@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:fitsSystemWindows="true"
+    tools:context=".AddProductActivity">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:theme="@style/Theme.Dispensa">
+        <!-- Usa il tema corretto per la tua app -->
+
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar_add_product"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/colorPrimary"
+            app:popupTheme="@style/Theme.Dispensa" />
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+    <!-- Campo Codice a Barre -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/textFieldBarcodeLayout"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="@string/barcode_hint"
+            android:layout_marginEnd="8dp"> <!-- Aggiungi un margine se vuoi spaziatura -->
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/editTextBarcode"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Pulsante Scansione Codice a Barre -->
+        <ImageButton
+            android:id="@+id/buttonScanBarcode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@android:drawable/ic_menu_camera"
+            android:contentDescription="@string/scan_barcode_description"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="8dp"/>
+
+    </LinearLayout>
+
+    <androidx.camera.view.PreviewView
+        android:id="@+id/previewViewBarcode"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:layout_marginTop="8dp"
+        android:visibility="gone"
+    />
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/textFieldProductNameLayout"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:hint="Nome Prodotto">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/editTextProductName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:enabled="false" /> <!-- Rendilo non editabile se vuoi solo visualizzare -->
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- NUOVO: Immagine Prodotto -->
+    <ImageView
+        android:id="@+id/imageViewProduct"
+        android:layout_width="wrap_content"
+        android:layout_height="150dp"
+    android:layout_marginTop="16dp"
+    android:layout_gravity="center_horizontal"
+    android:visibility="gone"
+    android:contentDescription="Immagine prodotto"
+    android:scaleType="fitCenter"
+    tools:srcCompat="@tools:sample/avatars" />
+
+    <!-- Campo Quantità -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/textFieldQuantityLayout"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:hint="@string/quantity_hint">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/editTextQuantity"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="number" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Campo Scadenza -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/textFieldExpiryDateLayout"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:hint="@string/expiry_date_hint">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/editTextExpiryDate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:focusable="false"
+            android:clickable="true"
+            android:inputType="date" />
+        <!-- focusable e clickable per mostrare DatePickerDialog al click -->
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <Button
+        android:id="@+id/buttonSaveProduct"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="@string/save_product_button"/>
+
+</LinearLayout>
