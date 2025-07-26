@@ -1,0 +1,72 @@
+[versions]
+agp = "8.11.1"
+junit = "4.13.2"
+junitVersion = "1.2.1"
+espressoCore = "3.6.1"
+appcompat = "1.7.1"
+material = "1.12.0"
+constraintlayout = "2.2.1"
+navigationFragment = "2.9.2"
+navigationUi = "2.9.2"
+roomRuntime = "2.7.2"
+roomCompiler = "2.7.2"
+roomKtx = "2.7.2"
+roomPaging = "2.7.2"
+roomRxjava2 = "2.7.2"
+roomRxjava3 = "2.7.2"
+roomGuava = "2.7.2"
+playServicesAnalyticsImpl = "18.2.0"
+cardview = "1.0.0"
+media3Common = "1.7.1"
+materialVersion = "1.12.0"
+swiperefreshlayout = "1.1.0"
+cameraCore = "1.4.2"
+cameraCamera2 = "1.4.2"
+cameraLifecycle = "1.4.2"
+cameraView = "1.4.2"
+playServicesMlkitBarcodeScanning = "18.3.1"
+converterMoshi = "3.0.0"
+barcodeScanning = "17.3.0"
+cameraViewVersion = "1.4.2"
+retrofit = "3.0.0"
+converterGson = "3.0.0"
+glide = "4.16.0"
+workRuntimeKtx = "2.10.2"
+
+[libraries]
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
+espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+navigation-fragment = { group = "androidx.navigation", name = "navigation-fragment", version.ref = "navigationFragment" }
+navigation-ui = { group = "androidx.navigation", name = "navigation-ui", version.ref = "navigationUi" }
+room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "roomRuntime" }
+room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "roomCompiler" }
+room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "roomKtx" }
+room-paging = { group = "androidx.room", name = "room-paging", version.ref = "roomPaging" }
+room-rxjava2 = { group = "androidx.room", name = "room-rxjava2", version.ref = "roomRxjava2" }
+room-rxjava3 = { group = "androidx.room", name = "room-rxjava3", version.ref = "roomRxjava3" }
+room-guava = { group = "androidx.room", name = "room-guava", version.ref = "roomGuava" }
+play-services-analytics-impl = { group = "com.google.android.gms", name = "play-services-analytics-impl", version.ref = "playServicesAnalyticsImpl" }
+cardview = { group = "androidx.cardview", name = "cardview", version.ref = "cardview" }
+media3-common = { group = "androidx.media3", name = "media3-common", version.ref = "media3Common" }
+x_implementation_com-material = { group = "  implementation 'com.google.android.material", name = "material", version.ref = "materialVersion" }
+swiperefreshlayout = { group = "androidx.swiperefreshlayout", name = "swiperefreshlayout", version.ref = "swiperefreshlayout" }
+camera-core = { group = "androidx.camera", name = "camera-core", version.ref = "cameraCore" }
+camera-camera2 = { group = "androidx.camera", name = "camera-camera2", version.ref = "cameraCamera2" }
+camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "cameraLifecycle" }
+camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "cameraView" }
+play-services-mlkit-barcode-scanning = { group = "com.google.android.gms", name = "play-services-mlkit-barcode-scanning", version.ref = "playServicesMlkitBarcodeScanning" }
+converter-moshi = { group = "com.squareup.retrofit2", name = "converter-moshi", version.ref = "converterMoshi" }
+barcode-scanning = { group = "com.google.mlkit", name = "barcode-scanning", version.ref = "barcodeScanning" }
+androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "cameraViewVersion" }
+retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "converterGson" }
+glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "glide" }
+androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workRuntimeKtx" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+
