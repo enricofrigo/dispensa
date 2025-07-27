@@ -7,9 +7,8 @@ public class OpenFoodFactsProductResponse {
 
     @SerializedName("product")
     private ProductData product;
-
     @SerializedName("status")
-    private int status; // 1 se il prodotto è stato trovato, 0 altrimenti
+    private int status;
 
     public ProductData getProduct() {
         return product;
@@ -20,32 +19,25 @@ public class OpenFoodFactsProductResponse {
     }
 
     public static class ProductData {
-        @SerializedName("product_name_it") // Nome del prodotto in italiano
+
+        @SerializedName("product_name_it")
         private String productNameIt;
-
-        @SerializedName("product_name") // Nome generico del prodotto (fallback)
+        @SerializedName("product_name")
         private String productName;
-
-        @SerializedName("image_front_url") // URL dell'immagine frontale
+        @SerializedName("image_front_url")
         private String imageFrontUrl;
-
-        @SerializedName("image_url") // Altro URL immagine (fallback)
+        @SerializedName("image_url")
         private String imageUrl;
-
-        // Aggiungi altri campi se ti servono (es. brands, quantity, ecc.)
 
         public String getProductNameIt() {
             return productNameIt;
         }
-
         public String getProductName() {
             return productName;
         }
-
         public String getImageFrontUrl() {
             return imageFrontUrl;
         }
-
         public String getImageUrl() { return imageUrl; }
     }
 }

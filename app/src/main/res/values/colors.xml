@@ -7,4 +7,11 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="product_expired_background">#FFCDD2</color> <!-- Rosso chiaro per lo sfondo -->
+    <color name="product_expired_stroke">#E53935</color> <!-- Rosso più scuro per il bordo -->
+    <color name="product_expiring_soon_background">#FFF9C4</color> <!-- Giallo chiaro per lo sfondo -->
+    <color name="product_expiring_soon_stroke">#FDD835</color> <!-- Giallo più scuro per il bordo -->
+    <color name="product_default_stroke">#E0E0E0</color> <!-- Grigio chiaro per il bordo di default -->
+    <color name="product_default_background">#FFFFFF</color>
+    <color name="grey_text">#757575</color>
 </resources>

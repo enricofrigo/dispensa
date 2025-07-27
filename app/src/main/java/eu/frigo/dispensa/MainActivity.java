@@ -17,7 +17,12 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import androidx.appcompat.widget.Toolbar;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.media3.common.util.Log;
 import androidx.navigation.ui.AppBarConfiguration;
@@ -28,10 +33,12 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import eu.frigo.dispensa.adapter.ProductListAdapter;
 import eu.frigo.dispensa.data.Product;
 import eu.frigo.dispensa.databinding.ActivityMainBinding;
+import eu.frigo.dispensa.ui.SettingsActivity;
 import eu.frigo.dispensa.viewmodel.MainViewModel;
 
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.ViewGroup;
 import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity implements ProductListAdapter.OnItemInteractionListener{
@@ -42,6 +49,9 @@ public class MainActivity extends AppCompatActivity implements ProductListAdapte
     private ProductListAdapter adapter;
     private RecyclerView recyclerView;
     private SwipeRefreshLayout swipeRefreshLayout;
+    private FloatingActionButton fab;
+    private CoordinatorLayout mainCoordinatorLayout;
+    private int originalFabBottomMargin;
 
     private final ActivityResultLauncher<String> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
@@ -53,16 +63,18 @@ public class MainActivity extends AppCompatActivity implements ProductListAdapte
             });
     private final ActivityResultLauncher<Intent> addProductActivityLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+                String message = null ;
                 if (result.getResultCode() == AppCompatActivity.RESULT_OK && result.getData() != null) {
                     String newBarcode = result.getData().getStringExtra("NEW_PRODUCT_BARCODE");
                     if (newBarcode != null) {
-                        Snackbar.make(findViewById(R.id.fab), "Prodotto aggiunto: " + newBarcode, Snackbar.LENGTH_LONG).show();
+                        message = "Prodotto aggiunto: " + newBarcode;
                     } else {
-                        Snackbar.make(findViewById(R.id.fab), "Nuovo prodotto aggiunto!", Snackbar.LENGTH_LONG).show();
+                        message ="Nuovo prodotto aggiunto!";
                     }
                 } else if (result.getResultCode() == AppCompatActivity.RESULT_CANCELED) {
-                    Snackbar.make(findViewById(R.id.fab), "Aggiunta prodotto annullata.", Snackbar.LENGTH_SHORT).show();
+                    message = "Aggiunta prodotto annullata.";
                 }
+                if (message != null) showProductSavedSnackbar(message);
             });
 
     @SuppressLint("UnsafeOptInUsageError")
@@ -70,10 +82,13 @@ public class MainActivity extends AppCompatActivity implements ProductListAdapte
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         askForNotificationPermission();
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         setContentView(R.layout.activity_main); // Il tuo layout con RecyclerView
+        mainCoordinatorLayout = findViewById(R.id.main_coordinator_layout);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         toolbar.setTitle(R.string.app_name);
+        setSupportActionBar(toolbar);
 
         recyclerView = findViewById(R.id.recyclerViewProducts);
         adapter = new ProductListAdapter(new ProductListAdapter.ProductDiff(),this);
@@ -103,7 +118,31 @@ public class MainActivity extends AppCompatActivity implements ProductListAdapte
                 android.R.color.holo_orange_light,
                 android.R.color.holo_red_light);
 
-        FloatingActionButton fab = findViewById(R.id.fab);
+        fab = findViewById(R.id.fab);
+        if (fab.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
+            originalFabBottomMargin = ((ViewGroup.MarginLayoutParams) fab.getLayoutParams()).bottomMargin;
+        } else {
+            originalFabBottomMargin = 0; // O un valore di default appropriato
+        }
+        ViewCompat.setOnApplyWindowInsetsListener(mainCoordinatorLayout, (v, windowInsets) -> {
+            Insets navigationBarsInsets = windowInsets.getInsets(WindowInsetsCompat.Type.navigationBars());
+            Insets statusBarsInsets = windowInsets.getInsets(WindowInsetsCompat.Type.statusBars());
+            Insets imeInsets = windowInsets.getInsets(WindowInsetsCompat.Type.ime()); // Per la tastiera
+
+            v.setPadding(
+                    navigationBarsInsets.left,
+                    statusBarsInsets.top,
+                    navigationBarsInsets.right,
+                    0
+            );
+            ViewGroup.MarginLayoutParams fabParams = (ViewGroup.MarginLayoutParams) fab.getLayoutParams();
+            int bottomInset = Math.max(navigationBarsInsets.bottom, imeInsets.bottom);
+            fabParams.bottomMargin = originalFabBottomMargin + bottomInset;
+            fab.setLayoutParams(fabParams);
+
+            return windowInsets;
+        });
+
         fab.setOnClickListener(view -> {
             Intent intent = new Intent(MainActivity.this, AddProductActivity.class);
             addProductActivityLauncher.launch(intent);
@@ -136,10 +175,10 @@ public class MainActivity extends AppCompatActivity implements ProductListAdapte
     }
     @Override
     public boolean onContextItemSelected(@NonNull MenuItem item) {
-        Product selectedProduct = adapter.getSelectedProduct(); // Ottieni il prodotto selezionato dall'adapter
+        Product selectedProduct = adapter.getSelectedProduct();
 
         if (selectedProduct == null) {
-            return super.onContextItemSelected(item); // Nessun prodotto era stato selezionato
+            return super.onContextItemSelected(item);
         }
 
         int itemId = item.getItemId();
@@ -149,18 +188,19 @@ public class MainActivity extends AppCompatActivity implements ProductListAdapte
             intent.putExtra("PRODUCT_ID", selectedProduct.getId());
             intent.putExtra("PRODUCT_BARCODE", selectedProduct.getBarcode());
             intent.putExtra("PRODUCT_QUANTITY", selectedProduct.getQuantity());
-            intent.putExtra("PRODUCT_EXPIRY_DATE", selectedProduct.getExpiryDate());
+            intent.putExtra("PRODUCT_EXPIRY_DATE", selectedProduct.getExpiryDateString());
             intent.putExtra("PRODUCT_NAME", selectedProduct.getProductName());
+            intent.putExtra("PRODUCT_IMAGE", selectedProduct.getImageUrl());
             addProductActivityLauncher.launch(intent);
             return true;
         } else if (itemId == R.id.action_delete_product) {
             // Azione Cancella - Mostra un dialogo di conferma
             new AlertDialog.Builder(this)
                     .setTitle("Conferma Cancellazione")
-                    .setMessage("Sei sicuro di voler cancellare il prodotto: " + selectedProduct.getBarcode() + "?")
+                    .setMessage("Sei sicuro di voler cancellare il prodotto: " + selectedProduct.getProductName() + "?")
                     .setPositiveButton("Cancella", (dialog, which) -> {
                         mainViewModel.delete(selectedProduct); // Chiama il metodo delete nel ViewModel
-                        Snackbar.make(recyclerView, "Prodotto cancellato: " + selectedProduct.getBarcode(), Snackbar.LENGTH_LONG).show();
+                        showProductSavedSnackbar("Prodotto cancellato: " + selectedProduct.getProductName());
                     })
                     .setNegativeButton("Annulla", null)
                     .setIcon(android.R.drawable.ic_dialog_alert)
@@ -170,7 +210,15 @@ public class MainActivity extends AppCompatActivity implements ProductListAdapte
             return super.onContextItemSelected(item);
         }
     }
-
+    public void showProductSavedSnackbar(String message) {
+        if (mainCoordinatorLayout != null && fab != null) {
+            Snackbar snackbar = Snackbar.make(mainCoordinatorLayout, message, Snackbar.LENGTH_LONG);
+            snackbar.setAnchorView(fab); // ANCORA QUI
+            snackbar.show();
+        } else {
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+        }
+    }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -180,26 +228,23 @@ public class MainActivity extends AppCompatActivity implements ProductListAdapte
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            Intent intent = new Intent(this, SettingsActivity.class);
+            startActivity(intent);
             return true;
         }
 
         return super.onOptionsItemSelected(item);
     }
-
     @Override
     public void onEditProduct(Product product) {
         Intent intent = new Intent(MainActivity.this, AddProductActivity.class);
         intent.putExtra("PRODUCT_ID", product.getId());
         intent.putExtra("PRODUCT_BARCODE", product.getBarcode());
         intent.putExtra("PRODUCT_QUANTITY", product.getQuantity());
-        intent.putExtra("PRODUCT_EXPIRY_DATE", product.getExpiryDate());
+        intent.putExtra("PRODUCT_EXPIRY_DATE", product.getExpiryDateString());
         addProductActivityLauncher.launch(intent);
     }
 
@@ -210,7 +255,7 @@ public class MainActivity extends AppCompatActivity implements ProductListAdapte
                 .setMessage("Sei sicuro di voler cancellare il prodotto: " + product.getBarcode() + "?")
                 .setPositiveButton("Cancella", (dialog, which) -> {
                     mainViewModel.delete(product);
-                    Snackbar.make(recyclerView, "Prodotto cancellato: " + product.getBarcode(), Snackbar.LENGTH_LONG).show();
+                    showProductSavedSnackbar("Prodotto cancellato: " + product.getBarcode());
                 })
                 .setNegativeButton("Annulla", null)
                 .setIcon(android.R.drawable.ic_dialog_alert)

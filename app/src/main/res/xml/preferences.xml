@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory
+        app:title="Notifiche di Scadenza"
+        app:iconSpaceReserved="false">
+
+        <EditTextPreference
+            app:key="pref_expiry_days_before"
+            app:title="Giorni di preavviso"
+            app:summary="Numero di giorni prima della scadenza per ricevere la notifica."
+            app:defaultValue="3"
+            app:useSimpleSummaryProvider="true"
+            android:inputType="number"
+            app:iconSpaceReserved="false"/>
+
+        <Preference
+            app:key="pref_notification_time"
+            app:title="Ora della notifica giornaliera"
+            app:summary="Seleziona l'ora in cui ricevere la notifica di scadenza."
+            app:iconSpaceReserved="false"/>
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

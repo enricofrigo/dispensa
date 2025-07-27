@@ -1,6 +1,7 @@
 package eu.frigo.dispensa.adapter; // Crea un package adapter o simile
 
 import android.annotation.SuppressLint;
+import android.content.SharedPreferences;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -10,15 +11,23 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.media3.common.util.Log;
+import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.google.android.material.card.MaterialCardView;
+
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Locale;
 
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.data.Product;
+import eu.frigo.dispensa.ui.SettingsFragment;
 
 public class ProductListAdapter extends ListAdapter<Product, ProductListAdapter.ProductViewHolder> {
 
@@ -59,6 +68,7 @@ public class ProductListAdapter extends ListAdapter<Product, ProductListAdapter.
         private final TextView textViewExpiryDate;
         private final TextView textViewProductName;
         private final ImageView imageViewProduct;
+        private final MaterialCardView cardProductItem;
 
         ProductViewHolder(View itemView) {
             super(itemView);
@@ -66,7 +76,8 @@ public class ProductListAdapter extends ListAdapter<Product, ProductListAdapter.
             textViewExpiryDate = itemView.findViewById(R.id.textViewItemExpiryDate);
             textViewProductName = itemView.findViewById(R.id.textViewItemProductName);
             imageViewProduct = itemView.findViewById(R.id.imageViewItemProduct);
-           itemView.setOnCreateContextMenuListener(this);
+            cardProductItem = itemView.findViewById(R.id.card_product_item);
+            itemView.setOnCreateContextMenuListener(this);
         }
 
         void bind(Product product) {
@@ -77,7 +88,8 @@ public class ProductListAdapter extends ListAdapter<Product, ProductListAdapter.
                 textViewProductName.setText(product.getBarcode());
             }
             textViewQuantity.setText(itemView.getContext().getString(R.string.quantity_label, product.getQuantity()));
-            textViewExpiryDate.setText(itemView.getContext().getString(R.string.expiry_date_label, product.getExpiryDate()));
+
+            textViewExpiryDate.setText(itemView.getContext().getString(R.string.expiry_date_label, product.getExpiryDateString()));
             if (product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {
                 Glide.with(itemView.getContext())
                         .load(product.getImageUrl())
@@ -87,7 +99,67 @@ public class ProductListAdapter extends ListAdapter<Product, ProductListAdapter.
                 imageViewProduct.setVisibility(View.VISIBLE);
             } else {
                 imageViewProduct.setImageResource(R.drawable.ic_placeholder_image);
-            }        }
+            }
+            
+            if (product.getExpiryDate() != null) {
+                textViewExpiryDate.setText(String.format("Scad: %s", eu.frigo.dispensa.utils.DateConverter.formatTimestampToDisplayDate(product.getExpiryDate())));
+                textViewExpiryDate.setVisibility(View.VISIBLE);
+
+                long todayTimestamp = eu.frigo.dispensa.utils.DateConverter.getTodayNormalizedTimestamp(); // Mezzogiorno di oggi
+
+                // Leggi i giorni di preavviso dalle preferenze
+                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(itemView.getContext());
+                String daysBeforeStr = prefs.getString(SettingsFragment.KEY_EXPIRY_DAYS_BEFORE, "3");
+                int daysBeforeWarning;
+                try {
+                    daysBeforeWarning = Integer.parseInt(daysBeforeStr);
+                } catch (NumberFormatException e) {
+                    daysBeforeWarning = 3; // Fallback
+                }
+
+                Calendar warningCalendar = Calendar.getInstance();
+                warningCalendar.setTimeInMillis(todayTimestamp);
+                warningCalendar.add(Calendar.DAY_OF_YEAR, daysBeforeWarning);
+                long warningTimestamp = warningCalendar.getTimeInMillis(); // Timestamp per l'inizio del periodo di "avviso"
+
+                // Stato 1: Scaduto
+                if (product.getExpiryDate() < todayTimestamp) {
+                    textViewExpiryDate.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.product_expired_stroke));
+                    if (cardProductItem != null) {
+                        cardProductItem.setStrokeColor(ContextCompat.getColor(itemView.getContext(), R.color.product_expired_stroke));
+                        cardProductItem.setStrokeWidth(itemView.getResources().getDimensionPixelSize(R.dimen.card_stroke_width_highlighted)); // Definisci questa dimen
+                        // cardProductItem.setCardBackgroundColor(ContextCompat.getColor(itemView.getContext(), R.color.product_expired_background)); // Sfondo opzionale
+                    }
+                }
+                // Stato 2: In scadenza a breve
+                else if (product.getExpiryDate() <= warningTimestamp) {
+                    textViewExpiryDate.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.product_expiring_soon_stroke));
+                    if (cardProductItem != null) {
+                        cardProductItem.setStrokeColor(ContextCompat.getColor(itemView.getContext(), R.color.product_expiring_soon_stroke));
+                        cardProductItem.setStrokeWidth(itemView.getResources().getDimensionPixelSize(R.dimen.card_stroke_width_highlighted));
+                        // cardProductItem.setCardBackgroundColor(ContextCompat.getColor(itemView.getContext(), R.color.product_expiring_soon_background)); // Sfondo opzionale
+                    }
+                }
+                // Stato 3: Non in scadenza a breve / Non scaduto
+                else {
+                    textViewExpiryDate.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.grey_text)); // O il tuo colore di default
+                    if (cardProductItem != null) {
+                        cardProductItem.setStrokeColor(ContextCompat.getColor(itemView.getContext(), R.color.product_default_stroke));
+                        cardProductItem.setStrokeWidth(itemView.getResources().getDimensionPixelSize(R.dimen.card_stroke_width_default)); // Definisci questa dimen
+                        // cardProductItem.setCardBackgroundColor(ContextCompat.getColor(itemView.getContext(), R.color.product_default_background));
+                    }
+                }
+            } else {
+                textViewExpiryDate.setText("Scad: N/D");
+                textViewExpiryDate.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.grey_text)); // O il tuo colore di default
+                if (cardProductItem != null) {
+                    cardProductItem.setStrokeColor(ContextCompat.getColor(itemView.getContext(), R.color.product_default_stroke));
+                    cardProductItem.setStrokeWidth(itemView.getResources().getDimensionPixelSize(R.dimen.card_stroke_width_default));
+                    // cardProductItem.setCardBackgroundColor(ContextCompat.getColor(itemView.getContext(), R.color.product_default_background));
+                }
+            }        
+        
+        }
         @Override
         public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
             MenuItem edit = menu.add(Menu.NONE, R.id.action_edit_product, 1, "Modifica");

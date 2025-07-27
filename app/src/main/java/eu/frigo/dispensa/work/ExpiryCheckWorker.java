@@ -1,11 +1,13 @@
 package eu.frigo.dispensa.work; // Crea questo package
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.preference.PreferenceManager;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 import java.text.ParseException;
@@ -22,6 +24,7 @@ import android.Manifest; // Per il permesso delle notifiche
 import android.app.PendingIntent;
 import android.content.Intent;
 import eu.frigo.dispensa.MainActivity;
+import eu.frigo.dispensa.ui.SettingsFragment;
 
 
 public class ExpiryCheckWorker extends Worker {
@@ -39,16 +42,24 @@ public class ExpiryCheckWorker extends Worker {
     @Override
     public Result doWork() {
         Context context = getApplicationContext();
-        ProductDao productDao = AppDatabase.getDatabase(context).productDao();
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        String daysBeforeStr = prefs.getString(SettingsFragment.KEY_EXPIRY_DAYS_BEFORE, "3");
+        int daysBeforeExpiryWarning;
+        try {
+            daysBeforeExpiryWarning = Integer.parseInt(daysBeforeStr);
+        } catch (NumberFormatException e) {
+            daysBeforeExpiryWarning = DAYS_BEFORE_EXPIRY_WARNING; // Fallback
+        }
 
         Calendar todayCalendar = Calendar.getInstance();
         Calendar expiryWarningCalendar = Calendar.getInstance();
-        expiryWarningCalendar.add(Calendar.DAY_OF_YEAR, DAYS_BEFORE_EXPIRY_WARNING);
+        expiryWarningCalendar.add(Calendar.DAY_OF_YEAR, daysBeforeExpiryWarning);
 
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
         String todayDateString = dateFormat.format(todayCalendar.getTime());
         String expiryWarningDateString = dateFormat.format(expiryWarningCalendar.getTime());
 
+        ProductDao productDao = AppDatabase.getDatabase(context).productDao();
         List<Product> allProducts = productDao.getAllProductsListStatic(); // Assicurati di avere un metodo per ottenere una lista statica
         // o considera di fare questa logica in un thread separato se usi LiveData/Flow qui
 
@@ -56,25 +67,18 @@ public class ExpiryCheckWorker extends Worker {
         int expiringCount = 0;
 
         for (Product product : allProducts) {
-            if (product.getExpiryDate() == null || product.getExpiryDate().trim().isEmpty()) {
+            if (product.getExpiryDate() == null) {
                 continue;
             }
-            try {
-                Date productExpiryDate = dateFormat.parse(product.getExpiryDate());
-                if (productExpiryDate != null) {
-                    // Controlla se il prodotto scade oggi o entro DAYS_BEFORE_EXPIRY_WARNING giorni
-                    if (!productExpiryDate.after(expiryWarningCalendar.getTime()) && !productExpiryDate.before(todayCalendar.getTime())) {
-                        // Il prodotto è in scadenza (o scaduto oggi)
-                        expiringCount++;
-                        String productName = (product.getProductName() != null && !product.getProductName().isEmpty())
-                                ? product.getProductName() : product.getBarcode();
-                        expiringProductsMessage.append("- ").append(productName)
-                                .append(" (Scad. ").append(product.getExpiryDate()).append(")\n");
-                    }
-                }
-            } catch (ParseException e) {
-                // Logga l'errore o gestiscilo come preferisci
-                android.util.Log.e(TAG, "Formato data errato per il prodotto: " + product.getBarcode(), e);
+            Date productExpiryDate = new Date(product.getExpiryDate());
+            // Controlla se il prodotto scade oggi o entro DAYS_BEFORE_EXPIRY_WARNING giorni
+            if (!productExpiryDate.after(expiryWarningCalendar.getTime()) && !productExpiryDate.before(todayCalendar.getTime())) {
+                // Il prodotto è in scadenza (o scaduto oggi)
+                expiringCount++;
+                String productName = (product.getProductName() != null && !product.getProductName().isEmpty())
+                        ? product.getProductName() : product.getBarcode();
+                expiringProductsMessage.append("- ").append(productName)
+                        .append(" (Scad. ").append(product.getExpiryDateString()).append(")\n");
             }
         }
 
