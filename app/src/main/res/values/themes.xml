@@ -8,11 +8,24 @@
         <item name="colorSecondaryVariant">@color/teal_700</item>
         <item name="colorOnSecondary">@color/black</item>
         <!-- Colore della barra di stato (opzionale, ma se impostato, non trasparente di default) -->
-        <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:windowLightStatusBar" >true</item>
-        <item name="android:windowLightNavigationBar" >true</item>
+        <item name="android:statusBarColor">@android:color/black</item>
+        <item name="android:navigationBarColor">@android:color/black</item>
+        <item name="android:windowLightStatusBar" >false</item>
+        <item name="android:windowLightNavigationBar" >false</item>
     </style>
 
         <style name="Theme.Dispensa" parent="Base.Theme.Dispensa" />
+
+    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.MaterialComponents.ActionBar">
+        <item name="android:textColorPrimary">@android:color/black</item>
+        <item name="android:textColorSecondary">@android:color/black</item>
+        <item name="actionMenuTextColor">@android:color/black</item>
+        <item name="android:actionMenuTextColor">@android:color/black</item>
+        <item name="titleTextColor">@android:color/black</item>
+    </style>
+
+    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.MaterialComponents.Light">
+        <item name="android:textColor">@android:color/black</item> <!-- TESTO "IMPOSTAZIONI" NEL POPUP NERO -->
+    </style>
+
     </resources>

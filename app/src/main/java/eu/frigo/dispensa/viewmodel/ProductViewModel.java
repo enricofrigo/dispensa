@@ -10,12 +10,12 @@ import java.util.List;
 import eu.frigo.dispensa.data.Product;
 import eu.frigo.dispensa.data.ProductRepository;
 
-public class MainViewModel extends AndroidViewModel {
+public class ProductViewModel extends AndroidViewModel {
 
     private ProductRepository repository;
     private LiveData<List<Product>> allProducts;
 
-    public MainViewModel(@NonNull Application application) {
+    public ProductViewModel(@NonNull Application application) {
         super(application);
         repository = new ProductRepository(application); // Usa il tuo Repository
         allProducts = repository.getAllProducts();

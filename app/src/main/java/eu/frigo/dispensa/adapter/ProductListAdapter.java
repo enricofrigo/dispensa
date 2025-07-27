@@ -12,7 +12,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
-import androidx.media3.common.util.Log;
 import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
@@ -21,9 +20,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.google.android.material.card.MaterialCardView;
 
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Locale;
 
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.data.Product;
@@ -107,7 +104,6 @@ public class ProductListAdapter extends ListAdapter<Product, ProductListAdapter.
 
                 long todayTimestamp = eu.frigo.dispensa.utils.DateConverter.getTodayNormalizedTimestamp(); // Mezzogiorno di oggi
 
-                // Leggi i giorni di preavviso dalle preferenze
                 SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(itemView.getContext());
                 String daysBeforeStr = prefs.getString(SettingsFragment.KEY_EXPIRY_DAYS_BEFORE, "3");
                 int daysBeforeWarning;

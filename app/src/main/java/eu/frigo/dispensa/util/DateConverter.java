@@ -31,11 +31,8 @@ public class DateConverter {
     @NonNull
     public static String formatTimestampToDisplayDate(@Nullable Long timestampMs) {
         if (timestampMs == null) {
-            return ""; // O potresti restituire "N/D", o null se il chiamante lo gestisce
+            return "";
         }
-        // Il timestamp dovrebbe già rappresentare una data con ora normalizzata (es. mezzogiorno UTC).
-        // Quando lo formattiamo, SimpleDateFormat userà la timezone di default del dispositivo
-        // per interpretare quel momento nel tempo.
         return displayFormatter.format(new Date(timestampMs));
     }
 
@@ -53,19 +50,18 @@ public class DateConverter {
             return null;
         }
         try {
-            // Per il parsing, SimpleDateFormat userà la timezone di default del dispositivo.
-            displayFormatter.setLenient(false); // Per un parsing più stretto del formato atteso.
+            displayFormatter.setLenient(false);
             Date parsedDate = displayFormatter.parse(dateString.trim());
 
             if (parsedDate != null) {
-                Calendar calendar = Calendar.getInstance(); // Ottiene un calendario con la timezone di default
+                Calendar calendar = Calendar.getInstance();
                 calendar.setTime(parsedDate);
                 normalizeTime(calendar);
                 return calendar.getTimeInMillis();
             }
         } catch (ParseException e) {
             Log.e("DateConverter", "Errore durante il parsing della data: " + e.getMessage());
-            return null; // Indica che il parsing è fallito
+            return null;
         }
         return null;
     }
