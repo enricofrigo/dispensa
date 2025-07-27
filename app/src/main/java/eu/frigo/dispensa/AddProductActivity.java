@@ -1,4 +1,4 @@
-package eu.frigo.dispensa; // Assicurati che il package sia corretto
+package eu.frigo.dispensa;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -63,16 +63,17 @@ import retrofit2.Response;
 
 public class AddProductActivity extends AppCompatActivity {
 
+    public static final String EXTRA_PRODUCT_ID = "extra_product_id";
     private TextInputEditText editTextBarcode;
     private ImageButton buttonScanBarcode;
     private TextInputEditText editTextQuantity;
     private TextInputEditText editTextExpiryDate;
     private Button buttonSaveProduct;
-    private Toolbar toolbarAddProduct; // Variabile per la Toolbar
+    private Toolbar toolbarAddProduct;
     private AddProductViewModel addProductViewModel;
-    private int currentProductId = -1; // Per tenere traccia dell'ID del prodotto da modificare, -1 se è un nuovo prodotto
+    private int currentProductId = -1;
     private boolean isEditMode = false;
-    private androidx.camera.view.PreviewView previewViewBarcode; // Aggiungeremo questo al layout
+    private androidx.camera.view.PreviewView previewViewBarcode;
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
     private ExecutorService cameraExecutor;
     private com.google.mlkit.vision.barcode.BarcodeScanner barcodeScanner;
@@ -351,7 +352,7 @@ public class AddProductActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onFailure(retrofit2.Call<OpenFoodFactsProductResponse> call, Throwable t) {
+            public void onFailure(@NonNull retrofit2.Call<OpenFoodFactsProductResponse> call, @NonNull Throwable t) {
                 Log.e("OpenFoodFacts", "Fallimento chiamata API", t);
                 Toast.makeText(AddProductActivity.this, "Errore di rete: " + t.getMessage(), Toast.LENGTH_LONG).show();
                 clearProductApiFieldsAndData();
@@ -375,13 +376,8 @@ public class AddProductActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        // Rilascia le risorse
-        if (cameraExecutor != null) {
-            cameraExecutor.shutdown();
-        }
-        if (barcodeScanner != null) {
-            barcodeScanner.close();
-        }
+        if (cameraExecutor != null) {cameraExecutor.shutdown();}
+        if (barcodeScanner != null) {barcodeScanner.close();}
     }
 
     private void saveOrUpdateProduct() {
@@ -423,15 +419,7 @@ public class AddProductActivity extends AppCompatActivity {
         } else {
             name=barcode;
         }
-        String myFormat = "dd/MM/yyyy"; // Scegli il formato che preferisci
-        SimpleDateFormat sdf = new SimpleDateFormat(myFormat, Locale.ITALY);
-        Long expms = null;
-        try {
-            expms = Objects.requireNonNull(sdf.parse(expiryDate)).getTime();
-        } catch (ParseException e) {
-            throw new RuntimeException(e);
-        }
-        Product product = new Product(barcode, quantity, expms, name, currentImageUrlFromApi);
+        Product product = new Product(barcode, quantity, eu.frigo.dispensa.utils.DateConverter.parseDisplayDateToTimestampMs(expiryDate), name, currentImageUrlFromApi);
        Log.d("AddProductActivity", "Salvataggio prodotto: " + product.toString());
        if(isEditMode) {
             product.setId(currentProductId);
@@ -441,7 +429,8 @@ public class AddProductActivity extends AppCompatActivity {
         }
         clearProductApiFieldsAndData();
         Intent resultIntent = new Intent();
-        resultIntent.putExtra("NEW_PRODUCT_BARCODE", barcode);
+        resultIntent.putExtra("NEW_PRODUCT_NAME", name);
+        resultIntent.putExtra("NEW_PRODUCT_EDIT", isEditMode);
         setResult(RESULT_OK, resultIntent);
         finish();
     }
@@ -463,9 +452,7 @@ public class AddProductActivity extends AppCompatActivity {
         }
 
         private void updateLabel() {
-            String myFormat = "dd/MM/yyyy"; // Scegli il formato che preferisci
-            SimpleDateFormat sdf = new SimpleDateFormat(myFormat, Locale.ITALY);
-            editTextExpiryDate.setText(sdf.format(calendar.getTime()));
+            editTextExpiryDate.setText(eu.frigo.dispensa.utils.DateConverter.formatTimestampToDisplayDate(calendar.getTimeInMillis()));
         }
 
         @Override

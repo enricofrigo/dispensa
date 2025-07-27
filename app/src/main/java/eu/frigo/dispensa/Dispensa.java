@@ -3,7 +3,6 @@ package eu.frigo.dispensa;
 import android.app.Application;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.os.Build;
 
 import androidx.work.ExistingPeriodicWorkPolicy;
 import androidx.work.PeriodicWorkRequest;
@@ -11,7 +10,7 @@ import androidx.work.WorkManager;
 
 import java.util.concurrent.TimeUnit;
 
-import eu.frigo.dispensa.work.ExpiryCheckWorker; // Importa il tuo worker
+import eu.frigo.dispensa.work.ExpiryCheckWorker;
 import eu.frigo.dispensa.work.ExpiryCheckWorkerScheduler;
 
 public class Dispensa extends Application {
@@ -19,7 +18,7 @@ public class Dispensa extends Application {
     public void onCreate() {
         super.onCreate();
         createNotificationChannel();
-        ExpiryCheckWorkerScheduler.scheduleWorker(this); // Schedula all'avvio dell'app
+        ExpiryCheckWorkerScheduler.scheduleWorker(this);
     }
 
     private void createNotificationChannel() {
@@ -35,17 +34,13 @@ public class Dispensa extends Application {
         }
     }
     private void scheduleExpiryCheckWorker() {
-        // Crea una richiesta di lavoro periodica (es. una volta al giorno)
         PeriodicWorkRequest expiryCheckRequest =
                 new PeriodicWorkRequest.Builder(ExpiryCheckWorker.class, 1, TimeUnit.DAYS)
-                        // Puoi aggiungere vincoli qui, es: .setConstraints(Constraints.Builder()...build())
                         .build();
 
-        // Schedula il lavoro, assicurandoti che ce ne sia solo uno attivo con lo stesso nome
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-                "expiryCheckWork", // Un nome univoco per questo lavoro
-                ExistingPeriodicWorkPolicy.KEEP, // Mantieni il lavoro esistente se già schedulato
-                // Oppure usa REPLACE se vuoi che ogni nuova schedulazione sovrascriva la precedente
+                "expiryCheckWork",
+                ExistingPeriodicWorkPolicy.KEEP,
                 expiryCheckRequest);
     }
 }

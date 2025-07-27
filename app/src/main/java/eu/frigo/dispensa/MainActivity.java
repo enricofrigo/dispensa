@@ -17,6 +17,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import androidx.appcompat.widget.Toolbar;
+import androidx.appcompat.widget.SearchView;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
@@ -34,19 +35,25 @@ import eu.frigo.dispensa.adapter.ProductListAdapter;
 import eu.frigo.dispensa.data.Product;
 import eu.frigo.dispensa.databinding.ActivityMainBinding;
 import eu.frigo.dispensa.ui.SettingsActivity;
-import eu.frigo.dispensa.viewmodel.MainViewModel;
+import eu.frigo.dispensa.viewmodel.ProductViewModel;
 
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
-public class MainActivity extends AppCompatActivity implements ProductListAdapter.OnItemInteractionListener{
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+public class MainActivity extends AppCompatActivity implements SearchView.OnQueryTextListener, ProductListAdapter.OnItemInteractionListener{
 
     private AppBarConfiguration appBarConfiguration;
     private ActivityMainBinding binding;
-    private MainViewModel mainViewModel;
+    private ProductViewModel productViewModel;
     private ProductListAdapter adapter;
+    private List<Product> allProductsList = new ArrayList<>();
+    private SearchView searchView;
     private RecyclerView recyclerView;
     private SwipeRefreshLayout swipeRefreshLayout;
     private FloatingActionButton fab;
@@ -65,9 +72,10 @@ public class MainActivity extends AppCompatActivity implements ProductListAdapte
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
                 String message = null ;
                 if (result.getResultCode() == AppCompatActivity.RESULT_OK && result.getData() != null) {
-                    String newBarcode = result.getData().getStringExtra("NEW_PRODUCT_BARCODE");
-                    if (newBarcode != null) {
-                        message = "Prodotto aggiunto: " + newBarcode;
+                    String productName = result.getData().getStringExtra("NEW_PRODUCT_NAME");
+                    boolean isEdit = result.getData().getBooleanExtra("NEW_PRODUCT_EDIT", false);
+                    if (productName != null) {
+                        message = isEdit?"Prodotto aggiornato: " + productName:"Prodotto aggiunto: " + productName;
                     } else {
                         message ="Nuovo prodotto aggiunto!";
                     }
@@ -91,26 +99,54 @@ public class MainActivity extends AppCompatActivity implements ProductListAdapte
         setSupportActionBar(toolbar);
 
         recyclerView = findViewById(R.id.recyclerViewProducts);
-        adapter = new ProductListAdapter(new ProductListAdapter.ProductDiff(),this);
+
+        adapter = new ProductListAdapter(new ProductListAdapter.ProductDiff(), new ProductListAdapter.OnItemInteractionListener() {
+            @Override
+            public void onEditProduct(Product product) {
+                Log.d("MainActivity", "Edit product: " + product.getBarcode());
+            }
+
+            @Override
+            public void onDeleteProduct(Product product) {
+                Log.d("MainActivity", "Delete product: " + product.getBarcode());
+            }
+
+            public void onItemClick(Product product) { // Assuming this is one of the methods
+                Intent intent = new Intent(MainActivity.this, AddProductActivity.class);
+                intent.putExtra(AddProductActivity.EXTRA_PRODUCT_ID, product.getId());
+                startActivity(intent);
+            }
+        });
+
         recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setOnCreateContextMenuListener(this);
 
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
 
-        // Inizializza il ViewModel
-        mainViewModel = new ViewModelProvider(this).get(MainViewModel.class);
+        productViewModel = new ViewModelProvider(this).get(ProductViewModel.class);
 
-        // Osserva i LiveData dal ViewModel
-        mainViewModel.getAllProducts().observe(this, products -> {
-            // Aggiorna la copia cache dei prodotti nell'adapter.
-            // ListAdapter gestirà l'animazione e gli aggiornamenti della UI.
+        productViewModel.getAllProducts().observe(this, products -> {
+            // Quando i dati cambiano, aggiorna sia la lista completa che quella visualizzata dall'adapter
+            allProductsList.clear();
+            if (products != null) {
+                allProductsList.addAll(products);
+            }
+            // Applica il filtro corrente (se presente) o mostra tutti i prodotti
+            if (searchView != null && searchView.getQuery() != null && !searchView.getQuery().toString().isEmpty()) {
+                filter(searchView.getQuery().toString());
+            } else {
+                adapter.submitList(new ArrayList<>(allProductsList)); // Mostra tutti se non c'è query
+            }
+        });
+
+        productViewModel.getAllProducts().observe(this, products -> {
             adapter.submitList(products);
         });
 
         swipeRefreshLayout.setOnRefreshListener(() -> {
                     Log.d("MainActivity", "Pull to refresh triggered!");
-                    mainViewModel.refreshProducts();
+                    productViewModel.refreshProducts();
                     swipeRefreshLayout.setRefreshing(false);
                 });
         swipeRefreshLayout.setColorSchemeResources(android.R.color.holo_blue_bright,
@@ -199,7 +235,7 @@ public class MainActivity extends AppCompatActivity implements ProductListAdapte
                     .setTitle("Conferma Cancellazione")
                     .setMessage("Sei sicuro di voler cancellare il prodotto: " + selectedProduct.getProductName() + "?")
                     .setPositiveButton("Cancella", (dialog, which) -> {
-                        mainViewModel.delete(selectedProduct); // Chiama il metodo delete nel ViewModel
+                        productViewModel.delete(selectedProduct); // Chiama il metodo delete nel ViewModel
                         showProductSavedSnackbar("Prodotto cancellato: " + selectedProduct.getProductName());
                     })
                     .setNegativeButton("Annulla", null)
@@ -221,8 +257,32 @@ public class MainActivity extends AppCompatActivity implements ProductListAdapte
     }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
+        MenuItem searchItem = menu.findItem(R.id.action_search);
+        searchView = (SearchView) searchItem.getActionView();
+
+        if (searchView != null) {
+            searchView.setOnQueryTextListener(this);
+            searchView.setQueryHint("Cerca prodotti..."); // Hint opzionale
+
+            // Gestisci l'espansione/collasso della SearchView per mostrare/nascondere altri item (opzionale)
+            searchItem.setOnActionExpandListener(new MenuItem.OnActionExpandListener() {
+                @Override
+                public boolean onMenuItemActionExpand(MenuItem item) {
+                    // Nascondi altri item di menu se vuoi (es. Impostazioni)
+                    // setMenuItemsVisibility(menu, item, false);
+                    return true; // Return true per permettere l'espansione
+                }
+
+                @Override
+                public boolean onMenuItemActionCollapse(MenuItem item) {
+                    // Mostra di nuovo gli altri item di menu
+                    // setMenuItemsVisibility(menu, null, true);
+                    invalidateOptionsMenu(); // Per assicurarsi che gli item vengano ridisegnati correttamente
+                    return true; // Return true per permettere il collasso
+                }
+            });
+        }
         return true;
     }
 
@@ -247,18 +307,64 @@ public class MainActivity extends AppCompatActivity implements ProductListAdapte
         intent.putExtra("PRODUCT_EXPIRY_DATE", product.getExpiryDateString());
         addProductActivityLauncher.launch(intent);
     }
-
     @Override
     public void onDeleteProduct(Product product) {
         new AlertDialog.Builder(this)
                 .setTitle("Conferma Cancellazione")
                 .setMessage("Sei sicuro di voler cancellare il prodotto: " + product.getBarcode() + "?")
                 .setPositiveButton("Cancella", (dialog, which) -> {
-                    mainViewModel.delete(product);
+                    productViewModel.delete(product);
                     showProductSavedSnackbar("Prodotto cancellato: " + product.getBarcode());
                 })
                 .setNegativeButton("Annulla", null)
                 .setIcon(android.R.drawable.ic_dialog_alert)
                 .show();
+    }
+    @Override
+    public boolean onQueryTextSubmit(String query) {
+        // L'utente ha premuto "invio" o il pulsante di ricerca
+        // Non è strettamente necessario fare qualcosa qui se il filtro avviene in onQueryTextChange
+        filter(query);
+        return false; // false se la SearchView deve eseguire l'azione di default (nessuna in questo caso)
+    }
+
+    @Override
+    public boolean onQueryTextChange(String newText) {
+        // Il testo nella SearchView è cambiato
+        filter(newText);
+        return true; // true se l'azione è stata gestita dal listener
+    }
+
+    private void filter(String text) {
+        List<Product> filteredList = new ArrayList<>();
+        String filterPattern = text.toLowerCase(Locale.getDefault()).trim();
+
+        if (filterPattern.isEmpty()) {
+            filteredList.addAll(allProductsList);
+        } else {
+            for (Product product : allProductsList) {
+                // Filtra per nome prodotto e/o barcode
+                boolean nameMatches = product.getProductName() != null &&
+                        product.getProductName().toLowerCase(Locale.getDefault()).contains(filterPattern);
+                boolean barcodeMatches = product.getBarcode() != null &&
+                        product.getBarcode().toLowerCase(Locale.getDefault()).contains(filterPattern);
+
+                if (nameMatches || barcodeMatches) {
+                    filteredList.add(product);
+                }
+            }
+        }
+        adapter.submitList(filteredList);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        // Chiudi la SearchView se è espansa quando l'activity va in stop
+        // per evitare che rimanga aperta se l'utente torna indietro rapidamente.
+        if (searchView != null && !searchView.isIconified()) {
+            searchView.setIconified(true); // Collassa la vista
+            searchView.onActionViewCollapsed(); // Assicura che si chiuda correttamente
+        }
     }
 }
