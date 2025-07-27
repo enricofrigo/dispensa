@@ -5,6 +5,10 @@ import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 import androidx.room.ColumnInfo;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+
 @Entity(tableName = "products") // Nome della tabella nel database
 public class Product {
 
@@ -15,7 +19,7 @@ public class Product {
     @ColumnInfo(name = "quantity")
     public int quantity;
     @ColumnInfo(name = "expiry_date")
-    public String expiryDate;
+    public Long expiryDate;
     @ColumnInfo(name = "product_name")
     private String productName;
     @ColumnInfo(name = "image_url")
@@ -23,7 +27,7 @@ public class Product {
 
     public Product() {}
 
-    public Product(String barcode, int quantity, String expiryDate,String productName, String imageUrl) {
+    public Product(String barcode, int quantity, Long expiryDate,String productName, String imageUrl) {
         this.barcode = barcode;
         this.quantity = quantity;
         this.expiryDate = expiryDate;
@@ -56,11 +60,13 @@ public class Product {
         this.quantity = quantity;
     }
 
-    public String getExpiryDate() {
-        return expiryDate;
+    public Long getExpiryDate() {return expiryDate;}
+    public String getExpiryDateString() {
+        String myFormat = "dd/MM/yyyy"; // Scegli il formato che preferisci
+        SimpleDateFormat sdf = new SimpleDateFormat(myFormat, Locale.ITALY);
+        return sdf.format(new Date(expiryDate));
     }
-
-    public void setExpiryDate(String expiryDate) {
+    public void setExpiryDate(Long expiryDate) {
         this.expiryDate = expiryDate;
     }
 

@@ -12,13 +12,14 @@ import androidx.work.WorkManager;
 import java.util.concurrent.TimeUnit;
 
 import eu.frigo.dispensa.work.ExpiryCheckWorker; // Importa il tuo worker
+import eu.frigo.dispensa.work.ExpiryCheckWorkerScheduler;
 
 public class Dispensa extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
         createNotificationChannel();
-        scheduleExpiryCheckWorker();
+        ExpiryCheckWorkerScheduler.scheduleWorker(this); // Schedula all'avvio dell'app
     }
 
     private void createNotificationChannel() {

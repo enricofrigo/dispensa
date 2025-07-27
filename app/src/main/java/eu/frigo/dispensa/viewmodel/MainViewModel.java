@@ -8,7 +8,7 @@ import androidx.media3.common.util.Log;
 
 import java.util.List;
 import eu.frigo.dispensa.data.Product;
-import eu.frigo.dispensa.data.ProductRepository; // Assumendo che tu abbia un Repository
+import eu.frigo.dispensa.data.ProductRepository;
 
 public class MainViewModel extends AndroidViewModel {
 

@@ -119,7 +119,7 @@ public class AddProductActivity extends AppCompatActivity {
                 setSupportActionBar(toolbarAddProduct);
                 if (getSupportActionBar() != null) {
                     getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-                    getSupportActionBar().setTitle(getString(R.string.add_product)); // Titolo della pagina
+                    getSupportActionBar().setTitle(getString(R.string.add_product));
                 }
             }
 
@@ -140,20 +140,18 @@ public class AddProductActivity extends AppCompatActivity {
                                     Barcode.FORMAT_EAN_8,
                                     Barcode.FORMAT_UPC_A,
                                     Barcode.FORMAT_UPC_E,
-                                    Barcode.FORMAT_QR_CODE, // Se vuoi anche i QR
-                                    Barcode.FORMAT_CODE_128, // Formati comuni
+                                    Barcode.FORMAT_QR_CODE,
+                                    Barcode.FORMAT_CODE_128,
                                     Barcode.FORMAT_CODE_39,
                                     Barcode.FORMAT_CODABAR
                             )
                             .build();
             barcodeScanner = BarcodeScanning.getClient(options);
-            buttonScanBarcode.setOnClickListener(v -> {
-                checkCameraPermissionAndStartScanner();
-            });
+            buttonScanBarcode.setOnClickListener(v -> {checkCameraPermissionAndStartScanner();});
             editTextBarcode.setOnFocusChangeListener((v, hasFocus) -> {
-                if (!hasFocus) { // Quando l'utente esce dal campo
-                    String barcode = editTextBarcode.getText().toString().trim();
-                    if (!barcode.isEmpty() && (scannedBarcodeValue == null || !barcode.equals(scannedBarcodeValue))) {
+                if (!hasFocus) {
+                    String barcode = Objects.requireNonNull(editTextBarcode.getText()).toString().trim();
+                    if (!barcode.isEmpty() && (!barcode.equals(scannedBarcodeValue))) {
                         fetchProductDetailsFromApi(barcode);
                     }
                 }
@@ -167,6 +165,10 @@ public class AddProductActivity extends AppCompatActivity {
                 int quantity = intent.getIntExtra("PRODUCT_QUANTITY", 0);
                 String expiryDate = intent.getStringExtra("PRODUCT_EXPIRY_DATE");
                 String productName = intent.getStringExtra("PRODUCT_NAME");
+                String imageUrl = intent.getStringExtra("PRODUCT_IMAGE");
+
+                currentImageUrlFromApi = imageUrl;
+                currentProductNameFromApi = productName;
                 editTextProductName.setText(productName);
                 editTextBarcode.setText(barcode);
                 editTextQuantity.setText(String.valueOf(quantity));
@@ -179,10 +181,17 @@ public class AddProductActivity extends AppCompatActivity {
                         Log.e("ParseDate", e.getMessage());
                     }
                 }
-                if (getSupportActionBar() != null) {
-                    getSupportActionBar().setTitle("Modifica Prodotto"); // Cambia titolo in modalità modifica
+                if (imageUrl != null && !imageUrl.trim().isEmpty()) {
+                    Glide.with(AddProductActivity.this)
+                            .load(imageUrl)
+                            .into(imageViewProduct);
+                    imageViewProduct.setVisibility(View.VISIBLE);
                 }
-                buttonSaveProduct.setText("Aggiorna Prodotto"); // Cambia testo del pulsante
+
+                if (getSupportActionBar() != null) {
+                    getSupportActionBar().setTitle("Modifica Prodotto");
+                }
+                buttonSaveProduct.setText("Aggiorna Prodotto");
             } else {
                 isEditMode = false;
                 if (getSupportActionBar() != null) {
@@ -191,6 +200,7 @@ public class AddProductActivity extends AppCompatActivity {
                 buttonSaveProduct.setText(getString(R.string.save_product_button));
             }
 
+            Log.d("AddProductActivity", editTextBarcode.getText()+" "+editTextQuantity.getText()+" "+editTextExpiryDate.getText()+" "+imageViewProduct.toString());
             if (getSupportActionBar() != null) {
                 getSupportActionBar().setDisplayHomeAsUpEnabled(true);
                 getSupportActionBar().setDisplayShowHomeEnabled(true);
@@ -275,7 +285,6 @@ public class AddProductActivity extends AppCompatActivity {
         cameraProvider.unbindAll();
 
         try {
-            // Associa i casi d'uso al ciclo di vita della fotocamera
             cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalysis);
         } catch (Exception e) {
             Log.e("AddProductActivity", "Fallimento nel bind dei casi d'uso della fotocamera", e);
@@ -296,20 +305,20 @@ public class AddProductActivity extends AppCompatActivity {
         retrofit2.Call<OpenFoodFactsProductResponse> call = apiService.getProductByBarcode(barcode, fieldsToFetch);
         call.enqueue(new Callback<OpenFoodFactsProductResponse>() {
             @Override
-            public void onResponse(retrofit2.Call<OpenFoodFactsProductResponse> call, Response<OpenFoodFactsProductResponse> response) {
+            public void onResponse(@NonNull retrofit2.Call<OpenFoodFactsProductResponse> call, @NonNull Response<OpenFoodFactsProductResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     OpenFoodFactsProductResponse apiResponse = response.body();
                     if (apiResponse.getStatus() == 1 && apiResponse.getProduct() != null) {
                         OpenFoodFactsProductResponse.ProductData productData = apiResponse.getProduct();
                         String productName = productData.getProductNameIt();
                         if (productName == null || productName.trim().isEmpty()) {
-                            productName = productData.getProductName(); // Fallback al nome generico
+                            productName = productData.getProductName();
                         }
                         currentProductNameFromApi = productName;
                         if (productName != null && !productName.trim().isEmpty()) {
                             editTextProductName.setText(productName);
                         } else {
-                            editTextProductName.setText(""); // O un messaggio tipo "Nome non trovato"
+                            editTextProductName.setText("Non trovato");
                             Log.w("OpenFoodFacts", "Nome prodotto non trovato per: " + barcode);
                         }
 
@@ -321,8 +330,6 @@ public class AddProductActivity extends AppCompatActivity {
                         if (imageUrl != null && !imageUrl.trim().isEmpty()) {
                             Glide.with(AddProductActivity.this)
                                     .load(imageUrl)
-                                    //.placeholder(R.drawable.ic_placeholder_image)
-                                    //.error(R.drawable.ic_error_image)
                                     .into(imageViewProduct);
                             imageViewProduct.setVisibility(View.VISIBLE);
                         } else {
@@ -373,7 +380,7 @@ public class AddProductActivity extends AppCompatActivity {
             cameraExecutor.shutdown();
         }
         if (barcodeScanner != null) {
-            barcodeScanner.close(); // Importante per rilasciare risorse di ML Kit
+            barcodeScanner.close();
         }
     }
 
@@ -383,7 +390,6 @@ public class AddProductActivity extends AppCompatActivity {
         String quantityStr = editTextQuantity.getText() != null ? editTextQuantity.getText().toString().trim() : "";
         String expiryDate = editTextExpiryDate.getText() != null ? editTextExpiryDate.getText().toString().trim() : "";
 
-        // Validazione (come prima)
         if (barcode.isEmpty()) {
             editTextBarcode.setError("Il codice a barre è obbligatorio");
             editTextBarcode.requestFocus();
@@ -417,9 +423,17 @@ public class AddProductActivity extends AppCompatActivity {
         } else {
             name=barcode;
         }
-
-        Product product = new Product(barcode, quantity, expiryDate,name,currentImageUrlFromApi);
-        if(isEditMode) {
+        String myFormat = "dd/MM/yyyy"; // Scegli il formato che preferisci
+        SimpleDateFormat sdf = new SimpleDateFormat(myFormat, Locale.ITALY);
+        Long expms = null;
+        try {
+            expms = Objects.requireNonNull(sdf.parse(expiryDate)).getTime();
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
+        Product product = new Product(barcode, quantity, expms, name, currentImageUrlFromApi);
+       Log.d("AddProductActivity", "Salvataggio prodotto: " + product.toString());
+       if(isEditMode) {
             product.setId(currentProductId);
             addProductViewModel.update(product);
         }else {
@@ -430,7 +444,7 @@ public class AddProductActivity extends AppCompatActivity {
         resultIntent.putExtra("NEW_PRODUCT_BARCODE", barcode);
         setResult(RESULT_OK, resultIntent);
         finish();
-        }
+    }
 
 
     private void showDatePickerDialog() {
