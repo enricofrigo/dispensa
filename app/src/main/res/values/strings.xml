@@ -22,4 +22,5 @@
     <string name="expiring_products_notification_title">Prodotti in Scadenza %d</string>
     <string name="add_new_product">aggiungi prodotto</string>
     <string name="action_search">Cerca</string>
+    <string name="action_toggle_layout">Cambia visualizzazione</string>
 </resources>
