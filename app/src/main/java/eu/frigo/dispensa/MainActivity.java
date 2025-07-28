@@ -3,6 +3,7 @@ package eu.frigo.dispensa;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -27,6 +28,8 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.media3.common.util.Log;
 import androidx.navigation.ui.AppBarConfiguration;
+import androidx.preference.PreferenceManager;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
@@ -37,6 +40,7 @@ import eu.frigo.dispensa.databinding.ActivityMainBinding;
 import eu.frigo.dispensa.ui.SettingsActivity;
 import eu.frigo.dispensa.viewmodel.ProductViewModel;
 
+import android.util.DisplayMetrics;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.ViewGroup;
@@ -59,6 +63,11 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     private FloatingActionButton fab;
     private CoordinatorLayout mainCoordinatorLayout;
     private int originalFabBottomMargin;
+    private static final String PREF_LAYOUT_MANAGER_KEY = "layout_manager_preference";
+    private static final int LAYOUT_MANAGER_LIST = 0;
+    private static final int LAYOUT_MANAGER_GRID = 1;
+    private int currentLayoutManagerType;
+    private MenuItem layoutToggleMenuItem;
 
     private final ActivityResultLauncher<String> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
@@ -80,7 +89,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
                         message ="Nuovo prodotto aggiunto!";
                     }
                 } else if (result.getResultCode() == AppCompatActivity.RESULT_CANCELED) {
-                    message = "Aggiunta prodotto annullata.";
+                    message = "Azione annullata.";
                 }
                 if (message != null) showProductSavedSnackbar(message);
             });
@@ -99,6 +108,8 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         setSupportActionBar(toolbar);
 
         recyclerView = findViewById(R.id.recyclerViewProducts);
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        currentLayoutManagerType = prefs.getInt(PREF_LAYOUT_MANAGER_KEY, LAYOUT_MANAGER_LIST); // Default a lista
 
         adapter = new ProductListAdapter(new ProductListAdapter.ProductDiff(), new ProductListAdapter.OnItemInteractionListener() {
             @Override
@@ -121,6 +132,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setOnCreateContextMenuListener(this);
+        setLayoutManager(currentLayoutManagerType);
 
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
 
@@ -185,6 +197,35 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         });
 
         registerForContextMenu(recyclerView);
+    }
+    private int calculateSpanCount() {
+        DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
+        float dpWidth = displayMetrics.widthPixels / displayMetrics.density;
+        int itemWidthDp = 180; // Larghezza desiderata approssimativa di un item in griglia in dp
+        int spanCount = (int) (dpWidth / itemWidthDp);
+        return Math.max(2, spanCount); // Assicurati almeno 2 colonne
+    }
+    private void setLayoutManager(int layoutType) {
+        if (layoutType == LAYOUT_MANAGER_GRID) {
+            int spanCount = calculateSpanCount();
+            recyclerView.setLayoutManager(new GridLayoutManager(this, spanCount));
+            currentLayoutManagerType = LAYOUT_MANAGER_GRID;
+        } else {
+            recyclerView.setLayoutManager(new LinearLayoutManager(this));
+            currentLayoutManagerType = LAYOUT_MANAGER_LIST;
+        }
+        // adapter.notifyDataSetChanged(); // Usalo con cautela, ListAdapter gestisce meglio gli aggiornamenti.
+    }
+    private void updateLayoutToggleIcon() {
+        if (layoutToggleMenuItem != null) {
+            if (currentLayoutManagerType == LAYOUT_MANAGER_GRID) {
+                layoutToggleMenuItem.setIcon(R.drawable.ic_view_list); // Mostra icona per passare a Lista
+                layoutToggleMenuItem.setTitle("Visualizza come Lista"); // Aggiorna title per accessibilità
+            } else {
+                layoutToggleMenuItem.setIcon(R.drawable.ic_view_grid); // Mostra icona per passare a Griglia
+                layoutToggleMenuItem.setTitle("Visualizza come Griglia");
+            }
+        }
     }
     private void askForNotificationPermission() {
         // Questo è necessario solo da Android 13 (API 33) in su
@@ -259,6 +300,8 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
         MenuItem searchItem = menu.findItem(R.id.action_search);
+        layoutToggleMenuItem = menu.findItem(R.id.action_toggle_layout);
+        updateLayoutToggleIcon(); // Imposta l'icona corretta all'avvio
         searchView = (SearchView) searchItem.getActionView();
 
         if (searchView != null) {
@@ -290,7 +333,10 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
 
-        if (id == R.id.action_settings) {
+        if (id == R.id.action_toggle_layout) {
+            toggleLayoutManager();
+            return true;
+        } else if (id == R.id.action_settings) {
             Intent intent = new Intent(this, SettingsActivity.class);
             startActivity(intent);
             return true;
@@ -298,6 +344,17 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
 
         return super.onOptionsItemSelected(item);
     }
+    private void toggleLayoutManager() {
+        if (currentLayoutManagerType == LAYOUT_MANAGER_LIST) {
+            setLayoutManager(LAYOUT_MANAGER_GRID);
+        } else {
+            setLayoutManager(LAYOUT_MANAGER_LIST);
+        }
+        updateLayoutToggleIcon();
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        prefs.edit().putInt(PREF_LAYOUT_MANAGER_KEY, currentLayoutManagerType).apply();
+    }
+
     @Override
     public void onEditProduct(Product product) {
         Intent intent = new Intent(MainActivity.this, AddProductActivity.class);
