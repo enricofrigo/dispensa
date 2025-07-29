@@ -24,4 +24,9 @@
     <string name="action_search">Cerca</string>
     <string name="action_toggle_layout">Cambia visualizzazione</string>
     <string name="unload_product">Usa</string>
+    <string name="button_add_tag">Aggiungi</string>
+    <string name="hint_nome_prodotto">Nome Prodotto</string>
+    <string name="hint_immagine_prodotto">Immagine prodotto</string>
+    <string name="hint_categorie_tags">Categorie (Tags)</string>
+    <string name="hint_nuova_categoria">Nuova Categoria (es. en:dairy)</string>
 </resources>

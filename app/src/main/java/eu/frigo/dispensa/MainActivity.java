@@ -13,7 +13,6 @@ import com.google.android.material.snackbar.Snackbar;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -36,6 +35,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import eu.frigo.dispensa.adapter.ProductListAdapter;
 import eu.frigo.dispensa.data.Product;
+import eu.frigo.dispensa.data.ProductWithCategoryDefinitions;
 import eu.frigo.dispensa.databinding.ActivityMainBinding;
 import eu.frigo.dispensa.ui.SettingsActivity;
 import eu.frigo.dispensa.viewmodel.ProductViewModel;
@@ -56,7 +56,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     private ActivityMainBinding binding;
     private ProductViewModel productViewModel;
     private ProductListAdapter adapter;
-    private List<Product> allProductsList = new ArrayList<>();
+    private List<ProductWithCategoryDefinitions> allProductsList = new ArrayList<>();
     private SearchView searchView;
     private RecyclerView recyclerView;
     private SwipeRefreshLayout swipeRefreshLayout;
@@ -226,7 +226,8 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         }
     }
     @Override
-    public void onEditActionClicked(Product product) {
+    public void onEditActionClicked(ProductWithCategoryDefinitions productWithCategoryDefinitions) {
+        Product product = productWithCategoryDefinitions.product;
         Intent intent = new Intent(MainActivity.this, AddProductActivity.class);
         intent.putExtra("PRODUCT_ID", product.getId());
         intent.putExtra("PRODUCT_BARCODE", product.getBarcode());
@@ -237,7 +238,8 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         addProductActivityLauncher.launch(intent);
     }
     @Override
-    public void onDeleteActionClicked(Product product) {
+    public void onDeleteActionClicked(ProductWithCategoryDefinitions productWithCategoryDefinitions) {
+        Product product = productWithCategoryDefinitions.product;
         new AlertDialog.Builder(this)
                 .setTitle("Conferma Cancellazione")
                 .setMessage("Sei sicuro di voler cancellare il prodotto: " + product.getProductName() + "?")
@@ -250,9 +252,10 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
                 .show();
     }
     @Override
-    public void onProductItemClickedForQuantity(Product product) {
-        Log.d("MainActivity", "onProductItemClickedForQuantity called with product: " + product);
-        if (product == null) return;
+    public void onProductItemClickedForQuantity(ProductWithCategoryDefinitions productWithCategoryDefinitions) {
+        Log.d("MainActivity", "onProductItemClickedForQuantity called with product: " + productWithCategoryDefinitions);
+        if (productWithCategoryDefinitions == null) return;
+        Product product = productWithCategoryDefinitions.product;
 
         int currentQuantity = product.getQuantity();
         if (currentQuantity > 1) {
@@ -345,14 +348,14 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     }
 
     private void filter(String text) {
-        List<Product> filteredList = new ArrayList<>();
+        List<ProductWithCategoryDefinitions> filteredList = new ArrayList<>();
         String filterPattern = text.toLowerCase(Locale.getDefault()).trim();
         if (filterPattern.isEmpty()) {
             filteredList.addAll(allProductsList);
         } else {
-            for (Product product : allProductsList) {
-                boolean nameMatches = product.getProductName() != null &&
-                        product.getProductName().toLowerCase(Locale.getDefault()).contains(filterPattern);
+            for (ProductWithCategoryDefinitions product : allProductsList) {
+                boolean nameMatches = product.product.getProductName() != null &&
+                        product.product.getProductName().toLowerCase(Locale.getDefault()).contains(filterPattern);
                 if (nameMatches) {
                     filteredList.add(product);
                 }

@@ -9,11 +9,12 @@ import androidx.media3.common.util.Log;
 import java.util.List;
 import eu.frigo.dispensa.data.Product;
 import eu.frigo.dispensa.data.ProductRepository;
+import eu.frigo.dispensa.data.ProductWithCategoryDefinitions;
 
 public class ProductViewModel extends AndroidViewModel {
 
     private ProductRepository repository;
-    private LiveData<List<Product>> allProducts;
+    private LiveData<List<ProductWithCategoryDefinitions>> allProducts;
 
     public ProductViewModel(@NonNull Application application) {
         super(application);
@@ -21,7 +22,7 @@ public class ProductViewModel extends AndroidViewModel {
         allProducts = repository.getAllProducts();
     }
 
-    public LiveData<List<Product>> getAllProducts() {
+    public LiveData<List<ProductWithCategoryDefinitions>> getAllProducts() {
         return allProducts;
     }
 

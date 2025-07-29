@@ -9,6 +9,7 @@ import android.media.Image;
 import android.os.Bundle;
 import android.util.Size;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -28,6 +29,8 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.media3.common.util.Log;
 
 import com.bumptech.glide.Glide;
+import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions;
@@ -35,12 +38,18 @@ import com.google.mlkit.vision.barcode.BarcodeScanning;
 import com.google.mlkit.vision.barcode.common.Barcode;
 import com.google.mlkit.vision.common.InputImage;
 
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import eu.frigo.dispensa.data.CategoryDefinition;
 import eu.frigo.dispensa.data.Product;
 import eu.frigo.dispensa.network.OpenFoodFactsApiService;
 import eu.frigo.dispensa.network.RetrofitClient;
@@ -57,7 +66,6 @@ public class AddProductActivity extends AppCompatActivity {
     private ImageButton buttonScanBarcode;
     private TextInputEditText editTextQuantity;
     private static final String DEFAULT_QUANTITY = "1";
-
     private TextInputEditText editTextExpiryDate;
     private Button buttonSaveProduct;
     private Toolbar toolbarAddProduct;
@@ -75,6 +83,12 @@ public class AddProductActivity extends AppCompatActivity {
     private final Calendar calendar = Calendar.getInstance();
     private String currentProductNameFromApi;
     private String currentImageUrlFromApi;
+    private ChipGroup chipGroupCategories;
+    private TextInputEditText editTextNewCategory;
+    private Button buttonAddCategory;
+    private Set<String> currentProductTagsSet = new HashSet<>();
+    private Collection<String> currentCategoriesFromApi;
+
     private final ActivityResultLauncher<String> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
                 if (isGranted) {
@@ -100,7 +114,7 @@ public class AddProductActivity extends AppCompatActivity {
                 });
 
 
-        @SuppressLint("UnsafeOptInUsageError")
+    @SuppressLint("UnsafeOptInUsageError")
         @Override
         protected void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
@@ -123,6 +137,9 @@ public class AddProductActivity extends AppCompatActivity {
             editTextProductName = findViewById(R.id.editTextProductName);
             imageViewProduct = findViewById(R.id.imageViewProduct);
             cameraExecutor = Executors.newSingleThreadExecutor();
+            chipGroupCategories = findViewById(R.id.chipGroupCategories);
+            editTextNewCategory = findViewById(R.id.editTextNewCategory);
+            buttonAddCategory = findViewById(R.id.buttonAddCategory);
             buttonSaveProduct = findViewById(R.id.buttonSaveProduct);
 
             BarcodeScannerOptions options =
@@ -174,7 +191,6 @@ public class AddProductActivity extends AppCompatActivity {
                             .into(imageViewProduct);
                     imageViewProduct.setVisibility(View.VISIBLE);
                 }
-
                 if (getSupportActionBar() != null) {
                     getSupportActionBar().setTitle("Modifica Prodotto");
                 }
@@ -189,6 +205,36 @@ public class AddProductActivity extends AppCompatActivity {
                 editTextQuantity.setSelection(editTextQuantity.getText().length());
 
             }
+            if (isEditMode && currentProductId != -1) {
+                addProductViewModel.getProductById(currentProductId).observe(this, productWithDefs -> {
+                    if (productWithDefs != null && productWithDefs.product != null) {
+                        // ... (popola altri campi)
+
+                        if (productWithDefs.categoryDefinitions != null) {
+                            currentProductTagsSet.clear(); // Pulisci prima di aggiungere
+                            for (CategoryDefinition def : productWithDefs.categoryDefinitions) {
+                                currentProductTagsSet.add(def.tagName); // Aggiungi il nome del tag originale (es. "en:dairy")
+                            }
+                            updateChipGroup();
+                        }
+                    }
+                });
+            } else if (currentCategoriesFromApi != null && !currentCategoriesFromApi.isEmpty()){
+                // Se stiamo creando un nuovo prodotto e i tag sono stati pre-caricati dall'API
+                currentProductTagsSet.clear();
+                currentProductTagsSet.addAll(currentCategoriesFromApi);
+                updateChipGroup();
+            }
+
+
+            buttonAddCategory.setOnClickListener(v -> addNewCategoryTag());
+            editTextNewCategory.setOnEditorActionListener((v, actionId, event) -> {
+                if (actionId == EditorInfo.IME_ACTION_DONE) {
+                    addNewCategoryTag();
+                    return true;
+                }
+                return false;
+            });
 
             Log.d("AddProductActivity", editTextBarcode.getText()+" "+editTextQuantity.getText()+" "+editTextExpiryDate.getText()+" "+imageViewProduct.toString());
             if (getSupportActionBar() != null) {
@@ -200,7 +246,31 @@ public class AddProductActivity extends AppCompatActivity {
             buttonScanBarcode.setOnClickListener(v -> checkCameraPermissionAndStartScanner());
             buttonSaveProduct.setOnClickListener(v -> saveOrUpdateProduct());
         }
-
+    private void updateChipGroup() {
+        chipGroupCategories.removeAllViews(); // Pulisci i chip esistenti
+        for (String tag : currentProductTagsSet) {
+            Chip chip = new Chip(this);
+            chip.setText(tag);
+            chip.setCloseIconVisible(true);
+            chip.setOnCloseIconClickListener(v -> {
+                currentProductTagsSet.remove(tag); // Rimuovi dal Set
+                updateChipGroup(); // Ridisegna la ChipGroup
+            });
+            chipGroupCategories.addView(chip);
+        }
+    }
+    private void addNewCategoryTag() {
+        String newTag = editTextNewCategory.getText().toString().trim();
+        if (!newTag.isEmpty()) {
+            if (!newTag.matches("^[a-z]{2}:.*")) {
+                newTag = "it:" + newTag;
+            }
+            if (currentProductTagsSet.add(newTag)) { // .add() di Set restituisce true se l'elemento è stato aggiunto (non era già presente)
+                updateChipGroup(); // Aggiorna la UI
+            }
+            editTextNewCategory.setText(""); // Pulisci l'EditText
+        }
+    }
     private void checkCameraPermissionAndStartScanner() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
             isCameraPermissionGranted = true;
@@ -290,7 +360,7 @@ public class AddProductActivity extends AppCompatActivity {
         Toast.makeText(this, "Caricamento dati prodotto...", Toast.LENGTH_SHORT).show();
 
         OpenFoodFactsApiService apiService = RetrofitClient.getApiService();
-        String fieldsToFetch = "product_name_it,product_name,image_front_url,image_url";
+        String fieldsToFetch = "product_name_it,product_name,image_front_url,image_url,categories_tags";
 
         retrofit2.Call<OpenFoodFactsProductResponse> call = apiService.getProductByBarcode(barcode, fieldsToFetch);
         call.enqueue(new Callback<OpenFoodFactsProductResponse>() {
@@ -326,6 +396,16 @@ public class AddProductActivity extends AppCompatActivity {
                             imageViewProduct.setVisibility(View.GONE); // O mostra un placeholder
                             Log.w("OpenFoodFacts", "URL immagine non trovato per: " + barcode);
                         }
+                        List<String> fetchedCategories = productData.getCategoriesTags();
+                        if (fetchedCategories != null && !fetchedCategories.isEmpty()) {
+                            currentProductTagsSet.clear();
+                            currentProductTagsSet.addAll(fetchedCategories);
+                            Log.d("OpenFoodFacts", "Categories fetched: " + fetchedCategories);
+                        } else {
+                            // currentProductTagsSet.clear(); // Decidi se pulire se l'API non restituisce nulla
+                            Log.d("OpenFoodFacts", "No categories found from API.");
+                        }
+                        updateChipGroup();
                         Toast.makeText(AddProductActivity.this, "Dati caricati!", Toast.LENGTH_SHORT).show();
 
                     } else {
@@ -411,12 +491,13 @@ public class AddProductActivity extends AppCompatActivity {
             }
         }
         Product product = new Product(barcode, quantity, DateConverter.parseDisplayDateToTimestampMs(expiryDate), name, currentImageUrlFromApi);
-       Log.d("AddProductActivity", "Salvataggio prodotto: " + product.toString());
-       if(isEditMode) {
+        Log.d("AddProductActivity", "Salvataggio prodotto: " + product.toString());
+        List<String> tagsToSave = new ArrayList<>(currentProductTagsSet);
+        if(isEditMode) {
             product.setId(currentProductId);
-            addProductViewModel.update(product);
+            addProductViewModel.update(product,tagsToSave);
         }else {
-            addProductViewModel.insert(product);
+            addProductViewModel.insert(product,tagsToSave);
         }
         clearProductApiFieldsAndData();
         Intent resultIntent = new Intent();
