@@ -6,4 +6,7 @@
     <item
         android:id="@+id/action_delete_product"
         android:title="@string/cancella" />
+    <item
+        android:id="@+id/action_unload_product"
+        android:title="@string/unload_product" />
 </menu>

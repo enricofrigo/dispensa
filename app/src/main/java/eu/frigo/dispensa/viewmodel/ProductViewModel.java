@@ -33,4 +33,12 @@ public class ProductViewModel extends AndroidViewModel {
         Log.d("MainViewModel", "refreshProducts() chiamato.");
         repository.triggerDataRefresh();
     }
+
+    public void update(Product updatedProduct) {
+        repository.update(updatedProduct);
+    }
+
+    public void insert(Product product) {
+        repository.insert(product);
+    }
 }

@@ -97,4 +97,15 @@ public class Product {
                 ", imageUrl='" + imageUrl + '\'' +
                 '}';
     }
+
+    public Product copyWithNewQuantity(int i) {
+        Product copy = new Product();
+        copy.id = this.id;
+        copy.barcode = this.barcode;
+        copy.quantity = i;
+        copy.expiryDate = this.expiryDate;
+        copy.productName = this.productName;
+        copy.imageUrl = this.imageUrl;
+        return copy;
+    }
 }
