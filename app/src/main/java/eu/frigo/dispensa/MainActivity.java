@@ -50,7 +50,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-public class MainActivity extends AppCompatActivity implements SearchView.OnQueryTextListener, ProductListAdapter.OnItemInteractionListener{
+public class MainActivity extends AppCompatActivity implements SearchView.OnQueryTextListener, ProductListAdapter.OnProductInteractionListener{
 
     private AppBarConfiguration appBarConfiguration;
     private ActivityMainBinding binding;
@@ -93,6 +93,24 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
                 }
                 if (message != null) showProductSavedSnackbar(message);
             });
+    private void askForNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                if (shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
+                    new AlertDialog.Builder(this)
+                            .setTitle("Permesso Notifiche Richiesto")
+                            .setMessage("L'app ha bisogno del permesso per inviarti notifiche sui prodotti in scadenza.")
+                            .setPositiveButton("OK", (dialog, which) -> {
+                                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+                            })
+                            .setNegativeButton("Annulla", (dialog, which) -> dialog.dismiss())
+                            .create().show();
+                } else {
+                    requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+                }
+            }
+        }
+    }
 
     @SuppressLint("UnsafeOptInUsageError")
     @Override
@@ -111,24 +129,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         currentLayoutManagerType = prefs.getInt(PREF_LAYOUT_MANAGER_KEY, LAYOUT_MANAGER_LIST); // Default a lista
 
-        adapter = new ProductListAdapter(new ProductListAdapter.ProductDiff(), new ProductListAdapter.OnItemInteractionListener() {
-            @Override
-            public void onEditProduct(Product product) {
-                Log.d("MainActivity", "Edit product: " + product.getBarcode());
-            }
-
-            @Override
-            public void onDeleteProduct(Product product) {
-                Log.d("MainActivity", "Delete product: " + product.getBarcode());
-            }
-
-            public void onItemClick(Product product) { // Assuming this is one of the methods
-                Intent intent = new Intent(MainActivity.this, AddProductActivity.class);
-                intent.putExtra(AddProductActivity.EXTRA_PRODUCT_ID, product.getId());
-                startActivity(intent);
-            }
-        });
-
+        adapter = new ProductListAdapter(new ProductListAdapter.ProductDiff(),this);
         recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setOnCreateContextMenuListener(this);
@@ -139,12 +140,10 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         productViewModel = new ViewModelProvider(this).get(ProductViewModel.class);
 
         productViewModel.getAllProducts().observe(this, products -> {
-            // Quando i dati cambiano, aggiorna sia la lista completa che quella visualizzata dall'adapter
             allProductsList.clear();
             if (products != null) {
                 allProductsList.addAll(products);
             }
-            // Applica il filtro corrente (se presente) o mostra tutti i prodotti
             if (searchView != null && searchView.getQuery() != null && !searchView.getQuery().toString().isEmpty()) {
                 filter(searchView.getQuery().toString());
             } else {
@@ -157,7 +156,6 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         });
 
         swipeRefreshLayout.setOnRefreshListener(() -> {
-                    Log.d("MainActivity", "Pull to refresh triggered!");
                     productViewModel.refreshProducts();
                     swipeRefreshLayout.setRefreshing(false);
                 });
@@ -170,7 +168,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         if (fab.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
             originalFabBottomMargin = ((ViewGroup.MarginLayoutParams) fab.getLayoutParams()).bottomMargin;
         } else {
-            originalFabBottomMargin = 0; // O un valore di default appropriato
+            originalFabBottomMargin = 0;
         }
         ViewCompat.setOnApplyWindowInsetsListener(mainCoordinatorLayout, (v, windowInsets) -> {
             Insets navigationBarsInsets = windowInsets.getInsets(WindowInsetsCompat.Type.navigationBars());
@@ -201,9 +199,9 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     private int calculateSpanCount() {
         DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
         float dpWidth = displayMetrics.widthPixels / displayMetrics.density;
-        int itemWidthDp = 180; // Larghezza desiderata approssimativa di un item in griglia in dp
+        int itemWidthDp = 180;
         int spanCount = (int) (dpWidth / itemWidthDp);
-        return Math.max(2, spanCount); // Assicurati almeno 2 colonne
+        return Math.max(2, spanCount);
     }
     private void setLayoutManager(int layoutType) {
         if (layoutType == LAYOUT_MANAGER_GRID) {
@@ -219,78 +217,60 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     private void updateLayoutToggleIcon() {
         if (layoutToggleMenuItem != null) {
             if (currentLayoutManagerType == LAYOUT_MANAGER_GRID) {
-                layoutToggleMenuItem.setIcon(R.drawable.ic_view_list); // Mostra icona per passare a Lista
-                layoutToggleMenuItem.setTitle("Visualizza come Lista"); // Aggiorna title per accessibilità
+                layoutToggleMenuItem.setIcon(R.drawable.ic_view_list);
+                layoutToggleMenuItem.setTitle("Visualizza come Lista");
             } else {
-                layoutToggleMenuItem.setIcon(R.drawable.ic_view_grid); // Mostra icona per passare a Griglia
+                layoutToggleMenuItem.setIcon(R.drawable.ic_view_grid);
                 layoutToggleMenuItem.setTitle("Visualizza come Griglia");
             }
         }
     }
-    private void askForNotificationPermission() {
-        // Questo è necessario solo da Android 13 (API 33) in su
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
-                    PackageManager.PERMISSION_GRANTED) {
-                // Il permesso è già concesso
-            } else if (shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
-                // Mostra una UI educativa all'utente prima di richiedere di nuovo il permesso
-                // Ad esempio, un AlertDialog che spiega perché hai bisogno delle notifiche
-                new AlertDialog.Builder(this)
-                        .setTitle("Permesso Notifiche Richiesto")
-                        .setMessage("L'app ha bisogno del permesso per inviarti notifiche sui prodotti in scadenza.")
-                        .setPositiveButton("OK", (dialog, which) -> {
-                            requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
-                        })
-                        .setNegativeButton("Annulla", (dialog, which) -> dialog.dismiss())
-                        .create().show();
-            } else {
-                // Richiedi direttamente il permesso
-                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
-            }
-        }
+    @Override
+    public void onEditActionClicked(Product product) {
+        Intent intent = new Intent(MainActivity.this, AddProductActivity.class);
+        intent.putExtra("PRODUCT_ID", product.getId());
+        intent.putExtra("PRODUCT_BARCODE", product.getBarcode());
+        intent.putExtra("PRODUCT_QUANTITY", product.getQuantity());
+        intent.putExtra("PRODUCT_EXPIRY_DATE", product.getExpiryDateString());
+        intent.putExtra("PRODUCT_NAME", product.getProductName());
+        intent.putExtra("PRODUCT_IMAGE", product.getImageUrl());
+        addProductActivityLauncher.launch(intent);
     }
     @Override
-    public boolean onContextItemSelected(@NonNull MenuItem item) {
-        Product selectedProduct = adapter.getSelectedProduct();
+    public void onDeleteActionClicked(Product product) {
+        new AlertDialog.Builder(this)
+                .setTitle("Conferma Cancellazione")
+                .setMessage("Sei sicuro di voler cancellare il prodotto: " + product.getProductName() + "?")
+                .setPositiveButton("Cancella", (dialog, which) -> {
+                    productViewModel.delete(product);
+                    showProductSavedSnackbar("Prodotto cancellato: " + product.getProductName());
+                })
+                .setNegativeButton("Annulla", null)
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .show();
+    }
+    @Override
+    public void onProductItemClickedForQuantity(Product product) {
+        Log.d("MainActivity", "onProductItemClickedForQuantity called with product: " + product);
+        if (product == null) return;
 
-        if (selectedProduct == null) {
-            return super.onContextItemSelected(item);
-        }
-
-        int itemId = item.getItemId();
-        if (itemId == R.id.action_edit_product) {
-            // Azione Modifica
-            Intent intent = new Intent(MainActivity.this, AddProductActivity.class);
-            intent.putExtra("PRODUCT_ID", selectedProduct.getId());
-            intent.putExtra("PRODUCT_BARCODE", selectedProduct.getBarcode());
-            intent.putExtra("PRODUCT_QUANTITY", selectedProduct.getQuantity());
-            intent.putExtra("PRODUCT_EXPIRY_DATE", selectedProduct.getExpiryDateString());
-            intent.putExtra("PRODUCT_NAME", selectedProduct.getProductName());
-            intent.putExtra("PRODUCT_IMAGE", selectedProduct.getImageUrl());
-            addProductActivityLauncher.launch(intent);
-            return true;
-        } else if (itemId == R.id.action_delete_product) {
-            // Azione Cancella - Mostra un dialogo di conferma
-            new AlertDialog.Builder(this)
-                    .setTitle("Conferma Cancellazione")
-                    .setMessage("Sei sicuro di voler cancellare il prodotto: " + selectedProduct.getProductName() + "?")
-                    .setPositiveButton("Cancella", (dialog, which) -> {
-                        productViewModel.delete(selectedProduct); // Chiama il metodo delete nel ViewModel
-                        showProductSavedSnackbar("Prodotto cancellato: " + selectedProduct.getProductName());
-                    })
-                    .setNegativeButton("Annulla", null)
-                    .setIcon(android.R.drawable.ic_dialog_alert)
+        int currentQuantity = product.getQuantity();
+        if (currentQuantity > 1) {
+            Product updatedProduct = product.copyWithNewQuantity(currentQuantity - 1); // Assicurati che Product abbia questo metodo
+            productViewModel.update(updatedProduct);
+        } else if (currentQuantity == 1) {
+            productViewModel.delete(product);
+            Snackbar.make(findViewById(R.id.main_coordinator_layout), // O la tua view radice
+                            "\"" + product.getProductName() + "\" rimosso.",
+                            Snackbar.LENGTH_LONG)
+                    .setAction("ANNULLA", v -> productViewModel.insert(product)) // Azione ANNULLA opzionale
                     .show();
-            return true;
-        } else {
-            return super.onContextItemSelected(item);
         }
     }
     public void showProductSavedSnackbar(String message) {
         if (mainCoordinatorLayout != null && fab != null) {
             Snackbar snackbar = Snackbar.make(mainCoordinatorLayout, message, Snackbar.LENGTH_LONG);
-            snackbar.setAnchorView(fab); // ANCORA QUI
+            snackbar.setAnchorView(fab);
             snackbar.show();
         } else {
             Toast.makeText(this, message, Toast.LENGTH_LONG).show();
@@ -301,28 +281,27 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         getMenuInflater().inflate(R.menu.menu_main, menu);
         MenuItem searchItem = menu.findItem(R.id.action_search);
         layoutToggleMenuItem = menu.findItem(R.id.action_toggle_layout);
-        updateLayoutToggleIcon(); // Imposta l'icona corretta all'avvio
+        updateLayoutToggleIcon();
         searchView = (SearchView) searchItem.getActionView();
 
         if (searchView != null) {
             searchView.setOnQueryTextListener(this);
             searchView.setQueryHint("Cerca prodotti..."); // Hint opzionale
 
-            // Gestisci l'espansione/collasso della SearchView per mostrare/nascondere altri item (opzionale)
             searchItem.setOnActionExpandListener(new MenuItem.OnActionExpandListener() {
                 @Override
                 public boolean onMenuItemActionExpand(MenuItem item) {
                     // Nascondi altri item di menu se vuoi (es. Impostazioni)
                     // setMenuItemsVisibility(menu, item, false);
-                    return true; // Return true per permettere l'espansione
+                    return true;
                 }
 
                 @Override
                 public boolean onMenuItemActionCollapse(MenuItem item) {
                     // Mostra di nuovo gli altri item di menu
                     // setMenuItemsVisibility(menu, null, true);
-                    invalidateOptionsMenu(); // Per assicurarsi che gli item vengano ridisegnati correttamente
-                    return true; // Return true per permettere il collasso
+                    invalidateOptionsMenu();
+                    return true;
                 }
             });
         }
@@ -332,7 +311,6 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-
         if (id == R.id.action_toggle_layout) {
             toggleLayoutManager();
             return true;
@@ -341,7 +319,6 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
             startActivity(intent);
             return true;
         }
-
         return super.onOptionsItemSelected(item);
     }
     private void toggleLayoutManager() {
@@ -356,57 +333,27 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     }
 
     @Override
-    public void onEditProduct(Product product) {
-        Intent intent = new Intent(MainActivity.this, AddProductActivity.class);
-        intent.putExtra("PRODUCT_ID", product.getId());
-        intent.putExtra("PRODUCT_BARCODE", product.getBarcode());
-        intent.putExtra("PRODUCT_QUANTITY", product.getQuantity());
-        intent.putExtra("PRODUCT_EXPIRY_DATE", product.getExpiryDateString());
-        addProductActivityLauncher.launch(intent);
-    }
-    @Override
-    public void onDeleteProduct(Product product) {
-        new AlertDialog.Builder(this)
-                .setTitle("Conferma Cancellazione")
-                .setMessage("Sei sicuro di voler cancellare il prodotto: " + product.getBarcode() + "?")
-                .setPositiveButton("Cancella", (dialog, which) -> {
-                    productViewModel.delete(product);
-                    showProductSavedSnackbar("Prodotto cancellato: " + product.getBarcode());
-                })
-                .setNegativeButton("Annulla", null)
-                .setIcon(android.R.drawable.ic_dialog_alert)
-                .show();
-    }
-    @Override
     public boolean onQueryTextSubmit(String query) {
-        // L'utente ha premuto "invio" o il pulsante di ricerca
-        // Non è strettamente necessario fare qualcosa qui se il filtro avviene in onQueryTextChange
         filter(query);
-        return false; // false se la SearchView deve eseguire l'azione di default (nessuna in questo caso)
+        return false;
     }
 
     @Override
     public boolean onQueryTextChange(String newText) {
-        // Il testo nella SearchView è cambiato
         filter(newText);
-        return true; // true se l'azione è stata gestita dal listener
+        return true;
     }
 
     private void filter(String text) {
         List<Product> filteredList = new ArrayList<>();
         String filterPattern = text.toLowerCase(Locale.getDefault()).trim();
-
         if (filterPattern.isEmpty()) {
             filteredList.addAll(allProductsList);
         } else {
             for (Product product : allProductsList) {
-                // Filtra per nome prodotto e/o barcode
                 boolean nameMatches = product.getProductName() != null &&
                         product.getProductName().toLowerCase(Locale.getDefault()).contains(filterPattern);
-                boolean barcodeMatches = product.getBarcode() != null &&
-                        product.getBarcode().toLowerCase(Locale.getDefault()).contains(filterPattern);
-
-                if (nameMatches || barcodeMatches) {
+                if (nameMatches) {
                     filteredList.add(product);
                 }
             }
@@ -417,11 +364,9 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     @Override
     protected void onStop() {
         super.onStop();
-        // Chiudi la SearchView se è espansa quando l'activity va in stop
-        // per evitare che rimanga aperta se l'utente torna indietro rapidamente.
         if (searchView != null && !searchView.isIconified()) {
-            searchView.setIconified(true); // Collassa la vista
-            searchView.onActionViewCollapsed(); // Assicura che si chiuda correttamente
+            searchView.setIconified(true);
+            searchView.onActionViewCollapsed();
         }
     }
 }

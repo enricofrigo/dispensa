@@ -2,6 +2,7 @@ package eu.frigo.dispensa.adapter; // Crea un package adapter o simile
 
 import android.annotation.SuppressLint;
 import android.content.SharedPreferences;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -25,20 +26,22 @@ import java.util.Calendar;
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.data.Product;
 import eu.frigo.dispensa.ui.SettingsFragment;
+import eu.frigo.dispensa.util.DateConverter;
 
 public class ProductListAdapter extends ListAdapter<Product, ProductListAdapter.ProductViewHolder> {
 
-    private OnItemInteractionListener listener;
     private Product selectedProduct;
+    private final OnProductInteractionListener interactionListener;
 
-    public interface OnItemInteractionListener {
-        void onEditProduct(Product product);
-        void onDeleteProduct(Product product);
+    public interface OnProductInteractionListener {
+        void onProductItemClickedForQuantity(Product product);
+        void onEditActionClicked(Product product);
+        void onDeleteActionClicked(Product product);
     }
 
-    public ProductListAdapter(@NonNull DiffUtil.ItemCallback<Product> diffCallback, OnItemInteractionListener listener) {
+    public ProductListAdapter(@NonNull DiffUtil.ItemCallback<Product> diffCallback, OnProductInteractionListener listener) {
         super(diffCallback);
-        this.listener = listener;
+        interactionListener=listener;
     }
 
     @NonNull
@@ -46,7 +49,7 @@ public class ProductListAdapter extends ListAdapter<Product, ProductListAdapter.
     public ProductViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View itemView = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.list_item_product, parent, false);
-        return new ProductViewHolder(itemView);
+        return new ProductViewHolder(itemView,interactionListener);
     }
 
     @SuppressLint("UnsafeOptInUsageError")
@@ -54,10 +57,6 @@ public class ProductListAdapter extends ListAdapter<Product, ProductListAdapter.
     public void onBindViewHolder(@NonNull ProductViewHolder holder, int position) {
         Product currentProduct = getItem(position);
         holder.bind(currentProduct);
-        holder.itemView.setOnLongClickListener(v -> {
-            selectedProduct = currentProduct;
-            return false;
-        });
     }
 
     static class ProductViewHolder extends RecyclerView.ViewHolder implements View.OnCreateContextMenuListener{
@@ -66,9 +65,17 @@ public class ProductListAdapter extends ListAdapter<Product, ProductListAdapter.
         private final TextView textViewProductName;
         private final ImageView imageViewProduct;
         private final MaterialCardView cardProductItem;
+        private final OnProductInteractionListener listenerInternal;
+        private Product currentProduct;
+        private static final int SINGLE_CLICK_ACTION = 1;
+        private static final int DOUBLE_CLICK_ACTION = 2;
+        private static final long CLICK_TIMEOUT = 250;
+        private final android.os.Handler clickHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+        private int clickExecutionState = 0;
 
-        ProductViewHolder(View itemView) {
+        ProductViewHolder(View itemView, OnProductInteractionListener listener) {
             super(itemView);
+            this.listenerInternal = listener;
             textViewQuantity = itemView.findViewById(R.id.textViewItemQuantity);
             textViewExpiryDate = itemView.findViewById(R.id.textViewItemExpiryDate);
             textViewProductName = itemView.findViewById(R.id.textViewItemProductName);
@@ -78,6 +85,7 @@ public class ProductListAdapter extends ListAdapter<Product, ProductListAdapter.
         }
 
         void bind(Product product) {
+            this.currentProduct = product;
             if (product.getProductName() != null && !product.getProductName().isEmpty()) {
                 textViewProductName.setText(product.getProductName());
                 textViewProductName.setVisibility(View.VISIBLE);
@@ -99,10 +107,10 @@ public class ProductListAdapter extends ListAdapter<Product, ProductListAdapter.
             }
             
             if (product.getExpiryDate() != null) {
-                textViewExpiryDate.setText(String.format("Scad: %s", eu.frigo.dispensa.utils.DateConverter.formatTimestampToDisplayDate(product.getExpiryDate())));
+                textViewExpiryDate.setText(String.format("Scad: %s", DateConverter.formatTimestampToDisplayDate(product.getExpiryDate())));
                 textViewExpiryDate.setVisibility(View.VISIBLE);
 
-                long todayTimestamp = eu.frigo.dispensa.utils.DateConverter.getTodayNormalizedTimestamp(); // Mezzogiorno di oggi
+                long todayTimestamp = DateConverter.getTodayNormalizedTimestamp(); // Mezzogiorno di oggi
 
                 SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(itemView.getContext());
                 String daysBeforeStr = prefs.getString(SettingsFragment.KEY_EXPIRY_DAYS_BEFORE, "3");
@@ -124,7 +132,6 @@ public class ProductListAdapter extends ListAdapter<Product, ProductListAdapter.
                     if (cardProductItem != null) {
                         cardProductItem.setStrokeColor(ContextCompat.getColor(itemView.getContext(), R.color.product_expired_stroke));
                         cardProductItem.setStrokeWidth(itemView.getResources().getDimensionPixelSize(R.dimen.card_stroke_width_highlighted)); // Definisci questa dimen
-                        // cardProductItem.setCardBackgroundColor(ContextCompat.getColor(itemView.getContext(), R.color.product_expired_background)); // Sfondo opzionale
                     }
                 }
                 // Stato 2: In scadenza a breve
@@ -133,7 +140,6 @@ public class ProductListAdapter extends ListAdapter<Product, ProductListAdapter.
                     if (cardProductItem != null) {
                         cardProductItem.setStrokeColor(ContextCompat.getColor(itemView.getContext(), R.color.product_expiring_soon_stroke));
                         cardProductItem.setStrokeWidth(itemView.getResources().getDimensionPixelSize(R.dimen.card_stroke_width_highlighted));
-                        // cardProductItem.setCardBackgroundColor(ContextCompat.getColor(itemView.getContext(), R.color.product_expiring_soon_background)); // Sfondo opzionale
                     }
                 }
                 // Stato 3: Non in scadenza a breve / Non scaduto
@@ -142,7 +148,6 @@ public class ProductListAdapter extends ListAdapter<Product, ProductListAdapter.
                     if (cardProductItem != null) {
                         cardProductItem.setStrokeColor(ContextCompat.getColor(itemView.getContext(), R.color.product_default_stroke));
                         cardProductItem.setStrokeWidth(itemView.getResources().getDimensionPixelSize(R.dimen.card_stroke_width_default)); // Definisci questa dimen
-                        // cardProductItem.setCardBackgroundColor(ContextCompat.getColor(itemView.getContext(), R.color.product_default_background));
                     }
                 }
             } else {
@@ -151,16 +156,61 @@ public class ProductListAdapter extends ListAdapter<Product, ProductListAdapter.
                 if (cardProductItem != null) {
                     cardProductItem.setStrokeColor(ContextCompat.getColor(itemView.getContext(), R.color.product_default_stroke));
                     cardProductItem.setStrokeWidth(itemView.getResources().getDimensionPixelSize(R.dimen.card_stroke_width_default));
-                    // cardProductItem.setCardBackgroundColor(ContextCompat.getColor(itemView.getContext(), R.color.product_default_background));
                 }
-            }        
-        
-        }
+            }
+            itemView.setOnClickListener(v -> {
+                if (listenerInternal == null || currentProduct == null) {
+                    return;
+                }
+
+                if (clickExecutionState == 0) { // Primo click o click dopo un timeout/azione
+                    clickExecutionState = SINGLE_CLICK_ACTION; // Segna che un singolo click è in attesa
+                    Log.d("ClickLogic", "First click. Single click action PENDING (Edit).");
+
+                    // Posticipa l'azione del singolo click
+                    clickHandler.postDelayed(() -> {
+                        // Questo Runnable viene eseguito se non c'è un secondo click entro CLICK_TIMEOUT
+                        if (clickExecutionState == SINGLE_CLICK_ACTION) { // Controlla se siamo ancora in attesa del singolo click
+                            Log.d("ClickLogic", "Timeout expired. Executing SINGLE click action (Edit).");
+                            listenerInternal.onEditActionClicked(currentProduct); // Esegui l'azione di modifica
+                            clickExecutionState = 0; // Resetta lo stato
+                        }
+                    }, CLICK_TIMEOUT);
+
+                } else if (clickExecutionState == SINGLE_CLICK_ACTION) { // Secondo click arrivato mentre un singolo click era in attesa
+                    // Questo è un doppio click!
+                    clickExecutionState = DOUBLE_CLICK_ACTION; // Segna che stiamo per eseguire un doppio click
+                    Log.d("ClickLogic", "Second click detected. Executing DOUBLE click action (Decrement Quantity).");
+
+                    // Rimuovi il Runnable del singolo click che era in attesa
+                    clickHandler.removeCallbacksAndMessages(null); // Rimuove tutti i Runnable in sospeso per questo Handler
+
+                    listenerInternal.onProductItemClickedForQuantity(currentProduct); // Esegui l'azione di decremento quantità
+                    clickExecutionState = 0; // Resetta lo stato dopo l'azione
+                }
+            });        }
         @Override
         public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
             MenuItem edit = menu.add(Menu.NONE, R.id.action_edit_product, 1, "Modifica");
             MenuItem delete = menu.add(Menu.NONE, R.id.action_delete_product, 2, "Cancella");
+            MenuItem usa = menu.add(Menu.NONE, R.id.action_delete_product, 2, "Usa");
+            edit.setOnMenuItemClickListener(item -> {
+                listenerInternal.onEditActionClicked(currentProduct);
+                return true;
+            });
+
+            delete.setOnMenuItemClickListener(item -> {
+                listenerInternal.onDeleteActionClicked(currentProduct);
+                return true;
+            });
+
+            usa.setOnMenuItemClickListener(item -> {
+                listenerInternal.onProductItemClickedForQuantity(currentProduct);
+                return true;
+            });
         }
+
+
     }
 
     public Product getProductAt(int position) {
@@ -183,6 +233,8 @@ public class ProductListAdapter extends ListAdapter<Product, ProductListAdapter.
         public boolean areContentsTheSame(@NonNull Product oldItem, @NonNull Product newItem) {
             return oldItem.getBarcode().equals(newItem.getBarcode()) &&
                     oldItem.getQuantity() == newItem.getQuantity() &&
+                    oldItem.getProductName().equals(newItem.getProductName()) &&
+                    (oldItem.getImageUrl() == null || oldItem.getImageUrl().equals(newItem.getImageUrl())) &&
                     oldItem.getExpiryDate().equals(newItem.getExpiryDate());
         }
     }

@@ -1,4 +1,4 @@
-package eu.frigo.dispensa.utils;
+package eu.frigo.dispensa.util;
 
 import android.util.Log;
 
@@ -62,6 +62,14 @@ public class DateConverter {
         } catch (ParseException e) {
             Log.e("DateConverter", "Errore durante il parsing della data: " + e.getMessage());
             return null;
+        }
+        return null;
+    }
+    @Nullable
+    public static Date parseDisplayDateToDate(@Nullable String dateString) {
+        Long l = parseDisplayDateToTimestampMs(dateString);
+        if (l != null) {
+            return new Date(l);
         }
         return null;
     }

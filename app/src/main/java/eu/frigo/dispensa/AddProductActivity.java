@@ -7,11 +7,9 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.Image;
 import android.os.Bundle;
-import android.telecom.Call;
 import android.util.Size;
 import android.view.View;
 import android.widget.Button;
-import android.widget.DatePicker;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -37,27 +35,18 @@ import com.google.mlkit.vision.barcode.BarcodeScanning;
 import com.google.mlkit.vision.barcode.common.Barcode;
 import com.google.mlkit.vision.common.InputImage;
 
-// Per la scansione del codice a barre, dovrai aggiungere una libreria,
-// ad esempio ML Kit Barcode Scanning o una libreria di terze parti come ZXing.
-// Esempio con un placeholder per l'intent di scansione:
-// import com.journeyapps.barcodescanner.ScanContract;
-// import com.journeyapps.barcodescanner.ScanOptions;
-
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import eu.frigo.dispensa.data.AppDatabase;
 import eu.frigo.dispensa.data.Product;
 import eu.frigo.dispensa.network.OpenFoodFactsApiService;
 import eu.frigo.dispensa.network.RetrofitClient;
 import eu.frigo.dispensa.network.model.OpenFoodFactsProductResponse;
 import eu.frigo.dispensa.viewmodel.AddProductViewModel;
+import eu.frigo.dispensa.util.DateConverter;
 import retrofit2.Callback;
 import retrofit2.Response;
 
@@ -67,6 +56,8 @@ public class AddProductActivity extends AppCompatActivity {
     private TextInputEditText editTextBarcode;
     private ImageButton buttonScanBarcode;
     private TextInputEditText editTextQuantity;
+    private static final String DEFAULT_QUANTITY = "1";
+
     private TextInputEditText editTextExpiryDate;
     private Button buttonSaveProduct;
     private Toolbar toolbarAddProduct;
@@ -175,12 +166,7 @@ public class AddProductActivity extends AppCompatActivity {
                 editTextQuantity.setText(String.valueOf(quantity));
                 editTextExpiryDate.setText(expiryDate);
                 if (expiryDate != null && !expiryDate.isEmpty()) {
-                    try {
-                        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.ITALY);
-                        calendar.setTime(Objects.requireNonNull(sdf.parse(expiryDate)));
-                    } catch (ParseException e) {
-                        Log.e("ParseDate", e.getMessage());
-                    }
+                    calendar.setTime(Objects.requireNonNull(DateConverter.parseDisplayDateToDate(expiryDate)));
                 }
                 if (imageUrl != null && !imageUrl.trim().isEmpty()) {
                     Glide.with(AddProductActivity.this)
@@ -199,6 +185,9 @@ public class AddProductActivity extends AppCompatActivity {
                     getSupportActionBar().setTitle(getString(R.string.add_product_title));
                 }
                 buttonSaveProduct.setText(getString(R.string.save_product_button));
+                editTextQuantity.setText(DEFAULT_QUANTITY);
+                editTextQuantity.setSelection(editTextQuantity.getText().length());
+
             }
 
             Log.d("AddProductActivity", editTextBarcode.getText()+" "+editTextQuantity.getText()+" "+editTextExpiryDate.getText()+" "+imageViewProduct.toString());
@@ -414,12 +403,14 @@ public class AddProductActivity extends AppCompatActivity {
             Toast.makeText(this, "La data di scadenza è obbligatoria", Toast.LENGTH_SHORT).show();
             return;
         }
-       if (currentProductNameFromApi != null && !currentProductNameFromApi.isEmpty()){
-            name=currentProductNameFromApi;
-        } else {
-            name=barcode;
+        if(name.isEmpty()){
+            if (currentProductNameFromApi != null && !currentProductNameFromApi.isEmpty()){
+                name=currentProductNameFromApi;
+            } else {
+                name=barcode;
+            }
         }
-        Product product = new Product(barcode, quantity, eu.frigo.dispensa.utils.DateConverter.parseDisplayDateToTimestampMs(expiryDate), name, currentImageUrlFromApi);
+        Product product = new Product(barcode, quantity, DateConverter.parseDisplayDateToTimestampMs(expiryDate), name, currentImageUrlFromApi);
        Log.d("AddProductActivity", "Salvataggio prodotto: " + product.toString());
        if(isEditMode) {
             product.setId(currentProductId);
@@ -452,7 +443,7 @@ public class AddProductActivity extends AppCompatActivity {
         }
 
         private void updateLabel() {
-            editTextExpiryDate.setText(eu.frigo.dispensa.utils.DateConverter.formatTimestampToDisplayDate(calendar.getTimeInMillis()));
+            editTextExpiryDate.setText(DateConverter.formatTimestampToDisplayDate(calendar.getTimeInMillis()));
         }
 
         @Override
