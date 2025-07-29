@@ -25,13 +25,11 @@ import java.util.Calendar;
 
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.data.ProductWithCategoryDefinitions;
-import eu.frigo.dispensa.data.ProductWithCategoryDefinitions;
 import eu.frigo.dispensa.ui.SettingsFragment;
 import eu.frigo.dispensa.util.DateConverter;
 
 public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitions, ProductListAdapter.ProductViewHolder> {
 
-    private ProductWithCategoryDefinitions selectedProduct;
     private final OnProductInteractionListener interactionListener;
 
     public interface OnProductInteractionListener {
@@ -218,12 +216,6 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
         return getItem(position);
     }
 
-    // Metodo per ottenere il prodotto selezionato (usato dall'Activity)
-    public ProductWithCategoryDefinitions getSelectedProduct() {
-        return selectedProduct;
-    }
-
-    // DiffUtil per aggiornamenti efficienti della lista
     public static class ProductDiff extends DiffUtil.ItemCallback<ProductWithCategoryDefinitions> {
         @Override
         public boolean areItemsTheSame(@NonNull ProductWithCategoryDefinitions oldItem, @NonNull ProductWithCategoryDefinitions newItem) {
@@ -236,7 +228,8 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
                     oldItem.product.getQuantity() == newItem.product.getQuantity() &&
                     oldItem.product.getProductName().equals(newItem.product.getProductName()) &&
                     (oldItem.product.getImageUrl() == null || oldItem.product.getImageUrl().equals(newItem.product.getImageUrl())) &&
-                    oldItem.product.getExpiryDate().equals(newItem.product.getExpiryDate());
+                    oldItem.product.getExpiryDate().equals(newItem.product.getExpiryDate()) &&
+                    (oldItem.product.getStorageLocation()==null || oldItem.product.getStorageLocation().equals(newItem.product.getStorageLocation()));
         }
     }
 }

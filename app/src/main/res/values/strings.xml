@@ -29,4 +29,5 @@
     <string name="hint_immagine_prodotto">Immagine prodotto</string>
     <string name="hint_categorie_tags">Categorie (Tags)</string>
     <string name="hint_nuova_categoria">Nuova Categoria (es. en:dairy)</string>
+    <string name="hint_posizione_conservazione">Posizione Conservazione</string>
 </resources>

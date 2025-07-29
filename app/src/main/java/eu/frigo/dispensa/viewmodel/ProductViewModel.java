@@ -42,4 +42,8 @@ public class ProductViewModel extends AndroidViewModel {
     public void insert(Product product) {
         repository.insert(product);
     }
+
+    public LiveData<List<ProductWithCategoryDefinitions>> getProductsByLocation(String storageLocationFilter) {
+        return repository.getProductByStorageLocation(storageLocationFilter);
+    }
 }

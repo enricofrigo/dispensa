@@ -72,7 +72,7 @@ public class ExpiryCheckWorker extends Worker {
             }
             Date productExpiryDate = new Date(product.getExpiryDate());
             // Controlla se il prodotto scade oggi o entro DAYS_BEFORE_EXPIRY_WARNING giorni
-            if (!productExpiryDate.after(expiryWarningCalendar.getTime()) && !productExpiryDate.before(todayCalendar.getTime())) {
+            if (!productExpiryDate.after(expiryWarningCalendar.getTime())) {
                 // Il prodotto è in scadenza (o scaduto oggi)
                 expiringCount++;
                 String productName = (product.getProductName() != null && !product.getProductName().isEmpty())
@@ -99,7 +99,7 @@ public class ExpiryCheckWorker extends Worker {
 
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_notification_expiry_foreground)
+                .setSmallIcon(R.drawable.ic_fridge)
                 .setContentTitle(title)
                 .setContentText(message)
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(message)) // Per testo lungo

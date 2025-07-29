@@ -81,7 +81,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:hint="Nome Prodotto">
+                android:hint="@string/hint_nome_prodotto">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/editTextProductName"
@@ -97,7 +97,7 @@
             android:layout_marginTop="16dp"
             android:layout_gravity="center_horizontal"
             android:visibility="gone"
-            android:contentDescription="Immagine prodotto"
+            android:contentDescription="@string/hint_immagine_prodotto"
             android:scaleType="fitCenter"
             tools:srcCompat="@tools:sample/avatars" />
 
@@ -134,14 +134,26 @@
                     android:focusable="false"
                     android:clickable="true"
                     android:inputType="date" />
-                <!-- focusable e clickable per mostrare DatePickerDialog al click -->
 
             </com.google.android.material.textfield.TextInputLayout>
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:text="Categorie (Tags)"
+                android:hint="@string/hint_posizione_conservazione"
+                android:textAppearance="?attr/textAppearanceSubtitle1"/>
+
+            <Spinner
+                android:id="@+id/spinnerStorageLocation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:minHeight="48dp" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/hint_categorie_tags"
                 android:textAppearance="?attr/textAppearanceSubtitle1"/>
 
             <com.google.android.material.chip.ChipGroup
@@ -166,7 +178,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:hint="Nuova Categoria (es. en:dairy)"
+                    android:hint="@string/hint_nuova_categoria"
                     android:layout_marginEnd="8dp">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -182,7 +194,7 @@
                     style="@style/Widget.MaterialComponents.Button.Icon"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Aggiungi"
+                    android:text="@string/button_add_tag"
                     app:icon="@drawable/ic_add_circle_outline_24"/>
             </LinearLayout>
 

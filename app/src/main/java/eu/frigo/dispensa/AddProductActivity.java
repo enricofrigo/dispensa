@@ -10,9 +10,12 @@ import android.os.Bundle;
 import android.util.Size;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -61,6 +64,8 @@ import retrofit2.Response;
 
 public class AddProductActivity extends AppCompatActivity {
 
+    private Spinner spinnerStorageLocation;
+    private String selectedStorageLocation;
     public static final String EXTRA_PRODUCT_ID = "extra_product_id";
     private TextInputEditText editTextBarcode;
     private ImageButton buttonScanBarcode;
@@ -87,7 +92,10 @@ public class AddProductActivity extends AppCompatActivity {
     private TextInputEditText editTextNewCategory;
     private Button buttonAddCategory;
     private Set<String> currentProductTagsSet = new HashSet<>();
-    private Collection<String> currentCategoriesFromApi;
+    //private Collection<String> currentCategoriesFromApi;
+    private static final String[] STORAGE_LOCATIONS_DISPLAY = {"Frigorifero", "Freezer", "Dispensa"};
+    private static final String[] STORAGE_LOCATIONS_VALUES = {Product.LOCATION_FRIDGE, Product.LOCATION_FREEZER, Product.LOCATION_PANTRY};
+
 
     private final ActivityResultLauncher<String> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
@@ -137,6 +145,8 @@ public class AddProductActivity extends AppCompatActivity {
             editTextProductName = findViewById(R.id.editTextProductName);
             imageViewProduct = findViewById(R.id.imageViewProduct);
             cameraExecutor = Executors.newSingleThreadExecutor();
+            spinnerStorageLocation = findViewById(R.id.spinnerStorageLocation);
+            setupStorageLocationSpinner();
             chipGroupCategories = findViewById(R.id.chipGroupCategories);
             editTextNewCategory = findViewById(R.id.editTextNewCategory);
             buttonAddCategory = findViewById(R.id.buttonAddCategory);
@@ -208,24 +218,25 @@ public class AddProductActivity extends AppCompatActivity {
             if (isEditMode && currentProductId != -1) {
                 addProductViewModel.getProductById(currentProductId).observe(this, productWithDefs -> {
                     if (productWithDefs != null && productWithDefs.product != null) {
-                        // ... (popola altri campi)
-
+                        String currentLocation = productWithDefs.product.getStorageLocation();
+                        if (currentLocation != null) {
+                            for (int i = 0; i < STORAGE_LOCATIONS_VALUES.length; i++) {
+                                if (STORAGE_LOCATIONS_VALUES[i].equals(currentLocation)) {
+                                    spinnerStorageLocation.setSelection(i);
+                                    break;
+                                }
+                            }
+                        }
                         if (productWithDefs.categoryDefinitions != null) {
-                            currentProductTagsSet.clear(); // Pulisci prima di aggiungere
+                            currentProductTagsSet.clear();
                             for (CategoryDefinition def : productWithDefs.categoryDefinitions) {
-                                currentProductTagsSet.add(def.tagName); // Aggiungi il nome del tag originale (es. "en:dairy")
+                                currentProductTagsSet.add(def.tagName);
                             }
                             updateChipGroup();
                         }
                     }
                 });
-            } else if (currentCategoriesFromApi != null && !currentCategoriesFromApi.isEmpty()){
-                // Se stiamo creando un nuovo prodotto e i tag sono stati pre-caricati dall'API
-                currentProductTagsSet.clear();
-                currentProductTagsSet.addAll(currentCategoriesFromApi);
-                updateChipGroup();
             }
-
 
             buttonAddCategory.setOnClickListener(v -> addNewCategoryTag());
             editTextNewCategory.setOnEditorActionListener((v, actionId, event) -> {
@@ -246,6 +257,22 @@ public class AddProductActivity extends AppCompatActivity {
             buttonScanBarcode.setOnClickListener(v -> checkCameraPermissionAndStartScanner());
             buttonSaveProduct.setOnClickListener(v -> saveOrUpdateProduct());
         }
+    private void setupStorageLocationSpinner() {
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, STORAGE_LOCATIONS_DISPLAY);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerStorageLocation.setAdapter(adapter);
+
+        spinnerStorageLocation.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                selectedStorageLocation = STORAGE_LOCATIONS_VALUES[position];
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+    }
     private void updateChipGroup() {
         chipGroupCategories.removeAllViews(); // Pulisci i chip esistenti
         for (String tag : currentProductTagsSet) {
@@ -490,7 +517,7 @@ public class AddProductActivity extends AppCompatActivity {
                 name=barcode;
             }
         }
-        Product product = new Product(barcode, quantity, DateConverter.parseDisplayDateToTimestampMs(expiryDate), name, currentImageUrlFromApi);
+        Product product = new Product(barcode, quantity, DateConverter.parseDisplayDateToTimestampMs(expiryDate), name, currentImageUrlFromApi, selectedStorageLocation);
         Log.d("AddProductActivity", "Salvataggio prodotto: " + product.toString());
         List<String> tagsToSave = new ArrayList<>(currentProductTagsSet);
         if(isEditMode) {

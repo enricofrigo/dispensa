@@ -50,6 +50,9 @@ public class ProductRepository {
     public LiveData<ProductWithCategoryDefinitions> getProductById(int currentProductId) {
         return productDao.getProductWithFullCategoriesById(currentProductId);
     }
+    public LiveData<List<ProductWithCategoryDefinitions>> getProductByStorageLocation(String storageLocation) {
+        return productDao.getProductWithFullCategoriesByLocation(storageLocation);
+    }
     public void insertProductWithApiTags(Product product, List<String> apiTags) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
             long productIdLong = productDao.insert(product);
