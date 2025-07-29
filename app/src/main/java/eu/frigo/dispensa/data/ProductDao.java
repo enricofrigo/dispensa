@@ -42,7 +42,9 @@ public interface ProductDao {
     @Transaction
     @Query("SELECT * FROM products WHERE id = :productId")
     public LiveData<ProductWithCategoryDefinitions> getProductWithFullCategoriesById(int productId);
-
+    @Transaction
+    @Query("SELECT * FROM products WHERE storage_location = :storageLocation ORDER BY expiry_date ASC")
+    public LiveData<List<ProductWithCategoryDefinitions>> getProductWithFullCategoriesByLocation(String storageLocation);
     @Transaction
     @Query("SELECT * FROM products ORDER BY expiry_date ASC")
     public LiveData<List<ProductWithCategoryDefinitions>> getAllProductsWithFullCategories();

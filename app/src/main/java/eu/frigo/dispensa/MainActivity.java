@@ -10,6 +10,8 @@ import android.os.Bundle;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.android.material.tabs.TabLayout;
+import com.google.android.material.tabs.TabLayoutMediator;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -24,19 +26,18 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.lifecycle.ViewModelProvider;
+import androidx.fragment.app.Fragment;
 import androidx.media3.common.util.Log;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.preference.PreferenceManager;
-import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+import androidx.viewpager2.widget.ViewPager2;
 
 import eu.frigo.dispensa.adapter.ProductListAdapter;
+import eu.frigo.dispensa.adapter.SectionsPagerAdapter;
 import eu.frigo.dispensa.data.Product;
 import eu.frigo.dispensa.data.ProductWithCategoryDefinitions;
 import eu.frigo.dispensa.databinding.ActivityMainBinding;
+import eu.frigo.dispensa.ui.ProductListFragment;
 import eu.frigo.dispensa.ui.SettingsActivity;
 import eu.frigo.dispensa.viewmodel.ProductViewModel;
 
@@ -58,16 +59,16 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     private ProductListAdapter adapter;
     private List<ProductWithCategoryDefinitions> allProductsList = new ArrayList<>();
     private SearchView searchView;
-    private RecyclerView recyclerView;
-    private SwipeRefreshLayout swipeRefreshLayout;
     private FloatingActionButton fab;
     private CoordinatorLayout mainCoordinatorLayout;
     private int originalFabBottomMargin;
-    private static final String PREF_LAYOUT_MANAGER_KEY = "layout_manager_preference";
-    private static final int LAYOUT_MANAGER_LIST = 0;
-    private static final int LAYOUT_MANAGER_GRID = 1;
     private int currentLayoutManagerType;
     private MenuItem layoutToggleMenuItem;
+    private ViewPager2 viewPager;
+    private TabLayout tabLayout;
+    private SectionsPagerAdapter sectionsPagerAdapter;
+
+    private static final String[] TAB_TITLES = new String[]{"Tutti", "Frigo", "Freezer", "Dispensa"};
 
     private final ActivityResultLauncher<String> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
@@ -125,44 +126,13 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         toolbar.setTitle(R.string.app_name);
         setSupportActionBar(toolbar);
 
-        recyclerView = findViewById(R.id.recyclerViewProducts);
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        currentLayoutManagerType = prefs.getInt(PREF_LAYOUT_MANAGER_KEY, LAYOUT_MANAGER_LIST); // Default a lista
-
-        adapter = new ProductListAdapter(new ProductListAdapter.ProductDiff(),this);
-        recyclerView.setAdapter(adapter);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        recyclerView.setOnCreateContextMenuListener(this);
-        setLayoutManager(currentLayoutManagerType);
-
-        swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
-
-        productViewModel = new ViewModelProvider(this).get(ProductViewModel.class);
-
-        productViewModel.getAllProducts().observe(this, products -> {
-            allProductsList.clear();
-            if (products != null) {
-                allProductsList.addAll(products);
-            }
-            if (searchView != null && searchView.getQuery() != null && !searchView.getQuery().toString().isEmpty()) {
-                filter(searchView.getQuery().toString());
-            } else {
-                adapter.submitList(new ArrayList<>(allProductsList)); // Mostra tutti se non c'è query
-            }
-        });
-
-        productViewModel.getAllProducts().observe(this, products -> {
-            adapter.submitList(products);
-        });
-
-        swipeRefreshLayout.setOnRefreshListener(() -> {
-                    productViewModel.refreshProducts();
-                    swipeRefreshLayout.setRefreshing(false);
-                });
-        swipeRefreshLayout.setColorSchemeResources(android.R.color.holo_blue_bright,
-                android.R.color.holo_green_light,
-                android.R.color.holo_orange_light,
-                android.R.color.holo_red_light);
+        viewPager = findViewById(R.id.viewPager);
+        tabLayout = findViewById(R.id.tabLayout);
+        sectionsPagerAdapter = new SectionsPagerAdapter(this);
+        viewPager.setAdapter(sectionsPagerAdapter);
+        new TabLayoutMediator(tabLayout, viewPager,
+                (tab, position) -> tab.setText(TAB_TITLES[position])
+        ).attach();
 
         fab = findViewById(R.id.fab);
         if (fab.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
@@ -194,7 +164,6 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
             addProductActivityLauncher.launch(intent);
         });
 
-        registerForContextMenu(recyclerView);
     }
     private int calculateSpanCount() {
         DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
@@ -203,26 +172,28 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         int spanCount = (int) (dpWidth / itemWidthDp);
         return Math.max(2, spanCount);
     }
-    private void setLayoutManager(int layoutType) {
-        if (layoutType == LAYOUT_MANAGER_GRID) {
-            int spanCount = calculateSpanCount();
-            recyclerView.setLayoutManager(new GridLayoutManager(this, spanCount));
-            currentLayoutManagerType = LAYOUT_MANAGER_GRID;
-        } else {
-            recyclerView.setLayoutManager(new LinearLayoutManager(this));
-            currentLayoutManagerType = LAYOUT_MANAGER_LIST;
+    public void updateLayoutToggleIcon() {
+        if (layoutToggleMenuItem == null) return;
+
+        Fragment currentFragmentRaw = getSupportFragmentManager().findFragmentByTag("f" + viewPager.getCurrentItem());
+        if (!(currentFragmentRaw instanceof ProductListFragment)) {
+            // Se il fragment non è ProductListFragment, potresti nascondere l'icona o impostarne una di default
+            // layoutToggleMenuItem.setVisible(false);
+            return;
         }
-        // adapter.notifyDataSetChanged(); // Usalo con cautela, ListAdapter gestisce meglio gli aggiornamenti.
-    }
-    private void updateLayoutToggleIcon() {
-        if (layoutToggleMenuItem != null) {
-            if (currentLayoutManagerType == LAYOUT_MANAGER_GRID) {
-                layoutToggleMenuItem.setIcon(R.drawable.ic_view_list);
-                layoutToggleMenuItem.setTitle("Visualizza come Lista");
-            } else {
-                layoutToggleMenuItem.setIcon(R.drawable.ic_view_grid);
-                layoutToggleMenuItem.setTitle("Visualizza come Griglia");
-            }
+        //layoutToggleMenuItem.setVisible(true);
+
+        ProductListFragment currentFragment = (ProductListFragment) currentFragmentRaw;
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        String layoutPreferenceKey = ProductListFragment.PREF_LAYOUT_MANAGER_KEY;
+        Log.d("MainActivity", "layoutPreferenceKey: " + layoutPreferenceKey);
+        String currentLayout = prefs.getString(layoutPreferenceKey, ProductListFragment.LAYOUT_LIST);
+        if (currentLayout.equals(ProductListFragment.LAYOUT_GRID)) {
+            layoutToggleMenuItem.setIcon(R.drawable.ic_view_list);
+            layoutToggleMenuItem.setTitle("Visualizza Lista");
+        } else {
+            layoutToggleMenuItem.setIcon(R.drawable.ic_view_grid);
+            layoutToggleMenuItem.setTitle("Visualizza Griglia");
         }
     }
     @Override
@@ -315,7 +286,10 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         if (id == R.id.action_toggle_layout) {
-            toggleLayoutManager();
+            Fragment currentFragment = getSupportFragmentManager().findFragmentByTag("f" + viewPager.getCurrentItem());
+            if (currentFragment instanceof ProductListFragment) {
+                ((ProductListFragment) currentFragment).toggleLayoutManager();
+            }
             return true;
         } else if (id == R.id.action_settings) {
             Intent intent = new Intent(this, SettingsActivity.class);
@@ -324,17 +298,6 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         }
         return super.onOptionsItemSelected(item);
     }
-    private void toggleLayoutManager() {
-        if (currentLayoutManagerType == LAYOUT_MANAGER_LIST) {
-            setLayoutManager(LAYOUT_MANAGER_GRID);
-        } else {
-            setLayoutManager(LAYOUT_MANAGER_LIST);
-        }
-        updateLayoutToggleIcon();
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        prefs.edit().putInt(PREF_LAYOUT_MANAGER_KEY, currentLayoutManagerType).apply();
-    }
-
     @Override
     public boolean onQueryTextSubmit(String query) {
         filter(query);
@@ -361,9 +324,35 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
                 }
             }
         }
-        adapter.submitList(filteredList);
+        Fragment currentFragment = getSupportFragmentManager().findFragmentByTag("f" + viewPager.getCurrentItem());
+        if (currentFragment instanceof ProductListFragment) {
+            ((ProductListFragment) currentFragment).productListAdapter.submitList(filteredList);
+            ;
+        }
+    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (viewPager != null) {
+            viewPager.registerOnPageChangeCallback(pageChangeCallback);
+        }
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (viewPager != null) {
+            viewPager.unregisterOnPageChangeCallback(pageChangeCallback);
+        }
+    }
+
+    private ViewPager2.OnPageChangeCallback pageChangeCallback = new ViewPager2.OnPageChangeCallback() {
+        @Override
+        public void onPageSelected(int position) {
+            super.onPageSelected(position);
+            invalidateOptionsMenu();
+        }
+    };
     @Override
     protected void onStop() {
         super.onStop();

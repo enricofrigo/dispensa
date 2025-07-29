@@ -12,6 +12,10 @@ import java.util.Locale;
 @Entity(tableName = "products")
 public class Product {
 
+    public static final String LOCATION_FRIDGE = "FRIDGE";
+    public static final String LOCATION_FREEZER = "FREEZER";
+    public static final String LOCATION_PANTRY = "PANTRY";
+
     @PrimaryKey(autoGenerate = true)
     public int id;
     @ColumnInfo(name = "barcode")
@@ -24,15 +28,17 @@ public class Product {
     private String productName;
     @ColumnInfo(name = "image_url")
     private String imageUrl;
-
+    @ColumnInfo(name = "storage_location")
+    private String storageLocation;
     public Product() {}
 
-    public Product(String barcode, int quantity, Long expiryDate,String productName, String imageUrl) {
+    public Product(String barcode, int quantity, Long expiryDate,String productName, String imageUrl,String storageLocation) {
         this.barcode = barcode;
         this.quantity = quantity;
         this.expiryDate = expiryDate;
         this.productName = productName;
         this.imageUrl = imageUrl;
+        this.storageLocation = storageLocation;
     }
 
     // Getters e Setters (opzionali se i campi sono pubblici, ma buona pratica includerli)
@@ -85,6 +91,11 @@ public class Product {
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
     }
+
+    public String getStorageLocation() {return storageLocation;}
+
+    public void setStorageLocation(String storageLocation) {this.storageLocation = storageLocation;}
+
     @NonNull
     @Override
     public String toString() {
@@ -95,6 +106,7 @@ public class Product {
                 ", expiryDate='" + expiryDate + '\'' +
                 ", productName='" + productName + '\'' +
                 ", imageUrl='" + imageUrl + '\'' +
+                ", storageLocation='" + storageLocation + '\'' +
                 '}';
     }
 
@@ -106,6 +118,7 @@ public class Product {
         copy.expiryDate = this.expiryDate;
         copy.productName = this.productName;
         copy.imageUrl = this.imageUrl;
+        copy.storageLocation = this.storageLocation;
         return copy;
     }
 }

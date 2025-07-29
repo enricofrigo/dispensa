@@ -12,7 +12,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-@Database(entities = {Product.class, CategoryDefinition.class, ProductCategoryLink.class }, version = 4, exportSchema = false)
+@Database(entities = {Product.class, CategoryDefinition.class, ProductCategoryLink.class }, version = 5, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract ProductDao productDao();
@@ -24,11 +24,10 @@ public abstract class AppDatabase extends RoomDatabase {
     public static final ExecutorService databaseWriteExecutor =
             Executors.newFixedThreadPool(NUMBER_OF_THREADS);
 
-    static final Migration MIGRATION_1_2 = new Migration(1, 2) {
+    static final Migration MIGRATION_4_5 = new Migration(4, 5) {
         @Override
         public void migrate(@NonNull SupportSQLiteDatabase database) {
-            database.execSQL("ALTER TABLE products ADD COLUMN product_name TEXT");
-            database.execSQL("ALTER TABLE products ADD COLUMN image_url TEXT");
+            database.execSQL("ALTER TABLE products ADD COLUMN storage_location TEXT");
         }
     };
 
@@ -38,6 +37,7 @@ public abstract class AppDatabase extends RoomDatabase {
                 if (INSTANCE == null) {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                                     AppDatabase.class, "dispensa_database")
+                            .addMigrations(MIGRATION_4_5)
                             //.fallbackToDestructiveMigration()
                             .build();
                 }
