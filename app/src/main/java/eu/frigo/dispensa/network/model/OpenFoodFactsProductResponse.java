@@ -3,6 +3,8 @@ package eu.frigo.dispensa.network.model; // Crea questo package se non esiste
 
 import com.google.gson.annotations.SerializedName;
 
+import java.util.List;
+
 public class OpenFoodFactsProductResponse {
 
     @SerializedName("product")
@@ -28,6 +30,8 @@ public class OpenFoodFactsProductResponse {
         private String imageFrontUrl;
         @SerializedName("image_url")
         private String imageUrl;
+        @SerializedName("categories_tags")
+        private List<String> categoriesTags; // Lista di stringhe
 
         public String getProductNameIt() {
             return productNameIt;
@@ -39,5 +43,8 @@ public class OpenFoodFactsProductResponse {
             return imageFrontUrl;
         }
         public String getImageUrl() { return imageUrl; }
+        public List<String> getCategoriesTags() { return categoriesTags; }
+        public void setCategoriesTags(List<String> categoriesTags) { this.categoriesTags = categoriesTags; }
+
     }
 }

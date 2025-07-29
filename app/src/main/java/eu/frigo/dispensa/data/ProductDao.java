@@ -5,6 +5,7 @@ import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
+import androidx.room.Transaction;
 import androidx.room.Update;
 import androidx.room.Delete;
 
@@ -14,7 +15,7 @@ import java.util.List;
 public interface ProductDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    void insert(Product product);
+    long insert(Product product);
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertAll(List<Product> products);
@@ -37,4 +38,12 @@ public interface ProductDao {
 
     @Query("SELECT * FROM products WHERE barcode = :barcode LIMIT 1")
     Product getProductByBarcode(String barcode);
+
+    @Transaction
+    @Query("SELECT * FROM products WHERE id = :productId")
+    public LiveData<ProductWithCategoryDefinitions> getProductWithFullCategoriesById(int productId);
+
+    @Transaction
+    @Query("SELECT * FROM products ORDER BY expiry_date ASC")
+    public LiveData<List<ProductWithCategoryDefinitions>> getAllProductsWithFullCategories();
 }

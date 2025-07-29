@@ -24,22 +24,23 @@ import com.google.android.material.card.MaterialCardView;
 import java.util.Calendar;
 
 import eu.frigo.dispensa.R;
-import eu.frigo.dispensa.data.Product;
+import eu.frigo.dispensa.data.ProductWithCategoryDefinitions;
+import eu.frigo.dispensa.data.ProductWithCategoryDefinitions;
 import eu.frigo.dispensa.ui.SettingsFragment;
 import eu.frigo.dispensa.util.DateConverter;
 
-public class ProductListAdapter extends ListAdapter<Product, ProductListAdapter.ProductViewHolder> {
+public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitions, ProductListAdapter.ProductViewHolder> {
 
-    private Product selectedProduct;
+    private ProductWithCategoryDefinitions selectedProduct;
     private final OnProductInteractionListener interactionListener;
 
     public interface OnProductInteractionListener {
-        void onProductItemClickedForQuantity(Product product);
-        void onEditActionClicked(Product product);
-        void onDeleteActionClicked(Product product);
+        void onProductItemClickedForQuantity(ProductWithCategoryDefinitions product);
+        void onEditActionClicked(ProductWithCategoryDefinitions product);
+        void onDeleteActionClicked(ProductWithCategoryDefinitions product);
     }
 
-    public ProductListAdapter(@NonNull DiffUtil.ItemCallback<Product> diffCallback, OnProductInteractionListener listener) {
+    public ProductListAdapter(@NonNull DiffUtil.ItemCallback<ProductWithCategoryDefinitions> diffCallback, OnProductInteractionListener listener) {
         super(diffCallback);
         interactionListener=listener;
     }
@@ -55,7 +56,7 @@ public class ProductListAdapter extends ListAdapter<Product, ProductListAdapter.
     @SuppressLint("UnsafeOptInUsageError")
     @Override
     public void onBindViewHolder(@NonNull ProductViewHolder holder, int position) {
-        Product currentProduct = getItem(position);
+        ProductWithCategoryDefinitions currentProduct = getItem(position);
         holder.bind(currentProduct);
     }
 
@@ -66,7 +67,7 @@ public class ProductListAdapter extends ListAdapter<Product, ProductListAdapter.
         private final ImageView imageViewProduct;
         private final MaterialCardView cardProductItem;
         private final OnProductInteractionListener listenerInternal;
-        private Product currentProduct;
+        private ProductWithCategoryDefinitions currentProduct;
         private static final int SINGLE_CLICK_ACTION = 1;
         private static final int DOUBLE_CLICK_ACTION = 2;
         private static final long CLICK_TIMEOUT = 250;
@@ -84,20 +85,20 @@ public class ProductListAdapter extends ListAdapter<Product, ProductListAdapter.
             itemView.setOnCreateContextMenuListener(this);
         }
 
-        void bind(Product product) {
+        void bind(ProductWithCategoryDefinitions product) {
             this.currentProduct = product;
-            if (product.getProductName() != null && !product.getProductName().isEmpty()) {
-                textViewProductName.setText(product.getProductName());
+            if (product.product.getProductName() != null && !product.product.getProductName().isEmpty()) {
+                textViewProductName.setText(product.product.getProductName());
                 textViewProductName.setVisibility(View.VISIBLE);
             } else {
-                textViewProductName.setText(product.getBarcode());
+                textViewProductName.setText(product.product.getBarcode());
             }
-            textViewQuantity.setText(itemView.getContext().getString(R.string.quantity_label, product.getQuantity()));
+            textViewQuantity.setText(itemView.getContext().getString(R.string.quantity_label, product.product.getQuantity()));
 
-            textViewExpiryDate.setText(itemView.getContext().getString(R.string.expiry_date_label, product.getExpiryDateString()));
-            if (product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {
+            textViewExpiryDate.setText(itemView.getContext().getString(R.string.expiry_date_label, product.product.getExpiryDateString()));
+            if (product.product.getImageUrl() != null && !product.product.getImageUrl().isEmpty()) {
                 Glide.with(itemView.getContext())
-                        .load(product.getImageUrl())
+                        .load(product.product.getImageUrl())
                         .placeholder(R.drawable.ic_placeholder_image)
                         .error(R.drawable.ic_placeholder_image)
                         .into(imageViewProduct);
@@ -106,8 +107,8 @@ public class ProductListAdapter extends ListAdapter<Product, ProductListAdapter.
                 imageViewProduct.setImageResource(R.drawable.ic_placeholder_image);
             }
             
-            if (product.getExpiryDate() != null) {
-                textViewExpiryDate.setText(String.format("Scad: %s", DateConverter.formatTimestampToDisplayDate(product.getExpiryDate())));
+            if (product.product.getExpiryDate() != null) {
+                textViewExpiryDate.setText(String.format("Scad: %s", DateConverter.formatTimestampToDisplayDate(product.product.getExpiryDate())));
                 textViewExpiryDate.setVisibility(View.VISIBLE);
 
                 long todayTimestamp = DateConverter.getTodayNormalizedTimestamp(); // Mezzogiorno di oggi
@@ -127,7 +128,7 @@ public class ProductListAdapter extends ListAdapter<Product, ProductListAdapter.
                 long warningTimestamp = warningCalendar.getTimeInMillis(); // Timestamp per l'inizio del periodo di "avviso"
 
                 // Stato 1: Scaduto
-                if (product.getExpiryDate() < todayTimestamp) {
+                if (product.product.getExpiryDate() < todayTimestamp) {
                     textViewExpiryDate.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.product_expired_stroke));
                     if (cardProductItem != null) {
                         cardProductItem.setStrokeColor(ContextCompat.getColor(itemView.getContext(), R.color.product_expired_stroke));
@@ -135,7 +136,7 @@ public class ProductListAdapter extends ListAdapter<Product, ProductListAdapter.
                     }
                 }
                 // Stato 2: In scadenza a breve
-                else if (product.getExpiryDate() <= warningTimestamp) {
+                else if (product.product.getExpiryDate() <= warningTimestamp) {
                     textViewExpiryDate.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.product_expiring_soon_stroke));
                     if (cardProductItem != null) {
                         cardProductItem.setStrokeColor(ContextCompat.getColor(itemView.getContext(), R.color.product_expiring_soon_stroke));
@@ -213,29 +214,29 @@ public class ProductListAdapter extends ListAdapter<Product, ProductListAdapter.
 
     }
 
-    public Product getProductAt(int position) {
+    public ProductWithCategoryDefinitions getProductAt(int position) {
         return getItem(position);
     }
 
     // Metodo per ottenere il prodotto selezionato (usato dall'Activity)
-    public Product getSelectedProduct() {
+    public ProductWithCategoryDefinitions getSelectedProduct() {
         return selectedProduct;
     }
 
     // DiffUtil per aggiornamenti efficienti della lista
-    public static class ProductDiff extends DiffUtil.ItemCallback<Product> {
+    public static class ProductDiff extends DiffUtil.ItemCallback<ProductWithCategoryDefinitions> {
         @Override
-        public boolean areItemsTheSame(@NonNull Product oldItem, @NonNull Product newItem) {
-            return oldItem.getId() == newItem.getId();
+        public boolean areItemsTheSame(@NonNull ProductWithCategoryDefinitions oldItem, @NonNull ProductWithCategoryDefinitions newItem) {
+            return oldItem.product.getId() == newItem.product.getId();
         }
 
         @Override
-        public boolean areContentsTheSame(@NonNull Product oldItem, @NonNull Product newItem) {
-            return oldItem.getBarcode().equals(newItem.getBarcode()) &&
-                    oldItem.getQuantity() == newItem.getQuantity() &&
-                    oldItem.getProductName().equals(newItem.getProductName()) &&
-                    (oldItem.getImageUrl() == null || oldItem.getImageUrl().equals(newItem.getImageUrl())) &&
-                    oldItem.getExpiryDate().equals(newItem.getExpiryDate());
+        public boolean areContentsTheSame(@NonNull ProductWithCategoryDefinitions oldItem, @NonNull ProductWithCategoryDefinitions newItem) {
+            return oldItem.product.getBarcode().equals(newItem.product.getBarcode()) &&
+                    oldItem.product.getQuantity() == newItem.product.getQuantity() &&
+                    oldItem.product.getProductName().equals(newItem.product.getProductName()) &&
+                    (oldItem.product.getImageUrl() == null || oldItem.product.getImageUrl().equals(newItem.product.getImageUrl())) &&
+                    oldItem.product.getExpiryDate().equals(newItem.product.getExpiryDate());
         }
     }
 }

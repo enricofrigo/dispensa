@@ -9,7 +9,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-@Entity(tableName = "products") // Nome della tabella nel database
+@Entity(tableName = "products")
 public class Product {
 
     @PrimaryKey(autoGenerate = true)

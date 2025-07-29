@@ -12,10 +12,12 @@ import androidx.sqlite.db.SupportSQLiteDatabase;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-@Database(entities = {Product.class}, version = 3, exportSchema = false)
+@Database(entities = {Product.class, CategoryDefinition.class, ProductCategoryLink.class }, version = 4, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract ProductDao productDao();
+    public abstract CategoryDefinitionDao categoryDefinitionDao();
+    public abstract ProductCategoryLinkDao productCategoryLinkDao();
 
     private static volatile AppDatabase INSTANCE;
     private static final int NUMBER_OF_THREADS = 4;
@@ -36,7 +38,7 @@ public abstract class AppDatabase extends RoomDatabase {
                 if (INSTANCE == null) {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                                     AppDatabase.class, "dispensa_database")
-                            .fallbackToDestructiveMigration()
+                            //.fallbackToDestructiveMigration()
                             .build();
                 }
             }
