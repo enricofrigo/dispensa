@@ -5,6 +5,7 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.LiveData;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -15,34 +16,33 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
-import java.util.ArrayList; // Aggiunto import
-import java.util.Collection;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 
 import eu.frigo.dispensa.MainActivity;
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.adapter.ProductListAdapter;
-import eu.frigo.dispensa.data.Product; // Per il tipo di adapter se non usi ProductWithCategoryDefinitions
-import eu.frigo.dispensa.data.ProductWithCategoryDefinitions; // Se il tuo adapter usa questo
+import eu.frigo.dispensa.data.ProductWithCategoryDefinitions;
 import eu.frigo.dispensa.viewmodel.ProductViewModel;
 
 public class ProductListFragment extends Fragment implements SharedPreferences.OnSharedPreferenceChangeListener {
 
     private static final String ARG_STORAGE_LOCATION = "storage_location";
     public String storageLocationFilter;
-
     private ProductViewModel productViewModel;
     public ProductListAdapter productListAdapter;
     private RecyclerView recyclerView;
     private SwipeRefreshLayout swipeRefreshLayout;
     public static final String PREF_LAYOUT_MANAGER_KEY = "layout_manager_type";
     private String currentLayoutPreferenceKey;
-
     public static final String LAYOUT_GRID = "grid";
     public static final String LAYOUT_LIST = "list";
+    private List<ProductWithCategoryDefinitions> originalProductList = new ArrayList<>(); // Lista originale non filtrata per posizione
+    private String currentSearchQuery = ""; // Query di ricerca corrente specifica per questo fragment
 
 
     public static ProductListFragment newInstance(@Nullable String storageLocation) {
@@ -91,6 +91,7 @@ public class ProductListFragment extends Fragment implements SharedPreferences.O
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         observeProducts();
+        observeSearchQuery();
     }
     private void setupRecyclerViewLayout() {
         if (recyclerView == null || productListAdapter == null) return; // Assicurati che siano inizializzati
@@ -137,18 +138,64 @@ public class ProductListFragment extends Fragment implements SharedPreferences.O
                 .unregisterOnSharedPreferenceChangeListener(this);
     }
     private void observeProducts() {
-        if (storageLocationFilter == null) {
-            productViewModel.getAllProducts().observe(getViewLifecycleOwner(), products -> {
-                if (products != null) {
-                    productListAdapter.submitList(new ArrayList<>(products));
-                }
-            });
-        } else {
-            productViewModel.getProductsByLocation(storageLocationFilter).observe(getViewLifecycleOwner(), products -> {
-                if (products != null) {
-                    productListAdapter.submitList(new ArrayList<>(products));
-                }
-            });
+        LiveData<List<ProductWithCategoryDefinitions>> productsLiveData;
+        if (storageLocationFilter == null) { // "Tutti" i prodotti
+            productsLiveData = productViewModel.getAllProductsWithCategories();
+        } else { // Prodotti filtrati per posizione
+            productsLiveData = productViewModel.getProductsByLocation(storageLocationFilter);
         }
+        productsLiveData.observe(getViewLifecycleOwner(), products -> {
+            // 'products' è la lista ricevuta dal ViewModel (già filtrata per posizione se storageLocationFilter != null)
+            if (products != null) {
+                // ----> POPOLAMENTO DI originalProductList <----
+                originalProductList = new ArrayList<>(products); // Copia la lista ricevuta in originalProductList
+                Log.d("ProductListFragment", "Fragment (" + getUniqueKeyPart() + "): Prodotti originali ricevuti e originalProductList aggiornata. Dimensione: " + originalProductList.size());
+                filterAndSubmitList(); // Dopo aver aggiornato originalProductList, applica il filtro di ricerca corrente
+            } else {
+                originalProductList = new ArrayList<>(); // Se i prodotti sono null, inizializza a lista vuota
+                Log.d("ProductListFragment", "Fragment (" + getUniqueKeyPart() + "): Prodotti ricevuti sono null. originalProductList svuotata.");
+                filterAndSubmitList(); // Applica comunque il filtro (che risulterà in una lista vuota per l'adapter)
+            }
+        });
+    }
+    private void observeSearchQuery() {
+        productViewModel.getSearchQuery().observe(getViewLifecycleOwner(), query -> {
+            currentSearchQuery = (query == null) ? "" : query.toLowerCase(Locale.getDefault());
+            Log.d("ProductListFragment", "Fragment (" + getUniqueKeyPart() + "): Nuova query di ricerca: '" + currentSearchQuery + "'");
+            filterAndSubmitList(); // Riapplica il filtro quando la query cambia
+        });
+    }
+    private void filterAndSubmitList() {
+        if (originalProductList == null) {
+            if (productListAdapter != null) {
+                productListAdapter.submitList(new ArrayList<>()); // Svuota la lista se originalProductList è null
+            }
+            return;
+        }
+
+        List<ProductWithCategoryDefinitions> filteredList = new ArrayList<>();
+        if (currentSearchQuery.isEmpty()) {
+            filteredList.addAll(originalProductList);
+        } else {
+            for (ProductWithCategoryDefinitions productWithDefs : originalProductList) {
+                // Filtra per nome prodotto O barcode (ignora maiuscole/minuscole)
+                // Puoi aggiungere altri campi al filtro se necessario (es. tags)
+                String productName = productWithDefs.product.getProductName() != null ? productWithDefs.product.getProductName().toLowerCase(Locale.getDefault()) : "";
+                String barcode = productWithDefs.product.getBarcode() != null ? productWithDefs.product.getBarcode().toLowerCase(Locale.getDefault()) : "";
+
+                if (productName.contains(currentSearchQuery) || barcode.contains(currentSearchQuery)) {
+                    filteredList.add(productWithDefs);
+                }
+            }
+        }
+        Log.d("ProductListFragment", "Fragment (" + getUniqueKeyPart() + "): Lista filtrata (" + currentSearchQuery + "): " + filteredList.size() + " elementi.");
+        if (productListAdapter != null) {
+            productListAdapter.submitList(filteredList);
+        } else {
+            Log.e("ProductListFragment", "ProductListAdapter è null in filterAndSubmitList!");
+        }
+    }
+    private String getUniqueKeyPart() {
+        return (storageLocationFilter == null) ? "all" : storageLocationFilter;
     }
 }

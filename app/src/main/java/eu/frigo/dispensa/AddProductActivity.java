@@ -43,7 +43,6 @@ import com.google.mlkit.vision.common.InputImage;
 
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -95,6 +94,7 @@ public class AddProductActivity extends AppCompatActivity {
     //private Collection<String> currentCategoriesFromApi;
     private static final String[] STORAGE_LOCATIONS_DISPLAY = {"Frigorifero", "Freezer", "Dispensa"};
     private static final String[] STORAGE_LOCATIONS_VALUES = {Product.LOCATION_FRIDGE, Product.LOCATION_FREEZER, Product.LOCATION_PANTRY};
+    private String preselectedLocationValue = null; // Per memorizzare la location passata
 
 
     private final ActivityResultLauncher<String> requestPermissionLauncher =
@@ -146,6 +146,10 @@ public class AddProductActivity extends AppCompatActivity {
             imageViewProduct = findViewById(R.id.imageViewProduct);
             cameraExecutor = Executors.newSingleThreadExecutor();
             spinnerStorageLocation = findViewById(R.id.spinnerStorageLocation);
+            if (getIntent().hasExtra("PRESELECTED_LOCATION")) {
+                preselectedLocationValue = getIntent().getStringExtra("PRESELECTED_LOCATION");
+                Log.d("AddProductActivity", "Ricevuta location preselezionata: " + preselectedLocationValue);
+            }
             setupStorageLocationSpinner();
             chipGroupCategories = findViewById(R.id.chipGroupCategories);
             editTextNewCategory = findViewById(R.id.editTextNewCategory);
@@ -262,7 +266,21 @@ public class AddProductActivity extends AppCompatActivity {
                 android.R.layout.simple_spinner_item, STORAGE_LOCATIONS_DISPLAY);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerStorageLocation.setAdapter(adapter);
-
+        if (preselectedLocationValue != null) {
+            int selectionIndex = -1;
+            for (int i = 0; i < STORAGE_LOCATIONS_VALUES.length; i++) {
+                if (preselectedLocationValue.equals(STORAGE_LOCATIONS_VALUES[i])) {
+                    selectionIndex = i;
+                    break;
+                }
+            }
+            if (selectionIndex != -1) {
+                spinnerStorageLocation.setSelection(selectionIndex);
+                Log.d("AddProductActivity", "Spinner impostato su: " + STORAGE_LOCATIONS_DISPLAY[selectionIndex]);
+            } else {
+                Log.w("AddProductActivity", "Valore di location preselezionato '" + preselectedLocationValue + "' non trovato nei valori dello spinner.");
+            }
+        }
         spinnerStorageLocation.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {

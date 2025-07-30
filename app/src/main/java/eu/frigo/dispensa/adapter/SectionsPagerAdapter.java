@@ -9,7 +9,7 @@ import eu.frigo.dispensa.ui.ProductListFragment;
 
 public class SectionsPagerAdapter extends FragmentStateAdapter {
 
-    private static final int NUM_TABS = 4; // Tutti, Frigo, Freezer, Dispensa
+    private static final int NUM_TABS = 4;
 
     public SectionsPagerAdapter(@NonNull FragmentActivity fragmentActivity) {
         super(fragmentActivity);
