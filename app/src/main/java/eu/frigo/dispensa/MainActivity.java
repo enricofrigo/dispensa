@@ -27,6 +27,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.media3.common.util.Log;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.preference.PreferenceManager;
@@ -67,7 +68,6 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     private ViewPager2 viewPager;
     private TabLayout tabLayout;
     private SectionsPagerAdapter sectionsPagerAdapter;
-
     private static final String[] TAB_TITLES = new String[]{"Tutti", "Frigo", "Freezer", "Dispensa"};
 
     private final ActivityResultLauncher<String> requestPermissionLauncher =
@@ -126,6 +126,8 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         toolbar.setTitle(R.string.app_name);
         setSupportActionBar(toolbar);
 
+        productViewModel = new ViewModelProvider(this).get(ProductViewModel.class);
+
         viewPager = findViewById(R.id.viewPager);
         tabLayout = findViewById(R.id.tabLayout);
         sectionsPagerAdapter = new SectionsPagerAdapter(this);
@@ -155,15 +157,71 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
             int bottomInset = Math.max(navigationBarsInsets.bottom, imeInsets.bottom);
             fabParams.bottomMargin = originalFabBottomMargin + bottomInset;
             fab.setLayoutParams(fabParams);
-
+            if (viewPager != null) {
+                viewPager.registerOnPageChangeCallback(pageChangeCallback);
+            }
             return windowInsets;
         });
 
         fab.setOnClickListener(view -> {
             Intent intent = new Intent(MainActivity.this, AddProductActivity.class);
+            String currentTabLocation = null;
+            if (viewPager != null && sectionsPagerAdapter != null && sectionsPagerAdapter.getItemCount() > 0) {
+                int currentItemPosition = viewPager.getCurrentItem();
+                if (currentItemPosition > 0 && currentItemPosition < TAB_TITLES.length) { // Salta "Tutti" se è il primo
+                    String tabTitle = TAB_TITLES[currentItemPosition];
+                    switch (tabTitle) {
+                        case "Frigo": // Usa le stringhe esatte dei tuoi TAB_TITLES
+                            currentTabLocation = Product.LOCATION_FRIDGE;
+                            break;
+                        case "Freezer":
+                            currentTabLocation = Product.LOCATION_FREEZER;
+                            break;
+                        case "Dispensa":
+                            currentTabLocation =Product.LOCATION_PANTRY;
+                            break;
+                    }
+                }
+            }
+            if (currentTabLocation != null)
+                intent.putExtra("PRESELECTED_LOCATION", currentTabLocation);
             addProductActivityLauncher.launch(intent);
         });
 
+    }
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        updateLayoutToggleIcon();
+        restoreSearchViewQuery(); // Assicurati che la SearchView mostri la query corretta
+        return super.onPrepareOptionsMenu(menu);
+    }
+    private void restoreSearchViewQuery() {
+        if (searchView != null && productViewModel != null && productViewModel.getSearchQuery().getValue() != null) {
+            String currentQueryInViewModel = productViewModel.getSearchQuery().getValue();
+            // Evita di resettare la query se l'utente sta attivamente scrivendo,
+            // confrontando con la query attuale della SearchView.
+            if (!searchView.getQuery().toString().equals(currentQueryInViewModel)) {
+                Log.d("SearchViewRestore", "Ripristino query nella SearchView: '" + currentQueryInViewModel + "'");
+                // Il parametro 'submit' a false evita di triggerare onQueryTextSubmit inutilmente,
+                // poiché l'observer nel fragment dovrebbe già gestire l'aggiornamento della lista.
+                searchView.setQuery(currentQueryInViewModel, false);
+            }
+
+            if (!currentQueryInViewModel.isEmpty()) {
+                if (searchView.isIconified()) { // Solo se è iconificata, espandila
+                    searchView.setIconified(false);
+                }
+            } else {
+                // Se la query nel ViewModel è vuota, assicurati che la SearchView sia iconificata
+                // a meno che non abbia il focus (l'utente potrebbe stare per scrivere)
+                if (!searchView.isIconified() && !searchView.hasFocus()) {
+                    searchView.setIconified(true);
+                }
+            }
+        } else if (searchView != null && !searchView.isIconified() && !searchView.hasFocus()) {
+            // Se non c'è query nel ViewModel, iconifica la SearchView (se non ha focus)
+            searchView.setIconified(true);
+        }
     }
     private int calculateSpanCount() {
         DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
@@ -254,34 +312,56 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
         MenuItem searchItem = menu.findItem(R.id.action_search);
+        if (searchItem != null) {
+            searchView = (SearchView) searchItem.getActionView();
+            if (searchView != null) {
+                setupSearchView();
+                restoreSearchViewQuery();
+            } else {
+                Log.e("MainActivity", "SearchView non trovato nell'item di menu!");
+            }
+        } else {
+            Log.e("MainActivity", "Item di menu action_search non trovato!");
+        }
         layoutToggleMenuItem = menu.findItem(R.id.action_toggle_layout);
         updateLayoutToggleIcon();
-        searchView = (SearchView) searchItem.getActionView();
-
-        if (searchView != null) {
-            searchView.setOnQueryTextListener(this);
-            searchView.setQueryHint("Cerca prodotti..."); // Hint opzionale
-
-            searchItem.setOnActionExpandListener(new MenuItem.OnActionExpandListener() {
-                @Override
-                public boolean onMenuItemActionExpand(MenuItem item) {
-                    // Nascondi altri item di menu se vuoi (es. Impostazioni)
-                    // setMenuItemsVisibility(menu, item, false);
-                    return true;
-                }
-
-                @Override
-                public boolean onMenuItemActionCollapse(MenuItem item) {
-                    // Mostra di nuovo gli altri item di menu
-                    // setMenuItemsVisibility(menu, null, true);
-                    invalidateOptionsMenu();
-                    return true;
-                }
-            });
-        }
         return true;
     }
+    private void setupSearchView() {
+        searchView.setQueryHint("Cerca prodotto...");
 
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                productViewModel.setSearchQuery(query); // Anche se la ricerca è live, l'invio può essere esplicito
+                searchView.clearFocus();
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                productViewModel.setSearchQuery(newText);
+                return true;
+            }
+        });
+
+        searchView.setOnCloseListener(() -> {
+            if (productViewModel != null) { // Aggiungi controllo null per sicurezza
+                productViewModel.setSearchQuery("");
+            }
+            return false;
+        });
+
+        searchView.setOnQueryTextFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus && searchView.getQuery().length() == 0) {
+                // Se la SearchView perde focus e la query è vuota,
+                // assicurati che il ViewModel rifletta questo (se non già gestito da onQueryTextChange con testo vuoto)
+                if (productViewModel != null && !"".equals(productViewModel.getSearchQuery().getValue())) {
+                    productViewModel.setSearchQuery("");
+                }
+            }
+        });
+    }
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
@@ -345,7 +425,13 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
             viewPager.unregisterOnPageChangeCallback(pageChangeCallback);
         }
     }
-
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (viewPager != null) {
+            viewPager.unregisterOnPageChangeCallback(pageChangeCallback);
+        }
+    }
     private ViewPager2.OnPageChangeCallback pageChangeCallback = new ViewPager2.OnPageChangeCallback() {
         @Override
         public void onPageSelected(int position) {

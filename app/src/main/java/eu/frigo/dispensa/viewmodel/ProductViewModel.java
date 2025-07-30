@@ -4,6 +4,7 @@ import android.app.Application;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
 import androidx.media3.common.util.Log;
 
 import java.util.List;
@@ -15,6 +16,8 @@ public class ProductViewModel extends AndroidViewModel {
 
     private ProductRepository repository;
     private LiveData<List<ProductWithCategoryDefinitions>> allProducts;
+    private final MutableLiveData<String> searchQuery = new MutableLiveData<>(""); // Inizializza con stringa vuota
+
 
     public ProductViewModel(@NonNull Application application) {
         super(application);
@@ -42,8 +45,13 @@ public class ProductViewModel extends AndroidViewModel {
     public void insert(Product product) {
         repository.insert(product);
     }
-
     public LiveData<List<ProductWithCategoryDefinitions>> getProductsByLocation(String storageLocationFilter) {
         return repository.getProductByStorageLocation(storageLocationFilter);
+    }
+    public void setSearchQuery(String query) {searchQuery.setValue(query);}
+    public LiveData<String> getSearchQuery() {return searchQuery;}
+
+    public LiveData<List<ProductWithCategoryDefinitions>> getAllProductsWithCategories() {
+        return repository.getAllProducts();
     }
 }
