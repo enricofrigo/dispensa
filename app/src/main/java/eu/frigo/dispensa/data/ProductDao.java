@@ -48,4 +48,9 @@ public interface ProductDao {
     @Transaction
     @Query("SELECT * FROM products ORDER BY expiry_date ASC")
     public LiveData<List<ProductWithCategoryDefinitions>> getAllProductsWithFullCategories();
+    @Query("UPDATE products SET storage_location = :defaultLocationInternalKey WHERE storage_location = :deleteLocationInternalKey")
+    void updateProductLocation(String deleteLocationInternalKey, String defaultLocationInternalKey);
+    @Transaction
+    @Query("SELECT * FROM products WHERE  storage_location = :locationInternalKeyFilter ORDER BY expiry_date ASC")
+    LiveData<List<ProductWithCategoryDefinitions>> getProductWithFullCategoriesByLocationInternalKey(String locationInternalKeyFilter);
 }

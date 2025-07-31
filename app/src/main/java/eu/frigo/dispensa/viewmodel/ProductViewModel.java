@@ -50,8 +50,10 @@ public class ProductViewModel extends AndroidViewModel {
     }
     public void setSearchQuery(String query) {searchQuery.setValue(query);}
     public LiveData<String> getSearchQuery() {return searchQuery;}
-
     public LiveData<List<ProductWithCategoryDefinitions>> getAllProductsWithCategories() {
         return repository.getAllProducts();
+    }
+    public LiveData<List<ProductWithCategoryDefinitions>> getProductsByLocationInternalKey(String locationInternalKeyFilter) {
+        return repository.getProductsByLocationInternalKey(locationInternalKeyFilter);
     }
 }

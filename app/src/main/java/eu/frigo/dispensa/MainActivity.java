@@ -33,13 +33,14 @@ import androidx.navigation.ui.AppBarConfiguration;
 import androidx.preference.PreferenceManager;
 import androidx.viewpager2.widget.ViewPager2;
 
+import eu.frigo.dispensa.adapter.LocationViewPagerAdapter;
 import eu.frigo.dispensa.adapter.ProductListAdapter;
-import eu.frigo.dispensa.adapter.SectionsPagerAdapter;
 import eu.frigo.dispensa.data.Product;
 import eu.frigo.dispensa.data.ProductWithCategoryDefinitions;
 import eu.frigo.dispensa.databinding.ActivityMainBinding;
 import eu.frigo.dispensa.ui.ProductListFragment;
 import eu.frigo.dispensa.ui.SettingsActivity;
+import eu.frigo.dispensa.viewmodel.LocationViewModel;
 import eu.frigo.dispensa.viewmodel.ProductViewModel;
 
 import android.util.DisplayMetrics;
@@ -67,8 +68,8 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     private MenuItem layoutToggleMenuItem;
     private ViewPager2 viewPager;
     private TabLayout tabLayout;
-    private SectionsPagerAdapter sectionsPagerAdapter;
-    private static final String[] TAB_TITLES = new String[]{"Tutti", "Frigo", "Freezer", "Dispensa"};
+    private LocationViewPagerAdapter locationViewPagerAdapter;
+    private LocationViewModel locationViewModel;
 
     private final ActivityResultLauncher<String> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
@@ -130,12 +131,21 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
 
         viewPager = findViewById(R.id.viewPager);
         tabLayout = findViewById(R.id.tabLayout);
-        sectionsPagerAdapter = new SectionsPagerAdapter(this);
-        viewPager.setAdapter(sectionsPagerAdapter);
-        new TabLayoutMediator(tabLayout, viewPager,
-                (tab, position) -> tab.setText(TAB_TITLES[position])
-        ).attach();
 
+        locationViewModel = new ViewModelProvider(this).get(LocationViewModel.class);
+        locationViewPagerAdapter = new LocationViewPagerAdapter(this);
+        viewPager.setAdapter(locationViewPagerAdapter);
+        new TabLayoutMediator(tabLayout, viewPager,
+                (tab, position) -> {
+                    String title = locationViewPagerAdapter.getPageTitle(position);
+                    tab.setText(title);
+                }
+        ).attach();
+        locationViewModel.getAllLocationsSorted().observe(this, newLocations -> {
+            if (newLocations != null) {
+                locationViewPagerAdapter.setLocations(newLocations);
+            }
+        });
         fab = findViewById(R.id.fab);
         if (fab.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
             originalFabBottomMargin = ((ViewGroup.MarginLayoutParams) fab.getLayoutParams()).bottomMargin;
@@ -165,26 +175,11 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
 
         fab.setOnClickListener(view -> {
             Intent intent = new Intent(MainActivity.this, AddProductActivity.class);
-            String currentTabLocation = null;
-            if (viewPager != null && sectionsPagerAdapter != null && sectionsPagerAdapter.getItemCount() > 0) {
+            if (locationViewPagerAdapter != null && locationViewPagerAdapter.getItemCount() > 0) {
                 int currentItemPosition = viewPager.getCurrentItem();
-                if (currentItemPosition > 0 && currentItemPosition < TAB_TITLES.length) { // Salta "Tutti" se è il primo
-                    String tabTitle = TAB_TITLES[currentItemPosition];
-                    switch (tabTitle) {
-                        case "Frigo": // Usa le stringhe esatte dei tuoi TAB_TITLES
-                            currentTabLocation = Product.LOCATION_FRIDGE;
-                            break;
-                        case "Freezer":
-                            currentTabLocation = Product.LOCATION_FREEZER;
-                            break;
-                        case "Dispensa":
-                            currentTabLocation =Product.LOCATION_PANTRY;
-                            break;
-                    }
-                }
+                String currentLocationInternalKey = locationViewPagerAdapter.getLocationInternalKeyAt(currentItemPosition);
+                intent.putExtra("PRESELECTED_LOCATION_INTERNAL_KEY", currentLocationInternalKey);
             }
-            if (currentTabLocation != null)
-                intent.putExtra("PRESELECTED_LOCATION", currentTabLocation);
             addProductActivityLauncher.launch(intent);
         });
 
@@ -223,20 +218,11 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
             searchView.setIconified(true);
         }
     }
-    private int calculateSpanCount() {
-        DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
-        float dpWidth = displayMetrics.widthPixels / displayMetrics.density;
-        int itemWidthDp = 180;
-        int spanCount = (int) (dpWidth / itemWidthDp);
-        return Math.max(2, spanCount);
-    }
     public void updateLayoutToggleIcon() {
         if (layoutToggleMenuItem == null) return;
 
         Fragment currentFragmentRaw = getSupportFragmentManager().findFragmentByTag("f" + viewPager.getCurrentItem());
         if (!(currentFragmentRaw instanceof ProductListFragment)) {
-            // Se il fragment non è ProductListFragment, potresti nascondere l'icona o impostarne una di default
-            // layoutToggleMenuItem.setVisible(false);
             return;
         }
         //layoutToggleMenuItem.setVisible(true);
@@ -264,6 +250,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         intent.putExtra("PRODUCT_EXPIRY_DATE", product.getExpiryDateString());
         intent.putExtra("PRODUCT_NAME", product.getProductName());
         intent.putExtra("PRODUCT_IMAGE", product.getImageUrl());
+        intent.putExtra("PRESELECTED_LOCATION_INTERNAL_KEY", product.getStorageLocation());
         addProductActivityLauncher.launch(intent);
     }
     @Override

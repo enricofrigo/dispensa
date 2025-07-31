@@ -27,11 +27,14 @@ import eu.frigo.dispensa.MainActivity;
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.adapter.ProductListAdapter;
 import eu.frigo.dispensa.data.ProductWithCategoryDefinitions;
+import eu.frigo.dispensa.viewmodel.LocationViewModel;
 import eu.frigo.dispensa.viewmodel.ProductViewModel;
 
 public class ProductListFragment extends Fragment implements SharedPreferences.OnSharedPreferenceChangeListener {
 
-    private static final String ARG_STORAGE_LOCATION = "storage_location";
+    private static final String ARG_LOCATION_INTERNAL_KEY = "location_internal_key";
+    private static final String ARG_LOCATION_ID = "location_id";
+    private static final String ARG_IS_ALL_PRODUCTS_MODE = "is_all_products_mode";
     public String storageLocationFilter;
     private ProductViewModel productViewModel;
     public ProductListAdapter productListAdapter;
@@ -43,23 +46,36 @@ public class ProductListFragment extends Fragment implements SharedPreferences.O
     public static final String LAYOUT_LIST = "list";
     private List<ProductWithCategoryDefinitions> originalProductList = new ArrayList<>(); // Lista originale non filtrata per posizione
     private String currentSearchQuery = ""; // Query di ricerca corrente specifica per questo fragment
+    private boolean isAllProductsMode = true;
+    private long specificLocationId = -1L; // Valore di default che indica nessuna location specifica
+    private String locationInternalKeyFilter; // Variabile per memorizzare l'internalKey
 
 
-    public static ProductListFragment newInstance(@Nullable String storageLocation) {
+
+    public static ProductListFragment newInstance(@Nullable String internalKey) {
         ProductListFragment fragment = new ProductListFragment();
         Bundle args = new Bundle();
-        args.putString(ARG_STORAGE_LOCATION, storageLocation);
+        if (internalKey != null) {
+            args.putString(ARG_LOCATION_INTERNAL_KEY, internalKey);
+        }
+        args.putBoolean(ARG_IS_ALL_PRODUCTS_MODE, false);
         fragment.setArguments(args);
+        Log.d("PLF_Factory", "newInstanceForLocation created with ID: " + internalKey);
         return fragment;
     }
-
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
-            storageLocationFilter = getArguments().getString(ARG_STORAGE_LOCATION);
-        }
-        currentLayoutPreferenceKey = PREF_LAYOUT_MANAGER_KEY;
+            locationInternalKeyFilter = getArguments().getString(ARG_LOCATION_INTERNAL_KEY);
+            if (locationInternalKeyFilter == null) {
+                locationInternalKeyFilter = LocationViewModel.ALL_PRODUCTS_INTERNAL_KEY; // Esempio
+                Log.w("ProductListFragment", "onCreate: locationInternalKeyFilter is null after getting from args.");
+            }
+        } else {
+            // locationInternalKeyFilter = LocationViewModel.ALL_PRODUCTS_INTERNAL_KEY; // Esempio se args è null
+            Log.w("ProductListFragment", "onCreate: getArguments() is null.");
+        }        currentLayoutPreferenceKey = PREF_LAYOUT_MANAGER_KEY;
         productViewModel = new ViewModelProvider(requireActivity()).get(ProductViewModel.class);
         PreferenceManager.getDefaultSharedPreferences(requireContext())
                 .registerOnSharedPreferenceChangeListener(this);
@@ -139,23 +155,29 @@ public class ProductListFragment extends Fragment implements SharedPreferences.O
     }
     private void observeProducts() {
         LiveData<List<ProductWithCategoryDefinitions>> productsLiveData;
-        if (storageLocationFilter == null) { // "Tutti" i prodotti
+
+        if (locationInternalKeyFilter == null || locationInternalKeyFilter.equals(LocationViewModel.ALL_PRODUCTS_INTERNAL_KEY)) {
+            Log.d("ProductListFragment", "Observing ALL products for " + getUniqueKeyPart());
             productsLiveData = productViewModel.getAllProductsWithCategories();
-        } else { // Prodotti filtrati per posizione
-            productsLiveData = productViewModel.getProductsByLocation(storageLocationFilter);
+        } else {
+            Log.d("ProductListFragment", "Observing products for location internalKey: " + locationInternalKeyFilter + " for " + getUniqueKeyPart());
+            productsLiveData = productViewModel.getProductsByLocationInternalKey(locationInternalKeyFilter); //  <<<< DEVI CREARE QUESTO METODO NEL VIEWMODEL
+        }
+        if (productsLiveData == null) {
+            Log.e("ProductListFragment", "productsLiveData is NULL for " + getUniqueKeyPart() + ". Mode: All=" + isAllProductsMode + ", LocID=" + specificLocationId);
+            originalProductList = new ArrayList<>();
+            filterAndSubmitList();
+            return;
         }
         productsLiveData.observe(getViewLifecycleOwner(), products -> {
-            // 'products' è la lista ricevuta dal ViewModel (già filtrata per posizione se storageLocationFilter != null)
             if (products != null) {
-                // ----> POPOLAMENTO DI originalProductList <----
                 originalProductList = new ArrayList<>(products); // Copia la lista ricevuta in originalProductList
                 Log.d("ProductListFragment", "Fragment (" + getUniqueKeyPart() + "): Prodotti originali ricevuti e originalProductList aggiornata. Dimensione: " + originalProductList.size());
-                filterAndSubmitList(); // Dopo aver aggiornato originalProductList, applica il filtro di ricerca corrente
             } else {
                 originalProductList = new ArrayList<>(); // Se i prodotti sono null, inizializza a lista vuota
                 Log.d("ProductListFragment", "Fragment (" + getUniqueKeyPart() + "): Prodotti ricevuti sono null. originalProductList svuotata.");
-                filterAndSubmitList(); // Applica comunque il filtro (che risulterà in una lista vuota per l'adapter)
             }
+            filterAndSubmitList(); // Applica comunque il filtro (che risulterà in una lista vuota per l'adapter)
         });
     }
     private void observeSearchQuery() {
@@ -178,8 +200,6 @@ public class ProductListFragment extends Fragment implements SharedPreferences.O
             filteredList.addAll(originalProductList);
         } else {
             for (ProductWithCategoryDefinitions productWithDefs : originalProductList) {
-                // Filtra per nome prodotto O barcode (ignora maiuscole/minuscole)
-                // Puoi aggiungere altri campi al filtro se necessario (es. tags)
                 String productName = productWithDefs.product.getProductName() != null ? productWithDefs.product.getProductName().toLowerCase(Locale.getDefault()) : "";
                 String barcode = productWithDefs.product.getBarcode() != null ? productWithDefs.product.getBarcode().toLowerCase(Locale.getDefault()) : "";
 
@@ -196,6 +216,9 @@ public class ProductListFragment extends Fragment implements SharedPreferences.O
         }
     }
     private String getUniqueKeyPart() {
-        return (storageLocationFilter == null) ? "all" : storageLocationFilter;
+        return (locationInternalKeyFilter == null) ? "unknown_key" : locationInternalKeyFilter;
     }
-}
+
+    public String getLayoutPreferenceKey() {
+        return PREF_LAYOUT_MANAGER_KEY + "_" + getUniqueKeyPart();
+    }}

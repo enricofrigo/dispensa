@@ -3,6 +3,8 @@ package eu.frigo.dispensa.ui; // o un package appropriato per la UI
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.format.DateFormat;
+
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.preference.EditTextPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
@@ -112,12 +114,17 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         if (key != null && key.equals(KEY_EXPIRY_DAYS_BEFORE)) {
-            // I giorni sono cambiati, il worker userà il nuovo valore al prossimo avvio.
-            // Non è strettamente necessario rischedulare, ma se vuoi che il cambio sia
-            // immediato per il calcolo dei giorni nel prossimo run, potresti farlo.
-            // Per ora, lasciamo che il worker legga il valore aggiornato al prossimo run.
         }
-        // Per KEY_NOTIFICATION_TIME_HOUR e KEY_NOTIFICATION_TIME_MINUTE,
-        // la rischedulazione avviene già nel listener del TimePicker.
+    }
+    @Override
+    public boolean onPreferenceTreeClick(Preference preference) {
+        if (preference.getKey() != null && preference.getKey().equals("manage_locations")) {
+            getParentFragmentManager().beginTransaction()
+                .replace(android.R.id.content, new ManageLocationsFragment())
+                .addToBackStack(null)
+                .commit();
+            return false;
+        }
+        return false;
     }
 }

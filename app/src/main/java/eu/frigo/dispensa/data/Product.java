@@ -12,10 +12,6 @@ import java.util.Locale;
 @Entity(tableName = "products")
 public class Product {
 
-    public static final String LOCATION_FRIDGE = "FRIDGE";
-    public static final String LOCATION_FREEZER = "FREEZER";
-    public static final String LOCATION_PANTRY = "PANTRY";
-
     @PrimaryKey(autoGenerate = true)
     public int id;
     @ColumnInfo(name = "barcode")

@@ -21,6 +21,13 @@
             app:summary="Seleziona l'ora in cui ricevere la notifica di scadenza."
             app:iconSpaceReserved="false"/>
 
+        <Preference
+            app:key="manage_locations"
+            app:title="Storage Location"
+            app:summary="Aggiungi, modifica o riordina le tue location"
+            app:icon="@drawable/ic_add_24_white"
+            app:iconTint="@color/white"/>
+
     </PreferenceCategory>
 
 </PreferenceScreen>

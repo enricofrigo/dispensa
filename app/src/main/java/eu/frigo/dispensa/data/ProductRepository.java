@@ -12,6 +12,7 @@ public class ProductRepository {
     private final ProductDao productDao;
     private final CategoryDefinitionDao categoryDefinitionDao;
     private final ProductCategoryLinkDao productCategoryLinkDao;
+    private final StorageLocationDao storageLocationDao;
     private final LiveData<List<ProductWithCategoryDefinitions>> allProducts;
 
     public ProductRepository(Application application) {
@@ -19,6 +20,7 @@ public class ProductRepository {
         productDao = db.productDao();
         categoryDefinitionDao = db.categoryDefinitionDao();
         productCategoryLinkDao = db.productCategoryLinkDao();
+        storageLocationDao = db.storageLocationDao();
         allProducts = productDao.getAllProductsWithFullCategories();
     }
 
@@ -107,5 +109,52 @@ public class ProductRepository {
             }
         });
     }
+    public LiveData<List<StorageLocation>> getAllLocationsSorted() {
+        return storageLocationDao.getAllLocationsSorted();
+    }
 
+    public LiveData<StorageLocation> getDefaultLocation() {
+        return storageLocationDao.getDefaultLocation();
+    }
+
+    public void insertLocation(StorageLocation location) {
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            storageLocationDao.insert(location);
+        });
+    }
+
+    public void updateLocation(StorageLocation location) {
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            storageLocationDao.update(location);
+        });
+    }
+    public void deleteLocation(StorageLocation location) {
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            productDao.updateProductLocation(location.internalKey, storageLocationDao.getDefaultLocationSync().internalKey);
+            storageLocationDao.delete(location);
+        });
+    }
+
+    public void setLocationAsDefault(String internalKey) {
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            storageLocationDao.setAsDefault(internalKey);
+        });
+    }
+
+    public void updateLocationOrder(List<StorageLocation> orderedLocations) {
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            for (int i = 0; i < orderedLocations.size(); i++) {
+                StorageLocation loc = orderedLocations.get(i);
+                loc.orderIndex = i;
+                storageLocationDao.update(loc);
+            }
+        });
+    }
+
+    public LiveData<List<ProductWithCategoryDefinitions>> getProductsByLocationInternalKey(String locationInternalKeyFilter) {
+        return productDao.getProductWithFullCategoriesByLocationInternalKey(locationInternalKeyFilter);
+    }
+    public LiveData<List<StorageLocation>> getAllSelectableLocations() {
+        return storageLocationDao.getAllLocationsSorted();
+    }
 }
