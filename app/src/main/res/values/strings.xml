@@ -1,8 +1,9 @@
 <resources>
     <string name="app_name">Dispensa</string>
-    <string name="action_settings">Impostazioni notifiche</string>
+    <string name="action_settings">Impostazioni</string>
     <string name="next">Next</string>
     <string name="previous">Previous</string>
+    <string name="tab_title_all_products">Tutti</string>
 
     <string name="add">add</string>
     <string name="add_product">Aggiungi Prodotto</string>
@@ -30,4 +31,9 @@
     <string name="hint_categorie_tags">Categorie (Tags)</string>
     <string name="hint_nuova_categoria">Nuova Categoria (es. en:dairy)</string>
     <string name="hint_posizione_conservazione">Posizione Conservazione</string>
+    <string name="modifica_location">Modifica Location</string>
+    <string name="elimina_location">Elimina Location</string>
+    <string name="icona_default">Icona Default</string>
+    <string name="aggiungi_nuova_location">Aggiungi nuova location</string>
+    <string name="title_manage_locations">Storage location management</string>
 </resources>

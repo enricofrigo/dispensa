@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="16dp"
+    android:background="?android:attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true">
+
+    <ImageView
+        android:id="@+id/icon_location_default"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:src="@drawable/ic_star_24"
+        app:tint="?attr/colorPrimary"
+        android:visibility="gone"
+        tools:visibility="visible"
+        android:layout_marginEnd="16dp"
+        android:contentDescription="@string/icona_default" />
+
+    <TextView
+        android:id="@+id/textView_location_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textAppearance="?attr/textAppearanceListItem"
+        tools:text="Dispensa" />
+
+    <!-- Potresti aggiungere un'icona per il drag handle qui se usi ItemTouchHelper per riordinare -->
+    <ImageView
+        android:id="@+id/button_edit_location"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_edit_24"
+        app:tint="?android:attr/textColorSecondary"
+        android:padding="8dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/modifica_location"
+        android:layout_marginStart="8dp"/>
+
+    <ImageView
+        android:id="@+id/button_delete_location"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_delete_24"
+        app:tint="?android:attr/textColorSecondary"
+        android:padding="8dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/elimina_location"
+        android:layout_marginStart="8dp" />
+
+</LinearLayout>

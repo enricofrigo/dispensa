@@ -52,7 +52,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import eu.frigo.dispensa.data.CategoryDefinition;
+import eu.frigo.dispensa.data.PredefinedData;
 import eu.frigo.dispensa.data.Product;
+import eu.frigo.dispensa.data.ProductWithCategoryDefinitions;
+import eu.frigo.dispensa.data.StorageLocation;
 import eu.frigo.dispensa.network.OpenFoodFactsApiService;
 import eu.frigo.dispensa.network.RetrofitClient;
 import eu.frigo.dispensa.network.model.OpenFoodFactsProductResponse;
@@ -65,7 +68,6 @@ public class AddProductActivity extends AppCompatActivity {
 
     private Spinner spinnerStorageLocation;
     private String selectedStorageLocation;
-    public static final String EXTRA_PRODUCT_ID = "extra_product_id";
     private TextInputEditText editTextBarcode;
     private ImageButton buttonScanBarcode;
     private TextInputEditText editTextQuantity;
@@ -91,12 +93,11 @@ public class AddProductActivity extends AppCompatActivity {
     private TextInputEditText editTextNewCategory;
     private Button buttonAddCategory;
     private Set<String> currentProductTagsSet = new HashSet<>();
-    //private Collection<String> currentCategoriesFromApi;
-    private static final String[] STORAGE_LOCATIONS_DISPLAY = {"Frigorifero", "Freezer", "Dispensa"};
-    private static final String[] STORAGE_LOCATIONS_VALUES = {Product.LOCATION_FRIDGE, Product.LOCATION_FREEZER, Product.LOCATION_PANTRY};
     private String preselectedLocationValue = null; // Per memorizzare la location passata
-
-
+    private List<StorageLocation> availableLocations = new ArrayList<>(); // Per memorizzare le location caricate
+    private ArrayAdapter<String> locationSpinnerAdapter;
+    private String selectedStorageInternalKey;
+    private ProductWithCategoryDefinitions productBeingEdited;
     private final ActivityResultLauncher<String> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
                 if (isGranted) {
@@ -146,8 +147,8 @@ public class AddProductActivity extends AppCompatActivity {
             imageViewProduct = findViewById(R.id.imageViewProduct);
             cameraExecutor = Executors.newSingleThreadExecutor();
             spinnerStorageLocation = findViewById(R.id.spinnerStorageLocation);
-            if (getIntent().hasExtra("PRESELECTED_LOCATION")) {
-                preselectedLocationValue = getIntent().getStringExtra("PRESELECTED_LOCATION");
+            if (getIntent().hasExtra("PRESELECTED_LOCATION_INTERNAL_KEY")) {
+                preselectedLocationValue = getIntent().getStringExtra("PRESELECTED_LOCATION_INTERNAL_KEY");
                 Log.d("AddProductActivity", "Ricevuta location preselezionata: " + preselectedLocationValue);
             }
             setupStorageLocationSpinner();
@@ -192,6 +193,7 @@ public class AddProductActivity extends AppCompatActivity {
 
                 currentImageUrlFromApi = imageUrl;
                 currentProductNameFromApi = productName;
+
                 editTextProductName.setText(productName);
                 editTextBarcode.setText(barcode);
                 editTextQuantity.setText(String.valueOf(quantity));
@@ -219,28 +221,6 @@ public class AddProductActivity extends AppCompatActivity {
                 editTextQuantity.setSelection(editTextQuantity.getText().length());
 
             }
-            if (isEditMode && currentProductId != -1) {
-                addProductViewModel.getProductById(currentProductId).observe(this, productWithDefs -> {
-                    if (productWithDefs != null && productWithDefs.product != null) {
-                        String currentLocation = productWithDefs.product.getStorageLocation();
-                        if (currentLocation != null) {
-                            for (int i = 0; i < STORAGE_LOCATIONS_VALUES.length; i++) {
-                                if (STORAGE_LOCATIONS_VALUES[i].equals(currentLocation)) {
-                                    spinnerStorageLocation.setSelection(i);
-                                    break;
-                                }
-                            }
-                        }
-                        if (productWithDefs.categoryDefinitions != null) {
-                            currentProductTagsSet.clear();
-                            for (CategoryDefinition def : productWithDefs.categoryDefinitions) {
-                                currentProductTagsSet.add(def.tagName);
-                            }
-                            updateChipGroup();
-                        }
-                    }
-                });
-            }
 
             buttonAddCategory.setOnClickListener(v -> addNewCategoryTag());
             editTextNewCategory.setOnEditorActionListener((v, actionId, event) -> {
@@ -262,32 +242,116 @@ public class AddProductActivity extends AppCompatActivity {
             buttonSaveProduct.setOnClickListener(v -> saveOrUpdateProduct());
         }
     private void setupStorageLocationSpinner() {
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_item, STORAGE_LOCATIONS_DISPLAY);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerStorageLocation.setAdapter(adapter);
-        if (preselectedLocationValue != null) {
-            int selectionIndex = -1;
-            for (int i = 0; i < STORAGE_LOCATIONS_VALUES.length; i++) {
-                if (preselectedLocationValue.equals(STORAGE_LOCATIONS_VALUES[i])) {
-                    selectionIndex = i;
-                    break;
+        List<String> locationDisplayNames = new ArrayList<>();
+        locationSpinnerAdapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, locationDisplayNames);
+        locationSpinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerStorageLocation.setAdapter(locationSpinnerAdapter);
+
+        addProductViewModel.getAllSelectableLocations().observe(this, locations -> {
+            if (locations != null && !locations.isEmpty()) {
+                availableLocations.clear();
+                availableLocations.addAll(locations); // Memorizza le location complete
+
+                locationDisplayNames.clear();
+                for (StorageLocation loc : locations) {
+                    locationDisplayNames.add(loc.getName()); // Aggiungi solo i nomi per la visualizzazione
                 }
-            }
-            if (selectionIndex != -1) {
-                spinnerStorageLocation.setSelection(selectionIndex);
-                Log.d("AddProductActivity", "Spinner impostato su: " + STORAGE_LOCATIONS_DISPLAY[selectionIndex]);
+                locationSpinnerAdapter.notifyDataSetChanged(); // Aggiorna lo spinner
+
+                String keyToSelect = null;
+                if (preselectedLocationValue != null) {
+                    keyToSelect = preselectedLocationValue;
+                } else if (isEditMode && productBeingEdited != null && productBeingEdited.product != null) {
+                    // Se siamo in modalità modifica E il prodotto è già stato caricato in productBeingEdited
+                    keyToSelect = productBeingEdited.product.getStorageLocation();
+                }
+
+                if (keyToSelect != null) {
+                    selectSpinnerLocationByInternalKey(keyToSelect);
+                } else if (!availableLocations.isEmpty()) {
+                    // Se nessuna preselezione, seleziona il primo elemento come default (opzionale)
+                    spinnerStorageLocation.setSelection(0);
+                    selectedStorageInternalKey = availableLocations.get(0).getInternalKey();
+                    Log.d("AddProductActivity", "Spinner default su: " + availableLocations.get(0).getName());
+                }
+
             } else {
-                Log.w("AddProductActivity", "Valore di location preselezionato '" + preselectedLocationValue + "' non trovato nei valori dello spinner.");
+                Log.w("AddProductActivity", "Nessuna location disponibile per lo spinner.");
+                availableLocations.clear();
+                locationDisplayNames.clear();
+                locationSpinnerAdapter.notifyDataSetChanged();
             }
+        });
+        if (isEditMode && currentProductId != -1) {
+            observeProductForEditMode();
         }
         spinnerStorageLocation.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                selectedStorageLocation = STORAGE_LOCATIONS_VALUES[position];
+                if (position >= 0 && position < availableLocations.size()) {
+                    selectedStorageInternalKey = availableLocations.get(position).getInternalKey();
+                    Log.d("AddProductActivity", "Location selezionata: " + availableLocations.get(position).getName() + " (Key: " + selectedStorageInternalKey + ")");
+                }
             }
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
+                selectedStorageInternalKey = null;
+            }
+        });
+    }
+    private void selectSpinnerLocationByInternalKey(String internalKey) {
+        if (internalKey == null || availableLocations.isEmpty()) {
+            return;
+        }
+        for (int i = 0; i < availableLocations.size(); i++) {
+            if (internalKey.equals(availableLocations.get(i).getInternalKey())) {
+                spinnerStorageLocation.setSelection(i);
+                selectedStorageInternalKey = internalKey; // Assicurati che sia impostato anche qui
+                Log.d("AddProductActivity", "Spinner preselezionato (dinamicamente) su: " + availableLocations.get(i).getName());
+                return; // Trovato e selezionato
+            }
+        }
+        Log.w("AddProductActivity", "Valore di location (internalKey) '" + internalKey + "' non trovato nello spinner dinamico.");
+    }
+    private void observeProductForEditMode() {
+        addProductViewModel.getProductById(currentProductId).observe(this, productWithDefs -> {
+            if (productWithDefs != null && productWithDefs.product != null) {
+                productBeingEdited = productWithDefs;
+                editTextProductName.setText(productBeingEdited.product.getProductName());
+                editTextBarcode.setText(productBeingEdited.product.getBarcode());
+                editTextQuantity.setText(String.valueOf(productBeingEdited.product.getQuantity()));
+
+                currentImageUrlFromApi = productBeingEdited.product.getImageUrl();
+                currentProductNameFromApi = productBeingEdited.product.getProductName(); // O quello che usi per l'API
+
+                if (productBeingEdited.product.getExpiryDate() != 0) {
+                    calendar.setTimeInMillis(productBeingEdited.product.getExpiryDate());
+                    updateLabel();
+                }
+
+                if (currentImageUrlFromApi != null && !currentImageUrlFromApi.trim().isEmpty()) {
+                    Glide.with(AddProductActivity.this)
+                            .load(currentImageUrlFromApi)
+                            .into(imageViewProduct);
+                    imageViewProduct.setVisibility(View.VISIBLE);
+                }
+
+                if (productBeingEdited.categoryDefinitions != null) {
+                    currentProductTagsSet.clear();
+                    for (CategoryDefinition def : productBeingEdited.categoryDefinitions) {
+                        currentProductTagsSet.add(def.tagName);
+                    }
+                    updateChipGroup();
+                }
+
+                if (!availableLocations.isEmpty() && productBeingEdited.product.getStorageLocation() != null) {
+                    selectSpinnerLocationByInternalKey(productBeingEdited.product.getStorageLocation());
+                }
+            } else {
+                productBeingEdited = null;
+                Toast.makeText(this, "Errore nel caricamento del prodotto da modificare.", Toast.LENGTH_LONG).show();
+                finish();
             }
         });
     }
@@ -500,6 +564,10 @@ public class AddProductActivity extends AppCompatActivity {
         String quantityStr = editTextQuantity.getText() != null ? editTextQuantity.getText().toString().trim() : "";
         String expiryDate = editTextExpiryDate.getText() != null ? editTextExpiryDate.getText().toString().trim() : "";
 
+        if (selectedStorageInternalKey == null || selectedStorageInternalKey.isEmpty()) {
+            Toast.makeText(this, "Seleziona una posizione di archiviazione", Toast.LENGTH_SHORT).show();
+            return;
+        }
         if (barcode.isEmpty()) {
             editTextBarcode.setError("Il codice a barre è obbligatorio");
             editTextBarcode.requestFocus();
@@ -535,7 +603,7 @@ public class AddProductActivity extends AppCompatActivity {
                 name=barcode;
             }
         }
-        Product product = new Product(barcode, quantity, DateConverter.parseDisplayDateToTimestampMs(expiryDate), name, currentImageUrlFromApi, selectedStorageLocation);
+        Product product = new Product(barcode, quantity, DateConverter.parseDisplayDateToTimestampMs(expiryDate), name, currentImageUrlFromApi, selectedStorageInternalKey);
         Log.d("AddProductActivity", "Salvataggio prodotto: " + product.toString());
         List<String> tagsToSave = new ArrayList<>(currentProductTagsSet);
         if(isEditMode) {
