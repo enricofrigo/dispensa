@@ -38,4 +38,8 @@
     <string name="title_manage_locations">Storage location management</string>
     <string name="drag_handle_description">Sposta</string>
     <string name="set_as_default_action">set default</string>
+    <string name="version_format_detailed">Versione: %1$s (Build: %2$s)</string>
+    <string name="version_format_simple">Versione: %1$s</string>
+    <string name="version_not_available">Versione: N/D</string>
+    <string name="versione_caricamento">Versione: Caricamento...</string>
 </resources>

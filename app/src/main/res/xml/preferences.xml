@@ -29,5 +29,4 @@
             app:iconTint="@color/white"/>
 
     </PreferenceCategory>
-
 </PreferenceScreen>
