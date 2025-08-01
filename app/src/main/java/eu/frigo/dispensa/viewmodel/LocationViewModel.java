@@ -7,16 +7,20 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
 
 import eu.frigo.dispensa.R;
+import eu.frigo.dispensa.data.AppDatabase;
 import eu.frigo.dispensa.data.ProductRepository;
 import eu.frigo.dispensa.data.StorageLocation;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class LocationViewModel extends AndroidViewModel {
 
     private ProductRepository repository;
     private MediatorLiveData<List<StorageLocation>> locationsForTabs;
+    private LiveData<List<StorageLocation>> dbRealLocationsSorted;
     private LiveData<StorageLocation> defaultLocation;
     public static final String ALL_PRODUCTS_INTERNAL_KEY = "all_products_key"; // Scegli una chiave univoca
     public static final int ALL_PRODUCTS_TAB_ID = -1;
@@ -26,7 +30,7 @@ public class LocationViewModel extends AndroidViewModel {
         repository = new ProductRepository(application);
         defaultLocation = repository.getDefaultLocation();
         locationsForTabs = new MediatorLiveData<>();
-        LiveData<List<StorageLocation>> dbRealLocationsSorted = repository.getAllLocationsSorted();
+        dbRealLocationsSorted = repository.getAllLocationsSorted();
         locationsForTabs.addSource(dbRealLocationsSorted, realLocations -> {
             List<StorageLocation> displayList = new ArrayList<>();
 
@@ -43,9 +47,11 @@ public class LocationViewModel extends AndroidViewModel {
             locationsForTabs.setValue(displayList);
         });
     }
-
-    public LiveData<List<StorageLocation>> getAllLocationsSorted() {
+    public LiveData<List<StorageLocation>> getLocationsForTabs() {
         return locationsForTabs;
+    }
+    public LiveData<List<StorageLocation>> getAllLocationsSorted() {
+        return dbRealLocationsSorted;
     }
 
     public LiveData<StorageLocation> getDefaultLocation() {
@@ -68,6 +74,21 @@ public class LocationViewModel extends AndroidViewModel {
         if (location != null) {
             repository.setLocationAsDefault(location.internalKey);
         }
+    }
+    public void insert(StorageLocation storageLocation, final OnMaxOrderIndexRetrievedListener listener) {
+        // Ottieni il max order index in background
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.execute(() -> {
+            int maxIndex = AppDatabase.getDatabase(getApplication()).storageLocationDao().getMaxOrderIndex();
+            // Esegui sul thread principale per aggiornare l'UI o continuare la logica
+            // (qui passiamo il risultato al listener che a sua volta lo passerà al repository)
+            if (listener != null) {
+                listener.onMaxOrderIndexRetrieved(maxIndex);
+            }
+        });
+    }
+    public interface OnMaxOrderIndexRetrievedListener {
+        void onMaxOrderIndexRetrieved(int maxIndex);
     }
     public void updateOrder(List<StorageLocation> orderedLocations) {
         List<StorageLocation> realLocationsToOrder = new ArrayList<>();

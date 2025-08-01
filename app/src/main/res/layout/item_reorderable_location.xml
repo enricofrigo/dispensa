@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="16dp"
+    android:gravity="center_vertical"
+    android:background="?attr/selectableItemBackground">
+
+    <ImageView
+        android:id="@+id/imageView_drag_handle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_drag_handle"
+        app:tint="?attr/colorControlNormal"
+        android:contentDescription="@string/drag_handle_description" />
+
+    <TextView
+        android:id="@+id/textView_location_name_reorder"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="16dp"
+        android:textAppearance="?attr/textAppearanceListItem"
+        tools:text="Nome Location" />
+
+    <!-- Potresti aggiungere un pulsante di modifica/eliminazione qui se lo desideri -->
+    <ImageButton
+        android:id="@+id/button_edit_location_item"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_edit_24"
+        app:tint="?attr/colorControlNormal"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/modifica_location"
+        android:layout_marginStart="8dp"/>
+
+    <ImageButton
+        android:id="@+id/button_delete_location_item"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_delete_24"
+        app:tint="?attr/colorError"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/elimina_location"
+        android:layout_marginStart="8dp"/>
+
+</LinearLayout>

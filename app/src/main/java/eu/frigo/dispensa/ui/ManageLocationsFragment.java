@@ -4,8 +4,12 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
+import androidx.navigation.Navigation;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import android.text.InputType;
@@ -15,18 +19,34 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.Toast;
+
+import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
 import eu.frigo.dispensa.R;
+import eu.frigo.dispensa.adapter.ReorderLocationsAdapter;
 import eu.frigo.dispensa.adapter.StorageLocationAdapter;
+import eu.frigo.dispensa.data.AppDatabase;
 import eu.frigo.dispensa.data.StorageLocation;
+import eu.frigo.dispensa.helper.SimpleItemTouchHelperCallback;
 import eu.frigo.dispensa.viewmodel.LocationViewModel;
 
-public class ManageLocationsFragment extends Fragment implements StorageLocationAdapter.OnLocationInteractionListener {
+public class ManageLocationsFragment extends Fragment implements
+        ReorderLocationsAdapter.OnStartDragListener,
+        ReorderLocationsAdapter.OnLocationInteractionListener,
+        SimpleItemTouchHelperCallback.ItemTouchHelperListener {
 
     private static final String TAG = "ManageLocationsFragment";
+    private RecyclerView recyclerViewLocations;
+    private ReorderLocationsAdapter adapter;
     private LocationViewModel locationViewModel;
-    private StorageLocationAdapter adapter;
-    private RecyclerView recyclerView;
+    private ItemTouchHelper itemTouchHelper;
+    private FloatingActionButton fabAddLocation;
+    private MaterialToolbar toolbar;
 
     public ManageLocationsFragment() {
         // Required empty public constructor
@@ -43,29 +63,51 @@ public class ManageLocationsFragment extends Fragment implements StorageLocation
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_manage_locations, container, false);
-
-        recyclerView = view.findViewById(R.id.recyclerView_locations);
-        FloatingActionButton fabAddLocation = view.findViewById(R.id.fab_add_location);
-
-        setupRecyclerView();
-
-        fabAddLocation.setOnClickListener(v -> showAddEditLocationDialog(null));
-
-        locationViewModel.getAllLocationsSorted().observe(getViewLifecycleOwner(), locations -> {
-            if (locations != null) {
-                Log.d(TAG, "Locations aggiornate: " + locations.size());
-                adapter.submitList(locations);
-            }
-        });
-
+        toolbar = view.findViewById(R.id.toolbar_manage_locations);
+        recyclerViewLocations = view.findViewById(R.id.recyclerView_locations);
+        fabAddLocation = view.findViewById(R.id.fab_add_location);
         return view;
     }
 
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        locationViewModel = new ViewModelProvider(requireActivity()).get(LocationViewModel.class);
+
+        setupRecyclerView();
+        observeLocations();
+
+        fabAddLocation.setOnClickListener(v -> showAddLocationDialog());
+
+        // Configura il titolo o il pulsante di navigazione sulla toolbar
+        toolbar.setTitle("Store location management");
+        // Se hai un menu nella toolbar:
+        // toolbar.setOnMenuItemClickListener(item -> { ... });
+    }
+
     private void setupRecyclerView() {
-        adapter = new StorageLocationAdapter(new StorageLocationAdapter.StorageLocationDiff(), this);
-        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        recyclerView.setAdapter(adapter);
-        // Qui aggiungeremo ItemTouchHelper per il drag and drop più avanti
+        adapter = new ReorderLocationsAdapter(new ArrayList<>(), this, this);
+        recyclerViewLocations.setLayoutManager(new LinearLayoutManager(getContext()));
+        recyclerViewLocations.setAdapter(adapter);
+
+        SimpleItemTouchHelperCallback callback = new SimpleItemTouchHelperCallback(adapter, this);
+        itemTouchHelper = new ItemTouchHelper(callback);
+        itemTouchHelper.attachToRecyclerView(recyclerViewLocations);
+    }
+
+    private void observeLocations() {
+        locationViewModel.getAllLocationsSorted().observe(getViewLifecycleOwner(), locations -> {
+            if (locations != null) {
+                adapter.submitList(new ArrayList<>(locations));
+            }
+        });
+    }
+
+    @Override
+    public void onStartDrag(RecyclerView.ViewHolder viewHolder) {
+        if (itemTouchHelper != null) {
+            itemTouchHelper.startDrag(viewHolder);
+        }
     }
 
     private void showAddEditLocationDialog(@Nullable final StorageLocation locationToEdit) {
@@ -114,11 +156,7 @@ public class ManageLocationsFragment extends Fragment implements StorageLocation
 
     @Override
     public void onEditLocation(StorageLocation location) {
-        if (location.isPredefined) {
-            Toast.makeText(getContext(), "Le location predefinite non possono essere modificate qui.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        showAddEditLocationDialog(location);
+        showEditLocationDialog(location);
     }
 
     @Override
@@ -143,11 +181,113 @@ public class ManageLocationsFragment extends Fragment implements StorageLocation
                 .show();
     }
 
-    @Override
-    public void onSetAsDefault(StorageLocation location) {
-        if (!location.isDefault) {
-            locationViewModel.setAsDefault(location);
-            Toast.makeText(getContext(), "'" + location.name + "' impostata come default.", Toast.LENGTH_SHORT).show();
+    public void onOrderChanged(List<StorageLocation> orderedLocations) {
+        // Assegna il nuovo orderIndex
+        for (int i = 0; i < orderedLocations.size(); i++) {
+            orderedLocations.get(i).setOrderIndex(i);
         }
+        locationViewModel.updateOrder(orderedLocations);
+        Toast.makeText(getContext(), "Salvataggio effettuato", Toast.LENGTH_SHORT).show();
+    }
+
+    private void showAddLocationDialog() {
+        showLocationDialog(null);
+    }
+
+    private void showEditLocationDialog(StorageLocation location) {
+        showLocationDialog(location);
+    }
+    @Override
+    public void onSetAsDefault(StorageLocation locationToSetAsDefault) {
+        Log.d(TAG, "onSetAsDefault: "+locationToSetAsDefault);
+        List<StorageLocation> currentList = adapter.getCurrentOrder(); // o osserva un LiveData non filtrato se necessario
+        StorageLocation oldDefault = null;
+        for (StorageLocation loc : currentList) {
+            if (loc.isDefault() && loc.getId() != locationToSetAsDefault.getId()) {
+                oldDefault = loc;
+                break;
+            }
+        }
+
+        List<StorageLocation> locationsToUpdate = new ArrayList<>();
+
+        if (oldDefault != null) {
+            StorageLocation modifiedOldDefault = findLocationById(currentList, oldDefault.getId());
+            if(modifiedOldDefault != null) {
+                modifiedOldDefault.setDefault(false);
+                locationsToUpdate.add(modifiedOldDefault);
+            }
+        }
+        StorageLocation modifiedNewDefault = findLocationById(currentList, locationToSetAsDefault.getId());
+        if(modifiedNewDefault != null) {
+            modifiedNewDefault.setDefault(true);
+            locationsToUpdate.add(modifiedNewDefault);
+        }
+
+        if (!locationsToUpdate.isEmpty()) {
+            if (oldDefault != null) {
+                locationViewModel.update(oldDefault);
+            }
+            locationViewModel.update(locationToSetAsDefault);
+            Toast.makeText(getContext(), "Location di default impostata "+locationToSetAsDefault.getName(), Toast.LENGTH_SHORT).show();
+        }
+    }
+    private StorageLocation findLocationById(List<StorageLocation> locations, int id) {
+        for (StorageLocation loc : locations) {
+            if (loc.getId() == id) {
+                return loc;
+            }
+        }
+        return null;
+    }
+    private void showLocationDialog(@Nullable final StorageLocation existingLocation) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+        String dialogTitle = existingLocation == null ? "Nuova Location" : "Edit Location";
+        builder.setTitle(dialogTitle);
+
+        final EditText input = new EditText(getContext());
+        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_WORDS);
+        if (existingLocation != null) {
+            input.setText(existingLocation.getName());
+            if (existingLocation.isPredefined()) { // Non permettere la modifica del nome delle predefinite
+                input.setEnabled(false);
+            }
+        }
+        builder.setView(input);
+        builder.setPositiveButton(existingLocation == null ? "Aggiungi" : "Salva", (dialog, which) -> {
+            String locationName = input.getText().toString().trim();
+            if (locationName.isEmpty()) {
+                Toast.makeText(getContext(), "Location non può essere vuota", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (existingLocation == null) { // Aggiungi Nuova
+                locationViewModel.insert(new StorageLocation(), maxIndex -> {
+                    requireActivity().runOnUiThread(() -> {
+                        StorageLocation newLocation = new StorageLocation(
+                                locationName,
+                                "custom_" + UUID.randomUUID().toString().substring(0, 8), // internalKey univoco
+                                maxIndex + 1, // orderIndex
+                                false, // isDefault
+                                false  // isPredefined
+                        );
+                        AppDatabase.databaseWriteExecutor.execute(() -> {
+                            AppDatabase.getDatabase(requireContext()).storageLocationDao().insert(newLocation);
+                        });
+
+                        Toast.makeText(getContext(), "Location '" + locationName + "' aggiunta", Toast.LENGTH_SHORT).show();
+                    });
+                });
+            } else { // Modifica Esistente
+                if (!existingLocation.isPredefined()) { // Modifica il nome solo se non è predefinita
+                    existingLocation.setName(locationName);
+                }
+                // Altri campi (isDefault) potrebbero essere modificati qui se necessario
+                locationViewModel.update(existingLocation);
+                Toast.makeText(getContext(), "Location '" + locationName + "' aggiornata", Toast.LENGTH_SHORT).show();
+            }
+        });
+        builder.setNegativeButton(android.R.string.cancel, (dialog, which) -> dialog.cancel());
+        builder.show();
     }
 }

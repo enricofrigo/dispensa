@@ -37,6 +37,7 @@ import eu.frigo.dispensa.adapter.LocationViewPagerAdapter;
 import eu.frigo.dispensa.adapter.ProductListAdapter;
 import eu.frigo.dispensa.data.Product;
 import eu.frigo.dispensa.data.ProductWithCategoryDefinitions;
+import eu.frigo.dispensa.data.StorageLocation;
 import eu.frigo.dispensa.databinding.ActivityMainBinding;
 import eu.frigo.dispensa.ui.ProductListFragment;
 import eu.frigo.dispensa.ui.SettingsActivity;
@@ -70,7 +71,6 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     private TabLayout tabLayout;
     private LocationViewPagerAdapter locationViewPagerAdapter;
     private LocationViewModel locationViewModel;
-
     private final ActivityResultLauncher<String> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
                 if (isGranted) {
@@ -128,6 +128,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         setSupportActionBar(toolbar);
 
         productViewModel = new ViewModelProvider(this).get(ProductViewModel.class);
+        locationViewModel = new ViewModelProvider(this).get(LocationViewModel.class);
 
         viewPager = findViewById(R.id.viewPager);
         tabLayout = findViewById(R.id.tabLayout);
@@ -135,12 +136,16 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         locationViewModel = new ViewModelProvider(this).get(LocationViewModel.class);
         locationViewPagerAdapter = new LocationViewPagerAdapter(this);
         viewPager.setAdapter(locationViewPagerAdapter);
-        new TabLayoutMediator(tabLayout, viewPager,
-                (tab, position) -> {
-                    String title = locationViewPagerAdapter.getPageTitle(position);
-                    tab.setText(title);
-                }
-        ).attach();
+        new TabLayoutMediator(tabLayout, viewPager, (tab, position) -> {
+            // Il titolo viene preso dall'adapter
+            StorageLocation currentLocation = locationViewPagerAdapter.getLocationAt(position);
+            if (currentLocation != null) {
+                tab.setText(currentLocation.getName());
+                // Qui potresti anche impostare icone per i tab se lo desideri
+            }
+        }).attach();
+        observeLocationsForTabs();
+
         locationViewModel.getAllLocationsSorted().observe(this, newLocations -> {
             if (newLocations != null) {
                 locationViewPagerAdapter.setLocations(newLocations);
@@ -183,6 +188,13 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
             addProductActivityLauncher.launch(intent);
         });
 
+    }
+    private void observeLocationsForTabs() {
+        locationViewModel.getLocationsForTabs().observe(this, locations -> {
+            if (locations != null) {
+                locationViewPagerAdapter.setLocations(locations);
+            }
+        });
     }
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
