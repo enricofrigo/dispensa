@@ -59,4 +59,11 @@ public class LocationViewPagerAdapter extends FragmentStateAdapter {
         }
         return null;
     }
+
+    public StorageLocation getLocationAt(int position) {
+        if (position >= 0 && position < storageLocations.size()) {
+            return storageLocations.get(position);
+        }
+        return null;
+    }
 }

@@ -64,5 +64,7 @@ public interface StorageLocationDao {
     }
 
     @Query("SELECT COUNT(*) FROM storage_locations")
-    int countLocations(); // Per controllare se il DB è vuoto per l'inizializzazione
+    int countLocations();
+    @Query("SELECT MAX(order_index) FROM storage_locations")
+    int getMaxOrderIndex();
 }

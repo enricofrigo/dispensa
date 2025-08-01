@@ -36,4 +36,6 @@
     <string name="icona_default">Icona Default</string>
     <string name="aggiungi_nuova_location">Aggiungi nuova location</string>
     <string name="title_manage_locations">Storage location management</string>
+    <string name="drag_handle_description">Sposta</string>
+    <string name="set_as_default_action">set default</string>
 </resources>

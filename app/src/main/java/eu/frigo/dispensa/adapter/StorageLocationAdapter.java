@@ -43,21 +43,18 @@ public class StorageLocationAdapter extends ListAdapter<StorageLocation, Storage
 
     static class StorageLocationViewHolder extends RecyclerView.ViewHolder {
         private final TextView textViewLocationName;
-        private final ImageView iconDefault;
         private final ImageView buttonEdit;
         private final ImageView buttonDelete;
 
         public StorageLocationViewHolder(@NonNull View itemView) {
             super(itemView);
             textViewLocationName = itemView.findViewById(R.id.textView_location_name);
-            iconDefault = itemView.findViewById(R.id.icon_location_default);
             buttonEdit = itemView.findViewById(R.id.button_edit_location);
             buttonDelete = itemView.findViewById(R.id.button_delete_location);
         }
 
         public void bind(final StorageLocation location, final OnLocationInteractionListener listener) {
             textViewLocationName.setText(location.name);
-            iconDefault.setVisibility(location.isDefault ? View.VISIBLE : View.GONE);
 
             // Impedisci modifica/eliminazione delle predefinite per ora (opzionale)
             if (location.isPredefined) {
