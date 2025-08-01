@@ -20,17 +20,12 @@ public class LocationViewPagerAdapter extends FragmentStateAdapter {
         super(fragmentActivity);
     }
 
-    // Costruttore alternativo se usato dentro un Fragment
-    // public LocationViewPagerAdapter(@NonNull Fragment fragment) {
-    //     super(fragment);
-    // }
-
     public void setLocations(List<StorageLocation> newLocations) {
         this.storageLocations.clear();
         if (newLocations != null) {
             this.storageLocations.addAll(newLocations);
         }
-        notifyDataSetChanged(); // Molto importante! Notifica al ViewPager2 che i dati sono cambiati.
+        notifyDataSetChanged();
     }
 
     @NonNull
@@ -47,9 +42,9 @@ public class LocationViewPagerAdapter extends FragmentStateAdapter {
 
     public String getPageTitle(int position) {
         if (position >= 0 && position < storageLocations.size()) {
-            return storageLocations.get(position).getName(); // Assumendo che StorageLocation abbia getName()
+            return storageLocations.get(position).getName();
         }
-        return null; // O una stringa di fallback
+        return null;
     }
 
     @Nullable

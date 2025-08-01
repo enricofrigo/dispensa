@@ -3,6 +3,7 @@ package eu.frigo.dispensa.ui; // o un package appropriato per la UI
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.format.DateFormat;
+import android.util.Log;
 
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.preference.EditTextPreference;
@@ -37,7 +38,6 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
             });
         }
 
-        // Valida l'input per i giorni di preavviso (opzionale ma consigliato)
         EditTextPreference daysBeforePref = findPreference(KEY_EXPIRY_DAYS_BEFORE);
         if (daysBeforePref != null) {
             daysBeforePref.setOnPreferenceChangeListener((preference, newValue) -> {
@@ -47,11 +47,10 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
                         return true;
                     }
                 } catch (NumberFormatException e) {
-                    // Non è un numero
+                    Log.e("SettingsFragment", "Errore durante la conversione a numero: " + e.getMessage());
                 }
-                // Mostra un Toast o un messaggio di errore se l'input non è valido
                 android.widget.Toast.makeText(getContext(), "Inserisci un numero di giorni valido (0-365).", android.widget.Toast.LENGTH_SHORT).show();
-                return false; // Impedisce il salvataggio del valore non valido
+                return false;
             });
         }
     }
@@ -78,10 +77,8 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
             editor.apply();
 
             updateNotificationTimeSummary();
-            // Rischedula il worker perché l'ora è cambiata
             ExpiryCheckWorkerScheduler.scheduleWorker(requireContext());
         });
-
         timePicker.show(getParentFragmentManager(), "TIME_PICKER_TAG");
     }
 
@@ -90,7 +87,6 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
             int hour = prefs.getInt(KEY_NOTIFICATION_TIME_HOUR, 9);
             int minute = prefs.getInt(KEY_NOTIFICATION_TIME_MINUTE, 0);
-            // Formatta l'ora per la visualizzazione
             Calendar cal = Calendar.getInstance();
             cal.set(Calendar.HOUR_OF_DAY, hour);
             cal.set(Calendar.MINUTE, minute);
