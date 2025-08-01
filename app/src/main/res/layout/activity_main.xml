@@ -23,8 +23,10 @@
             android:id="@+id/tabLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:requiresFadingEdge="horizontal"
+            android:fadingEdgeLength="30dp"
             app:tabMode="scrollable"
-            app:tabGravity="fill"/>
+            app:tabTextAppearance="@style/CustomTabTextStyle"/>
 
     </com.google.android.material.appbar.AppBarLayout>
 

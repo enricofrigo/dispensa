@@ -12,6 +12,8 @@ import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import android.text.InputFilter;
 import android.text.InputType;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -247,6 +249,10 @@ public class ManageLocationsFragment extends Fragment implements
 
         final EditText input = new EditText(getContext());
         input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_WORDS);
+        final int MAX_LOCATION_NAME_LENGTH = 25; // Scegli la lunghezza massima desiderata
+        InputFilter[] filters = new InputFilter[1];
+        filters[0] = new InputFilter.LengthFilter(MAX_LOCATION_NAME_LENGTH);
+        input.setFilters(filters);
         if (existingLocation != null) {
             input.setText(existingLocation.getName());
             if (existingLocation.isPredefined()) { // Non permettere la modifica del nome delle predefinite

@@ -14,7 +14,15 @@
         <item name="android:windowLightNavigationBar" >false</item>
     </style>
 
-        <style name="Theme.Dispensa" parent="Base.Theme.Dispensa" />
+    <style name="Theme.Dispensa" parent="Base.Theme.Dispensa" />
+
+    <style name="CustomTabTextStyle" parent="TextAppearance.Design.Tab">
+        <item name="android:ellipsize">end</item>
+        <item name="android:singleLine">true</item> <!-- REINTRODOTTO -->
+        <item name="android:maxWidth">40dp</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
 
     <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.MaterialComponents.ActionBar">
         <item name="android:textColorPrimary">@android:color/black</item>
@@ -28,4 +36,4 @@
         <item name="android:textColor">@android:color/black</item> <!-- TESTO "IMPOSTAZIONI" NEL POPUP NERO -->
     </style>
 
-    </resources>
+</resources>
