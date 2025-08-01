@@ -33,7 +33,6 @@ import eu.frigo.dispensa.viewmodel.ProductViewModel;
 public class ProductListFragment extends Fragment implements SharedPreferences.OnSharedPreferenceChangeListener {
 
     private static final String ARG_LOCATION_INTERNAL_KEY = "location_internal_key";
-    private static final String ARG_LOCATION_ID = "location_id";
     private static final String ARG_IS_ALL_PRODUCTS_MODE = "is_all_products_mode";
     public String storageLocationFilter;
     private ProductViewModel productViewModel;
@@ -44,13 +43,11 @@ public class ProductListFragment extends Fragment implements SharedPreferences.O
     private String currentLayoutPreferenceKey;
     public static final String LAYOUT_GRID = "grid";
     public static final String LAYOUT_LIST = "list";
-    private List<ProductWithCategoryDefinitions> originalProductList = new ArrayList<>(); // Lista originale non filtrata per posizione
-    private String currentSearchQuery = ""; // Query di ricerca corrente specifica per questo fragment
+    private List<ProductWithCategoryDefinitions> originalProductList = new ArrayList<>();
+    private String currentSearchQuery = "";
     private boolean isAllProductsMode = true;
-    private long specificLocationId = -1L; // Valore di default che indica nessuna location specifica
-    private String locationInternalKeyFilter; // Variabile per memorizzare l'internalKey
-
-
+    private long specificLocationId = -1L;
+    private String locationInternalKeyFilter;
 
     public static ProductListFragment newInstance(@Nullable String internalKey) {
         ProductListFragment fragment = new ProductListFragment();
@@ -69,11 +66,11 @@ public class ProductListFragment extends Fragment implements SharedPreferences.O
         if (getArguments() != null) {
             locationInternalKeyFilter = getArguments().getString(ARG_LOCATION_INTERNAL_KEY);
             if (locationInternalKeyFilter == null) {
-                locationInternalKeyFilter = LocationViewModel.ALL_PRODUCTS_INTERNAL_KEY; // Esempio
+                locationInternalKeyFilter = LocationViewModel.ALL_PRODUCTS_INTERNAL_KEY;
                 Log.w("ProductListFragment", "onCreate: locationInternalKeyFilter is null after getting from args.");
             }
         } else {
-            // locationInternalKeyFilter = LocationViewModel.ALL_PRODUCTS_INTERNAL_KEY; // Esempio se args è null
+            // locationInternalKeyFilter = LocationViewModel.ALL_PRODUCTS_INTERNAL_KEY;
             Log.w("ProductListFragment", "onCreate: getArguments() is null.");
         }        currentLayoutPreferenceKey = PREF_LAYOUT_MANAGER_KEY;
         productViewModel = new ViewModelProvider(requireActivity()).get(ProductViewModel.class);
@@ -110,15 +107,15 @@ public class ProductListFragment extends Fragment implements SharedPreferences.O
         observeSearchQuery();
     }
     private void setupRecyclerViewLayout() {
-        if (recyclerView == null || productListAdapter == null) return; // Assicurati che siano inizializzati
+        if (recyclerView == null || productListAdapter == null) return;
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
-        String layoutType = prefs.getString(currentLayoutPreferenceKey, LAYOUT_LIST); // Default a lista
+        String layoutType = prefs.getString(currentLayoutPreferenceKey, LAYOUT_LIST);
 
         if (layoutType.equals(LAYOUT_GRID)) {
             DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
             float dpWidth = displayMetrics.widthPixels / displayMetrics.density;
-            int desiredColumnWidthDp = 180; // Larghezza desiderata per colonna in DP
+            int desiredColumnWidthDp = 180;
             int spanCount = Math.max(1, (int) (dpWidth / desiredColumnWidthDp));
             recyclerView.setLayoutManager(new GridLayoutManager(getContext(), spanCount));
         } else {
@@ -218,7 +215,4 @@ public class ProductListFragment extends Fragment implements SharedPreferences.O
     private String getUniqueKeyPart() {
         return (locationInternalKeyFilter == null) ? "unknown_key" : locationInternalKeyFilter;
     }
-
-    public String getLayoutPreferenceKey() {
-        return PREF_LAYOUT_MANAGER_KEY + "_" + getUniqueKeyPart();
-    }}
+}

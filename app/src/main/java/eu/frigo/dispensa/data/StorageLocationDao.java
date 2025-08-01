@@ -7,7 +7,7 @@ import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 import androidx.room.Update;
-import androidx.room.Transaction; // Importa Transaction
+import androidx.room.Transaction;
 
 import java.util.List;
 
@@ -18,7 +18,7 @@ public interface StorageLocationDao {
     long insert(StorageLocation location);
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    void insertAll(List<StorageLocation> locations); // Per l'inizializzazione
+    void insertAll(List<StorageLocation> locations);
 
     @Update
     void update(StorageLocation location);

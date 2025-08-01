@@ -67,7 +67,6 @@ import retrofit2.Response;
 public class AddProductActivity extends AppCompatActivity {
 
     private Spinner spinnerStorageLocation;
-    private String selectedStorageLocation;
     private TextInputEditText editTextBarcode;
     private ImageButton buttonScanBarcode;
     private TextInputEditText editTextQuantity;
@@ -85,7 +84,6 @@ public class AddProductActivity extends AppCompatActivity {
     private boolean isCameraPermissionGranted;
     private TextInputEditText editTextProductName;
     private ImageView imageViewProduct;
-    private String scannedBarcodeValue;
     private final Calendar calendar = Calendar.getInstance();
     private String currentProductNameFromApi;
     private String currentImageUrlFromApi;
@@ -110,137 +108,140 @@ public class AddProductActivity extends AppCompatActivity {
                 }
             });
 
-        private final ActivityResultLauncher<Intent> barcodeScannerLauncher =
-                registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
-                    if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                        String scannedBarcode = result.getData().getStringExtra("SCANNED_BARCODE_DATA"); // Placeholder
-                        if (scannedBarcode != null) {
-                            editTextBarcode.setText(scannedBarcode);
-                        } else {
-                            Toast.makeText(this, "Scansione codice a barre fallita o annullata", Toast.LENGTH_SHORT).show();
-                        }
+    private final ActivityResultLauncher<Intent> barcodeScannerLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                    String scannedBarcode = result.getData().getStringExtra("SCANNED_BARCODE_DATA"); // Placeholder
+                    if (scannedBarcode != null) {
+                        editTextBarcode.setText(scannedBarcode);
+                    } else {
+                        Toast.makeText(this, "Scansione codice a barre fallita o annullata", Toast.LENGTH_SHORT).show();
                     }
-                });
+                }
+            });
 
 
     @SuppressLint("UnsafeOptInUsageError")
-        @Override
-        protected void onCreate(Bundle savedInstanceState) {
-            super.onCreate(savedInstanceState);
-            setContentView(R.layout.activity_add_product);
-            addProductViewModel = new ViewModelProvider(this).get(AddProductViewModel.class);
-            toolbarAddProduct = findViewById(R.id.toolbar_add_product);
-            if (toolbarAddProduct != null) {
-                setSupportActionBar(toolbarAddProduct);
-                if (getSupportActionBar() != null) {
-                    getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-                    getSupportActionBar().setTitle(getString(R.string.add_product));
-                }
-            }
-
-            editTextBarcode = findViewById(R.id.editTextBarcode);
-            buttonScanBarcode = findViewById(R.id.buttonScanBarcode);
-            editTextQuantity = findViewById(R.id.editTextQuantity);
-            editTextExpiryDate = findViewById(R.id.editTextExpiryDate);
-            previewViewBarcode = findViewById(R.id.previewViewBarcode);
-            editTextProductName = findViewById(R.id.editTextProductName);
-            imageViewProduct = findViewById(R.id.imageViewProduct);
-            cameraExecutor = Executors.newSingleThreadExecutor();
-            spinnerStorageLocation = findViewById(R.id.spinnerStorageLocation);
-            if (getIntent().hasExtra("PRESELECTED_LOCATION_INTERNAL_KEY")) {
-                preselectedLocationValue = getIntent().getStringExtra("PRESELECTED_LOCATION_INTERNAL_KEY");
-                Log.d("AddProductActivity", "Ricevuta location preselezionata: " + preselectedLocationValue);
-            }
-            setupStorageLocationSpinner();
-            chipGroupCategories = findViewById(R.id.chipGroupCategories);
-            editTextNewCategory = findViewById(R.id.editTextNewCategory);
-            buttonAddCategory = findViewById(R.id.buttonAddCategory);
-            buttonSaveProduct = findViewById(R.id.buttonSaveProduct);
-
-            BarcodeScannerOptions options =
-                    new BarcodeScannerOptions.Builder()
-                            .setBarcodeFormats(
-                                    Barcode.FORMAT_EAN_13,
-                                    Barcode.FORMAT_EAN_8,
-                                    Barcode.FORMAT_UPC_A,
-                                    Barcode.FORMAT_UPC_E,
-                                    Barcode.FORMAT_QR_CODE,
-                                    Barcode.FORMAT_CODE_128,
-                                    Barcode.FORMAT_CODE_39,
-                                    Barcode.FORMAT_CODABAR
-                            )
-                            .build();
-            barcodeScanner = BarcodeScanning.getClient(options);
-            buttonScanBarcode.setOnClickListener(v -> {checkCameraPermissionAndStartScanner();});
-            editTextBarcode.setOnFocusChangeListener((v, hasFocus) -> {
-                if (!hasFocus) {
-                    String barcode = Objects.requireNonNull(editTextBarcode.getText()).toString().trim();
-                    if (!barcode.isEmpty() && (!barcode.equals(scannedBarcodeValue))) {
-                        fetchProductDetailsFromApi(barcode);
-                    }
-                }
-            });
-
-            Intent intent = getIntent();
-            if (intent != null && intent.hasExtra("PRODUCT_ID")) {
-                isEditMode = true;
-                currentProductId = intent.getIntExtra("PRODUCT_ID", -1);
-                String barcode = intent.getStringExtra("PRODUCT_BARCODE");
-                int quantity = intent.getIntExtra("PRODUCT_QUANTITY", 0);
-                String expiryDate = intent.getStringExtra("PRODUCT_EXPIRY_DATE");
-                String productName = intent.getStringExtra("PRODUCT_NAME");
-                String imageUrl = intent.getStringExtra("PRODUCT_IMAGE");
-
-                currentImageUrlFromApi = imageUrl;
-                currentProductNameFromApi = productName;
-
-                editTextProductName.setText(productName);
-                editTextBarcode.setText(barcode);
-                editTextQuantity.setText(String.valueOf(quantity));
-                editTextExpiryDate.setText(expiryDate);
-                if (expiryDate != null && !expiryDate.isEmpty()) {
-                    calendar.setTime(Objects.requireNonNull(DateConverter.parseDisplayDateToDate(expiryDate)));
-                }
-                if (imageUrl != null && !imageUrl.trim().isEmpty()) {
-                    Glide.with(AddProductActivity.this)
-                            .load(imageUrl)
-                            .into(imageViewProduct);
-                    imageViewProduct.setVisibility(View.VISIBLE);
-                }
-                if (getSupportActionBar() != null) {
-                    getSupportActionBar().setTitle("Modifica Prodotto");
-                }
-                buttonSaveProduct.setText("Aggiorna Prodotto");
-            } else {
-                isEditMode = false;
-                if (getSupportActionBar() != null) {
-                    getSupportActionBar().setTitle(getString(R.string.add_product_title));
-                }
-                buttonSaveProduct.setText(getString(R.string.save_product_button));
-                editTextQuantity.setText(DEFAULT_QUANTITY);
-                editTextQuantity.setSelection(editTextQuantity.getText().length());
-
-            }
-
-            buttonAddCategory.setOnClickListener(v -> addNewCategoryTag());
-            editTextNewCategory.setOnEditorActionListener((v, actionId, event) -> {
-                if (actionId == EditorInfo.IME_ACTION_DONE) {
-                    addNewCategoryTag();
-                    return true;
-                }
-                return false;
-            });
-
-            Log.d("AddProductActivity", editTextBarcode.getText()+" "+editTextQuantity.getText()+" "+editTextExpiryDate.getText()+" "+imageViewProduct.toString());
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_add_product);
+        addProductViewModel = new ViewModelProvider(this).get(AddProductViewModel.class);
+        toolbarAddProduct = findViewById(R.id.toolbar_add_product);
+        if (toolbarAddProduct != null) {
+            setSupportActionBar(toolbarAddProduct);
             if (getSupportActionBar() != null) {
                 getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-                getSupportActionBar().setDisplayShowHomeEnabled(true);
+                getSupportActionBar().setTitle(getString(R.string.add_product));
             }
-
-            editTextExpiryDate.setOnClickListener(v -> showDatePickerDialog());
-            buttonScanBarcode.setOnClickListener(v -> checkCameraPermissionAndStartScanner());
-            buttonSaveProduct.setOnClickListener(v -> saveOrUpdateProduct());
         }
+
+        editTextBarcode = findViewById(R.id.editTextBarcode);
+        buttonScanBarcode = findViewById(R.id.buttonScanBarcode);
+        editTextQuantity = findViewById(R.id.editTextQuantity);
+        editTextExpiryDate = findViewById(R.id.editTextExpiryDate);
+        previewViewBarcode = findViewById(R.id.previewViewBarcode);
+        editTextProductName = findViewById(R.id.editTextProductName);
+        imageViewProduct = findViewById(R.id.imageViewProduct);
+        cameraExecutor = Executors.newSingleThreadExecutor();
+        spinnerStorageLocation = findViewById(R.id.spinnerStorageLocation);
+        if (getIntent().hasExtra("PRESELECTED_LOCATION_INTERNAL_KEY")) {
+            preselectedLocationValue = getIntent().getStringExtra("PRESELECTED_LOCATION_INTERNAL_KEY");
+            Log.d("AddProductActivity", "Ricevuta location preselezionata: " + preselectedLocationValue);
+        }
+        setupStorageLocationSpinner();
+        chipGroupCategories = findViewById(R.id.chipGroupCategories);
+        editTextNewCategory = findViewById(R.id.editTextNewCategory);
+        buttonAddCategory = findViewById(R.id.buttonAddCategory);
+        buttonSaveProduct = findViewById(R.id.buttonSaveProduct);
+
+        BarcodeScannerOptions options =
+                new BarcodeScannerOptions.Builder()
+                        .setBarcodeFormats(
+                                Barcode.FORMAT_EAN_13,
+                                Barcode.FORMAT_EAN_8,
+                                Barcode.FORMAT_UPC_A,
+                                Barcode.FORMAT_UPC_E,
+                                Barcode.FORMAT_QR_CODE,
+                                Barcode.FORMAT_CODE_128,
+                                Barcode.FORMAT_CODE_39,
+                                Barcode.FORMAT_CODABAR
+                        )
+                        .build();
+        barcodeScanner = BarcodeScanning.getClient(options);
+        buttonScanBarcode.setOnClickListener(v -> {
+            checkCameraPermissionAndStartScanner();
+        });
+        editTextBarcode.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus) {
+                String barcode = Objects.requireNonNull(editTextBarcode.getText()).toString().trim();
+                if (!barcode.isEmpty()) {
+                    fetchProductDetailsFromApi(barcode);
+                }
+            }
+        });
+
+        Intent intent = getIntent();
+        if (intent != null && intent.hasExtra("PRODUCT_ID")) {
+            isEditMode = true;
+            currentProductId = intent.getIntExtra("PRODUCT_ID", -1);
+            String barcode = intent.getStringExtra("PRODUCT_BARCODE");
+            int quantity = intent.getIntExtra("PRODUCT_QUANTITY", 0);
+            String expiryDate = intent.getStringExtra("PRODUCT_EXPIRY_DATE");
+            String productName = intent.getStringExtra("PRODUCT_NAME");
+            String imageUrl = intent.getStringExtra("PRODUCT_IMAGE");
+
+            currentImageUrlFromApi = imageUrl;
+            currentProductNameFromApi = productName;
+
+            editTextProductName.setText(productName);
+            editTextBarcode.setText(barcode);
+            editTextQuantity.setText(String.valueOf(quantity));
+            editTextExpiryDate.setText(expiryDate);
+            if (expiryDate != null && !expiryDate.isEmpty()) {
+                calendar.setTime(Objects.requireNonNull(DateConverter.parseDisplayDateToDate(expiryDate)));
+            }
+            if (imageUrl != null && !imageUrl.trim().isEmpty()) {
+                Glide.with(AddProductActivity.this)
+                        .load(imageUrl)
+                        .into(imageViewProduct);
+                imageViewProduct.setVisibility(View.VISIBLE);
+            }
+            if (getSupportActionBar() != null) {
+                getSupportActionBar().setTitle("Modifica Prodotto");
+            }
+            buttonSaveProduct.setText("Aggiorna Prodotto");
+        } else {
+            isEditMode = false;
+            if (getSupportActionBar() != null) {
+                getSupportActionBar().setTitle(getString(R.string.add_product_title));
+            }
+            buttonSaveProduct.setText(getString(R.string.save_product_button));
+            editTextQuantity.setText(DEFAULT_QUANTITY);
+            editTextQuantity.setSelection(editTextQuantity.getText().length());
+
+        }
+
+        buttonAddCategory.setOnClickListener(v -> addNewCategoryTag());
+        editTextNewCategory.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                addNewCategoryTag();
+                return true;
+            }
+            return false;
+        });
+
+        Log.d("AddProductActivity", editTextBarcode.getText() + " " + editTextQuantity.getText() + " " + editTextExpiryDate.getText() + " " + imageViewProduct.toString());
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+        }
+
+        editTextExpiryDate.setOnClickListener(v -> showDatePickerDialog());
+        buttonScanBarcode.setOnClickListener(v -> checkCameraPermissionAndStartScanner());
+        buttonSaveProduct.setOnClickListener(v -> saveOrUpdateProduct());
+    }
+
     private void setupStorageLocationSpinner() {
         List<String> locationDisplayNames = new ArrayList<>();
         locationSpinnerAdapter = new ArrayAdapter<>(this,
@@ -294,12 +295,14 @@ public class AddProductActivity extends AppCompatActivity {
                     Log.d("AddProductActivity", "Location selezionata: " + availableLocations.get(position).getName() + " (Key: " + selectedStorageInternalKey + ")");
                 }
             }
+
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
                 selectedStorageInternalKey = null;
             }
         });
     }
+
     private void selectSpinnerLocationByInternalKey(String internalKey) {
         if (internalKey == null || availableLocations.isEmpty()) {
             return;
@@ -314,6 +317,7 @@ public class AddProductActivity extends AppCompatActivity {
         }
         Log.w("AddProductActivity", "Valore di location (internalKey) '" + internalKey + "' non trovato nello spinner dinamico.");
     }
+
     private void observeProductForEditMode() {
         addProductViewModel.getProductById(currentProductId).observe(this, productWithDefs -> {
             if (productWithDefs != null && productWithDefs.product != null) {
@@ -355,6 +359,7 @@ public class AddProductActivity extends AppCompatActivity {
             }
         });
     }
+
     private void updateChipGroup() {
         chipGroupCategories.removeAllViews(); // Pulisci i chip esistenti
         for (String tag : currentProductTagsSet) {
@@ -368,6 +373,7 @@ public class AddProductActivity extends AppCompatActivity {
             chipGroupCategories.addView(chip);
         }
     }
+
     private void addNewCategoryTag() {
         String newTag = editTextNewCategory.getText().toString().trim();
         if (!newTag.isEmpty()) {
@@ -380,6 +386,7 @@ public class AddProductActivity extends AppCompatActivity {
             editTextNewCategory.setText(""); // Pulisci l'EditText
         }
     }
+
     private void checkCameraPermissionAndStartScanner() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
             isCameraPermissionGranted = true;
@@ -447,7 +454,9 @@ public class AddProductActivity extends AppCompatActivity {
                         .addOnFailureListener(e -> {
                             Log.e("BarcodeScanner", "Errore nella scansione del codice a barre", e);
                         })
-                        .addOnCompleteListener(task -> {imageProxy.close();});
+                        .addOnCompleteListener(task -> {
+                            imageProxy.close();
+                        });
             }
         });
 
@@ -459,6 +468,7 @@ public class AddProductActivity extends AppCompatActivity {
             Log.e("AddProductActivity", "Fallimento nel bind dei casi d'uso della fotocamera", e);
         }
     }
+
     private void fetchProductDetailsFromApi(String barcode) {
         if (barcode == null || barcode.trim().isEmpty()) {
             Toast.makeText(this, "Codice a barre non valido", Toast.LENGTH_SHORT).show();
@@ -537,13 +547,15 @@ public class AddProductActivity extends AppCompatActivity {
             }
         });
     }
+
     private void clearProductApiFieldsAndData() {
         editTextProductName.setText("");
         imageViewProduct.setImageDrawable(null);
         imageViewProduct.setVisibility(View.GONE);
-        currentProductNameFromApi=null;
-        currentImageUrlFromApi=null;
+        currentProductNameFromApi = null;
+        currentImageUrlFromApi = null;
     }
+
     private void stopCamera(ProcessCameraProvider cameraProvider) {
         if (cameraProvider != null) {
             cameraProvider.unbindAll();
@@ -554,8 +566,12 @@ public class AddProductActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (cameraExecutor != null) {cameraExecutor.shutdown();}
-        if (barcodeScanner != null) {barcodeScanner.close();}
+        if (cameraExecutor != null) {
+            cameraExecutor.shutdown();
+        }
+        if (barcodeScanner != null) {
+            barcodeScanner.close();
+        }
     }
 
     private void saveOrUpdateProduct() {
@@ -596,21 +612,21 @@ public class AddProductActivity extends AppCompatActivity {
             Toast.makeText(this, "La data di scadenza è obbligatoria", Toast.LENGTH_SHORT).show();
             return;
         }
-        if(name.isEmpty()){
-            if (currentProductNameFromApi != null && !currentProductNameFromApi.isEmpty()){
-                name=currentProductNameFromApi;
+        if (name.isEmpty()) {
+            if (currentProductNameFromApi != null && !currentProductNameFromApi.isEmpty()) {
+                name = currentProductNameFromApi;
             } else {
-                name=barcode;
+                name = barcode;
             }
         }
         Product product = new Product(barcode, quantity, DateConverter.parseDisplayDateToTimestampMs(expiryDate), name, currentImageUrlFromApi, selectedStorageInternalKey);
         Log.d("AddProductActivity", "Salvataggio prodotto: " + product.toString());
         List<String> tagsToSave = new ArrayList<>(currentProductTagsSet);
-        if(isEditMode) {
+        if (isEditMode) {
             product.setId(currentProductId);
-            addProductViewModel.update(product,tagsToSave);
-        }else {
-            addProductViewModel.insert(product,tagsToSave);
+            addProductViewModel.update(product, tagsToSave);
+        } else {
+            addProductViewModel.insert(product, tagsToSave);
         }
         clearProductApiFieldsAndData();
         Intent resultIntent = new Intent();
@@ -620,30 +636,30 @@ public class AddProductActivity extends AppCompatActivity {
         finish();
     }
 
-
     private void showDatePickerDialog() {
-            DatePickerDialog.OnDateSetListener dateSetListener = (view, year, monthOfYear, dayOfMonth) -> {
-                calendar.set(Calendar.YEAR, year);
-                calendar.set(Calendar.MONTH, monthOfYear);
-                calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-                updateLabel();
-            };
+        DatePickerDialog.OnDateSetListener dateSetListener = (view, year, monthOfYear, dayOfMonth) -> {
+            calendar.set(Calendar.YEAR, year);
+            calendar.set(Calendar.MONTH, monthOfYear);
+            calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+            updateLabel();
+        };
 
-            new DatePickerDialog(AddProductActivity.this, dateSetListener,
-                    calendar.get(Calendar.YEAR),
-                    calendar.get(Calendar.MONTH),
-                    calendar.get(Calendar.DAY_OF_MONTH))
-                    .show();
-        }
-
-        private void updateLabel() {
-            editTextExpiryDate.setText(DateConverter.formatTimestampToDisplayDate(calendar.getTimeInMillis()));
-        }
-
-        @Override
-        public boolean onSupportNavigateUp() {
-            onBackPressed(); // O finish();
-            return true;
-        }
+        new DatePickerDialog(AddProductActivity.this, dateSetListener,
+                calendar.get(Calendar.YEAR),
+                calendar.get(Calendar.MONTH),
+                calendar.get(Calendar.DAY_OF_MONTH))
+                .show();
     }
+
+    private void updateLabel() {
+        editTextExpiryDate.setText(DateConverter.formatTimestampToDisplayDate(calendar.getTimeInMillis()));
+    }
+
+    @Override
+    public boolean onSupportNavigateUp() {
+        onBackPressed(); // O finish();
+        return true;
+    }
+
+}
 

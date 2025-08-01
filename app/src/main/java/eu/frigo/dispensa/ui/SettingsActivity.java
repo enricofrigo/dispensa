@@ -11,11 +11,11 @@ public class SettingsActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_settings); // Creeremo questo layout
+        setContentView(R.layout.activity_settings);
 
         Toolbar toolbar = findViewById(R.id.toolbar_settings);
         setSupportActionBar(toolbar);
-        Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true); // Pulsante Indietro
+        Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setTitle("Impostazioni");
 
 
@@ -27,7 +27,6 @@ public class SettingsActivity extends AppCompatActivity {
         }
     }
 
-    // Gestisce il click sul pulsante Indietro nella toolbar
     @Override
     public boolean onSupportNavigateUp() {
         onBackPressed();

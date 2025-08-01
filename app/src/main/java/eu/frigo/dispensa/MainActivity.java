@@ -44,7 +44,6 @@ import eu.frigo.dispensa.ui.SettingsActivity;
 import eu.frigo.dispensa.viewmodel.LocationViewModel;
 import eu.frigo.dispensa.viewmodel.ProductViewModel;
 
-import android.util.DisplayMetrics;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.ViewGroup;
@@ -56,16 +55,12 @@ import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity implements SearchView.OnQueryTextListener, ProductListAdapter.OnProductInteractionListener{
 
-    private AppBarConfiguration appBarConfiguration;
-    private ActivityMainBinding binding;
     private ProductViewModel productViewModel;
-    private ProductListAdapter adapter;
     private List<ProductWithCategoryDefinitions> allProductsList = new ArrayList<>();
     private SearchView searchView;
     private FloatingActionButton fab;
     private CoordinatorLayout mainCoordinatorLayout;
     private int originalFabBottomMargin;
-    private int currentLayoutManagerType;
     private MenuItem layoutToggleMenuItem;
     private ViewPager2 viewPager;
     private TabLayout tabLayout;

@@ -31,7 +31,6 @@ import java.util.UUID;
 
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.adapter.ReorderLocationsAdapter;
-import eu.frigo.dispensa.adapter.StorageLocationAdapter;
 import eu.frigo.dispensa.data.AppDatabase;
 import eu.frigo.dispensa.data.StorageLocation;
 import eu.frigo.dispensa.helper.SimpleItemTouchHelperCallback;
