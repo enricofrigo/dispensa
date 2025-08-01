@@ -5,6 +5,7 @@
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
+
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
@@ -39,8 +40,7 @@
         <activity
             android:name=".AddProductActivity"
             android:label="@string/add_product"
-            android:parentActivityName=".MainActivity"> <!-- Opzionale: per il comportamento del pulsante "su" -->
-            <!-- Potresti voler aggiungere android:theme="..." se usi un tema diverso -->
+            android:parentActivityName=".MainActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".MainActivity" />
