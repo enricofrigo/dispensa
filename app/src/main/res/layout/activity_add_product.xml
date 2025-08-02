@@ -138,6 +138,7 @@
                     android:inputType="date" />
 
             </com.google.android.material.textfield.TextInputLayout>
+
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -158,6 +159,56 @@
                 android:text="@string/hint_categorie_tags"
                 android:textAppearance="?attr/textAppearanceSubtitle1"/>
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/layoutShelfLife"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="@string/days_opened"
+                    android:layout_marginEnd="8dp"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/editTextShelfLifeAfterOpening"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="number" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Eventualmente, per la modalità modifica o visualizzazione dettaglio: -->
+                <Button
+                    android:id="@+id/buttonMarkAsOpened"
+                    style="@style/Widget.MaterialComponents.Button.Icon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/apri"
+                    android:padding="8dp"
+                    android:visibility="gone" />
+
+                <Button
+                    android:id="@+id/buttonMarkAsClosed"
+                    style="@style/Widget.MaterialComponents.Button.Icon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/chiudi"
+                    android:padding="8dp"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/textViewOpenedDate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/aperto_date"
+                android:visibility="gone" />
+
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/chipGroupCategories"
                 android:layout_width="match_parent"
@@ -165,8 +216,8 @@
                 android:layout_marginTop="8dp"
                 app:chipSpacingHorizontal="8dp"
                 app:chipSpacingVertical="4dp"/>
-            <!-- Chip verranno aggiunti programmaticamente -->
 
+            <!-- Chip verranno aggiunti programmaticamente -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

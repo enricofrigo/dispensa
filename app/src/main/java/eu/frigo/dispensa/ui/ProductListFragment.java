@@ -6,6 +6,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -44,6 +45,7 @@ public class ProductListFragment extends Fragment implements SharedPreferences.O
     public static final String LAYOUT_GRID = "grid";
     public static final String LAYOUT_LIST = "list";
     private List<ProductWithCategoryDefinitions> originalProductList = new ArrayList<>();
+    private LiveData<List<ProductWithCategoryDefinitions>> productsLiveData = new MutableLiveData<>();
     private String currentSearchQuery = "";
     private boolean isAllProductsMode = true;
     private long specificLocationId = -1L;
@@ -105,6 +107,16 @@ public class ProductListFragment extends Fragment implements SharedPreferences.O
         super.onViewCreated(view, savedInstanceState);
         observeProducts();
         observeSearchQuery();
+        productsLiveData.observe(getViewLifecycleOwner(), products -> {
+            if (products != null) {
+                originalProductList = new ArrayList<>(products); // AGGIORNAMENTO
+                Log.d("ProductListFragment", "Fragment (" + getUniqueKeyPart() + "): Prodotti originali ricevuti e originalProductList aggiornata. Dimensione: " + originalProductList.size());
+            } else {
+                originalProductList = new ArrayList<>();
+                Log.d("ProductListFragment", "Fragment (" + getUniqueKeyPart() + "): Prodotti ricevuti sono null. originalProductList svuotata.");
+            }
+            filterAndSubmitList();
+        });
     }
     private void setupRecyclerViewLayout() {
         if (recyclerView == null || productListAdapter == null) return;
@@ -151,7 +163,6 @@ public class ProductListFragment extends Fragment implements SharedPreferences.O
                 .unregisterOnSharedPreferenceChangeListener(this);
     }
     private void observeProducts() {
-        LiveData<List<ProductWithCategoryDefinitions>> productsLiveData;
 
         if (locationInternalKeyFilter == null || locationInternalKeyFilter.equals(LocationViewModel.ALL_PRODUCTS_INTERNAL_KEY)) {
             Log.d("ProductListFragment", "Observing ALL products for " + getUniqueKeyPart());

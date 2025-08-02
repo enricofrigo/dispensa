@@ -21,12 +21,27 @@
             app:summary="Seleziona l'ora in cui ricevere la notifica di scadenza."
             app:iconSpaceReserved="false"/>
 
+    </PreferenceCategory>
+    <PreferenceCategory app:title="Locations"
+        app:iconSpaceReserved="false">
         <Preference
             app:key="manage_locations"
-            app:title="Storage Location"
+            app:title="Gestione degli storage"
             app:summary="Aggiungi, modifica o riordina le tue location"
-            app:icon="@drawable/ic_add_24_white"
-            app:iconTint="@color/white"/>
+            app:iconSpaceReserved="false"/>
+
+    </PreferenceCategory>
+    <PreferenceCategory app:title="Aspetto"
+        app:iconSpaceReserved="false">
+
+        <ListPreference
+            app:key="theme_preference"
+            app:title="Tema dell'app"
+            app:summary="%s"
+            app:defaultValue="system"
+            app:entries="@array/theme_entries"
+            app:entryValues="@array/theme_values"
+            app:iconSpaceReserved="false"/>
 
     </PreferenceCategory>
 </PreferenceScreen>

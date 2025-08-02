@@ -10,6 +10,7 @@ import androidx.work.WorkManager;
 
 import java.util.concurrent.TimeUnit;
 
+import eu.frigo.dispensa.util.ThemeHelper;
 import eu.frigo.dispensa.work.ExpiryCheckWorker;
 import eu.frigo.dispensa.work.ExpiryCheckWorkerScheduler;
 
@@ -17,6 +18,7 @@ public class Dispensa extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        ThemeHelper.applyTheme(this);
         createNotificationChannel();
         ExpiryCheckWorkerScheduler.scheduleWorker(this);
     }

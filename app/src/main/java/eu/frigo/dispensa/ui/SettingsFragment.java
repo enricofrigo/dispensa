@@ -15,6 +15,7 @@ import com.google.android.material.timepicker.TimeFormat;
 import java.util.Calendar;
 import java.util.Locale;
 import eu.frigo.dispensa.R;
+import eu.frigo.dispensa.util.ThemeHelper;
 import eu.frigo.dispensa.work.ExpiryCheckWorkerScheduler;
 
 public class SettingsFragment extends PreferenceFragmentCompat implements SharedPreferences.OnSharedPreferenceChangeListener {
@@ -110,6 +111,11 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         if (key != null && key.equals(KEY_EXPIRY_DAYS_BEFORE)) {
+        }
+        String themeValue = sharedPreferences.getString(key, ThemeHelper.SYSTEM_DEFAULT_MODE);
+        ThemeHelper.applyThemePreference(themeValue); // Applica la modalità base
+        if (getActivity() != null) {
+            getActivity().recreate();
         }
     }
     @Override
