@@ -26,7 +26,9 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
-        android:fillViewport="true">
+        android:fillViewport="true"
+        android:clipToPadding="false"
+        android:paddingBottom="80dp">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -198,12 +200,15 @@
                     app:icon="@drawable/ic_add_circle_outline_24"/>
             </LinearLayout>
 
-            <Button
-                android:id="@+id/buttonSaveProduct"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:text="@string/save_product_button"/>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
+
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/buttonSaveProduct"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginTop="24dp"
+        android:text="@string/save_product_button"/>
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
