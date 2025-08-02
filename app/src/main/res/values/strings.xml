@@ -42,4 +42,9 @@
     <string name="version_format_simple">Versione: %1$s</string>
     <string name="version_not_available">Versione: N/D</string>
     <string name="versione_caricamento">Versione: Caricamento...</string>
+    <string name="apri">Apri</string>
+    <string name="aperto_date">Aperto il: N/D</string>
+    <string name="product_opened_icon_description">aperto</string>
+    <string name="days_opened">Validità dopo apertura (giorni)</string>
+    <string name="chiudi">Chiudi</string>
 </resources>

@@ -55,7 +55,14 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
     @Override
     public void onBindViewHolder(@NonNull ProductViewHolder holder, int position) {
         ProductWithCategoryDefinitions currentProduct = getItem(position);
+        holder.textViewExpiryDate.setText(String.format("Scade il: %s", currentProduct.product.getActualExpiryDateString()));
+        if (currentProduct.product.isOpened()) {
+            holder.imageViewOpenedIcon.setVisibility(View.VISIBLE);
+        } else {
+            holder.imageViewOpenedIcon.setVisibility(View.GONE);
+        }
         holder.bind(currentProduct);
+
     }
 
     static class ProductViewHolder extends RecyclerView.ViewHolder implements View.OnCreateContextMenuListener{
@@ -71,6 +78,7 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
         private static final long CLICK_TIMEOUT = 250;
         private final android.os.Handler clickHandler = new android.os.Handler(android.os.Looper.getMainLooper());
         private int clickExecutionState = 0;
+        private ImageView imageViewOpenedIcon;
 
         ProductViewHolder(View itemView, OnProductInteractionListener listener) {
             super(itemView);
@@ -80,6 +88,7 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
             textViewProductName = itemView.findViewById(R.id.textViewItemProductName);
             imageViewProduct = itemView.findViewById(R.id.imageViewItemProduct);
             cardProductItem = itemView.findViewById(R.id.card_product_item);
+            imageViewOpenedIcon = itemView.findViewById(R.id.imageViewOpenedIcon);
             itemView.setOnCreateContextMenuListener(this);
         }
 
@@ -106,7 +115,7 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
             }
             
             if (product.product.getExpiryDate() != null) {
-                textViewExpiryDate.setText(String.format("Scad: %s", DateConverter.formatTimestampToDisplayDate(product.product.getExpiryDate())));
+                textViewExpiryDate.setText(String.format("Scad: %s", product.product.getActualExpiryDateString()));
                 textViewExpiryDate.setVisibility(View.VISIBLE);
 
                 long todayTimestamp = DateConverter.getTodayNormalizedTimestamp(); // Mezzogiorno di oggi
@@ -229,6 +238,8 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
                     oldItem.product.getProductName().equals(newItem.product.getProductName()) &&
                     (oldItem.product.getImageUrl() == null || oldItem.product.getImageUrl().equals(newItem.product.getImageUrl())) &&
                     oldItem.product.getExpiryDate().equals(newItem.product.getExpiryDate()) &&
+                    (oldItem.product.getOpenedDate()==null || oldItem.product.getOpenedDate().equals(newItem.product.getOpenedDate())) &&
+                    oldItem.product.getShelfLifeAfterOpeningDays() == newItem.product.getShelfLifeAfterOpeningDays() &&
                     (oldItem.product.getStorageLocation()==null || oldItem.product.getStorageLocation().equals(newItem.product.getStorageLocation()));
         }
     }

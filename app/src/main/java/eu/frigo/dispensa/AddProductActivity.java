@@ -16,6 +16,7 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -43,10 +44,13 @@ import com.google.mlkit.vision.barcode.BarcodeScanning;
 import com.google.mlkit.vision.barcode.common.Barcode;
 import com.google.mlkit.vision.common.InputImage;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -98,6 +102,12 @@ public class AddProductActivity extends AppCompatActivity {
     private ArrayAdapter<String> locationSpinnerAdapter;
     private String selectedStorageInternalKey;
     private ProductWithCategoryDefinitions productBeingEdited;
+    private TextInputEditText editTextShelfLifeAfterOpening;
+    private Button buttonMarkAsOpened;
+    private Button buttonMarkAsClosed;
+    private TextView textViewOpenedDate;
+    private Long currentOpenedDate = 0L;
+    private int currentShelfLifeDays = -1;
     private final ActivityResultLauncher<String> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
                 if (isGranted) {
@@ -152,6 +162,13 @@ public class AddProductActivity extends AppCompatActivity {
             Log.d("AddProductActivity", "Ricevuta location preselezionata: " + preselectedLocationValue);
         }
         setupStorageLocationSpinner();
+
+        editTextShelfLifeAfterOpening = findViewById(R.id.editTextShelfLifeAfterOpening);
+        buttonMarkAsOpened = findViewById(R.id.buttonMarkAsOpened);
+        buttonMarkAsClosed = findViewById(R.id.buttonMarkAsClosed);
+        textViewOpenedDate = findViewById(R.id.textViewOpenedDate);
+
+
         chipGroupCategories = findViewById(R.id.chipGroupCategories);
         editTextNewCategory = findViewById(R.id.editTextNewCategory);
         buttonAddCategory = findViewById(R.id.buttonAddCategory);
@@ -218,12 +235,36 @@ public class AddProductActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setDisplayShowHomeEnabled(true);
         }
-
+        if (buttonMarkAsOpened != null) {
+            buttonMarkAsOpened.setOnClickListener(v -> {
+                currentOpenedDate = System.currentTimeMillis();
+                updateOpenedDateUI(currentOpenedDate);
+            });
+        }
         editTextExpiryDate.setOnClickListener(v -> showDatePickerDialog());
         buttonScanBarcode.setOnClickListener(v -> checkCameraPermissionAndStartScanner());
+        buttonMarkAsClosed.setOnClickListener(v -> {currentOpenedDate = 0L;updateOpenedDateUI(currentOpenedDate);});
         fabButtonSaveProduct.setOnClickListener(v -> saveOrUpdateProduct());
     }
+    private void updateOpenedDateUI(Long openedTimestamp) {
+        if (buttonMarkAsOpened == null || textViewOpenedDate == null) return; // Se gli elementi non sono in questo layout
 
+        if (openedTimestamp != null && openedTimestamp > 0) {
+            textViewOpenedDate.setText(String.format("Aperto il: %s", formatDate(openedTimestamp)));
+            textViewOpenedDate.setVisibility(View.VISIBLE);
+            buttonMarkAsOpened.setVisibility(View.GONE);
+            buttonMarkAsClosed.setVisibility(View.VISIBLE);
+        } else {
+            textViewOpenedDate.setVisibility(View.GONE);
+            buttonMarkAsOpened.setVisibility(View.VISIBLE);
+            buttonMarkAsClosed.setVisibility(View.GONE);
+        }
+    }
+    private String formatDate(Long timestamp) {
+        if (timestamp == null || timestamp <= 0) return "N/D";
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.ITALY);
+        return sdf.format(new Date(timestamp));
+    }
     private void setupStorageLocationSpinner() {
         List<String> locationDisplayNames = new ArrayList<>();
         locationSpinnerAdapter = new ArrayAdapter<>(this,
@@ -292,9 +333,9 @@ public class AddProductActivity extends AppCompatActivity {
         for (int i = 0; i < availableLocations.size(); i++) {
             if (internalKey.equals(availableLocations.get(i).getInternalKey())) {
                 spinnerStorageLocation.setSelection(i);
-                selectedStorageInternalKey = internalKey; // Assicurati che sia impostato anche qui
+                selectedStorageInternalKey = internalKey;
                 Log.d("AddProductActivity", "Spinner preselezionato (dinamicamente) su: " + availableLocations.get(i).getName());
-                return; // Trovato e selezionato
+                return;
             }
         }
         Log.w("AddProductActivity", "Valore di location (internalKey) '" + internalKey + "' non trovato nello spinner dinamico.");
@@ -322,6 +363,16 @@ public class AddProductActivity extends AppCompatActivity {
                             .into(imageViewProduct);
                     imageViewProduct.setVisibility(View.VISIBLE);
                 }
+
+                currentOpenedDate = productBeingEdited.product.getOpenedDate();
+                currentShelfLifeDays = productBeingEdited.product.getShelfLifeAfterOpeningDays();
+
+                if (currentShelfLifeDays > 0) {
+                    editTextShelfLifeAfterOpening.setText(String.valueOf(currentShelfLifeDays));
+                } else {
+                    editTextShelfLifeAfterOpening.setText("");
+                }
+                updateOpenedDateUI(currentOpenedDate);
 
                 if (productBeingEdited.categoryDefinitions != null) {
                     currentProductTagsSet.clear();
@@ -362,10 +413,10 @@ public class AddProductActivity extends AppCompatActivity {
             if (!newTag.matches("^[a-z]{2}:.*")) {
                 newTag = "it:" + newTag;
             }
-            if (currentProductTagsSet.add(newTag)) { // .add() di Set restituisce true se l'elemento è stato aggiunto (non era già presente)
-                updateChipGroup(); // Aggiorna la UI
+            if (currentProductTagsSet.add(newTag)) {
+                updateChipGroup();
             }
-            editTextNewCategory.setText(""); // Pulisci l'EditText
+            editTextNewCategory.setText("");
         }
     }
 
@@ -561,7 +612,18 @@ public class AddProductActivity extends AppCompatActivity {
         String name = editTextProductName.getText() != null ? editTextProductName.getText().toString().trim() : "";
         String quantityStr = editTextQuantity.getText() != null ? editTextQuantity.getText().toString().trim() : "";
         String expiryDate = editTextExpiryDate.getText() != null ? editTextExpiryDate.getText().toString().trim() : "";
-
+        String shelfLifeStr = editTextShelfLifeAfterOpening.getText() != null ? editTextShelfLifeAfterOpening.getText().toString().trim() : "";
+        int shelfLifeDays = -1;
+        if (!shelfLifeStr.isEmpty()) {
+            try {
+                shelfLifeDays = Integer.parseInt(shelfLifeStr);
+                if (shelfLifeDays < 0) shelfLifeDays = -1;
+            } catch (NumberFormatException e) {
+                editTextShelfLifeAfterOpening.setError("Inserisci un numero valido");
+                editTextShelfLifeAfterOpening.requestFocus();
+                return;
+            }
+        }
         if (selectedStorageInternalKey == null || selectedStorageInternalKey.isEmpty()) {
             Toast.makeText(this, "Seleziona una posizione di archiviazione", Toast.LENGTH_SHORT).show();
             return;
@@ -601,7 +663,7 @@ public class AddProductActivity extends AppCompatActivity {
                 name = barcode;
             }
         }
-        Product product = new Product(barcode, quantity, DateConverter.parseDisplayDateToTimestampMs(expiryDate), name, currentImageUrlFromApi, selectedStorageInternalKey);
+        Product product = new Product(barcode, quantity, DateConverter.parseDisplayDateToTimestampMs(expiryDate), name, currentImageUrlFromApi, selectedStorageInternalKey, currentOpenedDate, shelfLifeDays);
         Log.d("AddProductActivity", "Salvataggio prodotto: " + product.toString());
         List<String> tagsToSave = new ArrayList<>(currentProductTagsSet);
         if (isEditMode) {

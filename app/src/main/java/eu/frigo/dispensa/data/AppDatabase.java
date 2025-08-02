@@ -16,7 +16,7 @@ import java.util.concurrent.Executors;
 
 @Database(entities = {Product.class, CategoryDefinition.class,
         ProductCategoryLink.class, StorageLocation.class },
-        version = 6, exportSchema = false)
+        version = 8, exportSchema = true)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract ProductDao productDao();
@@ -29,15 +29,10 @@ public abstract class AppDatabase extends RoomDatabase {
     public static final ExecutorService databaseWriteExecutor =
             Executors.newFixedThreadPool(NUMBER_OF_THREADS);
 
-    static final Migration MIGRATION_5_6 = new Migration(5, 6) {
+    static final Migration MIGRATION_7_8 = new Migration(7, 8) {
         @Override
         public void migrate(SupportSQLiteDatabase database) {
-            database.execSQL("CREATE TABLE IF NOT EXISTS `storage_locations` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT, `internal_key` TEXT, `order_index` INTEGER NOT NULL, `is_default` INTEGER NOT NULL DEFAULT 0, `is_predefined` INTEGER NOT NULL DEFAULT 0)");
-            database.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_storage_locations_internal_key` ON `storage_locations` (`internal_key`)");
-            database.execSQL("CREATE INDEX IF NOT EXISTS `index_storage_locations_order_index` ON `storage_locations` (`order_index`)");
-
-            // Qui potresti anche voler popolare le location predefinite
-            // se non lo fai nel RoomDatabase.Callback
+            database.execSQL("CREATE INDEX IF NOT EXISTS index_products_location_internal_key ON products(storage_location)");
         }
     };
     public static AppDatabase getDatabase(final Context context) {
@@ -46,8 +41,8 @@ public abstract class AppDatabase extends RoomDatabase {
                 if (INSTANCE == null) {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                                     AppDatabase.class, "dispensa_database")
-                            .addMigrations(MIGRATION_5_6)
-                            .addCallback(sRoomDatabaseCallback)
+                            .addMigrations(MIGRATION_7_8)
+                            //.addCallback(sRoomDatabaseCallback)
                             //.fallbackToDestructiveMigration()
                             .build();
                 }
