@@ -34,6 +34,8 @@ import androidx.media3.common.util.Log;
 import com.bumptech.glide.Glide;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions;
@@ -72,7 +74,7 @@ public class AddProductActivity extends AppCompatActivity {
     private TextInputEditText editTextQuantity;
     private static final String DEFAULT_QUANTITY = "1";
     private TextInputEditText editTextExpiryDate;
-    private Button buttonSaveProduct;
+    private ExtendedFloatingActionButton fabButtonSaveProduct;
     private Toolbar toolbarAddProduct;
     private AddProductViewModel addProductViewModel;
     private int currentProductId = -1;
@@ -153,7 +155,7 @@ public class AddProductActivity extends AppCompatActivity {
         chipGroupCategories = findViewById(R.id.chipGroupCategories);
         editTextNewCategory = findViewById(R.id.editTextNewCategory);
         buttonAddCategory = findViewById(R.id.buttonAddCategory);
-        buttonSaveProduct = findViewById(R.id.buttonSaveProduct);
+        fabButtonSaveProduct = findViewById(R.id.buttonSaveProduct);
 
         BarcodeScannerOptions options =
                 new BarcodeScannerOptions.Builder()
@@ -185,40 +187,20 @@ public class AddProductActivity extends AppCompatActivity {
         if (intent != null && intent.hasExtra("PRODUCT_ID")) {
             isEditMode = true;
             currentProductId = intent.getIntExtra("PRODUCT_ID", -1);
-            String barcode = intent.getStringExtra("PRODUCT_BARCODE");
-            int quantity = intent.getIntExtra("PRODUCT_QUANTITY", 0);
-            String expiryDate = intent.getStringExtra("PRODUCT_EXPIRY_DATE");
-            String productName = intent.getStringExtra("PRODUCT_NAME");
-            String imageUrl = intent.getStringExtra("PRODUCT_IMAGE");
-
-            currentImageUrlFromApi = imageUrl;
-            currentProductNameFromApi = productName;
-
-            editTextProductName.setText(productName);
-            editTextBarcode.setText(barcode);
-            editTextQuantity.setText(String.valueOf(quantity));
-            editTextExpiryDate.setText(expiryDate);
-            if (expiryDate != null && !expiryDate.isEmpty()) {
-                calendar.setTime(Objects.requireNonNull(DateConverter.parseDisplayDateToDate(expiryDate)));
-            }
-            if (imageUrl != null && !imageUrl.trim().isEmpty()) {
-                Glide.with(AddProductActivity.this)
-                        .load(imageUrl)
-                        .into(imageViewProduct);
-                imageViewProduct.setVisibility(View.VISIBLE);
-            }
             if (getSupportActionBar() != null) {
                 getSupportActionBar().setTitle("Modifica Prodotto");
             }
-            buttonSaveProduct.setText("Aggiorna Prodotto");
+            fabButtonSaveProduct.setText("Aggiorna Prodotto");
+            observeProductForEditMode();
         } else {
             isEditMode = false;
             if (getSupportActionBar() != null) {
                 getSupportActionBar().setTitle(getString(R.string.add_product_title));
             }
-            buttonSaveProduct.setText(getString(R.string.save_product_button));
+            fabButtonSaveProduct.setText(getString(R.string.save_product_button));
             editTextQuantity.setText(DEFAULT_QUANTITY);
             editTextQuantity.setSelection(editTextQuantity.getText().length());
+            checkCameraPermissionAndStartScanner(); // Avvia la fotocamera
 
         }
 
@@ -239,7 +221,7 @@ public class AddProductActivity extends AppCompatActivity {
 
         editTextExpiryDate.setOnClickListener(v -> showDatePickerDialog());
         buttonScanBarcode.setOnClickListener(v -> checkCameraPermissionAndStartScanner());
-        buttonSaveProduct.setOnClickListener(v -> saveOrUpdateProduct());
+        fabButtonSaveProduct.setOnClickListener(v -> saveOrUpdateProduct());
     }
 
     private void setupStorageLocationSpinner() {
