@@ -29,6 +29,14 @@ public abstract class AppDatabase extends RoomDatabase {
     public static final ExecutorService databaseWriteExecutor =
             Executors.newFixedThreadPool(NUMBER_OF_THREADS);
 
+    static final Migration MIGRATION_6_7 = new Migration(6,7) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("ALTER TABLE products ADD COLUMN opened_date INTEGER DEFAULT 0 NOT NULL");
+            database.execSQL("ALTER TABLE products ADD COLUMN shelf_life_after_opening_days INTEGER DEFAULT -1 NOT NULL");
+        }
+    };
+
     static final Migration MIGRATION_7_8 = new Migration(7, 8) {
         @Override
         public void migrate(SupportSQLiteDatabase database) {
@@ -41,6 +49,7 @@ public abstract class AppDatabase extends RoomDatabase {
                 if (INSTANCE == null) {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                                     AppDatabase.class, "dispensa_database")
+                            .addMigrations(MIGRATION_6_7)
                             .addMigrations(MIGRATION_7_8)
                             //.addCallback(sRoomDatabaseCallback)
                             //.fallbackToDestructiveMigration()
