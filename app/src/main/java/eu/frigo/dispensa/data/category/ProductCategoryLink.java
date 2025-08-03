@@ -1,9 +1,11 @@
-package eu.frigo.dispensa.data;
+package eu.frigo.dispensa.data.category;
 
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.ForeignKey;
 import androidx.room.Index;
+
+import eu.frigo.dispensa.data.product.Product;
 
 @Entity(tableName = "product_category_links",
         primaryKeys = {"product_id_fk", "category_id_fk"}, // Chiave primaria composta

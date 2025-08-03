@@ -10,7 +10,7 @@ import androidx.core.app.NotificationManagerCompat;
 import androidx.preference.PreferenceManager;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
-import java.text.ParseException;
+
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -18,12 +18,12 @@ import java.util.List;
 import java.util.Locale;
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.data.AppDatabase;
-import eu.frigo.dispensa.data.Product;
-import eu.frigo.dispensa.data.ProductDao;
+import eu.frigo.dispensa.data.product.Product;
+import eu.frigo.dispensa.data.product.ProductDao;
 import android.Manifest; // Per il permesso delle notifiche
 import android.app.PendingIntent;
 import android.content.Intent;
-import eu.frigo.dispensa.MainActivity;
+import eu.frigo.dispensa.activity.MainActivity;
 import eu.frigo.dispensa.ui.SettingsFragment;
 
 

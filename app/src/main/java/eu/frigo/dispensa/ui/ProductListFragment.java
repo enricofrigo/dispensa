@@ -24,10 +24,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import eu.frigo.dispensa.MainActivity;
+import eu.frigo.dispensa.activity.MainActivity;
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.adapter.ProductListAdapter;
-import eu.frigo.dispensa.data.ProductWithCategoryDefinitions;
+import eu.frigo.dispensa.data.category.ProductWithCategoryDefinitions;
 import eu.frigo.dispensa.viewmodel.LocationViewModel;
 import eu.frigo.dispensa.viewmodel.ProductViewModel;
 

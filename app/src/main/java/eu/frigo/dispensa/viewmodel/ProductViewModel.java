@@ -8,20 +8,20 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.media3.common.util.Log;
 
 import java.util.List;
-import eu.frigo.dispensa.data.Product;
-import eu.frigo.dispensa.data.ProductRepository;
-import eu.frigo.dispensa.data.ProductWithCategoryDefinitions;
+import eu.frigo.dispensa.data.product.Product;
+import eu.frigo.dispensa.data.Repository;
+import eu.frigo.dispensa.data.category.ProductWithCategoryDefinitions;
 
 public class ProductViewModel extends AndroidViewModel {
 
-    private ProductRepository repository;
+    private Repository repository;
     private LiveData<List<ProductWithCategoryDefinitions>> allProducts;
     private final MutableLiveData<String> searchQuery = new MutableLiveData<>(""); // Inizializza con stringa vuota
 
 
     public ProductViewModel(@NonNull Application application) {
         super(application);
-        repository = new ProductRepository(application); // Usa il tuo Repository
+        repository = new Repository(application); // Usa il tuo Repository
         allProducts = repository.getAllProducts();
     }
 

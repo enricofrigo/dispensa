@@ -24,7 +24,7 @@ import com.google.android.material.card.MaterialCardView;
 import java.util.Calendar;
 
 import eu.frigo.dispensa.R;
-import eu.frigo.dispensa.data.ProductWithCategoryDefinitions;
+import eu.frigo.dispensa.data.category.ProductWithCategoryDefinitions;
 import eu.frigo.dispensa.ui.SettingsFragment;
 import eu.frigo.dispensa.util.DateConverter;
 

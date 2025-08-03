@@ -1,4 +1,4 @@
-package eu.frigo.dispensa;
+package eu.frigo.dispensa.activity;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -36,7 +36,6 @@ import com.bumptech.glide.Glide;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions;
@@ -57,11 +56,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import eu.frigo.dispensa.data.CategoryDefinition;
-import eu.frigo.dispensa.data.PredefinedData;
-import eu.frigo.dispensa.data.Product;
-import eu.frigo.dispensa.data.ProductWithCategoryDefinitions;
-import eu.frigo.dispensa.data.StorageLocation;
+import eu.frigo.dispensa.R;
+import eu.frigo.dispensa.data.category.CategoryDefinition;
+import eu.frigo.dispensa.data.product.Product;
+import eu.frigo.dispensa.data.category.ProductWithCategoryDefinitions;
+import eu.frigo.dispensa.data.storage.StorageLocation;
 import eu.frigo.dispensa.network.OpenFoodFactsApiService;
 import eu.frigo.dispensa.network.RetrofitClient;
 import eu.frigo.dispensa.network.model.OpenFoodFactsProductResponse;

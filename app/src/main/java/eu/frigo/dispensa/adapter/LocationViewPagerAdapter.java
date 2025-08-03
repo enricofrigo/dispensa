@@ -9,7 +9,7 @@ import androidx.viewpager2.adapter.FragmentStateAdapter;
 import java.util.ArrayList;
 import java.util.List;
 
-import eu.frigo.dispensa.data.StorageLocation;
+import eu.frigo.dispensa.data.storage.StorageLocation;
 import eu.frigo.dispensa.ui.ProductListFragment; // Il fragment che mostra i prodotti per una location
 
 public class LocationViewPagerAdapter extends FragmentStateAdapter {

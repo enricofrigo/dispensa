@@ -1,4 +1,4 @@
-package eu.frigo.dispensa.data;
+package eu.frigo.dispensa.data.category;
 
 import androidx.lifecycle.LiveData;
 import androidx.room.Dao;

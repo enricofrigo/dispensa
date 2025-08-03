@@ -1,4 +1,4 @@
-package eu.frigo.dispensa.helper;
+package eu.frigo.dispensa.util;
 
 import android.graphics.Canvas;
 import androidx.annotation.NonNull;
@@ -9,7 +9,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
 import eu.frigo.dispensa.adapter.ReorderLocationsAdapter;
-import eu.frigo.dispensa.data.StorageLocation;
+import eu.frigo.dispensa.data.storage.StorageLocation;
 
 public class SimpleItemTouchHelperCallback extends ItemTouchHelper.Callback {
 

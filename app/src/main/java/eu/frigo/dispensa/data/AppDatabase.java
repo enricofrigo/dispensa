@@ -14,6 +14,16 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import eu.frigo.dispensa.data.category.CategoryDefinition;
+import eu.frigo.dispensa.data.category.CategoryDefinitionDao;
+import eu.frigo.dispensa.data.category.ProductCategoryLink;
+import eu.frigo.dispensa.data.category.ProductCategoryLinkDao;
+import eu.frigo.dispensa.data.product.Product;
+import eu.frigo.dispensa.data.product.ProductDao;
+import eu.frigo.dispensa.data.storage.PredefinedData;
+import eu.frigo.dispensa.data.storage.StorageLocation;
+import eu.frigo.dispensa.data.storage.StorageLocationDao;
+
 @Database(entities = {Product.class, CategoryDefinition.class,
         ProductCategoryLink.class, StorageLocation.class },
         version = 8, exportSchema = true)

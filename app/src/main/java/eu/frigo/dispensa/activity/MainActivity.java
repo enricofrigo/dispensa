@@ -1,4 +1,4 @@
-package eu.frigo.dispensa;
+package eu.frigo.dispensa.activity;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -29,16 +29,15 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.media3.common.util.Log;
-import androidx.navigation.ui.AppBarConfiguration;
 import androidx.preference.PreferenceManager;
 import androidx.viewpager2.widget.ViewPager2;
 
+import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.adapter.LocationViewPagerAdapter;
 import eu.frigo.dispensa.adapter.ProductListAdapter;
-import eu.frigo.dispensa.data.Product;
-import eu.frigo.dispensa.data.ProductWithCategoryDefinitions;
-import eu.frigo.dispensa.data.StorageLocation;
-import eu.frigo.dispensa.databinding.ActivityMainBinding;
+import eu.frigo.dispensa.data.product.Product;
+import eu.frigo.dispensa.data.category.ProductWithCategoryDefinitions;
+import eu.frigo.dispensa.data.storage.StorageLocation;
 import eu.frigo.dispensa.ui.ProductListFragment;
 import eu.frigo.dispensa.ui.SettingsActivity;
 import eu.frigo.dispensa.viewmodel.LocationViewModel;
