@@ -1,4 +1,4 @@
-package eu.frigo.dispensa.data;
+package eu.frigo.dispensa.data.category;
 
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;

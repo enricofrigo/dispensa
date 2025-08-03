@@ -1,4 +1,4 @@
-package eu.frigo.dispensa.data;
+package eu.frigo.dispensa.data.product;
 
 import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
@@ -10,6 +10,8 @@ import androidx.room.Update;
 import androidx.room.Delete;
 
 import java.util.List;
+
+import eu.frigo.dispensa.data.category.ProductWithCategoryDefinitions;
 
 @Dao
 public interface ProductDao {

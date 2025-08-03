@@ -1,4 +1,4 @@
-package eu.frigo.dispensa.data; // Crea un package 'data' o simile
+package eu.frigo.dispensa.data.product; // Crea un package 'data' o simile
 
 import androidx.annotation.NonNull;
 import androidx.room.Entity;

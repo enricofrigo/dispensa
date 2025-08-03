@@ -8,8 +8,8 @@ import androidx.lifecycle.MediatorLiveData;
 
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.data.AppDatabase;
-import eu.frigo.dispensa.data.ProductRepository;
-import eu.frigo.dispensa.data.StorageLocation;
+import eu.frigo.dispensa.data.Repository;
+import eu.frigo.dispensa.data.storage.StorageLocation;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,7 +18,7 @@ import java.util.concurrent.Executors;
 
 public class LocationViewModel extends AndroidViewModel {
 
-    private ProductRepository repository;
+    private Repository repository;
     private MediatorLiveData<List<StorageLocation>> locationsForTabs;
     private LiveData<List<StorageLocation>> dbRealLocationsSorted;
     private LiveData<StorageLocation> defaultLocation;
@@ -27,7 +27,7 @@ public class LocationViewModel extends AndroidViewModel {
 
     public LocationViewModel(@NonNull Application application) {
         super(application);
-        repository = new ProductRepository(application);
+        repository = new Repository(application);
         defaultLocation = repository.getDefaultLocation();
         locationsForTabs = new MediatorLiveData<>();
         dbRealLocationsSorted = repository.getAllLocationsSorted();

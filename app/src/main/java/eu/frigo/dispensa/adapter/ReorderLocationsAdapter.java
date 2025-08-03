@@ -14,7 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.Collections;
 import java.util.List;
 import eu.frigo.dispensa.R;
-import eu.frigo.dispensa.data.StorageLocation;
+import eu.frigo.dispensa.data.storage.StorageLocation;
 
 public class ReorderLocationsAdapter extends RecyclerView.Adapter<ReorderLocationsAdapter.ViewHolder> {
 

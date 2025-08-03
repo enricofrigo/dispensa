@@ -4,11 +4,8 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -32,8 +29,8 @@ import java.util.UUID;
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.adapter.ReorderLocationsAdapter;
 import eu.frigo.dispensa.data.AppDatabase;
-import eu.frigo.dispensa.data.StorageLocation;
-import eu.frigo.dispensa.helper.SimpleItemTouchHelperCallback;
+import eu.frigo.dispensa.data.storage.StorageLocation;
+import eu.frigo.dispensa.util.SimpleItemTouchHelperCallback;
 import eu.frigo.dispensa.viewmodel.LocationViewModel;
 
 public class ManageLocationsFragment extends Fragment implements

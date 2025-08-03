@@ -6,16 +6,25 @@ import androidx.media3.common.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
-public class ProductRepository {
+import eu.frigo.dispensa.data.category.CategoryDefinition;
+import eu.frigo.dispensa.data.category.CategoryDefinitionDao;
+import eu.frigo.dispensa.data.category.ProductCategoryLink;
+import eu.frigo.dispensa.data.category.ProductCategoryLinkDao;
+import eu.frigo.dispensa.data.category.ProductWithCategoryDefinitions;
+import eu.frigo.dispensa.data.product.Product;
+import eu.frigo.dispensa.data.product.ProductDao;
+import eu.frigo.dispensa.data.storage.StorageLocation;
+import eu.frigo.dispensa.data.storage.StorageLocationDao;
+
+public class Repository {
     private final ProductDao productDao;
     private final CategoryDefinitionDao categoryDefinitionDao;
     private final ProductCategoryLinkDao productCategoryLinkDao;
     private final StorageLocationDao storageLocationDao;
     private final LiveData<List<ProductWithCategoryDefinitions>> allProducts;
 
-    public ProductRepository(Application application) {
+    public Repository(Application application) {
         AppDatabase db = AppDatabase.getDatabase(application);
         productDao = db.productDao();
         categoryDefinitionDao = db.categoryDefinitionDao();

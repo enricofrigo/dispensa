@@ -6,18 +6,18 @@ import androidx.lifecycle.LiveData;
 
 import java.util.List;
 
-import eu.frigo.dispensa.data.Product;
-import eu.frigo.dispensa.data.ProductRepository;
-import eu.frigo.dispensa.data.ProductWithCategoryDefinitions;
-import eu.frigo.dispensa.data.StorageLocation;
+import eu.frigo.dispensa.data.product.Product;
+import eu.frigo.dispensa.data.Repository;
+import eu.frigo.dispensa.data.category.ProductWithCategoryDefinitions;
+import eu.frigo.dispensa.data.storage.StorageLocation;
 
 public class AddProductViewModel extends AndroidViewModel {
-    private ProductRepository repository;
+    private Repository repository;
     private LiveData<List<StorageLocation>> allSelectableLocations;
 
     public AddProductViewModel (Application application) {
         super(application);
-        repository = new ProductRepository(application);
+        repository = new Repository(application);
         allSelectableLocations = repository.getAllSelectableLocations();
     }
 

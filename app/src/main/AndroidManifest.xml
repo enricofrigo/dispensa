@@ -23,13 +23,13 @@
         <activity
             android:name=".ui.SettingsActivity"
             android:label="Impostazioni"
-            android:parentActivityName=".MainActivity">
+            android:parentActivityName=".activity.MainActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value=".MainActivity" />
+                android:value=".activity.MainActivity" />
         </activity>
         <activity
-            android:name=".MainActivity"
+            android:name=".activity.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.Dispensa">
             <intent-filter>
@@ -38,12 +38,12 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".AddProductActivity"
+            android:name=".activity.AddProductActivity"
             android:label="@string/add_product"
-            android:parentActivityName=".MainActivity">
+            android:parentActivityName=".activity.MainActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value=".MainActivity" />
+                android:value=".activity.MainActivity" />
         </activity>
     </application>
 </manifest>

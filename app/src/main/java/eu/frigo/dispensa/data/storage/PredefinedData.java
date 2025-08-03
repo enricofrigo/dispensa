@@ -1,4 +1,4 @@
-package eu.frigo.dispensa.data;
+package eu.frigo.dispensa.data.storage;
 
 import java.util.ArrayList;
 import java.util.List;

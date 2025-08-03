@@ -1,10 +1,12 @@
-package eu.frigo.dispensa.data;
+package eu.frigo.dispensa.data.category;
 
 import androidx.room.Embedded;
 import androidx.room.Junction;
 import androidx.room.Relation;
 
 import java.util.List;
+
+import eu.frigo.dispensa.data.product.Product;
 
 public class ProductWithCategoryDefinitions {
     @Embedded
