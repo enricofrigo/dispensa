@@ -77,10 +77,7 @@ public class ManageLocationsFragment extends Fragment implements
 
         fabAddLocation.setOnClickListener(v -> showAddLocationDialog());
 
-        // Configura il titolo o il pulsante di navigazione sulla toolbar
-        toolbar.setTitle("Store location management");
-        // Se hai un menu nella toolbar:
-        // toolbar.setOnMenuItemClickListener(item -> { ... });
+        toolbar.setTitle(getString(R.string.title_manage_locations));
     }
 
     private void setupRecyclerView() {
@@ -110,40 +107,36 @@ public class ManageLocationsFragment extends Fragment implements
 
     private void showAddEditLocationDialog(@Nullable final StorageLocation locationToEdit) {
         AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
-        builder.setTitle(locationToEdit == null ? "Aggiungi Nuova Location" : "Modifica Location");
+        builder.setTitle(locationToEdit == null ? getString(R.string.add_new_location) : getString(R.string.edit_location));
 
         final EditText input = new EditText(requireContext());
         input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_WORDS);
         if (locationToEdit != null) {
             input.setText(locationToEdit.name);
-            input.setSelection(input.getText().length()); // Posiziona cursore alla fine
+            input.setSelection(input.getText().length());
         } else {
-            input.setHint("Nome della location");
+            input.setHint(getString(R.string.hint_new_location));
         }
         builder.setView(input);
 
-        builder.setPositiveButton(locationToEdit == null ? "Aggiungi" : "Salva", (dialog, which) -> {
+        builder.setPositiveButton(locationToEdit == null ? getString(R.string.add) : getString(R.string.save), (dialog, which) -> {
             String locationName = input.getText().toString().trim();
             if (locationName.isEmpty()) {
-                Toast.makeText(getContext(), "Il nome non può essere vuoto", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), getString(R.string.error_empty_location), Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            if (locationToEdit == null) { // Aggiungi nuova
-                // Genera una chiave interna semplice (potresti volerla più robusta/univoca)
+            if (locationToEdit == null) {
                 String internalKey = "CUSTOM_" + locationName.toUpperCase().replaceAll("\\s+", "_") + "_" + System.currentTimeMillis() % 10000;
-                // L'orderIndex sarà gestito dal DB o impostato al massimo + 1
-                // Per ora, assumiamo che le nuove vengano aggiunte in fondo.
-                // Il ViewModel/Repository dovrebbe gestire l'orderIndex corretto all'inserimento.
-                int currentMaxOrder = adapter.getItemCount(); // Stima semplice, potrebbe non essere precisa se la lista è filtrata
+                int currentMaxOrder = adapter.getItemCount();
                 StorageLocation newLocation = new StorageLocation(locationName, internalKey, currentMaxOrder, false, false);
                 locationViewModel.insert(newLocation);
-                Toast.makeText(getContext(), "Location '" + locationName + "' aggiunta", Toast.LENGTH_SHORT).show();
-            } else { // Modifica esistente
+                Toast.makeText(getContext(), String.format(getString(R.string.notify_add_location), locationName), Toast.LENGTH_SHORT).show();
+            } else {
                 if (!locationToEdit.name.equals(locationName)) {
                     locationToEdit.name = locationName;
                     locationViewModel.update(locationToEdit);
-                    Toast.makeText(getContext(), "Location aggiornata", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), getString(R.string.notify_update_location), Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -160,32 +153,31 @@ public class ManageLocationsFragment extends Fragment implements
     @Override
     public void onDeleteLocation(StorageLocation location) {
         if (location.isPredefined) {
-            Toast.makeText(getContext(), "Le location predefinite non possono essere eliminate.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), getString(R.string.error_delete_default_location), Toast.LENGTH_SHORT).show();
             return;
         }
         if (location.isDefault) {
-            Toast.makeText(getContext(), "Non puoi eliminare la location di default. Impostane un'altra prima.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), getString(R.string.error_delete_default_location), Toast.LENGTH_SHORT).show();
             return;
         }
 
         new AlertDialog.Builder(requireContext())
-                .setTitle("Conferma Eliminazione")
-                .setMessage("Sei sicuro di voler eliminare la location '" + location.name + "'?\nI prodotti in questa location potrebbero dover essere riassegnati.")
-                .setPositiveButton("Elimina", (dialog, which) -> {
+                .setTitle(getString(R.string.delete_location_confirmation_title))
+                .setMessage(String.format(getString(R.string.error_delete_location_confirmation), location.name))
+                .setPositiveButton(getString(R.string.reomve), (dialog, which) -> {
                     locationViewModel.delete(location);
-                    Toast.makeText(getContext(), "Location '" + location.name + "' eliminata", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), String.format(getString(R.string.notify_delete_location), location.name), Toast.LENGTH_SHORT).show();
                 })
-                .setNegativeButton("Annulla", null)
+                .setNegativeButton(getString(R.string.cancel), null)
                 .show();
     }
 
     public void onOrderChanged(List<StorageLocation> orderedLocations) {
-        // Assegna il nuovo orderIndex
         for (int i = 0; i < orderedLocations.size(); i++) {
             orderedLocations.get(i).setOrderIndex(i);
         }
         locationViewModel.updateOrder(orderedLocations);
-        Toast.makeText(getContext(), "Salvataggio effettuato", Toast.LENGTH_SHORT).show();
+        Toast.makeText(getContext(), getString(R.string.notify_saved), Toast.LENGTH_SHORT).show();
     }
 
     private void showAddLocationDialog() {
@@ -198,7 +190,7 @@ public class ManageLocationsFragment extends Fragment implements
     @Override
     public void onSetAsDefault(StorageLocation locationToSetAsDefault) {
         Log.d(TAG, "onSetAsDefault: "+locationToSetAsDefault);
-        List<StorageLocation> currentList = adapter.getCurrentOrder(); // o osserva un LiveData non filtrato se necessario
+        List<StorageLocation> currentList = adapter.getCurrentOrder();
         StorageLocation oldDefault = null;
         for (StorageLocation loc : currentList) {
             if (loc.isDefault() && loc.getId() != locationToSetAsDefault.getId()) {
@@ -221,14 +213,6 @@ public class ManageLocationsFragment extends Fragment implements
             modifiedNewDefault.setDefault(true);
             locationsToUpdate.add(modifiedNewDefault);
         }
-
-        if (!locationsToUpdate.isEmpty()) {
-            if (oldDefault != null) {
-                locationViewModel.update(oldDefault);
-            }
-            locationViewModel.update(locationToSetAsDefault);
-            Toast.makeText(getContext(), "Location di default impostata "+locationToSetAsDefault.getName(), Toast.LENGTH_SHORT).show();
-        }
     }
     private StorageLocation findLocationById(List<StorageLocation> locations, int id) {
         for (StorageLocation loc : locations) {
@@ -240,26 +224,26 @@ public class ManageLocationsFragment extends Fragment implements
     }
     private void showLocationDialog(@Nullable final StorageLocation existingLocation) {
         AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
-        String dialogTitle = existingLocation == null ? "Nuova Location" : "Edit Location";
+        String dialogTitle = existingLocation == null ? getString(R.string.add_new_location) : getString(R.string.edit_location);
         builder.setTitle(dialogTitle);
 
         final EditText input = new EditText(getContext());
         input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_WORDS);
-        final int MAX_LOCATION_NAME_LENGTH = 25; // Scegli la lunghezza massima desiderata
+        final int MAX_LOCATION_NAME_LENGTH = 25;
         InputFilter[] filters = new InputFilter[1];
         filters[0] = new InputFilter.LengthFilter(MAX_LOCATION_NAME_LENGTH);
         input.setFilters(filters);
         if (existingLocation != null) {
-            input.setText(existingLocation.getName());
-            if (existingLocation.isPredefined()) { // Non permettere la modifica del nome delle predefinite
+            input.setText(existingLocation.getLocalizedName(getContext()));
+            if (existingLocation.isPredefined()) {
                 input.setEnabled(false);
             }
         }
         builder.setView(input);
-        builder.setPositiveButton(existingLocation == null ? "Aggiungi" : "Salva", (dialog, which) -> {
+        builder.setPositiveButton(existingLocation == null ? getString(R.string.add) : getString(R.string.save), (dialog, which) -> {
             String locationName = input.getText().toString().trim();
             if (locationName.isEmpty()) {
-                Toast.makeText(getContext(), "Location non può essere vuota", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), getString(R.string.error_empty_location), Toast.LENGTH_SHORT).show();
                 return;
             }
 
@@ -277,16 +261,15 @@ public class ManageLocationsFragment extends Fragment implements
                             AppDatabase.getDatabase(requireContext()).storageLocationDao().insert(newLocation);
                         });
 
-                        Toast.makeText(getContext(), "Location '" + locationName + "' aggiunta", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getContext(), String.format(getString(R.string.notify_add_location), locationName), Toast.LENGTH_SHORT).show();
                     });
                 });
-            } else { // Modifica Esistente
-                if (!existingLocation.isPredefined()) { // Modifica il nome solo se non è predefinita
+            } else {
+                if (!existingLocation.isPredefined()) {
                     existingLocation.setName(locationName);
                 }
-                // Altri campi (isDefault) potrebbero essere modificati qui se necessario
                 locationViewModel.update(existingLocation);
-                Toast.makeText(getContext(), "Location '" + locationName + "' aggiornata", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), getString(R.string.notify_update_location), Toast.LENGTH_SHORT).show();
             }
         });
         builder.setNegativeButton(android.R.string.cancel, (dialog, which) -> dialog.cancel());

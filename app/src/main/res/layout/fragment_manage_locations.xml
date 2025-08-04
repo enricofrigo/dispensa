@@ -39,7 +39,7 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
         android:src="@drawable/ic_add_24"
-        android:contentDescription="@string/aggiungi_nuova_location"
+        android:contentDescription="@string/add_new_location"
         app:tint="@android:color/white"/>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

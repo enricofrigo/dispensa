@@ -5,16 +5,16 @@ import android.content.SharedPreferences;
 import androidx.preference.PreferenceManager;
 import androidx.work.Constraints;
 import androidx.work.ExistingPeriodicWorkPolicy;
-import androidx.work.NetworkType;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 import java.util.Calendar;
 import java.util.concurrent.TimeUnit;
+
 import eu.frigo.dispensa.ui.SettingsFragment;
 
 public class ExpiryCheckWorkerScheduler {
 
-    private static final String EXPIRY_CHECK_WORK_TAG = "expiryCheckWork";
+    public static final String EXPIRY_CHECK_WORK_TAG = "expiryCheckWork";
 
     public static void scheduleWorker(Context context) {
         WorkManager workManager = WorkManager.getInstance(context.getApplicationContext());

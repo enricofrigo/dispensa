@@ -1,14 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string-array name="default_locations_entries">
+        <item>@string/default_location_fridge_entry</item>
+        <item>@string/default_location_freezer_entry</item>
+        <item>@string/default_location_pantry_entry</item>
+    </string-array>
+    <string-array name="default_locations_values">
+        <item>@string/default_location_fridge</item>
+        <item>@string/default_location_freezer</item>
+        <item>@string/default_location_pantry</item>
+    </string-array>
+
     <string-array name="theme_entries">
-        <item>Chiaro</item>
-        <item>Scuro</item>
-        <item>Predefinito di sistema</item>
+        <item>@string/pref_theme_light_entry</item>
+        <item>@string/pref_theme_dark_entry</item>
+        <item>@string/pref_theme_system_entry</item>
     </string-array>
 
     <string-array name="theme_values">
-        <item>light</item>
-        <item>dark</item>
-        <item>system</item>
+        <item>@string/pref_theme_light</item>
+        <item>@string/pref_theme_dark</item>
+        <item>@string/pref_theme_system</item>
+    </string-array>
+
+    <string-array name="language_entries">
+        <item>@string/language_system_default</item>
+        <item>@string/language_english</item>
+        <item>@string/language_italian</item>
+    </string-array>
+
+    <string-array name="language_values">
+        <item>@string/language_system_default_value</item>
+        <item>en</item>
+        <item>it</item>
     </string-array>
 </resources>

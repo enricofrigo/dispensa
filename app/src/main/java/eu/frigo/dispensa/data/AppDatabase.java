@@ -4,6 +4,7 @@ import android.content.Context;
 
 import androidx.annotation.NonNull;
 import androidx.media3.common.util.Log;
+import androidx.media3.common.util.UnstableApi;
 import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
@@ -56,12 +57,46 @@ public abstract class AppDatabase extends RoomDatabase {
     public static AppDatabase getDatabase(final Context context) {
         if (INSTANCE == null) {
             synchronized (AppDatabase.class) {
+                RoomDatabase.Callback sRoomDatabaseCallback = new RoomDatabase.Callback() {
+                    @UnstableApi
+                    @Override
+                    public void onCreate(@NonNull SupportSQLiteDatabase db) {
+                        super.onCreate(db);
+                        Executors.newSingleThreadExecutor().execute(() -> {
+                            Log.d("AppDatabase", "Database onCreate - Prepopolamento StorageLocations");
+                            StorageLocationDao dao = INSTANCE.storageLocationDao();
+                            if (dao.countLocations() == 0) { // Controlla se è veramente vuoto
+                                dao.insertAll(PredefinedData.getInitialStorageLocations(context.getApplicationContext()));
+                                Log.d("AppDatabase", "Prepopolamento StorageLocations completato.");
+                            }
+                        });
+                    }
+
+                    @UnstableApi
+                    @Override
+                    public void onOpen(@NonNull SupportSQLiteDatabase db) {
+                        super.onOpen(db);
+                        Executors.newSingleThreadExecutor().execute(() -> {
+                            Log.d("AppDatabase", "Database onOpen - Verifica/Aggiornamento StorageLocations predefinite");
+                            StorageLocationDao dao = INSTANCE.storageLocationDao();
+                            List<StorageLocation> predefined = PredefinedData.getInitialStorageLocations(context.getApplicationContext());
+                            for (StorageLocation loc : predefined) {
+                                StorageLocation existing = dao.getLocationByInternalKeySync(loc.internalKey);
+                                if (existing == null) {
+                                    dao.insert(loc);
+                                    Log.d("AppDatabase", "Inserita location predefinita mancante: " + loc.name);
+                                }
+                            }
+                        });
+                    }
+                };
+
                 if (INSTANCE == null) {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                                     AppDatabase.class, "dispensa_database")
                             .addMigrations(MIGRATION_6_7)
                             .addMigrations(MIGRATION_7_8)
-                            //.addCallback(sRoomDatabaseCallback)
+                            .addCallback(sRoomDatabaseCallback)
                             //.fallbackToDestructiveMigration()
                             .build();
                 }
@@ -69,43 +104,4 @@ public abstract class AppDatabase extends RoomDatabase {
         }
         return INSTANCE;
     }
-    private static RoomDatabase.Callback sRoomDatabaseCallback = new RoomDatabase.Callback() {
-        @Override
-        public void onCreate(@NonNull SupportSQLiteDatabase db) {
-            super.onCreate(db);
-            // Questo viene chiamato solo la PRIMA volta che il DB viene creato.
-            // Non viene chiamato dopo una migrazione se il DB esisteva già.
-            Executors.newSingleThreadExecutor().execute(() -> {
-                Log.d("AppDatabase", "Database onCreate - Prepopolamento StorageLocations");
-                StorageLocationDao dao = INSTANCE.storageLocationDao();
-                if (dao.countLocations() == 0) { // Controlla se è veramente vuoto
-                    dao.insertAll(PredefinedData.getInitialStorageLocations());
-                    Log.d("AppDatabase", "Prepopolamento StorageLocations completato.");
-                }
-            });
-        }
-        @Override
-        public void onOpen(@NonNull SupportSQLiteDatabase db) {
-            super.onOpen(db);
-            // Questo viene chiamato ogni volta che il DB viene aperto.
-            // Potresti usarlo per il prepopolamento se `onCreate` non è sufficiente
-            // (es. se le location predefinite potessero essere cancellate e vuoi ricrearle)
-            // Ma per ora, `onCreate` va bene per l'inizializzazione.
-            // Se vuoi assicurarti che le predefinite esistano sempre, puoi fare un controllo qui:
-            Executors.newSingleThreadExecutor().execute(() -> {
-                Log.d("AppDatabase", "Database onOpen - Verifica/Aggiornamento StorageLocations predefinite");
-                StorageLocationDao dao = INSTANCE.storageLocationDao();
-
-                // Logica per inserire le predefinite se non esistono (più robusta):
-                List<StorageLocation> predefined = PredefinedData.getInitialStorageLocations();
-                for (StorageLocation loc : predefined) {
-                    StorageLocation existing = dao.getLocationByInternalKeySync(loc.internalKey);
-                    if (existing == null) {
-                        dao.insert(loc);
-                        Log.d("AppDatabase", "Inserita location predefinita mancante: " + loc.name);
-                    }
-                }
-            });
-        }
-    };
 }

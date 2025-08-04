@@ -1,4 +1,4 @@
-package eu.frigo.dispensa.util; // o il tuo package di utility
+package eu.frigo.dispensa.util;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -6,33 +6,32 @@ import android.content.SharedPreferences;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.preference.PreferenceManager;
 
+import eu.frigo.dispensa.R;
+
 public class ThemeHelper {
 
-    public static final String LIGHT_MODE = "light";
-    public static final String DARK_MODE = "dark";
-    public static final String SYSTEM_DEFAULT_MODE = "system"; // Deve corrispondere a theme_values
+    public static String LIGHT_MODE;
+    public static String DARK_MODE;
+    public static String SYSTEM_DEFAULT_MODE;
+    public static String PREF_KEY_THEME;
 
-    public static final String PREF_KEY_THEME = "theme_preference";
-
-    // Applica il tema basandosi sulla preferenza salvata
     public static void applyTheme(Context context) {
+        LIGHT_MODE = String.valueOf(R.string.pref_theme_light);
+        DARK_MODE = String.valueOf(R.string.pref_theme_dark);
+        SYSTEM_DEFAULT_MODE = String.valueOf(R.string.pref_theme_system);
+        PREF_KEY_THEME = String.valueOf(R.string.pref_key_theme);
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         String themePreference = sharedPreferences.getString(PREF_KEY_THEME, SYSTEM_DEFAULT_MODE);
         applyThemePreference(themePreference);
     }
 
-    // Imposta la modalità notturna di AppCompat
     public static void applyThemePreference(String themePreference) {
-        switch (themePreference) {
-            case LIGHT_MODE:
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
-                break;
-            case DARK_MODE:
+        if (LIGHT_MODE.equals(themePreference)) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+        }else if (DARK_MODE.equals(themePreference)) {
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
-                break;
-            default: // SYSTEM_DEFAULT_MODE o qualsiasi valore non riconosciuto
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
-                break;
+        }else{
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
         }
     }
 }

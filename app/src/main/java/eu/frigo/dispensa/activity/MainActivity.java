@@ -2,6 +2,7 @@ package eu.frigo.dispensa.activity;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -40,6 +41,7 @@ import eu.frigo.dispensa.data.category.ProductWithCategoryDefinitions;
 import eu.frigo.dispensa.data.storage.StorageLocation;
 import eu.frigo.dispensa.ui.ProductListFragment;
 import eu.frigo.dispensa.ui.SettingsActivity;
+import eu.frigo.dispensa.util.LocaleHelper;
 import eu.frigo.dispensa.viewmodel.LocationViewModel;
 import eu.frigo.dispensa.viewmodel.ProductViewModel;
 
@@ -68,24 +70,24 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     private final ActivityResultLauncher<String> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
                 if (isGranted) {
-                    Toast.makeText(this, "Permesso notifiche concesso!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, getString(R.string.notify_permission_accpeted), Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(this, "Permesso notifiche negato. Non riceverai avvisi di scadenza.", Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, getString(R.string.notify_permission_denied), Toast.LENGTH_LONG).show();
                 }
             });
     private final ActivityResultLauncher<Intent> addProductActivityLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
                 String message = null ;
                 if (result.getResultCode() == AppCompatActivity.RESULT_OK && result.getData() != null) {
-                    String productName = result.getData().getStringExtra("NEW_PRODUCT_NAME");
-                    boolean isEdit = result.getData().getBooleanExtra("NEW_PRODUCT_EDIT", false);
+                    String productName = result.getData().getStringExtra(AddProductActivity.NEW_PRODUCT_NAME);
+                    boolean isEdit = result.getData().getBooleanExtra(AddProductActivity.NEW_PRODUCT_EDIT, false);
                     if (productName != null) {
-                        message = isEdit?"Prodotto aggiornato: " + productName:"Prodotto aggiunto: " + productName;
+                        message = isEdit? String.format(getString(R.string.notify_update_product), productName) : String.format(getString(R.string.notify_add_product), productName);
                     } else {
-                        message ="Nuovo prodotto aggiunto!";
+                        message = getString(R.string.notify_add_new_product);
                     }
                 } else if (result.getResultCode() == AppCompatActivity.RESULT_CANCELED) {
-                    message = "Azione annullata.";
+                    message = getString(R.string.canceled);
                 }
                 if (message != null) showProductSavedSnackbar(message);
             });
@@ -94,12 +96,12 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 if (shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
                     new AlertDialog.Builder(this)
-                            .setTitle("Permesso Notifiche Richiesto")
-                            .setMessage("L'app ha bisogno del permesso per inviarti notifiche sui prodotti in scadenza.")
-                            .setPositiveButton("OK", (dialog, which) -> {
+                            .setTitle(getString(R.string.notify_permission_title))
+                            .setMessage(getString(R.string.notify_permission_description))
+                            .setPositiveButton(getString(R.string.ok), (dialog, which) -> {
                                 requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
                             })
-                            .setNegativeButton("Annulla", (dialog, which) -> dialog.dismiss())
+                            .setNegativeButton(getString(R.string.cancel), (dialog, which) -> dialog.dismiss())
                             .create().show();
                 } else {
                     requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
@@ -131,11 +133,10 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         locationViewPagerAdapter = new LocationViewPagerAdapter(this);
         viewPager.setAdapter(locationViewPagerAdapter);
         new TabLayoutMediator(tabLayout, viewPager, (tab, position) -> {
-            // Il titolo viene preso dall'adapter
             StorageLocation currentLocation = locationViewPagerAdapter.getLocationAt(position);
             if (currentLocation != null) {
-                tab.setText(currentLocation.getName());
-                // Qui potresti anche impostare icone per i tab se lo desideri
+                Log.d("MainActivity", "Nome della posizione: " + currentLocation.getLocalizedName(getApplicationContext()));
+                tab.setText(currentLocation.getLocalizedName(getApplicationContext()));
             }
         }).attach();
         observeLocationsForTabs();
@@ -177,7 +178,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
             if (locationViewPagerAdapter != null && locationViewPagerAdapter.getItemCount() > 0) {
                 int currentItemPosition = viewPager.getCurrentItem();
                 String currentLocationInternalKey = locationViewPagerAdapter.getLocationInternalKeyAt(currentItemPosition);
-                intent.putExtra("PRESELECTED_LOCATION_INTERNAL_KEY", currentLocationInternalKey);
+                intent.putExtra(AddProductActivity.PRESELECTED_LOCATION_INTERNAL_KEY, currentLocationInternalKey);
             }
             addProductActivityLauncher.launch(intent);
         });
@@ -193,34 +194,27 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         updateLayoutToggleIcon();
-        restoreSearchViewQuery(); // Assicurati che la SearchView mostri la query corretta
+        restoreSearchViewQuery();
         return super.onPrepareOptionsMenu(menu);
     }
     private void restoreSearchViewQuery() {
         if (searchView != null && productViewModel != null && productViewModel.getSearchQuery().getValue() != null) {
             String currentQueryInViewModel = productViewModel.getSearchQuery().getValue();
-            // Evita di resettare la query se l'utente sta attivamente scrivendo,
-            // confrontando con la query attuale della SearchView.
             if (!searchView.getQuery().toString().equals(currentQueryInViewModel)) {
                 Log.d("SearchViewRestore", "Ripristino query nella SearchView: '" + currentQueryInViewModel + "'");
-                // Il parametro 'submit' a false evita di triggerare onQueryTextSubmit inutilmente,
-                // poiché l'observer nel fragment dovrebbe già gestire l'aggiornamento della lista.
                 searchView.setQuery(currentQueryInViewModel, false);
             }
 
             if (!currentQueryInViewModel.isEmpty()) {
-                if (searchView.isIconified()) { // Solo se è iconificata, espandila
+                if (searchView.isIconified()) {
                     searchView.setIconified(false);
                 }
             } else {
-                // Se la query nel ViewModel è vuota, assicurati che la SearchView sia iconificata
-                // a meno che non abbia il focus (l'utente potrebbe stare per scrivere)
                 if (!searchView.isIconified() && !searchView.hasFocus()) {
                     searchView.setIconified(true);
                 }
             }
         } else if (searchView != null && !searchView.isIconified() && !searchView.hasFocus()) {
-            // Se non c'è query nel ViewModel, iconifica la SearchView (se non ha focus)
             searchView.setIconified(true);
         }
     }
@@ -240,36 +234,36 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         String currentLayout = prefs.getString(layoutPreferenceKey, ProductListFragment.LAYOUT_LIST);
         if (currentLayout.equals(ProductListFragment.LAYOUT_GRID)) {
             layoutToggleMenuItem.setIcon(R.drawable.ic_view_list);
-            layoutToggleMenuItem.setTitle("Visualizza Lista");
+            layoutToggleMenuItem.setTitle(getString(R.string.layout_list_title));
         } else {
             layoutToggleMenuItem.setIcon(R.drawable.ic_view_grid);
-            layoutToggleMenuItem.setTitle("Visualizza Griglia");
+            layoutToggleMenuItem.setTitle(getString(R.string.layout_grid_title));
         }
     }
     @Override
     public void onEditActionClicked(ProductWithCategoryDefinitions productWithCategoryDefinitions) {
         Product product = productWithCategoryDefinitions.product;
         Intent intent = new Intent(MainActivity.this, AddProductActivity.class);
-        intent.putExtra("PRODUCT_ID", product.getId());
-        intent.putExtra("PRODUCT_BARCODE", product.getBarcode());
-        intent.putExtra("PRODUCT_QUANTITY", product.getQuantity());
-        intent.putExtra("PRODUCT_EXPIRY_DATE", product.getExpiryDateString());
-        intent.putExtra("PRODUCT_NAME", product.getProductName());
-        intent.putExtra("PRODUCT_IMAGE", product.getImageUrl());
-        intent.putExtra("PRESELECTED_LOCATION_INTERNAL_KEY", product.getStorageLocation());
+        intent.putExtra(AddProductActivity.EXTRA_PRODUCT_ID, product.getId());
+        intent.putExtra(AddProductActivity.EXTRA_PRODUCT_BARCODE, product.getBarcode());
+        intent.putExtra(AddProductActivity.EXTRA_PRODUCT_QUANTITY, product.getQuantity());
+        intent.putExtra(AddProductActivity.EXTRA_PRODUCT_EXPIRY_DATE, product.getExpiryDateString());
+        intent.putExtra(AddProductActivity.EXTRA_PRODUCT_NAME, product.getProductName());
+        intent.putExtra(AddProductActivity.EXTRA_PRODUCT_IMAGE, product.getImageUrl());
+        intent.putExtra(AddProductActivity.PRESELECTED_LOCATION_INTERNAL_KEY, product.getStorageLocation());
         addProductActivityLauncher.launch(intent);
     }
     @Override
     public void onDeleteActionClicked(ProductWithCategoryDefinitions productWithCategoryDefinitions) {
         Product product = productWithCategoryDefinitions.product;
         new AlertDialog.Builder(this)
-                .setTitle("Conferma Cancellazione")
-                .setMessage("Sei sicuro di voler cancellare il prodotto: " + product.getProductName() + "?")
-                .setPositiveButton("Cancella", (dialog, which) -> {
+                .setTitle(getString(R.string.delete_product_title))
+                .setMessage(String.format(getString(R.string.delete_product_descritpion), product.getProductName()))
+                .setPositiveButton(getString(R.string.delete), (dialog, which) -> {
                     productViewModel.delete(product);
-                    showProductSavedSnackbar("Prodotto cancellato: " + product.getProductName());
+                    showProductSavedSnackbar(String.format(getString(R.string.notify_delete_product), product.getProductName()));
                 })
-                .setNegativeButton("Annulla", null)
+                .setNegativeButton(getString(R.string.cancel), null)
                 .setIcon(android.R.drawable.ic_dialog_alert)
                 .show();
     }
@@ -285,10 +279,10 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
             productViewModel.update(updatedProduct);
         } else if (currentQuantity == 1) {
             productViewModel.delete(product);
-            Snackbar.make(findViewById(R.id.main_coordinator_layout), // O la tua view radice
-                            "\"" + product.getProductName() + "\" rimosso.",
+            Snackbar.make(findViewById(R.id.main_coordinator_layout),
+                            String.format(getString(R.string.notify_used), product.getProductName()),
                             Snackbar.LENGTH_LONG)
-                    .setAction("ANNULLA", v -> productViewModel.insert(product)) // Azione ANNULLA opzionale
+                    .setAction(getString(R.string.cancel).toUpperCase(), v -> productViewModel.insert(product))
                     .show();
         }
     }
@@ -321,12 +315,12 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         return true;
     }
     private void setupSearchView() {
-        searchView.setQueryHint("Cerca prodotto...");
+        searchView.setQueryHint(getString(R.string.action_search_hint));
 
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
-                productViewModel.setSearchQuery(query); // Anche se la ricerca è live, l'invio può essere esplicito
+                productViewModel.setSearchQuery(query);
                 searchView.clearFocus();
                 return true;
             }
@@ -339,7 +333,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         });
 
         searchView.setOnCloseListener(() -> {
-            if (productViewModel != null) { // Aggiungi controllo null per sicurezza
+            if (productViewModel != null) {
                 productViewModel.setSearchQuery("");
             }
             return false;
@@ -347,8 +341,6 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
 
         searchView.setOnQueryTextFocusChangeListener((v, hasFocus) -> {
             if (!hasFocus && searchView.getQuery().length() == 0) {
-                // Se la SearchView perde focus e la query è vuota,
-                // assicurati che il ViewModel rifletta questo (se non già gestito da onQueryTextChange con testo vuoto)
                 if (productViewModel != null && !"".equals(productViewModel.getSearchQuery().getValue())) {
                     productViewModel.setSearchQuery("");
                 }

@@ -1,5 +1,7 @@
 package eu.frigo.dispensa.adapter;
 
+import android.content.Context;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -15,6 +17,7 @@ import eu.frigo.dispensa.ui.ProductListFragment; // Il fragment che mostra i pro
 public class LocationViewPagerAdapter extends FragmentStateAdapter {
 
     private List<StorageLocation> storageLocations = new ArrayList<>();
+    private Context context;
 
     public LocationViewPagerAdapter(@NonNull FragmentActivity fragmentActivity) {
         super(fragmentActivity);
@@ -32,7 +35,9 @@ public class LocationViewPagerAdapter extends FragmentStateAdapter {
     @Override
     public Fragment createFragment(int position) {
         StorageLocation currentLocation = storageLocations.get(position);
-        return ProductListFragment.newInstance(currentLocation.getInternalKey());
+        Fragment fragment = ProductListFragment.newInstance(currentLocation.getInternalKey());
+        context= fragment.getContext();
+        return fragment;
     }
 
     @Override
@@ -42,7 +47,7 @@ public class LocationViewPagerAdapter extends FragmentStateAdapter {
 
     public String getPageTitle(int position) {
         if (position >= 0 && position < storageLocations.size()) {
-            return storageLocations.get(position).getName();
+            return storageLocations.get(position).getLocalizedName(context);
         }
         return null;
     }

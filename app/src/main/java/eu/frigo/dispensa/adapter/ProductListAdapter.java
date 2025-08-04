@@ -1,6 +1,7 @@
 package eu.frigo.dispensa.adapter; // Crea un package adapter o simile
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
 import android.view.ContextMenu;
@@ -115,10 +116,10 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
             }
             
             if (product.product.getExpiryDate() != null) {
-                textViewExpiryDate.setText(String.format("Scad: %s", product.product.getActualExpiryDateString()));
+                textViewExpiryDate.setText(String.format(textViewExpiryDate.getContext().getString(R.string.exp_date), product.product.getActualExpiryDateString()));
                 textViewExpiryDate.setVisibility(View.VISIBLE);
 
-                long todayTimestamp = DateConverter.getTodayNormalizedTimestamp(); // Mezzogiorno di oggi
+                long todayTimestamp = DateConverter.getTodayNormalizedTimestamp();
 
                 SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(itemView.getContext());
                 String daysBeforeStr = prefs.getString(SettingsFragment.KEY_EXPIRY_DAYS_BEFORE, "3");
@@ -126,13 +127,13 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
                 try {
                     daysBeforeWarning = Integer.parseInt(daysBeforeStr);
                 } catch (NumberFormatException e) {
-                    daysBeforeWarning = 3; // Fallback
+                    daysBeforeWarning = 3;
                 }
 
                 Calendar warningCalendar = Calendar.getInstance();
                 warningCalendar.setTimeInMillis(todayTimestamp);
                 warningCalendar.add(Calendar.DAY_OF_YEAR, daysBeforeWarning);
-                long warningTimestamp = warningCalendar.getTimeInMillis(); // Timestamp per l'inizio del periodo di "avviso"
+                long warningTimestamp = warningCalendar.getTimeInMillis();
 
                 // Stato 1: Scaduto
                 if (product.product.getExpiryDate() < todayTimestamp) {
@@ -159,7 +160,7 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
                     }
                 }
             } else {
-                textViewExpiryDate.setText("Scad: N/D");
+                textViewExpiryDate.setText(String.format(itemView.getContext().getString(R.string.exp_date),itemView.getContext().getString(R.string.not_defined)));
                 textViewExpiryDate.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.grey_text)); // O il tuo colore di default
                 if (cardProductItem != null) {
                     cardProductItem.setStrokeColor(ContextCompat.getColor(itemView.getContext(), R.color.product_default_stroke));
@@ -199,9 +200,9 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
             });        }
         @Override
         public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
-            MenuItem edit = menu.add(Menu.NONE, R.id.action_edit_product, 1, "Modifica");
-            MenuItem delete = menu.add(Menu.NONE, R.id.action_delete_product, 2, "Cancella");
-            MenuItem usa = menu.add(Menu.NONE, R.id.action_delete_product, 2, "Usa");
+            MenuItem edit = menu.add(Menu.NONE, R.id.action_edit_product, 1, itemView.getContext().getString(R.string.edit));
+            MenuItem delete = menu.add(Menu.NONE, R.id.action_delete_product, 2, itemView.getContext().getString(R.string.delete));
+            MenuItem usa = menu.add(Menu.NONE, R.id.action_delete_product, 2, itemView.getContext().getString(R.string.use));
             edit.setOnMenuItemClickListener(item -> {
                 listenerInternal.onEditActionClicked(currentProduct);
                 return true;

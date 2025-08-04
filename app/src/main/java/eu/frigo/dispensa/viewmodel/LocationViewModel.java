@@ -22,7 +22,7 @@ public class LocationViewModel extends AndroidViewModel {
     private MediatorLiveData<List<StorageLocation>> locationsForTabs;
     private LiveData<List<StorageLocation>> dbRealLocationsSorted;
     private LiveData<StorageLocation> defaultLocation;
-    public static final String ALL_PRODUCTS_INTERNAL_KEY = "all_products_key"; // Scegli una chiave univoca
+    public static final String ALL_PRODUCTS_INTERNAL_KEY = "all_products_key";
     public static final int ALL_PRODUCTS_TAB_ID = -1;
 
     public LocationViewModel(@NonNull Application application) {
