@@ -83,7 +83,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:hint="@string/hint_nome_prodotto">
+                android:hint="@string/hint_product_name">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/editTextProductName"
@@ -99,7 +99,7 @@
             android:layout_marginTop="16dp"
             android:layout_gravity="center_horizontal"
             android:visibility="gone"
-            android:contentDescription="@string/hint_immagine_prodotto"
+            android:contentDescription="@string/hint_product_image"
             android:scaleType="fitCenter"
             tools:srcCompat="@tools:sample/avatars" />
 
@@ -143,7 +143,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:hint="@string/hint_posizione_conservazione"
+                android:hint="@string/hint_store_location"
                 android:textAppearance="?attr/textAppearanceSubtitle1"/>
 
             <Spinner
@@ -156,7 +156,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:text="@string/hint_categorie_tags"
+                android:text="@string/hint_category_tags"
                 android:textAppearance="?attr/textAppearanceSubtitle1"/>
 
         <LinearLayout
@@ -187,7 +187,7 @@
                     style="@style/Widget.MaterialComponents.Button.Icon"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/apri"
+                    android:text="@string/open"
                     android:padding="8dp"
                     android:visibility="gone" />
 
@@ -196,7 +196,7 @@
                     style="@style/Widget.MaterialComponents.Button.Icon"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/chiudi"
+                    android:text="@string/close"
                     android:padding="8dp"
                     android:visibility="gone" />
 
@@ -206,7 +206,7 @@
                 android:id="@+id/textViewOpenedDate"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/aperto_date"
+                android:text="@string/open_date_nd"
                 android:visibility="gone" />
 
             <com.google.android.material.chip.ChipGroup
@@ -231,7 +231,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:hint="@string/hint_nuova_categoria"
+                    android:hint="@string/hint_category_new"
                     android:layout_marginEnd="8dp">
 
                     <com.google.android.material.textfield.TextInputEditText

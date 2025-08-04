@@ -34,7 +34,7 @@
         android:src="@drawable/ic_edit_24"
         app:tint="?attr/colorControlNormal"
         android:background="?attr/selectableItemBackgroundBorderless"
-        android:contentDescription="@string/modifica_location"
+        android:contentDescription="@string/edit_location"
         android:layout_marginStart="8dp"/>
 
     <ImageButton
@@ -44,7 +44,7 @@
         android:src="@drawable/ic_delete_24"
         app:tint="?attr/colorError"
         android:background="?attr/selectableItemBackgroundBorderless"
-        android:contentDescription="@string/elimina_location"
+        android:contentDescription="@string/delete_location"
         android:layout_marginStart="8dp"/>
 
 </LinearLayout>

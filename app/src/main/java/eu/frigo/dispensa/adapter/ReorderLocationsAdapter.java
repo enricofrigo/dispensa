@@ -53,7 +53,7 @@ public class ReorderLocationsAdapter extends RecyclerView.Adapter<ReorderLocatio
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         StorageLocation location = locations.get(position);
         Log.d("ReorderLocationsAdapter", position+"onBindViewHolder: "+location);
-        holder.locationName.setText(location.getName());
+        holder.locationName.setText(location.getLocalizedName(holder.itemView.getContext()));
 
         if (location.isPredefined()) {
             holder.editButton.setVisibility(View.GONE);

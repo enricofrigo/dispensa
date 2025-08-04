@@ -14,7 +14,7 @@ import eu.frigo.dispensa.data.storage.StorageLocation;
 public class SimpleItemTouchHelperCallback extends ItemTouchHelper.Callback {
 
     private final ReorderLocationsAdapter mAdapter;
-    private final ItemTouchHelperListener mListener; // Interfaccia per notificare il salvataggio
+    private final ItemTouchHelperListener mListener;
 
     public interface ItemTouchHelperListener {
         void onOrderChanged(List<StorageLocation> orderedLocations);
@@ -26,14 +26,10 @@ public class SimpleItemTouchHelperCallback extends ItemTouchHelper.Callback {
     }
 
     @Override
-    public boolean isLongPressDragEnabled() {
-        return false; // Gestiamo il drag tramite handle
-    }
+    public boolean isLongPressDragEnabled() {return false;}
 
     @Override
-    public boolean isItemViewSwipeEnabled() {
-        return false; // No swipe
-    }
+    public boolean isItemViewSwipeEnabled() {return false;}
 
     @Override
     public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
@@ -59,7 +55,6 @@ public class SimpleItemTouchHelperCallback extends ItemTouchHelper.Callback {
         if (actionState == ItemTouchHelper.ACTION_STATE_DRAG) {
             if (viewHolder != null) {
                 viewHolder.itemView.setAlpha(0.7f);
-                // Puoi anche elevare o cambiare lo sfondo
             }
         }
     }
@@ -74,7 +69,6 @@ public class SimpleItemTouchHelperCallback extends ItemTouchHelper.Callback {
         }
     }
 
-    // Opzionale: per disegnare dietro durante lo swipe (non usato qui ma ItemTouchHelper.Callback lo richiede)
     @Override
     public void onChildDraw(@NonNull Canvas c, @NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, float dX, float dY, int actionState, boolean isCurrentlyActive) {
         super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);

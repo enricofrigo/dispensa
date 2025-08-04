@@ -3,45 +3,60 @@
     xmlns:android="http://schemas.android.com/apk/res/android">
 
     <PreferenceCategory
-        app:title="Notifiche di Scadenza"
+        app:title="@string/pref_cat_expiry_title"
         app:iconSpaceReserved="false">
 
         <EditTextPreference
-            app:key="pref_expiry_days_before"
-            app:title="Giorni di preavviso"
-            app:summary="Numero di giorni prima della scadenza per ricevere la notifica."
+            app:key="@string/pref_key_exp_days"
+            app:title="@string/pref_exp_days_title"
+            app:summary="@string/pref_exp_days_summary"
             app:defaultValue="3"
             app:useSimpleSummaryProvider="true"
             android:inputType="number"
             app:iconSpaceReserved="false"/>
 
         <Preference
-            app:key="pref_notification_time"
-            app:title="Ora della notifica giornaliera"
-            app:summary="Seleziona l'ora in cui ricevere la notifica di scadenza."
+            app:key="@string/pref_key_exp_time"
+            app:title="@string/pref_key_exp_time_title"
+            app:summary="@string/pref_key_exp_summary"
             app:iconSpaceReserved="false"/>
 
     </PreferenceCategory>
-    <PreferenceCategory app:title="Locations"
+    <PreferenceCategory app:title="@string/pref_cat_locations_title"
         app:iconSpaceReserved="false">
         <Preference
-            app:key="manage_locations"
-            app:title="Gestione degli storage"
-            app:summary="Aggiungi, modifica o riordina le tue location"
+            app:key="@string/pref_key_location"
+            app:title="@string/pref_location_title"
+            app:summary="@string/pref_location_summary"
             app:iconSpaceReserved="false"/>
 
     </PreferenceCategory>
-    <PreferenceCategory app:title="Aspetto"
+    <PreferenceCategory app:title="@string/pref_cat_title_language"
         app:iconSpaceReserved="false">
 
         <ListPreference
-            app:key="theme_preference"
-            app:title="Tema dell'app"
+            app:key="language_preference"
+            app:title="@string/pref_cat_title_language"
             app:summary="%s"
-            app:defaultValue="system"
+            app:entries="@array/language_entries"
+            app:entryValues="@array/language_values"
+            app:defaultValue="@string/language_system_default_value"
+            app:iconSpaceReserved="false"
+            android:persistent="true"/>
+
+    </PreferenceCategory>
+    <PreferenceCategory app:title="@string/pref_cat_theme_title"
+        app:iconSpaceReserved="false">
+
+        <ListPreference
+            app:key="@string/pref_key_theme"
+            app:title="@string/pref_theme_title"
+            app:summary="%s"
+            app:defaultValue="@string/pref_theme_system"
             app:entries="@array/theme_entries"
             app:entryValues="@array/theme_values"
             app:iconSpaceReserved="false"/>
 
     </PreferenceCategory>
+
 </PreferenceScreen>

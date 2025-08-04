@@ -1,4 +1,4 @@
-package eu.frigo.dispensa.ui; // o il tuo package
+package eu.frigo.dispensa.ui;
 
 import android.content.Context;
 import android.content.pm.PackageInfo;
@@ -8,10 +8,11 @@ import android.os.Bundle;
 import android.view.MenuItem;
 import android.widget.TextView;
 
+import androidx.annotation.OptIn;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar; // Usa androidx.appcompat.widget.Toolbar
-import androidx.core.content.ContextCompat;
+import androidx.appcompat.widget.Toolbar;
 import androidx.media3.common.util.Log;
+import androidx.media3.common.util.UnstableApi;
 
 import eu.frigo.dispensa.R;
 import java.util.Objects;
@@ -26,7 +27,7 @@ public class SettingsActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar_settings);
         setSupportActionBar(toolbar);
         Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setTitle("Impostazioni");
+        getSupportActionBar().setTitle(getString(R.string.action_settings));
 
 
         if (savedInstanceState == null) {
@@ -42,50 +43,43 @@ public class SettingsActivity extends AppCompatActivity {
         if (textView == null) return;
 
         String versionName = getAppVersionName(this);
-        long versionCode = getAppVersionCode(this); // Opzionale
+        long versionCode = getAppVersionCode(this);
 
-        if (!"N/D".equals(versionName) && versionCode != -1L) {
+        if (!getString(R.string.not_defined).equals(versionName) && versionCode != -1L) {
             textView.setText(getString(R.string.version_format_detailed, versionName, String.valueOf(versionCode)));
-            // Esempio con string resource: Versione: %1$s (Build: %2$s)
         } else {
             textView.setText(getString(R.string.version_not_available));
-            // Esempio con string resource: Versione: N/D
         }
     }
+
+    @OptIn(markerClass = UnstableApi.class)
     private String getAppVersionName(Context context) {
         try {
             PackageInfo packageInfo;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 packageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), PackageManager.PackageInfoFlags.of(0));
             } else {
-                @SuppressWarnings("deprecation")
                 PackageInfo pi = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
                 packageInfo = pi;
             }
             return packageInfo.versionName;
         } catch (PackageManager.NameNotFoundException e) {
             Log.e("SettingsActivity", "NameNotFoundException while getting versionName", e);
-            return "N/D";
+            return getString(R.string.not_defined);
         }
     }
 
+    @OptIn(markerClass = UnstableApi.class)
     private long getAppVersionCode(Context context) {
         try {
             PackageInfo packageInfo;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 packageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), PackageManager.PackageInfoFlags.of(0));
             } else {
-                @SuppressWarnings("deprecation")
                 PackageInfo pi = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
                 packageInfo = pi;
             }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                return packageInfo.getLongVersionCode();
-            } else {
-                @SuppressWarnings("deprecation")
-                long vc = packageInfo.versionCode;
-                return vc;
-            }
+            return packageInfo.getLongVersionCode();
         } catch (PackageManager.NameNotFoundException e) {
             Log.e("SettingsActivity", "NameNotFoundException while getting versionCode", e);
             return -1L;
@@ -94,9 +88,8 @@ public class SettingsActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Gestisce il click sul pulsante "indietro" della toolbar
         if (item.getItemId() == android.R.id.home) {
-            onBackPressed(); // O NavUtils.navigateUpFromSameTask(this); se hai una gerarchia di parent definita
+            onBackPressed();
             return true;
         }
         return super.onOptionsItemSelected(item);

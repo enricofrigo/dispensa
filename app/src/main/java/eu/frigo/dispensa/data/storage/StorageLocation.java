@@ -1,5 +1,7 @@
 package eu.frigo.dispensa.data.storage;
 
+import android.content.Context;
+
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.Index;
@@ -40,6 +42,11 @@ public class StorageLocation {
 
     public String getName() {
         return name;
+    }
+    public String getLocalizedName(Context context) {
+        if(isPredefined){
+            return PredefinedData.getDisplayLocationName(context,getInternalKey());
+        }else return name;
     }
 
     public void setName(String name) {

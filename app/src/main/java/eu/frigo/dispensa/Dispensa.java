@@ -3,6 +3,7 @@ package eu.frigo.dispensa;
 import android.app.Application;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.content.Context;
 
 import androidx.work.ExistingPeriodicWorkPolicy;
 import androidx.work.PeriodicWorkRequest;
@@ -10,11 +11,17 @@ import androidx.work.WorkManager;
 
 import java.util.concurrent.TimeUnit;
 
+import eu.frigo.dispensa.util.LocaleHelper;
 import eu.frigo.dispensa.util.ThemeHelper;
 import eu.frigo.dispensa.work.ExpiryCheckWorker;
 import eu.frigo.dispensa.work.ExpiryCheckWorkerScheduler;
 
 public class Dispensa extends Application {
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(LocaleHelper.onAttach(newBase));
+    }
     @Override
     public void onCreate() {
         super.onCreate();
@@ -22,7 +29,6 @@ public class Dispensa extends Application {
         createNotificationChannel();
         ExpiryCheckWorkerScheduler.scheduleWorker(this);
     }
-
     private void createNotificationChannel() {
         CharSequence name = getString(R.string.expiry_notification_channel_name);
         String description = getString(R.string.expiry_notification_channel_description);
@@ -41,7 +47,7 @@ public class Dispensa extends Application {
                         .build();
 
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-                "expiryCheckWork",
+                ExpiryCheckWorkerScheduler.EXPIRY_CHECK_WORK_TAG,
                 ExistingPeriodicWorkPolicy.KEEP,
                 expiryCheckRequest);
     }

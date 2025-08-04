@@ -31,7 +31,7 @@
         android:paddingBottom="16dp"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
-        android:text="@string/versione_caricamento"
+        android:text="@string/loading_version"
         android:textAppearance="?android:attr/textAppearanceSmall"
         android:background="?android:attr/colorBackground" />
 
