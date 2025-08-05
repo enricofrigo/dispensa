@@ -97,7 +97,6 @@ public class ProductListFragment extends Fragment implements SharedPreferences.O
                 android.R.color.holo_green_light,
                 android.R.color.holo_orange_light,
                 android.R.color.holo_red_light);
-
         setupRecyclerViewLayout();
         return view;
     }
@@ -105,18 +104,12 @@ public class ProductListFragment extends Fragment implements SharedPreferences.O
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        // Prendi il valore iniziale della query, se disponibile
+        String initialQuery = productViewModel.getSearchQuery().getValue();
+        currentSearchQuery = (initialQuery == null) ? "" : initialQuery.toLowerCase(Locale.getDefault());
+        Log.d("ProductListFragment", "Fragment (" + getUniqueKeyPart() + "): Query iniziale impostata a: '" + currentSearchQuery + "' in onViewCreated");
         observeProducts();
         observeSearchQuery();
-        productsLiveData.observe(getViewLifecycleOwner(), products -> {
-            if (products != null) {
-                originalProductList = new ArrayList<>(products); // AGGIORNAMENTO
-                Log.d("ProductListFragment", "Fragment (" + getUniqueKeyPart() + "): Prodotti originali ricevuti e originalProductList aggiornata. Dimensione: " + originalProductList.size());
-            } else {
-                originalProductList = new ArrayList<>();
-                Log.d("ProductListFragment", "Fragment (" + getUniqueKeyPart() + "): Prodotti ricevuti sono null. originalProductList svuotata.");
-            }
-            filterAndSubmitList();
-        });
     }
     private void setupRecyclerViewLayout() {
         if (recyclerView == null || productListAdapter == null) return;
@@ -190,19 +183,24 @@ public class ProductListFragment extends Fragment implements SharedPreferences.O
     }
     private void observeSearchQuery() {
         productViewModel.getSearchQuery().observe(getViewLifecycleOwner(), query -> {
-            currentSearchQuery = (query == null) ? "" : query.toLowerCase(Locale.getDefault());
-            Log.d("ProductListFragment", "Fragment (" + getUniqueKeyPart() + "): Nuova query di ricerca: '" + currentSearchQuery + "'");
-            filterAndSubmitList(); // Riapplica il filtro quando la query cambia
+            String newQuery = (query == null) ? "" : query.toLowerCase(Locale.getDefault());
+            Log.d("ProductListFragment", "Fragment (" + getUniqueKeyPart() + "): Nuova query di ricerca ricevuta: '" + newQuery + "'");
+
+            if (!currentSearchQuery.equals(newQuery)) {
+                currentSearchQuery = newQuery;
+                Log.d("ProductListFragment", "Fragment (" + getUniqueKeyPart() + "): currentSearchQuery aggiornata a: '" + currentSearchQuery + "'. Si procede al filtro.");
+
+                if (!originalProductList.isEmpty() || !currentSearchQuery.isEmpty()) {
+                    filterAndSubmitList();
+                } else {
+                    Log.d("ProductListFragment", "Fragment (" + getUniqueKeyPart() + "): Query cambiata, ma originalProductList è vuota e la nuova query è vuota. Non si filtra.");
+                }
+            } else {
+                Log.d("ProductListFragment", "Fragment (" + getUniqueKeyPart() + "): Query ricevuta ('" + newQuery + "') è uguale alla currentSearchQuery. Non si rifiltra.");
+            }
         });
     }
     private void filterAndSubmitList() {
-        if (originalProductList == null) {
-            if (productListAdapter != null) {
-                productListAdapter.submitList(new ArrayList<>()); // Svuota la lista se originalProductList è null
-            }
-            return;
-        }
-
         List<ProductWithCategoryDefinitions> filteredList = new ArrayList<>();
         if (currentSearchQuery.isEmpty()) {
             filteredList.addAll(originalProductList);
@@ -219,6 +217,12 @@ public class ProductListFragment extends Fragment implements SharedPreferences.O
         Log.d("ProductListFragment", "Fragment (" + getUniqueKeyPart() + "): Lista filtrata (" + currentSearchQuery + "): " + filteredList.size() + " elementi.");
         if (productListAdapter != null) {
             productListAdapter.submitList(filteredList);
+            if (productListAdapter != null && !filteredList.isEmpty()) { // Solo se la lista sottomessa non è vuota
+                recyclerView.post(() -> { // Usa post per assicurarti che sia eseguito dopo il ciclo di layout corrente
+                    Log.d("PLF_Debug", "Forcing requestLayout for " + getUniqueKeyPart() + " because problem persists.");
+                    recyclerView.requestLayout();
+                });
+            }
         } else {
             Log.e("ProductListFragment", "ProductListAdapter è null in filterAndSubmitList!");
         }
