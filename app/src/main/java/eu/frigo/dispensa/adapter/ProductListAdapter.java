@@ -234,7 +234,7 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
 
         @Override
         public boolean areContentsTheSame(@NonNull ProductWithCategoryDefinitions oldItem, @NonNull ProductWithCategoryDefinitions newItem) {
-            return oldItem.product.getBarcode().equals(newItem.product.getBarcode()) &&
+            return false && oldItem.product.getBarcode().equals(newItem.product.getBarcode()) &&
                     oldItem.product.getQuantity() == newItem.product.getQuantity() &&
                     oldItem.product.getProductName().equals(newItem.product.getProductName()) &&
                     (oldItem.product.getImageUrl() == null || oldItem.product.getImageUrl().equals(newItem.product.getImageUrl())) &&
