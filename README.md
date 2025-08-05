@@ -15,10 +15,11 @@
 
 - 📝 Aggiungi, modifica ed elimina articoli nella tua dispensa (usa Open Food Facts per recuperare le informazioni)
 - 🔔 Ricevi notifiche per prodotti in scadenza  
-- 📦 Location personalizzabili 
+- 📦 Location personalizzabili
+- 🇮🇹 ligue supportate italiano ed inglese (it - en)
 
 ## 🚀 Installazione
-ccontrolla l'ultima release
+controlla l'ultima <a href="https://github.com/enricofrigo/dispensa/releases">release</a> 
 
 ### ✅ Prerequisiti
 - Android Studio (per la versione di sviluppo)
