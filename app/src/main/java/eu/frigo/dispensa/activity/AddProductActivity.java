@@ -75,6 +75,9 @@ public class AddProductActivity extends AppCompatActivity {
     private Spinner spinnerStorageLocation;
     private TextInputEditText editTextBarcode;
     private TextInputEditText editTextQuantity;
+    private ImageButton buttonDecrementQuantityActivity;
+    private ImageButton buttonIncrementQuantityActivity;
+
     private static final String DEFAULT_QUANTITY = "1";
     private TextInputEditText editTextExpiryDate;
     private AddProductViewModel addProductViewModel;
@@ -159,6 +162,8 @@ public class AddProductActivity extends AppCompatActivity {
         editTextBarcode = findViewById(R.id.editTextBarcode);
         ImageButton buttonScanBarcode = findViewById(R.id.buttonScanBarcode);
         editTextQuantity = findViewById(R.id.editTextQuantity);
+        buttonDecrementQuantityActivity = findViewById(R.id.buttonDecrementQuantityActivity);
+        buttonIncrementQuantityActivity = findViewById(R.id.buttonIncrementQuantityActivity);
         editTextExpiryDate = findViewById(R.id.editTextExpiryDate);
         previewViewBarcode = findViewById(R.id.previewViewBarcode);
         editTextProductName = findViewById(R.id.editTextProductName);
@@ -205,6 +210,30 @@ public class AddProductActivity extends AppCompatActivity {
                 if (!barcode.isEmpty()) {
                     fetchProductDetailsFromApi(barcode);
                 }
+            }
+        });
+        buttonIncrementQuantityActivity.setOnClickListener(v -> {
+            try {
+                int currentQuantity = Integer.parseInt(editTextQuantity.getText().toString());
+                currentQuantity++;
+                editTextQuantity.setText(String.valueOf(currentQuantity));
+            } catch (NumberFormatException e) {
+                editTextQuantity.setText("1"); // In caso di errore o campo vuoto
+            }
+        });
+
+        buttonDecrementQuantityActivity.setOnClickListener(v -> {
+            try {
+                int currentQuantity = Integer.parseInt(editTextQuantity.getText().toString());
+                if (currentQuantity > 1) { // Impedisci che la quantità scenda sotto 1 (o 0 se preferisci)
+                    currentQuantity--;
+                    editTextQuantity.setText(String.valueOf(currentQuantity));
+                } else {
+                    // Opzionale: Mostra un Toast o semplicemente non fare nulla
+                    // Toast.makeText(AddProductActivity.this, "La quantità non può essere inferiore a 1", Toast.LENGTH_SHORT).show();
+                }
+            } catch (NumberFormatException e) {
+                editTextQuantity.setText("1"); // In caso di errore o campo vuoto
             }
         });
 
