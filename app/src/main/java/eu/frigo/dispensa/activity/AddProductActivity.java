@@ -64,6 +64,7 @@ import eu.frigo.dispensa.data.storage.StorageLocation;
 import eu.frigo.dispensa.network.OpenFoodFactsApiService;
 import eu.frigo.dispensa.network.RetrofitClient;
 import eu.frigo.dispensa.network.model.OpenFoodFactsProductResponse;
+import eu.frigo.dispensa.util.KeyboardUtils;
 import eu.frigo.dispensa.viewmodel.AddProductViewModel;
 import eu.frigo.dispensa.util.DateConverter;
 import retrofit2.Callback;
@@ -278,7 +279,13 @@ public class AddProductActivity extends AppCompatActivity {
                 updateOpenedDateUI(currentOpenedDate);
             });
         }
-        editTextExpiryDate.setOnClickListener(v -> showDatePickerDialog());
+        editTextExpiryDate.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                KeyboardUtils.hideKeyboard(AddProductActivity.this);
+                showDatePickerDialog();
+            }
+        });
         buttonScanBarcode.setOnClickListener(v -> checkCameraPermissionAndStartScanner());
         buttonMarkAsClosed.setOnClickListener(v -> {currentOpenedDate = 0L;updateOpenedDateUI(currentOpenedDate);});
         fabButtonSaveProduct.setOnClickListener(v -> saveOrUpdateProduct());
