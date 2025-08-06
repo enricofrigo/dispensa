@@ -72,6 +72,7 @@
     <string name="save">Save</string>
     <string name="cancel">Cancel</string>
     <string name="ok">OK</string>
+    <string name="move">Move</string>
 
     <!-- Messages -->
     <string name="notify_saved">Saved successfully</string>
@@ -149,5 +150,8 @@
     <string name="default_location_pantry_entry">Pantry</string>
     <string name="default_location_freezer_entry">Freezer</string>
     <string name="default_location_fridge_entry">Fridge</string>
+
+    <string name="move_product_to_title">Move to %s</string>
+    <string name="product_moved_toast">%s moved to %s</string>
 
 </resources>
