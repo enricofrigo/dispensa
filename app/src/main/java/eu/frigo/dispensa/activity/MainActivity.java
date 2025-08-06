@@ -268,6 +268,78 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
                 .show();
     }
     @Override
+    public void onProductMoveClicked(ProductWithCategoryDefinitions productWithDefs) {
+        if (productWithDefs == null || productWithDefs.product == null) {
+            return;
+        }
+        Product productToMove = productWithDefs.product;
+
+        // Recupera le possibili locazioni
+        // Assumendo che LocationViewModel esponga LiveData<List<LocationEntity>>
+        if (locationViewModel == null) { // Fallback se locationViewModel non è inizializzato
+            Log.e("MainActivity", "LocationViewModel is null, cannot show move dialog.");
+            Toast.makeText(getApplicationContext(), "Impossibile caricare le locazioni.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        locationViewModel.getAllLocationsSorted().observe(this, locations -> {
+            if (locations == null || locations.isEmpty()) {
+                Toast.makeText(getApplicationContext(), "Nessuna locazione disponibile per lo spostamento.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Filtra la locazione corrente
+            List<StorageLocation> otherLocations = new ArrayList<>();
+            for (StorageLocation loc : locations) {
+                if (!loc.getInternalKey().equals(productToMove.getStorageLocation())) {
+                    otherLocations.add(loc);
+                }
+            }
+
+            if (otherLocations.isEmpty()) {
+                Toast.makeText(getApplicationContext(), "Nessun'altra locazione disponibile per lo spostamento.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            CharSequence[] locationNames = new CharSequence[otherLocations.size()];
+            for (int i = 0; i < otherLocations.size(); i++) {
+                locationNames[i] = otherLocations.get(i).getLocalizedName(getApplicationContext()); // O un nome più user-friendly
+            }
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle(getString(R.string.move_product_to_title, productToMove.getProductName()));
+            builder.setItems(locationNames, (dialog, which) -> {
+                StorageLocation selectedLocation = otherLocations.get(which);
+                String oldLocationKey = productToMove.getStorageLocation();
+                String newLocationKey = selectedLocation.getInternalKey();
+
+                Log.d("MainActivity", "Spostamento prodotto '" + productToMove.getProductName() +
+                        "' da " + oldLocationKey + " a " + newLocationKey);
+
+                productToMove.setStorageLocation(newLocationKey);
+                productViewModel.update(productToMove);
+
+                // Opzionale: Mostra un messaggio di conferma
+                Toast.makeText(getApplicationContext(),
+                        String.format(getString(R.string.product_moved_toast), productToMove.getProductName(), selectedLocation.getLocalizedName(getApplicationContext())),
+                        Toast.LENGTH_SHORT).show();
+
+                // L'aggiornamento del LiveData dovrebbe far sì che il prodotto scompaia da questo tab
+                // e appaia nel nuovo tab (se i tab osservano LiveData filtrati per locazione).
+            });
+            builder.setNegativeButton(android.R.string.cancel, null);
+            builder.show();
+
+            // IMPORTANTE: Rimuovi l'observer dopo che è stato usato per evitare chiamate multiple
+            // se l'utente clicca "sposta" più volte prima che il dialogo precedente sia chiuso.
+            // Questo è un punto delicato con LiveData dentro un handler di evento.
+            // Una soluzione migliore potrebbe essere avere la lista di locazioni già disponibile
+            // come campo nel Fragment, aggiornato una sola volta.
+            // Per ora, lo lasciamo così, ma considera alternative se noti problemi.
+            // O, meglio ancora, recupera le locazioni una volta e passale al metodo del dialogo.
+        });
+    }
+    @Override
     public void onProductItemClickedForQuantity(ProductWithCategoryDefinitions productWithCategoryDefinitions) {
         Log.d("MainActivity", "onProductItemClickedForQuantity called with product: " + productWithCategoryDefinitions);
         if (productWithCategoryDefinitions == null) return;

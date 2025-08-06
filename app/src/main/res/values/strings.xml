@@ -72,6 +72,8 @@
     <string name="save">Salva</string>
     <string name="cancel">Annulla</string>
     <string name="ok">OK</string>
+    <string name="move">Sposta</string>
+
 
     <!-- Messages -->
     <string name="notify_saved">Salvataggio effettuato</string>
@@ -155,6 +157,8 @@
     <string name="default_location_pantry" translatable="false">PANTRY</string>
 
     <string name="language_system_default_value" translatable="false">default</string>
+    <string name="move_product_to_title">Sposta in %s</string>
+    <string name="product_moved_toast">Prodotto %s spostato in %s</string>
 
 
 </resources>

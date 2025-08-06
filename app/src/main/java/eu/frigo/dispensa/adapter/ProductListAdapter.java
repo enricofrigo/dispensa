@@ -37,6 +37,7 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
         void onProductItemClickedForQuantity(ProductWithCategoryDefinitions product);
         void onEditActionClicked(ProductWithCategoryDefinitions product);
         void onDeleteActionClicked(ProductWithCategoryDefinitions product);
+        void onProductMoveClicked(ProductWithCategoryDefinitions product);
     }
 
     public ProductListAdapter(@NonNull DiffUtil.ItemCallback<ProductWithCategoryDefinitions> diffCallback, OnProductInteractionListener listener) {
@@ -203,6 +204,7 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
             MenuItem edit = menu.add(Menu.NONE, R.id.action_edit_product, 1, itemView.getContext().getString(R.string.edit));
             MenuItem delete = menu.add(Menu.NONE, R.id.action_delete_product, 2, itemView.getContext().getString(R.string.delete));
             MenuItem usa = menu.add(Menu.NONE, R.id.action_delete_product, 2, itemView.getContext().getString(R.string.use));
+            MenuItem sposta = menu.add(Menu.NONE, R.id.action_move_product, 2, itemView.getContext().getString(R.string.move));
             edit.setOnMenuItemClickListener(item -> {
                 listenerInternal.onEditActionClicked(currentProduct);
                 return true;
@@ -217,9 +219,11 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
                 listenerInternal.onProductItemClickedForQuantity(currentProduct);
                 return true;
             });
+            sposta.setOnMenuItemClickListener(item -> {
+                listenerInternal.onProductMoveClicked(currentProduct);
+                return true;
+            });
         }
-
-
     }
 
     public ProductWithCategoryDefinitions getProductAt(int position) {
