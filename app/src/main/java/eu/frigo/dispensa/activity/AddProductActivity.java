@@ -61,9 +61,12 @@ import eu.frigo.dispensa.data.category.CategoryDefinition;
 import eu.frigo.dispensa.data.product.Product;
 import eu.frigo.dispensa.data.category.ProductWithCategoryDefinitions;
 import eu.frigo.dispensa.data.storage.StorageLocation;
-import eu.frigo.dispensa.network.OpenFoodFactsApiService;
-import eu.frigo.dispensa.network.RetrofitClient;
-import eu.frigo.dispensa.network.model.OpenFoodFactsProductResponse;
+import eu.frigo.dispensa.network.openfoodfacts.OpenFoodFactsApiService;
+import eu.frigo.dispensa.network.openfoodfacts.OpenFoodFactsRetrofitClient;
+import eu.frigo.dispensa.network.openfoodfacts.model.OpenFoodFactsProductResponse;
+import eu.frigo.dispensa.network.tosano.TosanoApiService;
+import eu.frigo.dispensa.network.tosano.TosanoRetrofitClient;
+import eu.frigo.dispensa.network.tosano.model.TosanoApiResponse;
 import eu.frigo.dispensa.util.KeyboardUtils;
 import eu.frigo.dispensa.viewmodel.AddProductViewModel;
 import eu.frigo.dispensa.util.DateConverter;
@@ -552,10 +555,10 @@ public class AddProductActivity extends AppCompatActivity {
         Log.d("OpenFoodFacts", "Fetching details for barcode: " + barcode);
         Toast.makeText(this, getString(R.string.notify_load_product), Toast.LENGTH_SHORT).show();
 
-        OpenFoodFactsApiService apiService = RetrofitClient.getApiService();
+        OpenFoodFactsApiService OffApiService = OpenFoodFactsRetrofitClient.getApiService();
         String fieldsToFetch = "product_name_it,product_name,image_front_url,image_url,categories_tags";
+        retrofit2.Call<OpenFoodFactsProductResponse> call = OffApiService.getProductByBarcode(barcode, fieldsToFetch);
 
-        retrofit2.Call<OpenFoodFactsProductResponse> call = apiService.getProductByBarcode(barcode, fieldsToFetch);
         call.enqueue(new Callback<OpenFoodFactsProductResponse>() {
             @Override
             public void onResponse(@NonNull retrofit2.Call<OpenFoodFactsProductResponse> call, @NonNull Response<OpenFoodFactsProductResponse> response) {
@@ -618,6 +621,21 @@ public class AddProductActivity extends AppCompatActivity {
                 Log.e("OpenFoodFacts", "Fallimento chiamata API", t);
                 Toast.makeText(AddProductActivity.this, getString(R.string.err_network), Toast.LENGTH_LONG).show();
                 clearProductApiFieldsAndData();
+            }
+        });
+
+        TosanoApiService tosanoApiService = TosanoRetrofitClient.getApiService();
+        retrofit2.Call<TosanoApiResponse> callT = tosanoApiService.getProductByBarcode(barcode);
+        callT.enqueue(new Callback<TosanoApiResponse>() {
+            @Override
+            public void onResponse(@NonNull retrofit2.Call<TosanoApiResponse> call, @NonNull Response<TosanoApiResponse> response) {
+                // Gestisci la risposta
+                Log.d("Tosano", "Risposta API: " + response.body());
+            }
+            @Override
+            public void onFailure(@NonNull retrofit2.Call<TosanoApiResponse> call, @NonNull Throwable t) {
+                // Gestisci l'errore
+                Log.e("Tosano", "Errore chiamata API", t);
             }
         });
     }

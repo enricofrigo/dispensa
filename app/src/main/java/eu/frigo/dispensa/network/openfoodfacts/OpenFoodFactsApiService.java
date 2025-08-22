@@ -1,7 +1,7 @@
 // File: OpenFoodFactsApiService.java
-package eu.frigo.dispensa.network; // Crea questo package se non esiste
+package eu.frigo.dispensa.network.openfoodfacts; // Crea questo package se non esiste
 
-import eu.frigo.dispensa.network.model.OpenFoodFactsProductResponse;
+import eu.frigo.dispensa.network.openfoodfacts.model.OpenFoodFactsProductResponse;
 import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Path;
