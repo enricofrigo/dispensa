@@ -1,9 +1,11 @@
 package eu.frigo.dispensa.ui; // o il tuo package ui
 
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -19,8 +21,10 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
 
@@ -28,6 +32,7 @@ import eu.frigo.dispensa.activity.MainActivity;
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.adapter.ProductListAdapter;
 import eu.frigo.dispensa.data.category.ProductWithCategoryDefinitions;
+import eu.frigo.dispensa.util.DateConverter;
 import eu.frigo.dispensa.viewmodel.LocationViewModel;
 import eu.frigo.dispensa.viewmodel.ProductViewModel;
 
@@ -50,6 +55,7 @@ public class ProductListFragment extends Fragment implements SharedPreferences.O
     private boolean isAllProductsMode = true;
     private long specificLocationId = -1L;
     private String locationInternalKeyFilter;
+    private TextView textViewProductCount;
 
     public static ProductListFragment newInstance(@Nullable String internalKey) {
         ProductListFragment fragment = new ProductListFragment();
@@ -86,6 +92,7 @@ public class ProductListFragment extends Fragment implements SharedPreferences.O
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_product_list, container, false); // Crea questo layout
         recyclerView = view.findViewById(R.id.recyclerViewProductsFragment);
+        textViewProductCount = view.findViewById(R.id.textViewProductCount);
         productListAdapter = new ProductListAdapter(new ProductListAdapter.ProductDiff(), (ProductListAdapter.OnProductInteractionListener) getActivity());
         recyclerView.setAdapter(productListAdapter);
         swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
@@ -215,6 +222,28 @@ public class ProductListFragment extends Fragment implements SharedPreferences.O
             }
         }
         Log.d("ProductListFragment", "Fragment (" + getUniqueKeyPart() + "): Lista filtrata (" + currentSearchQuery + "): " + filteredList.size() + " elementi.");
+        if(textViewProductCount != null) {
+            long todayTimestamp = DateConverter.getTodayNormalizedTimestamp();
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getContext());
+            String daysBeforeStr = prefs.getString(SettingsFragment.KEY_EXPIRY_DAYS_BEFORE, "3");
+            int daysBeforeWarning;
+            try {
+                daysBeforeWarning = Integer.parseInt(daysBeforeStr);
+            } catch (NumberFormatException e) {
+                daysBeforeWarning = 3;
+            }
+            Calendar warningCalendar = Calendar.getInstance();
+            warningCalendar.setTimeInMillis(todayTimestamp);
+            warningCalendar.add(Calendar.DAY_OF_YEAR, daysBeforeWarning);
+
+            String countText = getString(R.string.product_count_footer_simple, filteredList.size());
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                int expired = filteredList.stream().filter(productWithCategoryDefinitions -> productWithCategoryDefinitions.product.getActualExpiryTimestamp()<todayTimestamp).toList().size();
+                int nearExpired = filteredList.stream().filter(productWithCategoryDefinitions -> productWithCategoryDefinitions.product.getActualExpiryTimestamp()<=warningCalendar.getTimeInMillis()).toList().size();
+                countText = getString(R.string.product_count_footer, filteredList.size(), expired, nearExpired);
+            }
+            textViewProductCount.setText(countText);
+        }
         if (productListAdapter != null) {
             productListAdapter.submitList(filteredList);
             if (productListAdapter != null && !filteredList.isEmpty()) { // Solo se la lista sottomessa non è vuota

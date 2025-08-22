@@ -138,7 +138,7 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
                 long warningTimestamp = warningCalendar.getTimeInMillis();
 
                 // Stato 1: Scaduto
-                if (product.product.getExpiryDate() < todayTimestamp) {
+                if (product.product.getActualExpiryTimestamp() < todayTimestamp) {
                     textViewExpiryDate.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.product_expired_stroke));
                     if (cardProductItem != null) {
                         cardProductItem.setStrokeColor(ContextCompat.getColor(itemView.getContext(), R.color.product_expired_stroke));
@@ -146,7 +146,7 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
                     }
                 }
                 // Stato 2: In scadenza a breve
-                else if (product.product.getExpiryDate() <= warningTimestamp) {
+                else if (product.product.getActualExpiryTimestamp() <= warningTimestamp) {
                     textViewExpiryDate.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.product_expiring_soon_stroke));
                     if (cardProductItem != null) {
                         cardProductItem.setStrokeColor(ContextCompat.getColor(itemView.getContext(), R.color.product_expiring_soon_stroke));
