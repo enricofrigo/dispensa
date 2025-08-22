@@ -1,5 +1,5 @@
 // File: OpenFoodFactsProductResponse.java
-package eu.frigo.dispensa.network.model; // Crea questo package se non esiste
+package eu.frigo.dispensa.network.openfoodfacts.model; // Crea questo package se non esiste
 
 import com.google.gson.annotations.SerializedName;
 
