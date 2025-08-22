@@ -153,5 +153,7 @@
 
     <string name="move_product_to_title">Move to %s</string>
     <string name="product_moved_toast">%s moved to %s</string>
+    <string name="product_count_footer_simple">Products: %d</string>
+    <string name="product_count_footer">Products: %d    Expired: %d     Near expiration: %d</string>
 
 </resources>

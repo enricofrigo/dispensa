@@ -123,11 +123,10 @@ public class Product {
             calendar.setTimeInMillis(openedDate);
             calendar.add(Calendar.DAY_OF_YEAR, shelfLifeAfterOpeningDays);
             long expiryAfterOpening = calendar.getTimeInMillis();
-
             // Il prodotto scade prima tra la sua data di scadenza originale
             // e quella calcolata dopo l'apertura.
             if (expiryDate != null && expiryDate > 0) {
-                return Math.min(expiryDate, expiryAfterOpening);
+                return Math.max(expiryDate, expiryAfterOpening);
             } else {
                 return expiryAfterOpening;
             }

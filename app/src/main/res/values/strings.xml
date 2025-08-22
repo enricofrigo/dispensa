@@ -159,6 +159,8 @@
     <string name="language_system_default_value" translatable="false">default</string>
     <string name="move_product_to_title">Sposta in %s</string>
     <string name="product_moved_toast">Prodotto %s spostato in %s</string>
+    <string name="product_count_footer_simple">Prodotti: %d</string>
+    <string name="product_count_footer">Prodotti: %d    Scaduti: %d     Vicini alla scadenza: %d</string>
 
 
 </resources>

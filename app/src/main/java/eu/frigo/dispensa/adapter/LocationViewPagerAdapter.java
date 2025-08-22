@@ -16,7 +16,7 @@ import eu.frigo.dispensa.ui.ProductListFragment; // Il fragment che mostra i pro
 
 public class LocationViewPagerAdapter extends FragmentStateAdapter {
 
-    private List<StorageLocation> storageLocations = new ArrayList<>();
+    private final List<StorageLocation> storageLocations = new ArrayList<>();
     private Context context;
 
     public LocationViewPagerAdapter(@NonNull FragmentActivity fragmentActivity) {
