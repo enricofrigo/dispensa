@@ -31,8 +31,8 @@ import eu.frigo.dispensa.work.ExpiryCheckWorkerScheduler;
 
 public class SettingsFragment extends PreferenceFragmentCompat implements SharedPreferences.OnSharedPreferenceChangeListener {
 
-    public static String KEY_EXPIRY_DAYS_BEFORE;
-    public static String KEY_THEME_PREFERENCE;
+    public static String KEY_EXPIRY_DAYS_BEFORE = "pref_expiry_days_before";
+    public static String KEY_THEME_PREFERENCE = "pref_key_theme";
     public static String KEY_LANGUAGE_PREFERENCE = "language_preference";
     public static final String KEY_NOTIFICATION_TIME_HOUR = "pref_notification_time_hour";
     public static final String KEY_NOTIFICATION_TIME_MINUTE = "pref_notification_time_minute";
@@ -42,11 +42,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
 
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
-        KEY_EXPIRY_DAYS_BEFORE = getString(R.string.pref_key_exp_days);
-        KEY_THEME_PREFERENCE = getString(R.string.pref_key_theme);
-
         setPreferencesFromResource(R.xml.preferences, rootKey);
-
         notificationTimePreference = findPreference(getString(R.string.pref_key_exp_time));
         if (notificationTimePreference != null) {
             updateNotificationTimeSummary();
@@ -159,6 +155,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
             triggerRebirthWithAlarmManager(context);
         }
         else if (KEY_EXPIRY_DAYS_BEFORE.equals(key)) {
+
         }
         else if (KEY_THEME_PREFERENCE.equals(key)) {
             String themeValue = sharedPreferences.getString(key, ThemeHelper.SYSTEM_DEFAULT_MODE);

@@ -141,7 +141,7 @@ public class ProductListFragment extends Fragment implements SharedPreferences.O
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         Log.d("ProductListFragment", "onSharedPreferenceChanged called with key: " + key);
-        if (key != null && key.equals(currentLayoutPreferenceKey)) {
+        if (key != null) {
             setupRecyclerViewLayout(); // Aggiorna il layout quando la preferenza cambia
             // Potrebbe essere necessario invalidare l'icona del menu in MainActivity
             if (getActivity() instanceof MainActivity) {
