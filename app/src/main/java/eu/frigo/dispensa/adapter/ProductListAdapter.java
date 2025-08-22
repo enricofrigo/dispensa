@@ -134,6 +134,7 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
                 Calendar warningCalendar = Calendar.getInstance();
                 warningCalendar.setTimeInMillis(todayTimestamp);
                 warningCalendar.add(Calendar.DAY_OF_YEAR, daysBeforeWarning);
+                Log.d("ProductViewHolder", "Warning date set to: " + warningCalendar.getTime());
                 long warningTimestamp = warningCalendar.getTimeInMillis();
 
                 // Stato 1: Scaduto
@@ -238,7 +239,7 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
 
         @Override
         public boolean areContentsTheSame(@NonNull ProductWithCategoryDefinitions oldItem, @NonNull ProductWithCategoryDefinitions newItem) {
-            return false && oldItem.product.getBarcode().equals(newItem.product.getBarcode()) &&
+            return oldItem.product.getBarcode().equals(newItem.product.getBarcode()) &&
                     oldItem.product.getQuantity() == newItem.product.getQuantity() &&
                     oldItem.product.getProductName().equals(newItem.product.getProductName()) &&
                     (oldItem.product.getImageUrl() == null || oldItem.product.getImageUrl().equals(newItem.product.getImageUrl())) &&
