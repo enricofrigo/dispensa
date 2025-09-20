@@ -148,6 +148,10 @@
     <string name="language_english">Inglese</string>
     <string name="language_italian">Italiano</string>
 
+    <string name="pref_cat_data_title">Dati</string>
+    <string name="pref_tosano_title">Abilita API Tosano</string>
+    <string name="pref_tosano_summary">Consenti all\'app di scaricare dati da Supermercati Tosano</string>
+
     <!--Dfault Location -->
     <string name="default_location_pantry_entry">Dispensa</string>
     <string name="default_location_freezer_entry">Freezer</string>
@@ -161,6 +165,5 @@
     <string name="product_moved_toast">Prodotto %s spostato in %s</string>
     <string name="product_count_footer_simple">Prodotti: %d</string>
     <string name="product_count_footer">Prodotti: %d    Scaduti: %d     Vicini alla scadenza: %d</string>
-
 
 </resources>

@@ -58,5 +58,18 @@
             app:iconSpaceReserved="false"/>
 
     </PreferenceCategory>
+    <PreferenceCategory app:key="pref_key_data"
+        app:title="@string/pref_cat_data_title"
+        app:iconSpaceReserved="false">
+
+        <SwitchPreferenceCompat
+            app:key="pref_key_enable_tosano_api"
+            app:title="@string/pref_tosano_title"
+            app:summary="@string/pref_tosano_summary"
+            app:defaultValue="false"
+            app:iconSpaceReserved="false"/>
+
+    </PreferenceCategory>
+
 
 </PreferenceScreen>

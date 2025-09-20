@@ -147,6 +147,10 @@
     <string name="language_english">English</string>
     <string name="language_italian">Italian</string>
 
+    <string name="pref_cat_data_title">Data</string>
+    <string name="pref_tosano_title">Enable Tosano API</string>
+    <string name="pref_tosano_summary">Enable app to download data from Tosano API</string>
+
     <string name="default_location_pantry_entry">Pantry</string>
     <string name="default_location_freezer_entry">Freezer</string>
     <string name="default_location_fridge_entry">Fridge</string>
