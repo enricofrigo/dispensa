@@ -624,20 +624,22 @@ public class AddProductActivity extends AppCompatActivity {
             }
         });
 
-        TosanoApiService tosanoApiService = TosanoRetrofitClient.getApiService();
-        retrofit2.Call<TosanoApiResponse> callT = tosanoApiService.getProductByBarcode(barcode);
-        callT.enqueue(new Callback<TosanoApiResponse>() {
-            @Override
-            public void onResponse(@NonNull retrofit2.Call<TosanoApiResponse> call, @NonNull Response<TosanoApiResponse> response) {
-                // Gestisci la risposta
-                Log.d("Tosano", "Risposta API: " + response.body());
-            }
-            @Override
-            public void onFailure(@NonNull retrofit2.Call<TosanoApiResponse> call, @NonNull Throwable t) {
-                // Gestisci l'errore
-                Log.e("Tosano", "Errore chiamata API", t);
-            }
-        });
+        TosanoApiService tosanoApiService = TosanoRetrofitClient.getApiService(getApplicationContext());
+        if (tosanoApiService != null){
+            retrofit2.Call<TosanoApiResponse> callT = tosanoApiService.getProductByBarcode(barcode);
+            callT.enqueue(new Callback<TosanoApiResponse>() {
+                @Override
+                public void onResponse(@NonNull retrofit2.Call<TosanoApiResponse> call, @NonNull Response<TosanoApiResponse> response) {
+                    // Gestisci la risposta
+                    Log.d("Tosano", "Risposta API: " + response.body());
+                }
+                @Override
+                public void onFailure(@NonNull retrofit2.Call<TosanoApiResponse> call, @NonNull Throwable t) {
+                    // Gestisci l'errore
+                    Log.e("Tosano", "Errore chiamata API", t);
+                }
+            });
+        }
     }
 
     private void clearProductApiFieldsAndData() {
