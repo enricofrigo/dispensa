@@ -29,6 +29,9 @@
     <string name="barcode_mandatory">Il codice a barre è obbligatorio</string>
     <string name="scan_barcode_description">Scansiona codice a barre</string>
     <string name="scan_barcode_error">Scansione codice a barre fallita o annullata</string>
+    <string name="no_barcode_in_image">Nessun codice a barre trovato nell\'immagine.</string>
+    <string name="err_scan_from_image">Errore nella scansione del codice a barre da immagine.</string>
+    <string name="err_load_image">Errore nel caricamento dell\'immagine.</string>
     <string name="quantity_hint">Quantità</string>
     <string name="quantity_mandatory">La quantità è obbligatoria</string>
     <string name="err_quantity_zero">La quantità deve essere maggiore di zero</string>
@@ -52,7 +55,7 @@
     <string name="delete_product_title">Conferma Cancellazione</string>
     <string name="delete_product_descritpion">Sei sicuro di voler cancellare il prodotto: %s?</string>
     <string name="notify_delete_product">Prodotto cancellato: %s</string>
-    <string name="notify_used">"\"%s\" rimosso.</string>
+    <string name="notify_used">""%s" rimosso.</string>
 
     <!-- Open/close -->
     <string name="open">Apri</string>
@@ -102,7 +105,8 @@
     <string name="notify_update_location">Location aggiornata</string>
     <string name="error_delete_default_location">Le location predefinite non possono essere eliminate.</string>
     <string name="delete_location_confirmation_title">Conferma Eliminazione</string>
-    <string name="error_delete_location_confirmation">Sei sicuro di voler eliminare la location \'%s\'?\nI prodotti in questa location potrebbero dover essere riassegnati.</string>
+    <string name="error_delete_location_confirmation">Sei sicuro di voler eliminare la location \'%s\'?
+I prodotti in questa location potrebbero dover essere riassegnati.</string>
     <string name="notify_delete_location">Location \'%s\' eliminata</string>
     <string name="err_location_select">Seleziona una posizione di archiviazione</string>
 
@@ -110,7 +114,7 @@
     <string name="version_format_detailed">Versione: %1$s (Build: %2$s)</string>
     <string name="version_format_simple">Versione: %1$s</string>
     <string name="version_not_available">Versione: N/D</string>
-    <string name="loading_version">Versione: Caricamento...</string>
+    <string name="loading_version">Versione: Caricamento…</string>
 
     <!-- Notifiche -->
     <string name="expiry_notification_channel_name">expiry_notification_channel_name</string>

@@ -1,11 +1,14 @@
 package eu.frigo.dispensa.activity;
 
+import static android.view.View.GONE;
+
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.Image;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Size;
 import android.view.View;
@@ -23,7 +26,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar; // Se vuoi una Toolbar anche qui
+import androidx.appcompat.widget.Toolbar;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.Preview;
@@ -43,6 +46,7 @@ import com.google.mlkit.vision.barcode.BarcodeScanning;
 import com.google.mlkit.vision.barcode.common.Barcode;
 import com.google.mlkit.vision.common.InputImage;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -122,6 +126,7 @@ public class AddProductActivity extends AppCompatActivity {
     public final static String NEW_PRODUCT_EDIT = "NEW_PRODUCT_EDIT";
     public final static String PRESELECTED_LOCATION_INTERNAL_KEY = "PRESELECTED_LOCATION_INTERNAL_KEY";
 
+    private ActivityResultLauncher<String> pickImageForBarcodeLauncher;
 
     private final ActivityResultLauncher<String> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
@@ -164,7 +169,8 @@ public class AddProductActivity extends AppCompatActivity {
         }
 
         editTextBarcode = findViewById(R.id.editTextBarcode);
-        ImageButton buttonScanBarcode = findViewById(R.id.buttonScanBarcode);
+        ImageButton buttonScanBarcodeCamera = findViewById(R.id.buttonScanBarcodeCamera);
+        ImageButton buttonScanBarcodeGallery = findViewById(R.id.buttonScanBarcodeGallery);
         editTextQuantity = findViewById(R.id.editTextQuantity);
         buttonDecrementQuantityActivity = findViewById(R.id.buttonDecrementQuantityActivity);
         buttonIncrementQuantityActivity = findViewById(R.id.buttonIncrementQuantityActivity);
@@ -205,9 +211,25 @@ public class AddProductActivity extends AppCompatActivity {
                         )
                         .build();
         barcodeScanner = BarcodeScanning.getClient(options);
-        buttonScanBarcode.setOnClickListener(v -> {
-            checkCameraPermissionAndStartScanner();
-        });
+
+        pickImageForBarcodeLauncher = registerForActivityResult(
+                new ActivityResultContracts.GetContent(),
+                uri -> {
+                    if (uri != null) {
+                        Log.d("BarcodeScan", "Immagine selezionata dalla galleria per barcode: " + uri.toString());
+                        try {
+                            cameraProviderFuture.get().unbindAll();
+                        } catch (ExecutionException | InterruptedException e) {
+                            Log.e("AddProductActivity", "Errore nel fermare la fotocamera", e);
+                        }
+                        previewViewBarcode.setVisibility(GONE);
+                        processImageForBarcode(uri);
+                    } else {
+                        Log.d("BarcodeScan", "Selezione immagine per barcode annullata.");
+                    }
+                }
+        );
+
         editTextBarcode.setOnFocusChangeListener((v, hasFocus) -> {
             if (!hasFocus) {
                 String barcode = Objects.requireNonNull(editTextBarcode.getText()).toString().trim();
@@ -232,9 +254,6 @@ public class AddProductActivity extends AppCompatActivity {
                 if (currentQuantity > 1) { // Impedisci che la quantità scenda sotto 1 (o 0 se preferisci)
                     currentQuantity--;
                     editTextQuantity.setText(String.valueOf(currentQuantity));
-                } else {
-                    // Opzionale: Mostra un Toast o semplicemente non fare nulla
-                    // Toast.makeText(AddProductActivity.this, "La quantità non può essere inferiore a 1", Toast.LENGTH_SHORT).show();
                 }
             } catch (NumberFormatException e) {
                 editTextQuantity.setText("1"); // In caso di errore o campo vuoto
@@ -250,6 +269,9 @@ public class AddProductActivity extends AppCompatActivity {
             }
             fabButtonSaveProduct.setText(getString(R.string.update_product));
             observeProductForEditMode();
+            buttonScanBarcodeGallery.setVisibility(GONE);
+            buttonScanBarcodeCamera.setVisibility(GONE);
+            editTextBarcode.setVisibility(GONE);
         } else {
             isEditMode = false;
             if (getSupportActionBar() != null) {
@@ -282,29 +304,60 @@ public class AddProductActivity extends AppCompatActivity {
                 updateOpenedDateUI(currentOpenedDate);
             });
         }
-        editTextExpiryDate.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                KeyboardUtils.hideKeyboard(AddProductActivity.this);
-                showDatePickerDialog();
-            }
+        editTextExpiryDate.setOnClickListener(v -> {
+            KeyboardUtils.hideKeyboard(AddProductActivity.this);
+            showDatePickerDialog();
         });
-        buttonScanBarcode.setOnClickListener(v -> checkCameraPermissionAndStartScanner());
+        buttonScanBarcodeCamera.setOnClickListener(v -> checkCameraPermissionAndStartScanner());
+        buttonScanBarcodeGallery.setOnClickListener(v -> pickImageForBarcodeLauncher.launch("image/*"));
         buttonMarkAsClosed.setOnClickListener(v -> {currentOpenedDate = 0L;updateOpenedDateUI(currentOpenedDate);});
         fabButtonSaveProduct.setOnClickListener(v -> saveOrUpdateProduct());
     }
+
+    private void processImageForBarcode(Uri imageUri) {
+        try {
+            InputImage image = InputImage.fromFilePath(this, imageUri);
+            barcodeScanner.process(image)
+                    .addOnSuccessListener(barcodes -> {
+                        if (!barcodes.isEmpty()) {
+                            for (Barcode barcode : barcodes) {
+                                String rawValue = barcode.getRawValue();
+                                Log.d("BarcodeScanner", "Codice a barre da immagine trovato: " + rawValue);
+                                runOnUiThread(() -> {
+                                    editTextBarcode.setText(rawValue);
+                                    fetchProductDetailsFromApi(rawValue);
+                                });
+                                return; // Trovato un barcode, esci
+                            }
+                        } else {
+                            Log.d("BarcodeScanner", "Nessun codice a barre trovato nell'immagine.");
+                            Toast.makeText(this, getString(R.string.no_barcode_in_image), Toast.LENGTH_SHORT).show();
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e("BarcodeScanner", "Errore nella scansione del codice a barre da immagine", e);
+                        Toast.makeText(this, getString(R.string.err_scan_from_image), Toast.LENGTH_SHORT).show();
+                    });
+        } catch (IOException e) {
+            e.printStackTrace();
+            Log.e("BarcodeScanner", "Errore nel creare InputImage da URI", e);
+            Toast.makeText(this, getString(R.string.err_load_image), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+
     private void updateOpenedDateUI(Long openedTimestamp) {
         if (buttonMarkAsOpened == null || textViewOpenedDate == null) return;
 
         if (openedTimestamp != null && openedTimestamp > 0) {
             textViewOpenedDate.setText(String.format(getString(R.string.open_date), formatDate(openedTimestamp)));
             textViewOpenedDate.setVisibility(View.VISIBLE);
-            buttonMarkAsOpened.setVisibility(View.GONE);
+            buttonMarkAsOpened.setVisibility(GONE);
             buttonMarkAsClosed.setVisibility(View.VISIBLE);
         } else {
-            textViewOpenedDate.setVisibility(View.GONE);
+            textViewOpenedDate.setVisibility(GONE);
             buttonMarkAsOpened.setVisibility(View.VISIBLE);
-            buttonMarkAsClosed.setVisibility(View.GONE);
+            buttonMarkAsClosed.setVisibility(GONE);
         }
     }
     private String formatDate(Long timestamp) {
@@ -589,7 +642,7 @@ public class AddProductActivity extends AppCompatActivity {
                                     .into(imageViewProduct);
                             imageViewProduct.setVisibility(View.VISIBLE);
                         } else {
-                            imageViewProduct.setVisibility(View.GONE); // O mostra un placeholder
+                            imageViewProduct.setVisibility(GONE); // O mostra un placeholder
                             Log.w("OpenFoodFacts", "URL immagine non trovato per: " + barcode);
                         }
                         List<String> fetchedCategories = productData.getCategoriesTags();
@@ -645,7 +698,7 @@ public class AddProductActivity extends AppCompatActivity {
     private void clearProductApiFieldsAndData() {
         editTextProductName.setText("");
         imageViewProduct.setImageDrawable(null);
-        imageViewProduct.setVisibility(View.GONE);
+        imageViewProduct.setVisibility(GONE);
         currentProductNameFromApi = null;
         currentImageUrlFromApi = null;
     }
@@ -654,7 +707,7 @@ public class AddProductActivity extends AppCompatActivity {
         if (cameraProvider != null) {
             cameraProvider.unbindAll();
         }
-        previewViewBarcode.setVisibility(View.GONE);
+        previewViewBarcode.setVisibility(GONE);
     }
 
     @Override
@@ -767,4 +820,3 @@ public class AddProductActivity extends AppCompatActivity {
     }
 
 }
-

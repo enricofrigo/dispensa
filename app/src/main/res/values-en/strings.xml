@@ -29,6 +29,9 @@
     <string name="barcode_mandatory">Barcode is mandatory</string>
     <string name="scan_barcode_description">Barcode scan</string>
     <string name="scan_barcode_error">Barcode scan failed or cancelled</string>
+    <string name="no_barcode_in_image">Barcode not find.</string>
+    <string name="err_scan_from_image">Barcode scan failed.</string>
+    <string name="err_load_image">Error loading image.</string>
     <string name="quantity_hint">Quantity</string>
     <string name="quantity_mandatory">Quantity is mandatory</string>
     <string name="err_quantity_zero">Quantity must be greater than zero</string>
