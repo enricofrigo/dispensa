@@ -60,7 +60,7 @@
 
                 <!-- Pulsante Scansione Codice a Barre -->
                 <ImageButton
-                    android:id="@+id/buttonScanBarcode"
+                    android:id="@+id/buttonScanBarcodeCamera"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:src="@android:drawable/ic_menu_camera"
@@ -68,6 +68,15 @@
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:padding="8dp"/>
 
+                <ImageButton
+                    android:id="@+id/buttonScanBarcodeGallery"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@android:drawable/ic_menu_gallery"
+                    android:contentDescription="@string/scan_barcode_description"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:visibility="visible"
+                    android:padding="8dp"/>
             </LinearLayout>
 
             <androidx.camera.view.PreviewView
