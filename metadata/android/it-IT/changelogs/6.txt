@@ -1,0 +1,5 @@
+• Gestione base della dispensa
+• Notifiche scadenze
+• Scansione barcode
+• Scansione barcode da immagine
+• Integrazione Open Food Facts
