@@ -4,7 +4,7 @@ plugins {
 
 android {
     namespace = "eu.frigo.dispensa"
-    compileSdk = 36
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "eu.frigo.dispensa"
