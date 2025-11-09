@@ -79,7 +79,7 @@
                     android:padding="8dp"/>
             </LinearLayout>
 
-            <androidx.camera.view.PreviewView
+            <com.journeyapps.barcodescanner.DecoratedBarcodeView
                 android:id="@+id/previewViewBarcode"
                 android:layout_width="match_parent"
                 android:layout_height="300dp"
