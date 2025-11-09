@@ -1,0 +1,11 @@
+Dispensa helps you manage your pantry simply and efficiently.
+
+Features:
+• Add, edit, and remove items from your pantry
+• Integration with Open Food Facts to automatically retrieve product information
+• Receive notifications for expiring products
+• Customizable locations to better organize your products
+• Barcode scan to quickly add products
+• Italian and English language support
+
+Avoid food waste and always keep track of what you have in your pantry!

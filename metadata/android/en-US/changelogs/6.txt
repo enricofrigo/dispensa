@@ -1,0 +1,6 @@
+• Initial release
+• Basic pantry management
+• Expiry notifications
+• Barcode scanning
+• Barcode scanning from image
+• Open Food Facts integration
