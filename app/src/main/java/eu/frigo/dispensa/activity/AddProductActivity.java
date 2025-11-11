@@ -3,7 +3,6 @@ package eu.frigo.dispensa.activity;
 import static android.view.View.GONE;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -46,7 +45,6 @@ import com.google.zxing.BarcodeFormat;
 import com.google.zxing.BinaryBitmap;
 import com.google.zxing.DecodeHintType;
 import com.google.zxing.MultiFormatReader;
-import com.google.zxing.NotFoundException;
 import com.google.zxing.RGBLuminanceSource;
 import com.google.zxing.Result;
 import com.google.zxing.common.HybridBinarizer;
@@ -186,6 +184,9 @@ public class AddProductActivity extends AppCompatActivity {
                 getSupportActionBar().setTitle(getString(R.string.add_product));
             }
         }
+
+        boolean tosanoApiEnabled = TosanoRetrofitClient.isTosanoApiEnabled(getApplicationContext());
+        boolean openFoodFactsApiEnabled = OpenFoodFactsRetrofitClient.isOpenFoodFactsApiEnabled(getApplicationContext());
 
         editTextBarcode = findViewById(R.id.editTextBarcode);
         ImageButton buttonScanBarcodeCamera = findViewById(R.id.buttonScanBarcodeCamera);
@@ -332,6 +333,11 @@ public class AddProductActivity extends AppCompatActivity {
             updateOpenedDateUI(currentOpenedDate);
         });
         fabButtonSaveProduct.setOnClickListener(v -> saveOrUpdateProduct());
+        if(!tosanoApiEnabled && !openFoodFactsApiEnabled){
+            buttonScanBarcodeCamera.setVisibility(GONE);
+            buttonScanBarcodeGallery.setVisibility(GONE);
+            barcodeView.setVisibility(GONE);
+        }
     }
 
     private void initializeZXingReader() {
@@ -679,75 +685,82 @@ public class AddProductActivity extends AppCompatActivity {
         Log.d("OpenFoodFacts", "Fetching details for barcode: " + barcode);
         Toast.makeText(this, getString(R.string.notify_load_product), Toast.LENGTH_SHORT).show();
 
-        OpenFoodFactsApiService OffApiService = OpenFoodFactsRetrofitClient.getApiService();
-        String fieldsToFetch = "product_name_it,product_name,image_front_url,image_url,categories_tags";
-        retrofit2.Call<OpenFoodFactsProductResponse> call = OffApiService.getProductByBarcode(barcode, fieldsToFetch);
+        OpenFoodFactsApiService OffApiService = OpenFoodFactsRetrofitClient.getApiService(getApplicationContext());
+        TosanoApiService tosanoApiService = TosanoRetrofitClient.getApiService(getApplicationContext());
+        if(OffApiService == null && tosanoApiService == null){
+            Toast.makeText(this, getString(R.string.err_api), Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-        call.enqueue(new Callback<OpenFoodFactsProductResponse>() {
-            @Override
-            public void onResponse(@NonNull retrofit2.Call<OpenFoodFactsProductResponse> call, @NonNull Response<OpenFoodFactsProductResponse> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    OpenFoodFactsProductResponse apiResponse = response.body();
-                    if (apiResponse.getStatus() == 1 && apiResponse.getProduct() != null) {
-                        OpenFoodFactsProductResponse.ProductData productData = apiResponse.getProduct();
-                        String productName = productData.getProductNameIt();
-                        if (productName == null || productName.trim().isEmpty()) {
-                            productName = productData.getProductName();
-                        }
-                        currentProductNameFromApi = productName;
-                        if (productName != null && !productName.trim().isEmpty()) {
-                            editTextProductName.setText(productName);
-                        } else {
-                            editTextProductName.setText(getString(R.string.not_find));
-                            Log.w("OpenFoodFacts", "Nome prodotto non trovato per: " + barcode);
-                        }
+        if (OffApiService != null) {
+            String fieldsToFetch = "product_name_it,product_name,image_front_url,image_url,categories_tags";
+            retrofit2.Call<OpenFoodFactsProductResponse> call = OffApiService.getProductByBarcode(barcode, fieldsToFetch);
 
-                        String imageUrl = productData.getImageFrontUrl();
-                        if (imageUrl == null || imageUrl.trim().isEmpty()) {
-                            imageUrl = productData.getImageUrl();
-                        }
-                        currentImageUrlFromApi = imageUrl;
-                        if (imageUrl != null && !imageUrl.trim().isEmpty()) {
-                            Glide.with(AddProductActivity.this)
-                                    .load(imageUrl)
-                                    .into(imageViewProduct);
-                            imageViewProduct.setVisibility(View.VISIBLE);
-                        } else {
-                            imageViewProduct.setVisibility(GONE);
-                            Log.w("OpenFoodFacts", "URL immagine non trovato per: " + barcode);
-                        }
-                        List<String> fetchedCategories = productData.getCategoriesTags();
-                        if (fetchedCategories != null && !fetchedCategories.isEmpty()) {
-                            currentProductTagsSet.clear();
-                            currentProductTagsSet.addAll(fetchedCategories);
-                            Log.d("OpenFoodFacts", "Categories fetched: " + fetchedCategories);
-                        } else {
-                            Log.d("OpenFoodFacts", "No categories found from API.");
-                        }
-                        updateChipGroup();
-                        Toast.makeText(AddProductActivity.this, getString(R.string.notify_loaded_product), Toast.LENGTH_SHORT).show();
+            call.enqueue(new Callback<OpenFoodFactsProductResponse>() {
+                @Override
+                public void onResponse(@NonNull retrofit2.Call<OpenFoodFactsProductResponse> call, @NonNull Response<OpenFoodFactsProductResponse> response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        OpenFoodFactsProductResponse apiResponse = response.body();
+                        if (apiResponse.getStatus() == 1 && apiResponse.getProduct() != null) {
+                            OpenFoodFactsProductResponse.ProductData productData = apiResponse.getProduct();
+                            String productName = productData.getProductNameIt();
+                            if (productName == null || productName.trim().isEmpty()) {
+                                productName = productData.getProductName();
+                            }
+                            currentProductNameFromApi = productName;
+                            if (productName != null && !productName.trim().isEmpty()) {
+                                editTextProductName.setText(productName);
+                            } else {
+                                editTextProductName.setText(getString(R.string.not_find));
+                                Log.w("OpenFoodFacts", "Nome prodotto non trovato per: " + barcode);
+                            }
 
+                            String imageUrl = productData.getImageFrontUrl();
+                            if (imageUrl == null || imageUrl.trim().isEmpty()) {
+                                imageUrl = productData.getImageUrl();
+                            }
+                            currentImageUrlFromApi = imageUrl;
+                            if (imageUrl != null && !imageUrl.trim().isEmpty()) {
+                                Glide.with(AddProductActivity.this)
+                                        .load(imageUrl)
+                                        .into(imageViewProduct);
+                                imageViewProduct.setVisibility(View.VISIBLE);
+                            } else {
+                                imageViewProduct.setVisibility(GONE);
+                                Log.w("OpenFoodFacts", "URL immagine non trovato per: " + barcode);
+                            }
+                            List<String> fetchedCategories = productData.getCategoriesTags();
+                            if (fetchedCategories != null && !fetchedCategories.isEmpty()) {
+                                currentProductTagsSet.clear();
+                                currentProductTagsSet.addAll(fetchedCategories);
+                                Log.d("OpenFoodFacts", "Categories fetched: " + fetchedCategories);
+                            } else {
+                                Log.d("OpenFoodFacts", "No categories found from API.");
+                            }
+                            updateChipGroup();
+                            Toast.makeText(AddProductActivity.this, getString(R.string.notify_loaded_product), Toast.LENGTH_SHORT).show();
+
+                        } else {
+                            Log.w("OpenFoodFacts", "Prodotto non trovato o dati mancanti nell'API per: " + barcode + ", Status: " + apiResponse.getStatus());
+                            Toast.makeText(AddProductActivity.this, "Prodotto non trovato su Open Food Facts", Toast.LENGTH_LONG).show();
+                            clearProductApiFieldsAndData();
+                        }
                     } else {
-                        Log.w("OpenFoodFacts", "Prodotto non trovato o dati mancanti nell'API per: " + barcode + ", Status: " + apiResponse.getStatus());
-                        Toast.makeText(AddProductActivity.this, "Prodotto non trovato su Open Food Facts", Toast.LENGTH_LONG).show();
+                        Log.e("OpenFoodFacts", "Errore nella risposta API: " + response.code() + " - " + response.message());
+                        Toast.makeText(AddProductActivity.this, "Errore nel caricare i dati: " + response.code(), Toast.LENGTH_LONG).show();
                         clearProductApiFieldsAndData();
                     }
-                } else {
-                    Log.e("OpenFoodFacts", "Errore nella risposta API: " + response.code() + " - " + response.message());
-                    Toast.makeText(AddProductActivity.this, "Errore nel caricare i dati: " + response.code(), Toast.LENGTH_LONG).show();
+                }
+
+                @Override
+                public void onFailure(@NonNull retrofit2.Call<OpenFoodFactsProductResponse> call, @NonNull Throwable t) {
+                    Log.e("OpenFoodFacts", "Fallimento chiamata API", t);
+                    Toast.makeText(AddProductActivity.this, getString(R.string.err_network), Toast.LENGTH_LONG).show();
                     clearProductApiFieldsAndData();
                 }
-            }
+            });
+        }
 
-            @Override
-            public void onFailure(@NonNull retrofit2.Call<OpenFoodFactsProductResponse> call, @NonNull Throwable t) {
-                Log.e("OpenFoodFacts", "Fallimento chiamata API", t);
-                Toast.makeText(AddProductActivity.this, getString(R.string.err_network), Toast.LENGTH_LONG).show();
-                clearProductApiFieldsAndData();
-            }
-        });
-
-        TosanoApiService tosanoApiService = TosanoRetrofitClient.getApiService(getApplicationContext());
         if (tosanoApiService != null){
             retrofit2.Call<TosanoApiResponse> callT = tosanoApiService.getProductByBarcode(barcode);
             callT.enqueue(new Callback<TosanoApiResponse>() {

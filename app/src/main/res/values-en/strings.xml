@@ -152,6 +152,9 @@
     <string name="pref_cat_data_title">Data</string>
     <string name="pref_tosano_title">Enable Tosano API</string>
     <string name="pref_tosano_summary">Enable app to download data from Tosano API</string>
+    <string name="pref_off_title">Enable Open Food Fact API</string>
+    <string name="pref_off_summary">Enable app to download data from Open Food Fact</string>
+    <string name="err_api">Cannot load data from API please enable Open Food Fact!</string>
 
     <string name="default_location_pantry_entry">Pantry</string>
     <string name="default_location_freezer_entry">Freezer</string>
