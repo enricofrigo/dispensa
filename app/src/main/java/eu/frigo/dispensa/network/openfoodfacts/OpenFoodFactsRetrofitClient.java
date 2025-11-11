@@ -1,6 +1,12 @@
 // File: RetrofitClient.java
 package eu.frigo.dispensa.network.openfoodfacts;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+
+import androidx.preference.PreferenceManager;
+
+import eu.frigo.dispensa.ui.SettingsFragment;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
@@ -18,8 +24,16 @@ public class OpenFoodFactsRetrofitClient {
         }
         return retrofitInstance;
     }
-
-    public static OpenFoodFactsApiService getApiService() {
+    public static boolean isOpenFoodFactsApiEnabled(Context context) {
+        if (context == null) {
+            // Fallback nel caso il contesto non sia disponibile, considera se abilitare o disabilitare di default
+            return true; // O false, a seconda del comportamento desiderato in questo caso limite
+        }
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        return prefs.getBoolean(SettingsFragment.KEY_PREF_ENABLE_OFF_API, true);
+    }
+    public static OpenFoodFactsApiService getApiService(Context context) {
+        if(!isOpenFoodFactsApiEnabled(context)) return null;
         return getClient().create(OpenFoodFactsApiService.class);
     }
 }
