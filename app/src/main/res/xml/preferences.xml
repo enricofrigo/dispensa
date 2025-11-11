@@ -40,7 +40,7 @@
             app:summary="%s"
             app:entries="@array/language_entries"
             app:entryValues="@array/language_values"
-            app:defaultValue="@string/language_system_default_value"
+            app:defaultValue="@string/language_english"
             app:iconSpaceReserved="false"
             android:persistent="true"/>
 
