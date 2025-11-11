@@ -146,7 +146,6 @@
     <string name="pref_theme_system">system</string>
 
     <string name="pref_cat_title_language">Language</string>
-    <string name="language_system_default">System default</string>
     <string name="language_english">English</string>
     <string name="language_italian">Italian</string>
 

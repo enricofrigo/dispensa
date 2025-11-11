@@ -148,7 +148,6 @@ I prodotti in questa location potrebbero dover essere riassegnati.</string>
     <string name="pref_theme_system">system</string>
 
     <string name="pref_cat_title_language">Lingua</string>
-    <string name="language_system_default">Predefinita dal sistema</string>
     <string name="language_english">Inglese</string>
     <string name="language_italian">Italiano</string>
 
@@ -164,7 +163,6 @@ I prodotti in questa location potrebbero dover essere riassegnati.</string>
     <string name="default_location_freezer" translatable="false">FREEZER</string>
     <string name="default_location_pantry" translatable="false">PANTRY</string>
 
-    <string name="language_system_default_value" translatable="false">default</string>
     <string name="move_product_to_title">Sposta in %s</string>
     <string name="product_moved_toast">Prodotto %s spostato in %s</string>
     <string name="product_count_footer_simple">Prodotti: %d</string>

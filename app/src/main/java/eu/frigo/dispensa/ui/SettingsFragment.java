@@ -77,7 +77,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
         languagePreference = findPreference(KEY_LANGUAGE_PREFERENCE);
         if (languagePreference != null) {
             String currentLangValue = PreferenceManager.getDefaultSharedPreferences(requireContext())
-                    .getString(KEY_LANGUAGE_PREFERENCE, getString(R.string.language_system_default));
+                    .getString(KEY_LANGUAGE_PREFERENCE, getString(R.string.language_english));
             Log.d("localeS", "onCreatePreferences - Valore lingua letto (con chiave hardcoded): " + currentLangValue);
             languagePreference.setValue(currentLangValue);
             updateLanguagePreferenceSummary(currentLangValue);
@@ -127,7 +127,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
         updateNotificationTimeSummary();
         if (languagePreference != null) {
             String currentLangValue = PreferenceManager.getDefaultSharedPreferences(requireContext())
-                    .getString(KEY_LANGUAGE_PREFERENCE, getString(R.string.language_system_default));
+                    .getString(KEY_LANGUAGE_PREFERENCE, getString(R.string.language_english));
             Log.d("localeS", "onResume - Valore lingua letto (con chiave hardcoded): " + currentLangValue);
             updateLanguagePreferenceSummary(currentLangValue);
         }
@@ -142,15 +142,10 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
         Context context = getContext();
         if (KEY_LANGUAGE_PREFERENCE.equals(key)) {
             if (context == null) return;
-            String langCode = sharedPreferences.getString(key, getString(R.string.language_system_default));
+            String langCode = sharedPreferences.getString(key, getString(R.string.language_english));
             Log.d("localeS", "Lingua selezionata: " + langCode + " applicata.");
 
-            LocaleListCompat appLocale;
-            if (LocaleHelper.DEFAULT_LANGUAGE_CODE.equals(langCode) || langCode.equalsIgnoreCase(getString(R.string.language_system_default))) {
-                appLocale = LocaleListCompat.getEmptyLocaleList();
-            } else {
-                appLocale = LocaleListCompat.forLanguageTags(langCode);
-            }
+            LocaleListCompat appLocale = LocaleListCompat.forLanguageTags(langCode);
             AppCompatDelegate.setApplicationLocales(appLocale);
             updateLanguagePreferenceSummary(langCode);
             // In onSharedPreferenceChanged, dopo che la lingua è cambiata e prima di triggerRebirth
