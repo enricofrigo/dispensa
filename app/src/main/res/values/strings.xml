@@ -1,17 +1,17 @@
 <resources>
-    <string name="app_name">Dispensa</string>
+    <string name="app_name">Pantry</string>
 
     <!-- Toolbar -->
-    <string name="tab_title_all_products">Tutti</string>
-    <string name="product_image_description">immagine</string>
-    <string name="add_new_product">Aggiungi prodotto</string>
-    <string name="action_search">Cerca</string>
-    <string name="action_search_hint">Cerca prodotto…</string>
-    <string name="action_toggle_layout">Cambia visualizzazione</string>
-    <string name="drag_handle_description">Sposta</string>
-    <string name="action_settings">Impostazioni</string>
-    <string name="layout_grid_title">Visualizza griglia</string>
-    <string name="layout_list_title">Visualizza lista</string>
+    <string name="tab_title_all_products">All</string>
+    <string name="product_image_description">image</string>
+    <string name="add_new_product">Add product</string>
+    <string name="action_search">Search</string>
+    <string name="action_search_hint">Search product…</string>
+    <string name="action_toggle_layout">Change layout</string>
+    <string name="drag_handle_description">Move</string>
+    <string name="action_settings">Settings</string>
+    <string name="layout_grid_title">Grid</string>
+    <string name="layout_list_title">List</string>
 
     <!-- Permissions -->
     <string name="notify_permission_title">Permesso Notifiche Richiesto</string>
@@ -22,153 +22,150 @@
     <string name="camera_permission_denied">Permesso fotocamera negato. Impossibile scansionare.</string>
 
     <!-- Products -->
-    <string name="add_product">Aggiungi Prodotto</string>
-    <string name="edit_product">Modifica Prodotto</string>
-    <string name="update_product">Aggiorna Prodotto</string>
-    <string name="barcode_hint">Codice a Barre</string>
-    <string name="barcode_mandatory">Il codice a barre è obbligatorio</string>
-    <string name="scan_barcode_description">Scansiona codice a barre</string>
-    <string name="scan_barcode_error">Scansione codice a barre fallita o annullata</string>
-    <string name="no_barcode_in_image">Nessun codice a barre trovato nell\'immagine.</string>
-    <string name="err_scan_from_image">Errore nella scansione del codice a barre da immagine.</string>
-    <string name="err_load_image">Errore nel caricamento dell\'immagine.</string>
-    <string name="quantity_hint">Quantità</string>
-    <string name="quantity_mandatory">La quantità è obbligatoria</string>
-    <string name="err_quantity_zero">La quantità deve essere maggiore di zero</string>
-    <string name="err_quantity_valid">Inserisci un numero valido per la quantità</string>
-    <string name="expiry_date_hint">Data di Scadenza</string>
-    <string name="save_product_button">Salva Prodotto</string>
-    <string name="quantity_label">Quantità: %d</string>
-    <string name="expiry_date_label">Scadenza: %s</string>
-    <string name="expiry_date_mandatory">La data di scadenza è obbligatoria</string>
-    <string name="add_product_title">Aggiungi Prodotto</string>
-    <string name="exp_date">Scad: %s</string>
+    <string name="add_product">Add product</string>
+    <string name="edit_product">Edit product</string>
+    <string name="update_product">Update product</string>
+    <string name="barcode_hint">Barcode</string>
+    <string name="barcode_mandatory">Barcode is mandatory</string>
+    <string name="scan_barcode_description">Barcode scan</string>
+    <string name="scan_barcode_error">Barcode scan failed or cancelled</string>
+    <string name="no_barcode_in_image">Barcode not find.</string>
+    <string name="err_scan_from_image">Barcode scan failed.</string>
+    <string name="err_load_image">Error loading image.</string>
+    <string name="quantity_hint">Quantity</string>
+    <string name="quantity_mandatory">Quantity is mandatory</string>
+    <string name="err_quantity_zero">Quantity must be greater than zero</string>
+    <string name="err_quantity_valid">Insert a valid quantity</string>
+    <string name="expiry_date_hint">Expiry date</string>
+    <string name="save_product_button">Save product</string>
+    <string name="quantity_label">Quantity: %d</string>
+    <string name="expiry_date_label">Expiry: %s</string>
+    <string name="expiry_date_mandatory">Expiry date is mandatory</string>
+    <string name="add_product_title">Add product</string>
+    <string name="exp_date">Expiry: %s</string>
     <string name="not_defined">N/D</string>
-    <string name="notify_load_product">Caricamento dati prodotto…</string>
-    <string name="err_load_product">Errore nel caricamento del prodotto da modificare.</string>
-    <string name="err_camera">Errore nell\'avvio della fotocamera</string>
-    <string name="err_barcode">Codice a barre non valido</string>
-    <string name="notify_loaded_product">Dati caricati</string>
-    <string name="notify_update_product">Prodotto aggiornato: %s</string>
-    <string name="notify_add_product">Prodotto aggiunto: %s</string>
-    <string name="notify_add_new_product">Nuovo prodotto aggiunto</string>
-    <string name="delete_product_title">Conferma Cancellazione</string>
-    <string name="delete_product_descritpion">Sei sicuro di voler cancellare il prodotto: %s?</string>
-    <string name="notify_delete_product">Prodotto cancellato: %s</string>
-    <string name="notify_used">""%s" rimosso.</string>
+    <string name="notify_load_product">loading product data…</string>
+    <string name="err_load_product">Error loading product to edit.</string>
+    <string name="err_camera">Error starting camera</string>
+    <string name="err_barcode">Invalid barcode</string>
+    <string name="notify_loaded_product">Data loaded</string>
+    <string name="notify_update_product">product updated: %s</string>
+    <string name="notify_add_product">product added: %s</string>
+    <string name="notify_add_new_product">New product added</string>
+    <string name="delete_product_title">Confirm Deletion</string>
+    <string name="delete_product_descritpion">Are you sure you want to delete the product: %s?</string>
+    <string name="notify_delete_product">Product deleted: %s</string>
+    <string name="notify_used">"\"%s\" deleted."</string>
 
     <!-- Open/close -->
-    <string name="open">Apri</string>
-    <string name="open_date_nd">Aperto il: N/D</string>
-    <string name="open_date">Aperto il: %s</string>
-    <string name="product_opened_icon_description">aperto</string>
-    <string name="days_opened">Validità dopo apertura (giorni)</string>
-    <string name="close">Chiudi</string>
-    <string name="err_days">Inserisci un numero valido</string>
+    <string name="open">Open</string>
+    <string name="open_date_nd">Open on: N/D</string>
+    <string name="open_date">Open on: %s</string>
+    <string name="product_opened_icon_description">opened</string>
+    <string name="days_opened">Valid until after opening (days)</string>
+    <string name="close">Close</string>
+    <string name="err_days">Insert a valid number</string>
 
     <!-- Buttons -->
-    <string name="add">Aggiungi</string>
-    <string name="delete">Cancella</string>
-    <string name="reomve">Elimina</string>
-    <string name="edit">Modifica</string>
-    <string name="use">Usa</string>
-    <string name="save">Salva</string>
-    <string name="cancel">Annulla</string>
+    <string name="add">Add</string>
+    <string name="delete">Delete</string>
+    <string name="reomve">Remove</string>
+    <string name="edit">Edit</string>
+    <string name="use">Use</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
     <string name="ok">OK</string>
-    <string name="move">Sposta</string>
-
+    <string name="move">Move</string>
 
     <!-- Messages -->
-    <string name="notify_saved">Salvataggio effettuato</string>
-    <string name="not_find">Non trovato</string>
-    <string name="err_network">Errore di rete</string>
-    <string name="canceled">Azione annullata</string>
+    <string name="notify_saved">Saved successfully</string>
+    <string name="not_find">Not found</string>
+    <string name="err_network">Network error</string>
+    <string name="canceled">Canceled</string>
 
     <!-- Tags -->
-    <string name="button_add_tag">Aggiungi</string>
-    <string name="hint_product_name">Nome Prodotto</string>
-    <string name="hint_product_image">Immagine prodotto</string>
-    <string name="hint_category_tags">Categorie (Tags)</string>
-    <string name="hint_category_new">Nuova Categoria (es. en:dairy)</string>
+    <string name="button_add_tag">Add</string>
+    <string name="hint_product_name">Product name</string>
+    <string name="hint_product_image">Product image</string>
+    <string name="hint_category_tags">Tags</string>
+    <string name="hint_category_new">new Tag (es. en:dairy)</string>
 
     <!-- Location -->
-    <string name="hint_store_location">Posizione Location</string>
-    <string name="new_location">Nuova Location</string>
-    <string name="edit_location">Modifica Location</string>
-    <string name="delete_location">Elimina Location</string>
-    <string name="default_icon">Icona Default</string>
-    <string name="add_new_location">Aggiungi nuova location</string>
+    <string name="hint_store_location">Location Order</string>
+    <string name="new_location">New Location</string>
+    <string name="edit_location">Edit Location</string>
+    <string name="delete_location">Delete Location</string>
+    <string name="default_icon">Default icon</string>
+    <string name="add_new_location">Add a new location</string>
     <string name="title_manage_locations">Storage location management</string>
-    <string name="hint_new_location">Nome della location</string>
-    <string name="error_empty_location">Il nome non può essere vuoto</string>
-    <string name="notify_add_location">Location \'%s\' aggiunta</string>
-    <string name="notify_update_location">Location aggiornata</string>
-    <string name="error_delete_default_location">Le location predefinite non possono essere eliminate.</string>
-    <string name="delete_location_confirmation_title">Conferma Eliminazione</string>
-    <string name="error_delete_location_confirmation">Sei sicuro di voler eliminare la location \'%s\'?
-I prodotti in questa location potrebbero dover essere riassegnati.</string>
-    <string name="notify_delete_location">Location \'%s\' eliminata</string>
-    <string name="err_location_select">Seleziona una posizione di archiviazione</string>
+    <string name="hint_new_location">Location name</string>
+    <string name="error_empty_location">Name cannot be empty</string>
+    <string name="notify_add_location">Location \'%s\' added</string>
+    <string name="notify_update_location">Location updated</string>
+    <string name="error_delete_default_location">Default locations cannot be deleted.</string>
+    <string name="delete_location_confirmation_title">Confirm Deletion</string>
+    <string name="error_delete_location_confirmation">Are you sure you want to delete the location \'%s\'?\nProducts in this location might need to be moved.</string>
+    <string name="notify_delete_location">Location \'%s\' deleted</string>
+    <string name="err_location_select">Select a location</string>
 
     <!-- Version -->
-    <string name="version_format_detailed">Versione: %1$s (Build: %2$s)</string>
-    <string name="version_format_simple">Versione: %1$s</string>
-    <string name="version_not_available">Versione: N/D</string>
-    <string name="loading_version">Versione: Caricamento…</string>
+    <string name="version_format_detailed">Version: %1$s (Build: %2$s)</string>
+    <string name="version_format_simple">Version: %1$s</string>
+    <string name="version_not_available">Version: N/D</string>
+    <string name="loading_version">Version: Loading...</string>
 
     <!-- Notifiche -->
     <string name="expiry_notification_channel_name">expiry_notification_channel_name</string>
     <string name="expiry_notification_channel_description">expiry notification channel description</string>
-    <string name="expiring_products_notification_title">Prodotti in Scadenza %d</string>
+    <string name="expiring_products_notification_title">Expiring Products %d</string>
 
     <!-- Preferences -->
-    <string name="pref_cat_expiry_title">Notifiche di Scadenza</string>
-    <string name="pref_exp_days_title">Giorni di preavviso</string>
-    <string name="pref_exp_days_summary">Numero di giorni prima della scadenza per ricevere la notifica.</string>
+    <string name="pref_cat_expiry_title">Expiry notifications</string>
+    <string name="pref_exp_days_title">Days before expiry</string>
+    <string name="pref_exp_days_summary">Number of days before expiry to receive the notification.</string>
     <string name="pref_key_exp_days">pref_expiry_days_before</string>
     <string name="pref_key_exp_time">pref_notification_time</string>
-    <string name="pref_key_exp_time_title">Ora della notifica giornaliera</string>
-    <string name="pref_key_exp_summary">Seleziona l\'ora in cui ricevere la notifica di scadenza.</string>
-    <string name="pref_exp_days_error">Inserisci un numero di giorni valido da 0 a 365.</string>
-    <string name="pref_exp_time_title">Seleziona ora notifica</string>
+    <string name="pref_key_exp_time_title">Notification time</string>
+    <string name="pref_key_exp_summary">Select the time to receive the notification.</string>
+    <string name="pref_exp_days_error">Insert a valid number of days from 0 to 365.</string>
+    <string name="pref_exp_time_title">Select notification time</string>
 
     <string name="pref_cat_locations_title">Locations</string>
     <string name="pref_key_location">manage_locations</string>
-    <string name="pref_location_title">Gestione degli storage</string>
-    <string name="pref_location_summary">Aggiungi, modifica o riordina le tue location</string>
+    <string name="pref_location_title">Manage storage</string>
+    <string name="pref_location_summary">Add, edit or reorder your locations</string>
 
-    <string name="pref_cat_theme_title">Aspetto</string>
+    <string name="pref_cat_theme_title">Theme</string>
     <string name="pref_key_theme">theme_preference</string>
-    <string name="pref_theme_title">Tema dell\'app</string>
-    <string name="pref_theme_dark_entry">Scuro</string>
-    <string name="pref_theme_light_entry">Chiaro</string>
-    <string name="pref_theme_system_entry">Predefinito di sistema</string>
+    <string name="pref_theme_title">App theme</string>
+    <string name="pref_theme_dark_entry">Dark</string>
+    <string name="pref_theme_light_entry">Light</string>
+    <string name="pref_theme_system_entry">System default</string>
     <string name="pref_theme_dark">dark</string>
     <string name="pref_theme_light">light</string>
     <string name="pref_theme_system">system</string>
 
-    <string name="pref_cat_title_language">Lingua</string>
-    <string name="language_english">Inglese</string>
-    <string name="language_italian">Italiano</string>
+    <string name="pref_cat_title_language">Language</string>
+    <string name="language_english">English</string>
+    <string name="language_italian">Italian</string>
 
-    <string name="pref_cat_data_title">Dati</string>
-    <string name="pref_tosano_title">Abilita API Tosano</string>
-    <string name="pref_tosano_summary">Consenti all\'app di scaricare dati da Supermercati Tosano</string>
-    <string name="err_api">Impossibile caricare i dati dalle API, abilitare le API Open Food Fact!</string>
+    <string name="pref_cat_data_title">Data</string>
+    <string name="pref_tosano_title">Enable Tosano API</string>
+    <string name="pref_tosano_summary">Enable app to download data from Tosano API</string>
+    <string name="pref_off_title">Enable Open Food Fact API</string>
+    <string name="pref_off_summary">Enable app to download data from Open Food Fact</string>
+    <string name="err_api">Cannot load data from API please enable Open Food Fact!</string>
 
-    <!--Dfault Location -->
-    <string name="default_location_pantry_entry">Dispensa</string>
+    <string name="default_location_pantry_entry">Pantry</string>
     <string name="default_location_freezer_entry">Freezer</string>
-    <string name="default_location_fridge_entry">Frigo</string>
+    <string name="default_location_fridge_entry">Fridge</string>
     <string name="default_location_fridge" translatable="false">FRIDGE</string>
     <string name="default_location_freezer" translatable="false">FREEZER</string>
     <string name="default_location_pantry" translatable="false">PANTRY</string>
 
-    <string name="move_product_to_title">Sposta in %s</string>
-    <string name="product_moved_toast">Prodotto %s spostato in %s</string>
-    <string name="product_count_footer_simple">Prodotti: %d</string>
-    <string name="product_count_footer">Prodotti: %d    Scaduti: %d     Vicini alla scadenza: %d</string>
-    <string name="pref_off_title">Abilita API Open Food Fact</string>
-    <string name="pref_off_summary">Consenti all\'app di scaricare dati da Open Food Fact</string>
+    <string name="move_product_to_title">Move to %s</string>
+    <string name="product_moved_toast">%s moved to %s</string>
+    <string name="product_count_footer_simple">Products: %d</string>
+    <string name="product_count_footer">Products: %d    Expired: %d     Near expiration: %d</string>
 
 </resources>
