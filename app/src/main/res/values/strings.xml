@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Pantry</string>
+    <string name="app_name">Dispensa</string>
 
     <!-- Toolbar -->
     <string name="tab_title_all_products">All</string>
