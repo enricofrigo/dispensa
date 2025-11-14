@@ -102,7 +102,11 @@ public class SettingsActivity extends AppCompatActivity {
         navigateToListAndFinish();
         return true;
     }
-
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        navigateToListAndFinish();
+    }
     private void navigateToListAndFinish() {
         Intent intent = new Intent(this, MainActivity.class); // oppure la tua activity della lista
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
