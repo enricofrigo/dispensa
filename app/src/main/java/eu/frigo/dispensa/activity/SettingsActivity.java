@@ -1,6 +1,7 @@
-package eu.frigo.dispensa.ui;
+package eu.frigo.dispensa.activity;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -15,6 +16,8 @@ import androidx.media3.common.util.Log;
 import androidx.media3.common.util.UnstableApi;
 
 import eu.frigo.dispensa.R;
+import eu.frigo.dispensa.ui.SettingsFragment;
+
 import java.util.Objects;
 
 public class SettingsActivity extends AppCompatActivity {
@@ -89,14 +92,21 @@ public class SettingsActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
-            onBackPressed();
+            navigateToListAndFinish();
             return true;
         }
         return super.onOptionsItemSelected(item);
     }
     @Override
     public boolean onSupportNavigateUp() {
-        onBackPressed();
+        navigateToListAndFinish();
         return true;
+    }
+
+    private void navigateToListAndFinish() {
+        Intent intent = new Intent(this, MainActivity.class); // oppure la tua activity della lista
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        startActivity(intent);
+        finish();
     }
 }

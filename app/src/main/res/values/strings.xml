@@ -168,4 +168,7 @@
     <string name="product_count_footer_simple">Products: %d</string>
     <string name="product_count_footer">Products: %d    Expired: %d     Near expiration: %d</string>
 
+    <string name="off_banner_text">Open Food Facts disabled.</string>
+    <string name="off_banner_button">Preferences</string>
+
 </resources>

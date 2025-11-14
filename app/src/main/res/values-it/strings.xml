@@ -168,4 +168,7 @@ I prodotti in questa location potrebbero dover essere riassegnati.</string>
     <string name="pref_off_title">Abilita API Open Food Fact</string>
     <string name="pref_off_summary">Consenti all\'app di scaricare dati da Open Food Fact</string>
 
+    <string name="off_banner_text">Open Food Facts non è abilitato.</string>
+    <string name="off_banner_button">Vai alle preferenze</string>
+
 </resources>

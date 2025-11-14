@@ -1,0 +1,2 @@
+• fix icons
+. fix preferences navigation

@@ -188,6 +188,10 @@ public class AddProductActivity extends AppCompatActivity {
         boolean tosanoApiEnabled = TosanoRetrofitClient.isTosanoApiEnabled(getApplicationContext());
         boolean openFoodFactsApiEnabled = OpenFoodFactsRetrofitClient.isOpenFoodFactsApiEnabled(getApplicationContext());
 
+        if (!openFoodFactsApiEnabled) {
+            showOpenFoodFactsBanner();
+        }
+
         editTextBarcode = findViewById(R.id.editTextBarcode);
         ImageButton buttonScanBarcodeCamera = findViewById(R.id.buttonScanBarcodeCamera);
         ImageButton buttonScanBarcodeGallery = findViewById(R.id.buttonScanBarcodeGallery);
@@ -340,6 +344,17 @@ public class AddProductActivity extends AppCompatActivity {
         }
     }
 
+    private void showOpenFoodFactsBanner() {
+        View banner = findViewById(R.id.banner_open_food_facts); // Devi avere questo View nel layout!
+        Button btnEnableOFF = banner.findViewById(R.id.button_enable_off);
+        banner.setVisibility(View.VISIBLE);
+        btnEnableOFF.setOnClickListener(v -> {
+            // Vai alle preferenze, es. se hai la SettingsActivity...
+            Intent intent = new Intent(this, SettingsActivity.class);
+            intent.putExtra("openFoodFactsSection", true);
+            startActivity(intent);
+        });
+    }
     private void initializeZXingReader() {
         multiFormatReader = new MultiFormatReader();
         Map<DecodeHintType, Object> hints = new EnumMap<>(DecodeHintType.class);
