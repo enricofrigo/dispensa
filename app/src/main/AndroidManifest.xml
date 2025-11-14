@@ -21,7 +21,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Dispensa">
         <activity
-            android:name=".ui.SettingsActivity"
+            android:name=".activity.SettingsActivity"
             android:label="Impostazioni"
             android:parentActivityName=".activity.MainActivity">
             <meta-data

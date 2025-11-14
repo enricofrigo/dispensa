@@ -2,7 +2,6 @@ package eu.frigo.dispensa.activity;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -40,8 +39,6 @@ import eu.frigo.dispensa.data.product.Product;
 import eu.frigo.dispensa.data.category.ProductWithCategoryDefinitions;
 import eu.frigo.dispensa.data.storage.StorageLocation;
 import eu.frigo.dispensa.ui.ProductListFragment;
-import eu.frigo.dispensa.ui.SettingsActivity;
-import eu.frigo.dispensa.util.LocaleHelper;
 import eu.frigo.dispensa.viewmodel.LocationViewModel;
 import eu.frigo.dispensa.viewmodel.ProductViewModel;
 
