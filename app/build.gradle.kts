@@ -16,9 +16,30 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    flavorDimensionList.addAll( listOf("store"))
+
+    productFlavors {
+        create("play") {
+            dimension = "store"
+        }
+        create("fdroid"){
+            dimension = "store"
+            versionNameSuffix = "-fdroid"
+        }
+    }
+
+
     buildTypes {
-        release {
+        debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+            isDebuggable = true
             isMinifyEnabled = false
+            isShrinkResources = false
+            signingConfig = signingConfigs.getByName("debug")
+        }
+        release {
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -32,6 +53,17 @@ android {
     buildFeatures {
         viewBinding = true
     }
+}
+
+tasks.withType<JavaCompile>().configureEach {
+    // Ottieni il servizio toolchain di Java
+    val javaToolchains = project.extensions.getByType<JavaToolchainService>()
+   // Specifica che per questo task vuoi usare un compilatore da un JDK 17
+    javaCompiler.set(
+        javaToolchains.compilerFor {
+            languageVersion.set(JavaLanguageVersion.of(17))
+        }
+    )
 }
 
 dependencies {
@@ -61,7 +93,10 @@ dependencies {
     implementation(libs.glide)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.preference.ktx)
-    implementation(libs.zxing.android.embedded)
+
+    "fdroidImplementation"(libs.zxing.android.embedded)
+    "playImplementation"(libs.play.services.mlkit.barcode.scanning)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
