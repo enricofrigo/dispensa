@@ -1,10 +1,12 @@
 plugins {
     alias(libs.plugins.android.application)
 }
-
 android {
     namespace = "eu.frigo.dispensa"
     compileSdk = 34
+    buildFeatures{
+        buildConfig = true
+    }
 
     defaultConfig {
         applicationId = "eu.frigo.dispensa"
@@ -14,6 +16,7 @@ android {
         versionName = "0.0.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "GITHUB_TOKEN", project.properties["GITHUB_API_TOKEN"].toString())
     }
 
     flavorDimensionList.addAll( listOf("store"))
@@ -93,12 +96,12 @@ dependencies {
     implementation(libs.glide)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.preference.ktx)
-
-    "fdroidImplementation"(libs.zxing.android.embedded)
-    "playImplementation"(libs.play.services.mlkit.barcode.scanning)
-
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
     annotationProcessor(libs.room.compiler)
+
+    "fdroidImplementation"(libs.zxing.android.embedded)
+    "playImplementation"(libs.play.services.mlkit.barcode.scanning)
+
 }
