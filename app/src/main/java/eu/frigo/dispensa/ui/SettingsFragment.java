@@ -46,11 +46,6 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         setPreferencesFromResource(R.xml.preferences, rootKey);
-        Preference tosanopref = findPreference(KEY_PREF_ENABLE_TOSANO_API);
-        if (tosanopref != null) {
-            boolean isDevelopmentSettingsEnabled = Settings.Global.getInt(getContext().getContentResolver(), Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 0) != 0;
-            tosanopref.setVisible(false);
-        }
         notificationTimePreference = findPreference(getString(R.string.pref_key_exp_time));
         if (notificationTimePreference != null) {
             updateNotificationTimeSummary();
