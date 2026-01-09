@@ -73,9 +73,6 @@ import eu.frigo.dispensa.data.storage.StorageLocation;
 import eu.frigo.dispensa.network.openfoodfacts.OpenFoodFactsApiService;
 import eu.frigo.dispensa.network.openfoodfacts.OpenFoodFactsRetrofitClient;
 import eu.frigo.dispensa.network.openfoodfacts.model.OpenFoodFactsProductResponse;
-import eu.frigo.dispensa.network.tosano.TosanoApiService;
-import eu.frigo.dispensa.network.tosano.TosanoRetrofitClient;
-import eu.frigo.dispensa.network.tosano.model.TosanoApiResponse;
 import eu.frigo.dispensa.util.KeyboardUtils;
 import eu.frigo.dispensa.viewmodel.AddProductViewModel;
 import eu.frigo.dispensa.util.DateConverter;
@@ -185,7 +182,6 @@ public class AddProductActivity extends AppCompatActivity {
             }
         }
 
-        boolean tosanoApiEnabled = TosanoRetrofitClient.isTosanoApiEnabled(getApplicationContext());
         boolean openFoodFactsApiEnabled = OpenFoodFactsRetrofitClient.isOpenFoodFactsApiEnabled(getApplicationContext());
 
         if (!openFoodFactsApiEnabled) {
@@ -337,7 +333,7 @@ public class AddProductActivity extends AppCompatActivity {
             updateOpenedDateUI(currentOpenedDate);
         });
         fabButtonSaveProduct.setOnClickListener(v -> saveOrUpdateProduct());
-        if(!tosanoApiEnabled && !openFoodFactsApiEnabled){
+        if(!openFoodFactsApiEnabled){
             buttonScanBarcodeCamera.setVisibility(GONE);
             buttonScanBarcodeGallery.setVisibility(GONE);
             barcodeView.setVisibility(GONE);
@@ -701,8 +697,7 @@ public class AddProductActivity extends AppCompatActivity {
         Toast.makeText(this, getString(R.string.notify_load_product), Toast.LENGTH_SHORT).show();
 
         OpenFoodFactsApiService OffApiService = OpenFoodFactsRetrofitClient.getApiService(getApplicationContext());
-        TosanoApiService tosanoApiService = TosanoRetrofitClient.getApiService(getApplicationContext());
-        if(OffApiService == null && tosanoApiService == null){
+        if(OffApiService == null){
             Toast.makeText(this, getString(R.string.err_api), Toast.LENGTH_SHORT).show();
             return;
         }
@@ -776,19 +771,6 @@ public class AddProductActivity extends AppCompatActivity {
             });
         }
 
-        if (tosanoApiService != null){
-            retrofit2.Call<TosanoApiResponse> callT = tosanoApiService.getProductByBarcode(barcode);
-            callT.enqueue(new Callback<TosanoApiResponse>() {
-                @Override
-                public void onResponse(@NonNull retrofit2.Call<TosanoApiResponse> call, @NonNull Response<TosanoApiResponse> response) {
-                    Log.d("Tosano", "Risposta API: " + response.body());
-                }
-                @Override
-                public void onFailure(@NonNull retrofit2.Call<TosanoApiResponse> call, @NonNull Throwable t) {
-                    Log.e("Tosano", "Errore chiamata API", t);
-                }
-            });
-        }
     }
 
     private void clearProductApiFieldsAndData() {

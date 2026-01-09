@@ -12,11 +12,10 @@ android {
         applicationId = "eu.frigo.dispensa"
         minSdk = 26
         targetSdk = 35
-        versionCode = 8
-        versionName = "0.0.8"
+        versionCode = 9
+        versionName = "0.0.9"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField("String", "GITHUB_TOKEN", project.properties["GITHUB_API_TOKEN"].toString())
     }
 
     flavorDimensionList.addAll( listOf("store"))

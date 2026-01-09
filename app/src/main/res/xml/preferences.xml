@@ -66,14 +66,7 @@
             app:key="pref_key_enable_off_api"
             app:title="@string/pref_off_title"
             app:summary="@string/pref_off_summary"
-            app:defaultValue="false"
-            app:iconSpaceReserved="false"/>
-
-        <SwitchPreferenceCompat
-            app:key="pref_key_enable_tosano_api"
-            app:title="@string/pref_tosano_title"
-            app:summary="@string/pref_tosano_summary"
-            app:defaultValue="false"
+            app:defaultValue="@bool/pref_enable_api"
             app:iconSpaceReserved="false"/>
 
     </PreferenceCategory>
