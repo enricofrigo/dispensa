@@ -1,1 +1,2 @@
+# app-ads.txt Dispensa file:
 google.com, pub-3575119647154040, DIRECT, f08c47fec0942fa0
