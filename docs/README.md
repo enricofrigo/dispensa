@@ -3,7 +3,7 @@
 > **Gestisci la tua dispensa in modo semplice ed efficiente.**  
 > A pantry manager to track what you have, avoid waste, and plan better.
 
-# :camera: Screenshots
+# 📷 Screenshots
 
 <img src="https://github.com/user-attachments/assets/eb90a318-a165-49f5-95aa-638942526294" width="200px" />
 <img src="https://github.com/user-attachments/assets/b925093d-207f-4057-83b0-5517f41ee375" width="200px" />
