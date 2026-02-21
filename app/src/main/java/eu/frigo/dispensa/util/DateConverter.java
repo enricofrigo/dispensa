@@ -16,17 +16,20 @@ public class DateConverter {
 
     private static final String DISPLAY_DATE_FORMAT_PATTERN = "dd/MM/yyyy";
 
-    // Formatter per la visualizzazione. Locale.getDefault() usa le impostazioni regionali dell'utente.
-    private static final SimpleDateFormat displayFormatter =
-            new SimpleDateFormat(DISPLAY_DATE_FORMAT_PATTERN, Locale.getDefault());
-
+    // Formatter per la visualizzazione. Locale.getDefault() usa le impostazioni
+    // regionali dell'utente.
+    private static final SimpleDateFormat displayFormatter = new SimpleDateFormat(DISPLAY_DATE_FORMAT_PATTERN,
+            Locale.getDefault());
 
     /**
      * Converte un timestamp Long (millisecondi, che rappresenta una data specifica
-     * con l'ora normalizzata) in una stringa di data formattata per la visualizzazione.
+     * con l'ora normalizzata) in una stringa di data formattata per la
+     * visualizzazione.
      *
-     * @param timestampMs Il timestamp in millisecondi. Se null, restituisce una stringa vuota o un placeholder.
-     * @return La data formattata come stringa (es. "25/12/2024"), o "" se il timestamp è null.
+     * @param timestampMs Il timestamp in millisecondi. Se null, restituisce una
+     *                    stringa vuota o un placeholder.
+     * @return La data formattata come stringa (es. "25/12/2024"), o "" se il
+     *         timestamp è null.
      */
     @NonNull
     public static String formatTimestampToDisplayDate(@Nullable Long timestampMs) {
@@ -37,34 +40,49 @@ public class DateConverter {
     }
 
     /**
-     * Converte una stringa di data (dal formato di visualizzazione) in un timestamp Long (millisecondi).
-     * La data risultante avrà l'ora normalizzata (es. a mezzogiorno della timezone di default)
+     * Converte una stringa di data (dal formato di visualizzazione) in un timestamp
+     * Long (millisecondi).
+     * La data risultante avrà l'ora normalizzata (es. a mezzogiorno della timezone
+     * di default)
      * per rappresentare l'intera giornata e facilitare i confronti di sole date.
      *
      * @param dateString La stringa della data da parsare (es. "25/12/2024").
-     * @return Il timestamp in millisecondi, o null se la stringa non è valida o è vuota.
+     * @return Il timestamp in millisecondi, o null se la stringa non è valida o è
+     *         vuota.
      */
     @Nullable
     public static Long parseDisplayDateToTimestampMs(@Nullable String dateString) {
         if (dateString == null || dateString.trim().isEmpty()) {
             return null;
         }
-        try {
-            displayFormatter.setLenient(false);
-            Date parsedDate = displayFormatter.parse(dateString.trim());
 
-            if (parsedDate != null) {
-                Calendar calendar = Calendar.getInstance();
-                calendar.setTime(parsedDate);
-                normalizeTime(calendar);
-                return calendar.getTimeInMillis();
+        String[] formats = { "dd/MM/yyyy", "MM/yyyy", "MM/yy" };
+        for (String format : formats) {
+            try {
+                SimpleDateFormat formatter = new SimpleDateFormat(format, Locale.getDefault());
+                formatter.setLenient(false);
+                Date parsedDate = formatter.parse(dateString.trim());
+
+                if (parsedDate != null) {
+                    Calendar calendar = Calendar.getInstance();
+                    calendar.setTime(parsedDate);
+
+                    if (format.equals("MM/yyyy") || format.equals("MM/yy")) {
+                        calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMaximum(Calendar.DAY_OF_MONTH));
+                    }
+
+                    normalizeTime(calendar);
+                    return calendar.getTimeInMillis();
+                }
+            } catch (ParseException e) {
+                // Ignore exception and try the next format
             }
-        } catch (ParseException e) {
-            Log.e("DateConverter", "Errore durante il parsing della data: " + e.getMessage());
-            return null;
         }
+
+        Log.e("DateConverter", "Errore durante il parsing della data: Unparseable date: \"" + dateString + "\"");
         return null;
     }
+
     @Nullable
     public static Date parseDisplayDateToDate(@Nullable String dateString) {
         Long l = parseDisplayDateToTimestampMs(dateString);
@@ -76,7 +94,8 @@ public class DateConverter {
 
     /**
      * Ottiene il timestamp per "oggi" con l'ora normalizzata (es. a mezzogiorno)
-     * nella timezone di default del dispositivo. Utile per confronti "data contro data".
+     * nella timezone di default del dispositivo. Utile per confronti "data contro
+     * data".
      *
      * @return Il timestamp di oggi a mezzogiorno in millisecondi.
      */
@@ -87,11 +106,12 @@ public class DateConverter {
     }
 
     /**
-     * Ottiene il timestamp per una data specifica (anno, mese, giorno) con l'ora normalizzata
+     * Ottiene il timestamp per una data specifica (anno, mese, giorno) con l'ora
+     * normalizzata
      * (es. a mezzogiorno) nella timezone di default del dispositivo.
      *
-     * @param year L'anno (es. 2024).
-     * @param month Il mese, 0-indexed (Gennaio = 0, Febbraio = 1, ...).
+     * @param year       L'anno (es. 2024).
+     * @param month      Il mese, 0-indexed (Gennaio = 0, Febbraio = 1, ...).
      * @param dayOfMonth Il giorno del mese (1-31).
      * @return Il timestamp per quella data a mezzogiorno in millisecondi.
      */
@@ -105,9 +125,11 @@ public class DateConverter {
     }
 
     /**
-     * Helper privato per normalizzare l'ora di un oggetto Calendar a un punto fisso della giornata
+     * Helper privato per normalizzare l'ora di un oggetto Calendar a un punto fisso
+     * della giornata
      * (es. mezzogiorno), azzerando minuti, secondi e millisecondi.
-     * Questo aiuta a evitare problemi dovuti a differenze di ora quando si confrontano solo le date.
+     * Questo aiuta a evitare problemi dovuti a differenze di ora quando si
+     * confrontano solo le date.
      *
      * @param calendar L'oggetto Calendar da normalizzare.
      */
@@ -119,7 +141,9 @@ public class DateConverter {
     }
 
     /**
-     * Ottiene il timestamp per "adesso", utile per popolare campi "data di creazione/modifica".
+     * Ottiene il timestamp per "adesso", utile per popolare campi "data di
+     * creazione/modifica".
+     * 
      * @return Il timestamp corrente in millisecondi.
      */
     public static long getCurrentTimestamp() {
