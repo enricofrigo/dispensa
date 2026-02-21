@@ -131,8 +131,8 @@ public class AddProductActivity extends AppCompatActivity {
 
     private ActivityResultLauncher<String> pickImageForBarcodeLauncher;
 
-    private final ActivityResultLauncher<String> requestPermissionLauncher =
-            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+    private final ActivityResultLauncher<String> requestPermissionLauncher = registerForActivityResult(
+            new ActivityResultContracts.RequestPermission(), isGranted -> {
                 if (isGranted) {
                     isCameraPermissionGranted = true;
                     Toast.makeText(this, getString(R.string.camera_permission_accepted), Toast.LENGTH_SHORT).show();
@@ -152,7 +152,8 @@ public class AddProductActivity extends AppCompatActivity {
                 // Verifica che sia un codice valido per prodotti
                 if (isValidProductBarcode(barcode)) {
                     isScanning = false;
-                    Log.d("BarcodeScanner", "Codice a barre trovato: " + barcode + " (Formato: " + result.getBarcodeFormat() + ")");
+                    Log.d("BarcodeScanner",
+                            "Codice a barre trovato: " + barcode + " (Formato: " + result.getBarcodeFormat() + ")");
 
                     runOnUiThread(() -> {
                         editTextBarcode.setText(barcode);
@@ -182,7 +183,8 @@ public class AddProductActivity extends AppCompatActivity {
             }
         }
 
-        boolean openFoodFactsApiEnabled = OpenFoodFactsRetrofitClient.isOpenFoodFactsApiEnabled(getApplicationContext());
+        boolean openFoodFactsApiEnabled = OpenFoodFactsRetrofitClient
+                .isOpenFoodFactsApiEnabled(getApplicationContext());
 
         if (!openFoodFactsApiEnabled) {
             showOpenFoodFactsBanner();
@@ -191,6 +193,14 @@ public class AddProductActivity extends AppCompatActivity {
         editTextBarcode = findViewById(R.id.editTextBarcode);
         ImageButton buttonScanBarcodeCamera = findViewById(R.id.buttonScanBarcodeCamera);
         ImageButton buttonScanBarcodeGallery = findViewById(R.id.buttonScanBarcodeGallery);
+
+        ImageButton buttonScanExpiryCamera = findViewById(R.id.buttonScanExpiryCamera);
+        if (buttonScanExpiryCamera != null)
+            buttonScanExpiryCamera.setVisibility(GONE);
+        ImageButton buttonScanExpiryGallery = findViewById(R.id.buttonScanExpiryGallery);
+        if (buttonScanExpiryGallery != null)
+            buttonScanExpiryGallery.setVisibility(GONE);
+
         editTextQuantity = findViewById(R.id.editTextQuantity);
         buttonDecrementQuantityActivity = findViewById(R.id.buttonDecrementQuantityActivity);
         buttonIncrementQuantityActivity = findViewById(R.id.buttonIncrementQuantityActivity);
@@ -223,8 +233,7 @@ public class AddProductActivity extends AppCompatActivity {
                 BarcodeFormat.UPC_A,
                 BarcodeFormat.UPC_E,
                 BarcodeFormat.CODE_128,
-                BarcodeFormat.CODE_39
-        );
+                BarcodeFormat.CODE_39);
         barcodeView.getBarcodeView().setDecoderFactory(new DefaultDecoderFactory(formats));
         barcodeView.setStatusText("Inquadra il codice a barre del prodotto");
 
@@ -238,8 +247,7 @@ public class AddProductActivity extends AppCompatActivity {
                     } else {
                         Log.d("BarcodeScan", "Selezione immagine per barcode annullata.");
                     }
-                }
-        );
+                });
 
         editTextBarcode.setOnFocusChangeListener((v, hasFocus) -> {
             if (!hasFocus) {
@@ -333,7 +341,7 @@ public class AddProductActivity extends AppCompatActivity {
             updateOpenedDateUI(currentOpenedDate);
         });
         fabButtonSaveProduct.setOnClickListener(v -> saveOrUpdateProduct());
-        if(!openFoodFactsApiEnabled){
+        if (!openFoodFactsApiEnabled) {
             buttonScanBarcodeCamera.setVisibility(GONE);
             buttonScanBarcodeGallery.setVisibility(GONE);
             barcodeView.setVisibility(GONE);
@@ -351,6 +359,7 @@ public class AddProductActivity extends AppCompatActivity {
             startActivity(intent);
         });
     }
+
     private void initializeZXingReader() {
         multiFormatReader = new MultiFormatReader();
         Map<DecodeHintType, Object> hints = new EnumMap<>(DecodeHintType.class);
@@ -361,8 +370,7 @@ public class AddProductActivity extends AppCompatActivity {
                 BarcodeFormat.UPC_A,
                 BarcodeFormat.UPC_E,
                 BarcodeFormat.CODE_128,
-                BarcodeFormat.CODE_39
-        );
+                BarcodeFormat.CODE_39);
 
         hints.put(DecodeHintType.POSSIBLE_FORMATS, formats);
         hints.put(DecodeHintType.TRY_HARDER, Boolean.TRUE);
@@ -396,9 +404,8 @@ public class AddProductActivity extends AppCompatActivity {
                     });
                 } else {
                     Log.d("BarcodeScanner", "Nessun codice a barre trovato nell'immagine.");
-                    runOnUiThread(() ->
-                            Toast.makeText(this, getString(R.string.no_barcode_in_image), Toast.LENGTH_SHORT).show()
-                    );
+                    runOnUiThread(() -> Toast
+                            .makeText(this, getString(R.string.no_barcode_in_image), Toast.LENGTH_SHORT).show());
                 }
             }
         } catch (IOException e) {
@@ -414,7 +421,7 @@ public class AddProductActivity extends AppCompatActivity {
         int width = bitmap.getWidth();
         int height = bitmap.getHeight();
         if (width > MAX_SIZE || height > MAX_SIZE) {
-            float ratio = Math.min((float)MAX_SIZE / width, (float)MAX_SIZE / height);
+            float ratio = Math.min((float) MAX_SIZE / width, (float) MAX_SIZE / height);
             width = Math.round(width * ratio);
             height = Math.round(height * ratio);
             bitmap = Bitmap.createScaledBitmap(bitmap, width, height, true);
@@ -437,8 +444,7 @@ public class AddProductActivity extends AppCompatActivity {
                 BarcodeFormat.CODE_39,
                 BarcodeFormat.CODE_93,
                 BarcodeFormat.ITF,
-                BarcodeFormat.QR_CODE
-        ));
+                BarcodeFormat.QR_CODE));
 
         Bitmap[] bitmaps = new Bitmap[4];
         bitmaps[0] = bitmap;
@@ -449,15 +455,18 @@ public class AddProductActivity extends AppCompatActivity {
         for (Bitmap b : bitmaps) {
             // Primo tentativo normale
             String resultText = decodeZXingOnce(b, reader, hints, false);
-            if (resultText != null) return resultText;
+            if (resultText != null)
+                return resultText;
             // Secondo: invertito
             resultText = decodeZXingOnce(b, reader, hints, true);
-            if (resultText != null) return resultText;
+            if (resultText != null)
+                return resultText;
         }
         return null;
     }
 
-    private String decodeZXingOnce(Bitmap bitmap, MultiFormatReader reader, Hashtable<DecodeHintType, Object> hints, boolean inverted) {
+    private String decodeZXingOnce(Bitmap bitmap, MultiFormatReader reader, Hashtable<DecodeHintType, Object> hints,
+            boolean inverted) {
         int width = bitmap.getWidth();
         int height = bitmap.getHeight();
         int[] pixels = new int[width * height];
@@ -482,8 +491,10 @@ public class AddProductActivity extends AppCompatActivity {
         m.postRotate(degrees);
         return Bitmap.createBitmap(b, 0, 0, b.getWidth(), b.getHeight(), m, true);
     }
+
     private void updateOpenedDateUI(Long openedTimestamp) {
-        if (buttonMarkAsOpened == null || textViewOpenedDate == null) return;
+        if (buttonMarkAsOpened == null || textViewOpenedDate == null)
+            return;
 
         if (openedTimestamp != null && openedTimestamp > 0) {
             textViewOpenedDate.setText(String.format(getString(R.string.open_date), formatDate(openedTimestamp)));
@@ -498,7 +509,8 @@ public class AddProductActivity extends AppCompatActivity {
     }
 
     private String formatDate(Long timestamp) {
-        if (timestamp == null || timestamp <= 0) return getString(R.string.not_defined);
+        if (timestamp == null || timestamp <= 0)
+            return getString(R.string.not_defined);
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.ITALY);
         return sdf.format(new Date(timestamp));
     }
@@ -553,7 +565,8 @@ public class AddProductActivity extends AppCompatActivity {
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 if (position >= 0 && position < availableLocations.size()) {
                     selectedStorageInternalKey = availableLocations.get(position).getInternalKey();
-                    Log.d("AddProductActivity", "Location selezionata: " + availableLocations.get(position).getName() + " (Key: " + selectedStorageInternalKey + ")");
+                    Log.d("AddProductActivity", "Location selezionata: " + availableLocations.get(position).getName()
+                            + " (Key: " + selectedStorageInternalKey + ")");
                 }
             }
 
@@ -572,11 +585,13 @@ public class AddProductActivity extends AppCompatActivity {
             if (internalKey.equals(availableLocations.get(i).getInternalKey())) {
                 spinnerStorageLocation.setSelection(i);
                 selectedStorageInternalKey = internalKey;
-                Log.d("AddProductActivity", "Spinner preselezionato (dinamicamente) su: " + availableLocations.get(i).getName());
+                Log.d("AddProductActivity",
+                        "Spinner preselezionato (dinamicamente) su: " + availableLocations.get(i).getName());
                 return;
             }
         }
-        Log.w("AddProductActivity", "Valore di location (internalKey) '" + internalKey + "' non trovato nello spinner dinamico.");
+        Log.w("AddProductActivity",
+                "Valore di location (internalKey) '" + internalKey + "' non trovato nello spinner dinamico.");
     }
 
     private void observeProductForEditMode() {
@@ -697,18 +712,20 @@ public class AddProductActivity extends AppCompatActivity {
         Toast.makeText(this, getString(R.string.notify_load_product), Toast.LENGTH_SHORT).show();
 
         OpenFoodFactsApiService OffApiService = OpenFoodFactsRetrofitClient.getApiService(getApplicationContext());
-        if(OffApiService == null){
+        if (OffApiService == null) {
             Toast.makeText(this, getString(R.string.err_api), Toast.LENGTH_SHORT).show();
             return;
         }
 
         if (OffApiService != null) {
             String fieldsToFetch = "product_name_it,product_name,image_front_url,image_url,categories_tags";
-            retrofit2.Call<OpenFoodFactsProductResponse> call = OffApiService.getProductByBarcode(barcode, fieldsToFetch);
+            retrofit2.Call<OpenFoodFactsProductResponse> call = OffApiService.getProductByBarcode(barcode,
+                    fieldsToFetch);
 
             call.enqueue(new Callback<OpenFoodFactsProductResponse>() {
                 @Override
-                public void onResponse(@NonNull retrofit2.Call<OpenFoodFactsProductResponse> call, @NonNull Response<OpenFoodFactsProductResponse> response) {
+                public void onResponse(@NonNull retrofit2.Call<OpenFoodFactsProductResponse> call,
+                        @NonNull Response<OpenFoodFactsProductResponse> response) {
                     if (response.isSuccessful() && response.body() != null) {
                         OpenFoodFactsProductResponse apiResponse = response.body();
                         if (apiResponse.getStatus() == 1 && apiResponse.getProduct() != null) {
@@ -748,22 +765,28 @@ public class AddProductActivity extends AppCompatActivity {
                                 Log.d("OpenFoodFacts", "No categories found from API.");
                             }
                             updateChipGroup();
-                            Toast.makeText(AddProductActivity.this, getString(R.string.notify_loaded_product), Toast.LENGTH_SHORT).show();
+                            Toast.makeText(AddProductActivity.this, getString(R.string.notify_loaded_product),
+                                    Toast.LENGTH_SHORT).show();
 
                         } else {
-                            Log.w("OpenFoodFacts", "Prodotto non trovato o dati mancanti nell'API per: " + barcode + ", Status: " + apiResponse.getStatus());
-                            Toast.makeText(AddProductActivity.this, "Prodotto non trovato su Open Food Facts", Toast.LENGTH_LONG).show();
+                            Log.w("OpenFoodFacts", "Prodotto non trovato o dati mancanti nell'API per: " + barcode
+                                    + ", Status: " + apiResponse.getStatus());
+                            Toast.makeText(AddProductActivity.this, "Prodotto non trovato su Open Food Facts",
+                                    Toast.LENGTH_LONG).show();
                             clearProductApiFieldsAndData();
                         }
                     } else {
-                        Log.e("OpenFoodFacts", "Errore nella risposta API: " + response.code() + " - " + response.message());
-                        Toast.makeText(AddProductActivity.this, "Errore nel caricare i dati: " + response.code(), Toast.LENGTH_LONG).show();
+                        Log.e("OpenFoodFacts",
+                                "Errore nella risposta API: " + response.code() + " - " + response.message());
+                        Toast.makeText(AddProductActivity.this, "Errore nel caricare i dati: " + response.code(),
+                                Toast.LENGTH_LONG).show();
                         clearProductApiFieldsAndData();
                     }
                 }
 
                 @Override
-                public void onFailure(@NonNull retrofit2.Call<OpenFoodFactsProductResponse> call, @NonNull Throwable t) {
+                public void onFailure(@NonNull retrofit2.Call<OpenFoodFactsProductResponse> call,
+                        @NonNull Throwable t) {
                     Log.e("OpenFoodFacts", "Fallimento chiamata API", t);
                     Toast.makeText(AddProductActivity.this, getString(R.string.err_network), Toast.LENGTH_LONG).show();
                     clearProductApiFieldsAndData();
@@ -810,12 +833,15 @@ public class AddProductActivity extends AppCompatActivity {
         String name = editTextProductName.getText() != null ? editTextProductName.getText().toString().trim() : "";
         String quantityStr = editTextQuantity.getText() != null ? editTextQuantity.getText().toString().trim() : "";
         String expiryDate = editTextExpiryDate.getText() != null ? editTextExpiryDate.getText().toString().trim() : "";
-        String shelfLifeStr = editTextShelfLifeAfterOpening.getText() != null ? editTextShelfLifeAfterOpening.getText().toString().trim() : "";
+        String shelfLifeStr = editTextShelfLifeAfterOpening.getText() != null
+                ? editTextShelfLifeAfterOpening.getText().toString().trim()
+                : "";
         int shelfLifeDays = -1;
         if (!shelfLifeStr.isEmpty()) {
             try {
                 shelfLifeDays = Integer.parseInt(shelfLifeStr);
-                if (shelfLifeDays < 0) shelfLifeDays = -1;
+                if (shelfLifeDays < 0)
+                    shelfLifeDays = -1;
             } catch (NumberFormatException e) {
                 editTextShelfLifeAfterOpening.setError(getString(R.string.err_days));
                 editTextShelfLifeAfterOpening.requestFocus();
@@ -861,7 +887,8 @@ public class AddProductActivity extends AppCompatActivity {
                 name = barcode;
             }
         }
-        Product product = new Product(barcode, quantity, DateConverter.parseDisplayDateToTimestampMs(expiryDate), name, currentImageUrlFromApi, selectedStorageInternalKey, currentOpenedDate, shelfLifeDays);
+        Product product = new Product(barcode, quantity, DateConverter.parseDisplayDateToTimestampMs(expiryDate), name,
+                currentImageUrlFromApi, selectedStorageInternalKey, currentOpenedDate, shelfLifeDays);
         Log.d("AddProductActivity", "Salvataggio prodotto: " + product.toString());
         List<String> tagsToSave = new ArrayList<>(currentProductTagsSet);
         if (isEditMode) {
