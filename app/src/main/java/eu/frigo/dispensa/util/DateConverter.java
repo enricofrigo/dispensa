@@ -56,18 +56,44 @@ public class DateConverter {
             return null;
         }
 
-        String[] formats = { "dd/MM/yyyy", "MM/yyyy", "MM/yy" };
-        for (String format : formats) {
+        String trimmed = dateString.trim();
+        String formatPattern = null;
+
+        if (trimmed.matches("\\d{2}/\\d{4}")) {
+            formatPattern = "MM/yyyy";
+        } else if (trimmed.matches("\\d{2}/\\d{2}")) {
+            formatPattern = "MM/yy";
+        } else if (trimmed.matches("\\d{2}/\\d{2}/\\d{4}")) {
+            formatPattern = "dd/MM/yyyy";
+        } else {
+            // Tentativo finale con formati addizionali se sfuggita alla normalizzazione (es. dd-MM-yyyy)
+            String[] fallbackFormats = { "dd/MM/yyyy", "dd.MM.yyyy", "dd-MM-yyyy" };
+            for (String format : fallbackFormats) {
+                try {
+                    SimpleDateFormat formatter = new SimpleDateFormat(format, Locale.getDefault());
+                    formatter.setLenient(false);
+                    Date parsedDate = formatter.parse(trimmed);
+                    if (parsedDate != null) {
+                        Calendar calendar = Calendar.getInstance();
+                        calendar.setTime(parsedDate);
+                        normalizeTime(calendar);
+                        return calendar.getTimeInMillis();
+                    }
+                } catch (ParseException ignored) {}
+            }
+        }
+
+        if (formatPattern != null) {
             try {
-                SimpleDateFormat formatter = new SimpleDateFormat(format, Locale.getDefault());
+                SimpleDateFormat formatter = new SimpleDateFormat(formatPattern, Locale.getDefault());
                 formatter.setLenient(false);
-                Date parsedDate = formatter.parse(dateString.trim());
+                Date parsedDate = formatter.parse(trimmed);
 
                 if (parsedDate != null) {
                     Calendar calendar = Calendar.getInstance();
                     calendar.setTime(parsedDate);
 
-                    if (format.equals("MM/yyyy") || format.equals("MM/yy")) {
+                    if (formatPattern.equals("MM/yyyy") || formatPattern.equals("MM/yy")) {
                         calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMaximum(Calendar.DAY_OF_MONTH));
                     }
 
@@ -75,7 +101,7 @@ public class DateConverter {
                     return calendar.getTimeInMillis();
                 }
             } catch (ParseException e) {
-                // Ignore exception and try the next format
+                // Procedi all'errore
             }
         }
 
