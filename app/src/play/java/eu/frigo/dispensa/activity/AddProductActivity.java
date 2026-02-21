@@ -414,9 +414,10 @@ public class AddProductActivity extends AppCompatActivity {
         String[] keywords = { "data di scadenza", "da consumarsi preferibilmente", "da consumarsi", "best before", "bb",
                 "scadenza", "scad", "lotto" };
 
-        String regexFull = "\\b(0[1-9]|[12][0-9]|3[01])[-/.](0[1-9]|1[012])[-/.](19|20)\\d\\d\\b";
-        String regexMonthYear = "\\b(0[1-9]|1[012])[-/.](19|20)\\d\\d\\b";
-        String regexMonthShortYear = "\\b(0[1-9]|1[012])[-/.]\\d\\d\\b";
+        String sep = "[\\-/.\\s]+";
+        String regexFull = "\\b(0[1-9]|[12][0-9]|3[01])" + sep + "(0[1-9]|1[012])" + sep + "(19|20)\\d\\d\\b";
+        String regexMonthYear = "\\b(0[1-9]|1[012])" + sep + "(19|20)\\d\\d\\b";
+        String regexMonthShortYear = "\\b(0[1-9]|1[012])" + sep + "\\d\\d\\b";
 
         String[] patternsToTry = { regexFull, regexMonthYear, regexMonthShortYear };
 
@@ -429,7 +430,7 @@ public class AddProductActivity extends AppCompatActivity {
                 String substringBefore = normalizedText.substring(Math.max(0, idx - 40), idx);
                 for (String kw : keywords) {
                     if (substringBefore.contains(kw)) {
-                        return dateFound.replaceAll("[-.]", "/");
+                        return dateFound.replaceAll("[\\-/.\\s]+", "/");
                     }
                 }
             }
@@ -439,7 +440,7 @@ public class AddProductActivity extends AppCompatActivity {
             Pattern p = Pattern.compile(pattern);
             Matcher m = p.matcher(normalizedText);
             if (m.find()) {
-                return m.group().replaceAll("[-.]", "/");
+                return m.group().replaceAll("[\\-/.\\s]+", "/");
             }
         }
 
