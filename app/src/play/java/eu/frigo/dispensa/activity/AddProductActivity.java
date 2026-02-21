@@ -45,6 +45,9 @@ import com.google.mlkit.vision.barcode.BarcodeScannerOptions;
 import com.google.mlkit.vision.barcode.BarcodeScanning;
 import com.google.mlkit.vision.barcode.common.Barcode;
 import com.google.mlkit.vision.common.InputImage;
+import com.google.mlkit.vision.text.TextRecognition;
+import com.google.mlkit.vision.text.TextRecognizer;
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -59,6 +62,8 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.data.category.CategoryDefinition;
@@ -92,7 +97,9 @@ public class AddProductActivity extends AppCompatActivity {
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
     private ExecutorService cameraExecutor;
     private com.google.mlkit.vision.barcode.BarcodeScanner barcodeScanner;
+    private TextRecognizer textRecognizer;
     private boolean isCameraPermissionGranted;
+    private boolean isScanningBarcode = true;
     private TextInputEditText editTextProductName;
     private ImageView imageViewProduct;
     private final Calendar calendar = Calendar.getInstance();
@@ -124,9 +131,10 @@ public class AddProductActivity extends AppCompatActivity {
     public final static String PRESELECTED_LOCATION_INTERNAL_KEY = "PRESELECTED_LOCATION_INTERNAL_KEY";
 
     private ActivityResultLauncher<String> pickImageForBarcodeLauncher;
+    private ActivityResultLauncher<String> pickImageForExpiryLauncher;
 
-    private final ActivityResultLauncher<String> requestPermissionLauncher =
-            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+    private final ActivityResultLauncher<String> requestPermissionLauncher = registerForActivityResult(
+            new ActivityResultContracts.RequestPermission(), isGranted -> {
                 if (isGranted) {
                     isCameraPermissionGranted = true;
                     Toast.makeText(this, getString(R.string.camera_permission_accepted), Toast.LENGTH_SHORT).show();
@@ -137,8 +145,8 @@ public class AddProductActivity extends AppCompatActivity {
                 }
             });
 
-    private final ActivityResultLauncher<Intent> barcodeScannerLauncher =
-            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+    private final ActivityResultLauncher<Intent> barcodeScannerLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(), result -> {
                 if (result.getResultCode() == RESULT_OK && result.getData() != null) {
                     String scannedBarcode = result.getData().getStringExtra(EXTRA_BARCODE);
                     if (scannedBarcode != null) {
@@ -148,7 +156,6 @@ public class AddProductActivity extends AppCompatActivity {
                     }
                 }
             });
-
 
     @SuppressLint("UnsafeOptInUsageError")
     @Override
@@ -168,6 +175,8 @@ public class AddProductActivity extends AppCompatActivity {
         editTextBarcode = findViewById(R.id.editTextBarcode);
         ImageButton buttonScanBarcodeCamera = findViewById(R.id.buttonScanBarcodeCamera);
         ImageButton buttonScanBarcodeGallery = findViewById(R.id.buttonScanBarcodeGallery);
+        ImageButton buttonScanExpiryCamera = findViewById(R.id.buttonScanExpiryCamera);
+        ImageButton buttonScanExpiryGallery = findViewById(R.id.buttonScanExpiryGallery);
         editTextQuantity = findViewById(R.id.editTextQuantity);
         buttonDecrementQuantityActivity = findViewById(R.id.buttonDecrementQuantityActivity);
         buttonIncrementQuantityActivity = findViewById(R.id.buttonIncrementQuantityActivity);
@@ -188,26 +197,24 @@ public class AddProductActivity extends AppCompatActivity {
         buttonMarkAsClosed = findViewById(R.id.buttonMarkAsClosed);
         textViewOpenedDate = findViewById(R.id.textViewOpenedDate);
 
-
         chipGroupCategories = findViewById(R.id.chipGroupCategories);
         editTextNewCategory = findViewById(R.id.editTextNewCategory);
         Button buttonAddCategory = findViewById(R.id.buttonAddCategory);
         ExtendedFloatingActionButton fabButtonSaveProduct = findViewById(R.id.buttonSaveProduct);
 
-        BarcodeScannerOptions options =
-                new BarcodeScannerOptions.Builder()
-                        .setBarcodeFormats(
-                                Barcode.FORMAT_EAN_13,
-                                Barcode.FORMAT_EAN_8,
-                                Barcode.FORMAT_UPC_A,
-                                Barcode.FORMAT_UPC_E,
-                                Barcode.FORMAT_QR_CODE,
-                                Barcode.FORMAT_CODE_128,
-                                Barcode.FORMAT_CODE_39,
-                                Barcode.FORMAT_CODABAR
-                        )
-                        .build();
+        BarcodeScannerOptions options = new BarcodeScannerOptions.Builder()
+                .setBarcodeFormats(
+                        Barcode.FORMAT_EAN_13,
+                        Barcode.FORMAT_EAN_8,
+                        Barcode.FORMAT_UPC_A,
+                        Barcode.FORMAT_UPC_E,
+                        Barcode.FORMAT_QR_CODE,
+                        Barcode.FORMAT_CODE_128,
+                        Barcode.FORMAT_CODE_39,
+                        Barcode.FORMAT_CODABAR)
+                .build();
         barcodeScanner = BarcodeScanning.getClient(options);
+        textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
 
         pickImageForBarcodeLauncher = registerForActivityResult(
                 new ActivityResultContracts.GetContent(),
@@ -224,8 +231,21 @@ public class AddProductActivity extends AppCompatActivity {
                     } else {
                         Log.d("BarcodeScan", "Selezione immagine per barcode annullata.");
                     }
-                }
-        );
+                });
+
+        pickImageForExpiryLauncher = registerForActivityResult(
+                new ActivityResultContracts.GetContent(),
+                uri -> {
+                    if (uri != null) {
+                        try {
+                            cameraProviderFuture.get().unbindAll();
+                        } catch (ExecutionException | InterruptedException e) {
+                            Log.e("AddProductActivity", "Errore nel fermare la fotocamera", e);
+                        }
+                        previewViewBarcode.setVisibility(GONE);
+                        processImageForExpiry(uri);
+                    }
+                });
 
         editTextBarcode.setOnFocusChangeListener((v, hasFocus) -> {
             if (!hasFocus) {
@@ -290,7 +310,8 @@ public class AddProductActivity extends AppCompatActivity {
             return false;
         });
 
-        Log.d("AddProductActivity", editTextBarcode.getText() + " " + editTextQuantity.getText() + " " + editTextExpiryDate.getText() + " " + imageViewProduct.toString());
+        Log.d("AddProductActivity", editTextBarcode.getText() + " " + editTextQuantity.getText() + " "
+                + editTextExpiryDate.getText() + " " + imageViewProduct.toString());
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setDisplayShowHomeEnabled(true);
@@ -305,9 +326,22 @@ public class AddProductActivity extends AppCompatActivity {
             KeyboardUtils.hideKeyboard(AddProductActivity.this);
             showDatePickerDialog();
         });
-        buttonScanBarcodeCamera.setOnClickListener(v -> checkCameraPermissionAndStartScanner());
+        buttonScanBarcodeCamera.setOnClickListener(v -> {
+            isScanningBarcode = true;
+            checkCameraPermissionAndStartScanner();
+        });
         buttonScanBarcodeGallery.setOnClickListener(v -> pickImageForBarcodeLauncher.launch("image/*"));
-        buttonMarkAsClosed.setOnClickListener(v -> {currentOpenedDate = 0L;updateOpenedDateUI(currentOpenedDate);});
+
+        buttonScanExpiryCamera.setOnClickListener(v -> {
+            isScanningBarcode = false;
+            checkCameraPermissionAndStartScanner();
+        });
+        buttonScanExpiryGallery.setOnClickListener(v -> pickImageForExpiryLauncher.launch("image/*"));
+
+        buttonMarkAsClosed.setOnClickListener(v -> {
+            currentOpenedDate = 0L;
+            updateOpenedDateUI(currentOpenedDate);
+        });
         fabButtonSaveProduct.setOnClickListener(v -> saveOrUpdateProduct());
     }
 
@@ -342,9 +376,48 @@ public class AddProductActivity extends AppCompatActivity {
         }
     }
 
+    private void processImageForExpiry(Uri imageUri) {
+        try {
+            InputImage image = InputImage.fromFilePath(this, imageUri);
+            textRecognizer.process(image)
+                    .addOnSuccessListener(text -> {
+                        String resultText = text.getText();
+                        String parsedDate = parseExpiryDate(resultText);
+                        if (parsedDate != null) {
+                            runOnUiThread(() -> {
+                                editTextExpiryDate.setText(parsedDate);
+                                Toast.makeText(this, "Data trovata: " + parsedDate, Toast.LENGTH_SHORT).show();
+                            });
+                        } else {
+                            runOnUiThread(() -> Toast
+                                    .makeText(this, "Nessuna data di scadenza trovata", Toast.LENGTH_SHORT).show());
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e("TextScanner", "Errore nella scansione del testo da immagine", e);
+                        Toast.makeText(this, "Errore scansione data", Toast.LENGTH_SHORT).show();
+                    });
+        } catch (IOException e) {
+            e.printStackTrace();
+            Log.e("TextScanner", "Errore nel creare InputImage da URI", e);
+            Toast.makeText(this, getString(R.string.err_load_image), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private String parseExpiryDate(String text) {
+        String pattern = "(0[1-9]|[12][0-9]|3[01])[-/.](0[1-9]|1[012])[-/.](19|20)\\d\\d";
+        Pattern compiledPattern = Pattern.compile(pattern);
+        Matcher matcher = compiledPattern.matcher(text);
+        if (matcher.find()) {
+            String date = matcher.group();
+            return date.replaceAll("[-.]", "/");
+        }
+        return null; // Fallback se non trovata
+    }
 
     private void updateOpenedDateUI(Long openedTimestamp) {
-        if (buttonMarkAsOpened == null || textViewOpenedDate == null) return;
+        if (buttonMarkAsOpened == null || textViewOpenedDate == null)
+            return;
 
         if (openedTimestamp != null && openedTimestamp > 0) {
             textViewOpenedDate.setText(String.format(getString(R.string.open_date), formatDate(openedTimestamp)));
@@ -357,11 +430,14 @@ public class AddProductActivity extends AppCompatActivity {
             buttonMarkAsClosed.setVisibility(GONE);
         }
     }
+
     private String formatDate(Long timestamp) {
-        if (timestamp == null || timestamp <= 0) return getString(R.string.not_defined);
+        if (timestamp == null || timestamp <= 0)
+            return getString(R.string.not_defined);
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.ITALY);
         return sdf.format(new Date(timestamp));
     }
+
     private void setupStorageLocationSpinner() {
         List<String> locationDisplayNames = new ArrayList<>();
         locationSpinnerAdapter = new ArrayAdapter<>(this,
@@ -410,7 +486,8 @@ public class AddProductActivity extends AppCompatActivity {
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 if (position >= 0 && position < availableLocations.size()) {
                     selectedStorageInternalKey = availableLocations.get(position).getInternalKey();
-                    Log.d("AddProductActivity", "Location selezionata: " + availableLocations.get(position).getName() + " (Key: " + selectedStorageInternalKey + ")");
+                    Log.d("AddProductActivity", "Location selezionata: " + availableLocations.get(position).getName()
+                            + " (Key: " + selectedStorageInternalKey + ")");
                 }
             }
 
@@ -429,11 +506,13 @@ public class AddProductActivity extends AppCompatActivity {
             if (internalKey.equals(availableLocations.get(i).getInternalKey())) {
                 spinnerStorageLocation.setSelection(i);
                 selectedStorageInternalKey = internalKey;
-                Log.d("AddProductActivity", "Spinner preselezionato (dinamicamente) su: " + availableLocations.get(i).getName());
+                Log.d("AddProductActivity",
+                        "Spinner preselezionato (dinamicamente) su: " + availableLocations.get(i).getName());
                 return;
             }
         }
-        Log.w("AddProductActivity", "Valore di location (internalKey) '" + internalKey + "' non trovato nello spinner dinamico.");
+        Log.w("AddProductActivity",
+                "Valore di location (internalKey) '" + internalKey + "' non trovato nello spinner dinamico.");
     }
 
     private void observeProductForEditMode() {
@@ -552,38 +631,62 @@ public class AddProductActivity extends AppCompatActivity {
 
         preview.setSurfaceProvider(previewViewBarcode.getSurfaceProvider());
 
-        ImageAnalysis imageAnalysis =
-                new ImageAnalysis.Builder()
-                        .setTargetResolution(new Size(1280, 720)) // Scegli una risoluzione appropriata
-                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                        .build();
+        ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
+                .setTargetResolution(new Size(1280, 720)) // Scegli una risoluzione appropriata
+                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                .build();
 
         imageAnalysis.setAnalyzer(cameraExecutor, imageProxy -> {
             Image mediaImage = imageProxy.getImage();
             if (mediaImage != null) {
-                InputImage image = InputImage.fromMediaImage(mediaImage, imageProxy.getImageInfo().getRotationDegrees());
-                barcodeScanner.process(image)
-                        .addOnSuccessListener(barcodes -> {
-                            if (!barcodes.isEmpty()) {
-                                for (Barcode barcode : barcodes) {
-                                    String rawValue = barcode.getRawValue();
-                                    Log.d("BarcodeScanner", "Codice a barre trovato: " + rawValue);
+                InputImage image = InputImage.fromMediaImage(mediaImage,
+                        imageProxy.getImageInfo().getRotationDegrees());
+                if (isScanningBarcode) {
+                    barcodeScanner.process(image)
+                            .addOnSuccessListener(barcodes -> {
+                                if (!barcodes.isEmpty()) {
+                                    for (Barcode barcode : barcodes) {
+                                        String rawValue = barcode.getRawValue();
+                                        Log.d("BarcodeScanner", "Codice a barre trovato: " + rawValue);
 
-                                    runOnUiThread(() -> {
-                                        editTextBarcode.setText(rawValue);
-                                        stopCamera(cameraProvider);
-                                        fetchProductDetailsFromApi(rawValue);
-                                    });
-                                    return;
+                                        runOnUiThread(() -> {
+                                            editTextBarcode.setText(rawValue);
+                                            stopCamera(cameraProvider);
+                                            fetchProductDetailsFromApi(rawValue);
+                                        });
+                                        return;
+                                    }
                                 }
-                            }
-                        })
-                        .addOnFailureListener(e -> {
-                            Log.e("BarcodeScanner", "Errore nella scansione del codice a barre", e);
-                        })
-                        .addOnCompleteListener(task -> {
-                            imageProxy.close();
-                        });
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e("BarcodeScanner", "Errore nella scansione del codice a barre", e);
+                            })
+                            .addOnCompleteListener(task -> {
+                                imageProxy.close();
+                            });
+                } else {
+                    textRecognizer.process(image)
+                            .addOnSuccessListener(text -> {
+                                String resultText = text.getText();
+                                String parsedDate = parseExpiryDate(resultText);
+                                if (parsedDate != null) {
+                                    runOnUiThread(() -> {
+                                        editTextExpiryDate.setText(parsedDate);
+                                        stopCamera(cameraProvider);
+                                        Toast.makeText(AddProductActivity.this, "Data trovata: " + parsedDate,
+                                                Toast.LENGTH_SHORT).show();
+                                    });
+                                }
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e("TextScanner", "Errore scansione testo", e);
+                            })
+                            .addOnCompleteListener(task -> {
+                                imageProxy.close();
+                            });
+                }
+            } else {
+                imageProxy.close();
             }
         });
 
@@ -611,7 +714,8 @@ public class AddProductActivity extends AppCompatActivity {
 
         call.enqueue(new Callback<OpenFoodFactsProductResponse>() {
             @Override
-            public void onResponse(@NonNull retrofit2.Call<OpenFoodFactsProductResponse> call, @NonNull Response<OpenFoodFactsProductResponse> response) {
+            public void onResponse(@NonNull retrofit2.Call<OpenFoodFactsProductResponse> call,
+                    @NonNull Response<OpenFoodFactsProductResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     OpenFoodFactsProductResponse apiResponse = response.body();
                     if (apiResponse.getStatus() == 1 && apiResponse.getProduct() != null) {
@@ -648,20 +752,26 @@ public class AddProductActivity extends AppCompatActivity {
                             currentProductTagsSet.addAll(fetchedCategories);
                             Log.d("OpenFoodFacts", "Categories fetched: " + fetchedCategories);
                         } else {
-                            // currentProductTagsSet.clear(); // Decidi se pulire se l'API non restituisce nulla
+                            // currentProductTagsSet.clear(); // Decidi se pulire se l'API non restituisce
+                            // nulla
                             Log.d("OpenFoodFacts", "No categories found from API.");
                         }
                         updateChipGroup();
-                        Toast.makeText(AddProductActivity.this, getString(R.string.notify_loaded_product), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(AddProductActivity.this, getString(R.string.notify_loaded_product),
+                                Toast.LENGTH_SHORT).show();
 
                     } else {
-                        Log.w("OpenFoodFacts", "Prodotto non trovato o dati mancanti nell'API per: " + barcode + ", Status: " + apiResponse.getStatus());
-                        Toast.makeText(AddProductActivity.this, "Prodotto non trovato su Open Food Facts", Toast.LENGTH_LONG).show();
+                        Log.w("OpenFoodFacts", "Prodotto non trovato o dati mancanti nell'API per: " + barcode
+                                + ", Status: " + apiResponse.getStatus());
+                        Toast.makeText(AddProductActivity.this, "Prodotto non trovato su Open Food Facts",
+                                Toast.LENGTH_LONG).show();
                         clearProductApiFieldsAndData();
                     }
                 } else {
-                    Log.e("OpenFoodFacts", "Errore nella risposta API: " + response.code() + " - " + response.message());
-                    Toast.makeText(AddProductActivity.this, "Errore nel caricare i dati: " + response.code(), Toast.LENGTH_LONG).show();
+                    Log.e("OpenFoodFacts",
+                            "Errore nella risposta API: " + response.code() + " - " + response.message());
+                    Toast.makeText(AddProductActivity.this, "Errore nel caricare i dati: " + response.code(),
+                            Toast.LENGTH_LONG).show();
                     clearProductApiFieldsAndData();
                 }
             }
@@ -707,12 +817,15 @@ public class AddProductActivity extends AppCompatActivity {
         String name = editTextProductName.getText() != null ? editTextProductName.getText().toString().trim() : "";
         String quantityStr = editTextQuantity.getText() != null ? editTextQuantity.getText().toString().trim() : "";
         String expiryDate = editTextExpiryDate.getText() != null ? editTextExpiryDate.getText().toString().trim() : "";
-        String shelfLifeStr = editTextShelfLifeAfterOpening.getText() != null ? editTextShelfLifeAfterOpening.getText().toString().trim() : "";
+        String shelfLifeStr = editTextShelfLifeAfterOpening.getText() != null
+                ? editTextShelfLifeAfterOpening.getText().toString().trim()
+                : "";
         int shelfLifeDays = -1;
         if (!shelfLifeStr.isEmpty()) {
             try {
                 shelfLifeDays = Integer.parseInt(shelfLifeStr);
-                if (shelfLifeDays < 0) shelfLifeDays = -1;
+                if (shelfLifeDays < 0)
+                    shelfLifeDays = -1;
             } catch (NumberFormatException e) {
                 editTextShelfLifeAfterOpening.setError(getString(R.string.err_days));
                 editTextShelfLifeAfterOpening.requestFocus();
@@ -758,7 +871,8 @@ public class AddProductActivity extends AppCompatActivity {
                 name = barcode;
             }
         }
-        Product product = new Product(barcode, quantity, DateConverter.parseDisplayDateToTimestampMs(expiryDate), name, currentImageUrlFromApi, selectedStorageInternalKey, currentOpenedDate, shelfLifeDays);
+        Product product = new Product(barcode, quantity, DateConverter.parseDisplayDateToTimestampMs(expiryDate), name,
+                currentImageUrlFromApi, selectedStorageInternalKey, currentOpenedDate, shelfLifeDays);
         Log.d("AddProductActivity", "Salvataggio prodotto: " + product.toString());
         List<String> tagsToSave = new ArrayList<>(currentProductTagsSet);
         if (isEditMode) {
