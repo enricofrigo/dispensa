@@ -564,7 +564,8 @@ public class AddProductActivity extends AppCompatActivity {
                 currentImageUrlFromApi = productBeingEdited.product.getImageUrl();
                 currentProductNameFromApi = productBeingEdited.product.getProductName(); // O quello che usi per l'API
 
-                if (productBeingEdited.product.getExpiryDate() != 0) {
+                if (productBeingEdited.product.getExpiryDate() != null
+                        && productBeingEdited.product.getExpiryDate() != 0) {
                     calendar.setTimeInMillis(productBeingEdited.product.getExpiryDate());
                     updateLabel();
                 }
