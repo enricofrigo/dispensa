@@ -223,12 +223,16 @@ public class AddProductActivity extends AppCompatActivity {
                 uri -> {
                     if (uri != null) {
                         Log.d("BarcodeScan", "Immagine selezionata dalla galleria per barcode: " + uri.toString());
-                        try {
-                            cameraProviderFuture.get().unbindAll();
-                        } catch (ExecutionException | InterruptedException e) {
-                            Log.e("AddProductActivity", "Errore nel fermare la fotocamera", e);
+                        if (cameraProviderFuture != null) {
+                            try {
+                                cameraProviderFuture.get().unbindAll();
+                            } catch (ExecutionException | InterruptedException e) {
+                                Log.e("AddProductActivity", "Errore nel fermare la fotocamera", e);
+                            }
                         }
-                        previewViewBarcode.setVisibility(GONE);
+                        if (previewViewBarcode != null) {
+                            previewViewBarcode.setVisibility(GONE);
+                        }
                         processImageForBarcode(uri);
                     } else {
                         Log.d("BarcodeScan", "Selezione immagine per barcode annullata.");
@@ -239,10 +243,12 @@ public class AddProductActivity extends AppCompatActivity {
                 new ActivityResultContracts.GetContent(),
                 uri -> {
                     if (uri != null) {
-                        try {
-                            cameraProviderFuture.get().unbindAll();
-                        } catch (ExecutionException | InterruptedException e) {
-                            Log.e("AddProductActivity", "Errore nel fermare la fotocamera", e);
+                        if (cameraProviderFuture != null) {
+                            try {
+                                cameraProviderFuture.get().unbindAll();
+                            } catch (ExecutionException | InterruptedException e) {
+                                Log.e("AddProductActivity", "Errore nel fermare la fotocamera", e);
+                            }
                         }
                         if (previewViewBarcode != null)
                             previewViewBarcode.setVisibility(GONE);
