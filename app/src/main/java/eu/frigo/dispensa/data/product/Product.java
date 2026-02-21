@@ -12,10 +12,9 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
-@Entity(tableName = "products",
-        indices = { // 6. Definizione degli indici
-                @Index(value = {"storage_location"})
-        })
+@Entity(tableName = "products", indices = { // 6. Definizione degli indici
+        @Index(value = { "storage_location" })
+})
 public class Product {
 
     @PrimaryKey(autoGenerate = true)
@@ -41,9 +40,11 @@ public class Product {
     @Ignore
     private String notDefined = "N/D";
 
-    public Product() {}
+    public Product() {
+    }
 
-    public Product(String barcode, int quantity, Long expiryDate,String productName, String imageUrl,String storageLocation, Long openedDate, int shelfLifeAfterOpeningDays) {
+    public Product(String barcode, int quantity, Long expiryDate, String productName, String imageUrl,
+            String storageLocation, Long openedDate, int shelfLifeAfterOpeningDays) {
         this.barcode = barcode;
         this.quantity = quantity;
         this.expiryDate = expiryDate;
@@ -54,7 +55,8 @@ public class Product {
         this.shelfLifeAfterOpeningDays = shelfLifeAfterOpeningDays;
     }
 
-    // Getters e Setters (opzionali se i campi sono pubblici, ma buona pratica includerli)
+    // Getters e Setters (opzionali se i campi sono pubblici, ma buona pratica
+    // includerli)
     public int getId() {
         return id;
     }
@@ -79,11 +81,18 @@ public class Product {
         this.quantity = quantity;
     }
 
-    public Long getExpiryDate() {return expiryDate;}
+    public Long getExpiryDate() {
+        return expiryDate;
+    }
+
     public String getExpiryDateString() {
+        if (expiryDate == null || expiryDate <= 0) {
+            return notDefined;
+        }
         SimpleDateFormat sdf = new SimpleDateFormat(myFormat, Locale.ITALY);
         return sdf.format(new Date(expiryDate));
     }
+
     public void setExpiryDate(Long expiryDate) {
         this.expiryDate = expiryDate;
     }
@@ -104,17 +113,29 @@ public class Product {
         this.imageUrl = imageUrl;
     }
 
-    public String getStorageLocation() {return storageLocation;}
+    public String getStorageLocation() {
+        return storageLocation;
+    }
 
-    public void setStorageLocation(String storageLocation) {this.storageLocation = storageLocation;}
+    public void setStorageLocation(String storageLocation) {
+        this.storageLocation = storageLocation;
+    }
 
-    public Long getOpenedDate() {return openedDate; }
+    public Long getOpenedDate() {
+        return openedDate;
+    }
 
-    public void setOpenedDate(Long openedDate) {this.openedDate = openedDate;}
+    public void setOpenedDate(Long openedDate) {
+        this.openedDate = openedDate;
+    }
 
-    public int getShelfLifeAfterOpeningDays() {return shelfLifeAfterOpeningDays;}
+    public int getShelfLifeAfterOpeningDays() {
+        return shelfLifeAfterOpeningDays;
+    }
 
-    public void setShelfLifeAfterOpeningDays(int shelfLifeAfterOpeningDays) {this.shelfLifeAfterOpeningDays = shelfLifeAfterOpeningDays;}
+    public void setShelfLifeAfterOpeningDays(int shelfLifeAfterOpeningDays) {
+        this.shelfLifeAfterOpeningDays = shelfLifeAfterOpeningDays;
+    }
 
     @Ignore
     public Long getActualExpiryTimestamp() {
@@ -131,9 +152,11 @@ public class Product {
                 return expiryAfterOpening;
             }
         }
-        // Se non aperto o senza durata specifica dopo l'apertura, usa la data di scadenza originale
+        // Se non aperto o senza durata specifica dopo l'apertura, usa la data di
+        // scadenza originale
         return expiryDate != null ? expiryDate : 0L;
     }
+
     @Ignore
     public String getActualExpiryDateString() {
         Long actualTimestamp = getActualExpiryTimestamp();
@@ -143,10 +166,12 @@ public class Product {
         SimpleDateFormat sdf = new SimpleDateFormat(myFormat, Locale.ITALY);
         return sdf.format(new Date(actualTimestamp));
     }
+
     @Ignore
     public boolean isOpened() {
         return this.openedDate > 0;
     }
+
     @NonNull
     @Override
     public String toString() {
