@@ -102,6 +102,7 @@ public class AddProductActivity extends AppCompatActivity {
     private boolean isScanningBarcode = true;
     private TextInputEditText editTextProductName;
     private ImageView imageViewProduct;
+    private androidx.camera.view.PreviewView previewViewExpiryDate;
     private final Calendar calendar = Calendar.getInstance();
     private String currentProductNameFromApi;
     private String currentImageUrlFromApi;
@@ -182,6 +183,7 @@ public class AddProductActivity extends AppCompatActivity {
         buttonIncrementQuantityActivity = findViewById(R.id.buttonIncrementQuantityActivity);
         editTextExpiryDate = findViewById(R.id.editTextExpiryDate);
         previewViewBarcode = findViewById(R.id.previewViewBarcode);
+        previewViewExpiryDate = findViewById(R.id.previewViewExpiryDate);
         editTextProductName = findViewById(R.id.editTextProductName);
         imageViewProduct = findViewById(R.id.imageViewProduct);
         cameraExecutor = Executors.newSingleThreadExecutor();
@@ -242,7 +244,10 @@ public class AddProductActivity extends AppCompatActivity {
                         } catch (ExecutionException | InterruptedException e) {
                             Log.e("AddProductActivity", "Errore nel fermare la fotocamera", e);
                         }
-                        previewViewBarcode.setVisibility(GONE);
+                        if (previewViewBarcode != null)
+                            previewViewBarcode.setVisibility(GONE);
+                        if (previewViewExpiryDate != null)
+                            previewViewExpiryDate.setVisibility(GONE);
                         processImageForExpiry(uri);
                     }
                 });
@@ -405,14 +410,40 @@ public class AddProductActivity extends AppCompatActivity {
     }
 
     private String parseExpiryDate(String text) {
-        String pattern = "(0[1-9]|[12][0-9]|3[01])[-/.](0[1-9]|1[012])[-/.](19|20)\\d\\d";
-        Pattern compiledPattern = Pattern.compile(pattern);
-        Matcher matcher = compiledPattern.matcher(text);
-        if (matcher.find()) {
-            String date = matcher.group();
-            return date.replaceAll("[-.]", "/");
+        String normalizedText = text.toLowerCase().replace("\n", " ");
+        String[] keywords = { "data di scadenza", "da consumarsi preferibilmente", "da consumarsi", "best before", "bb",
+                "scadenza", "scad", "lotto" };
+
+        String regexFull = "\\b(0[1-9]|[12][0-9]|3[01])[-/.](0[1-9]|1[012])[-/.](19|20)\\d\\d\\b";
+        String regexMonthYear = "\\b(0[1-9]|1[012])[-/.](19|20)\\d\\d\\b";
+        String regexMonthShortYear = "\\b(0[1-9]|1[012])[-/.]\\d\\d\\b";
+
+        String[] patternsToTry = { regexFull, regexMonthYear, regexMonthShortYear };
+
+        for (String pattern : patternsToTry) {
+            Pattern p = Pattern.compile(pattern);
+            Matcher m = p.matcher(normalizedText);
+            while (m.find()) {
+                String dateFound = m.group();
+                int idx = m.start();
+                String substringBefore = normalizedText.substring(Math.max(0, idx - 40), idx);
+                for (String kw : keywords) {
+                    if (substringBefore.contains(kw)) {
+                        return dateFound.replaceAll("[-.]", "/");
+                    }
+                }
+            }
         }
-        return null; // Fallback se non trovata
+
+        for (String pattern : patternsToTry) {
+            Pattern p = Pattern.compile(pattern);
+            Matcher m = p.matcher(normalizedText);
+            if (m.find()) {
+                return m.group().replaceAll("[-.]", "/");
+            }
+        }
+
+        return null;
     }
 
     private void updateOpenedDateUI(Long openedTimestamp) {
@@ -609,7 +640,16 @@ public class AddProductActivity extends AppCompatActivity {
             return;
         }
 
-        previewViewBarcode.setVisibility(View.VISIBLE);
+        if (isScanningBarcode) {
+            previewViewBarcode.setVisibility(View.VISIBLE);
+            if (previewViewExpiryDate != null)
+                previewViewExpiryDate.setVisibility(GONE);
+        } else {
+            previewViewBarcode.setVisibility(GONE);
+            if (previewViewExpiryDate != null)
+                previewViewExpiryDate.setVisibility(View.VISIBLE);
+        }
+
         cameraProviderFuture = ProcessCameraProvider.getInstance(this);
         cameraProviderFuture.addListener(() -> {
             try {
@@ -629,7 +669,12 @@ public class AddProductActivity extends AppCompatActivity {
                 .requireLensFacing(CameraSelector.LENS_FACING_BACK)
                 .build();
 
-        preview.setSurfaceProvider(previewViewBarcode.getSurfaceProvider());
+        if (isScanningBarcode) {
+            preview.setSurfaceProvider(previewViewBarcode.getSurfaceProvider());
+        } else {
+            if (previewViewExpiryDate != null)
+                preview.setSurfaceProvider(previewViewExpiryDate.getSurfaceProvider());
+        }
 
         ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
                 .setTargetResolution(new Size(1280, 720)) // Scegli una risoluzione appropriata
@@ -798,7 +843,12 @@ public class AddProductActivity extends AppCompatActivity {
         if (cameraProvider != null) {
             cameraProvider.unbindAll();
         }
-        previewViewBarcode.setVisibility(GONE);
+        if (previewViewBarcode != null) {
+            previewViewBarcode.setVisibility(GONE);
+        }
+        if (previewViewExpiryDate != null) {
+            previewViewExpiryDate.setVisibility(GONE);
+        }
     }
 
     @Override
