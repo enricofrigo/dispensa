@@ -514,16 +514,29 @@ public class AddProductActivity extends AppCompatActivity {
                     }
 
                     if (needsExpiry) {
-                        tessBaseAPI.setImage(bitmap);
-                        String resultText = tessBaseAPI.getUTF8Text();
-                        String parsedDate = parseExpiryDate(resultText);
+                        // PASS 1: Fast Scan (Standard ROI)
+                        String parsedDate = runOcrPass(bitmap, TessBaseAPI.PageSegMode.PSM_SPARSE_TEXT);
+
+                        // PASS 2: Enhanced Scan (Upscaled + High Contrast)
+                        if (parsedDate == null) {
+                            Bitmap enhancedBitmap = enhanceBitmapForOcr(bitmap, false);
+                            parsedDate = runOcrPass(enhancedBitmap, TessBaseAPI.PageSegMode.PSM_SINGLE_LINE);
+                        }
+
+                        // PASS 3: Inverted Scan (For light text on dark backgrounds)
+                        if (parsedDate == null) {
+                            Bitmap invertedBitmap = enhanceBitmapForOcr(bitmap, true);
+                            parsedDate = runOcrPass(invertedBitmap, TessBaseAPI.PageSegMode.PSM_SINGLE_LINE);
+                        }
+
                         if (parsedDate != null) {
-                            Log.d("OCR", "Data trovata (Cropped): " + parsedDate);
+                            String finalDate = parsedDate;
+                            Log.d("OCR", "Data trovata con multi-pass: " + finalDate);
                             runOnUiThread(() -> {
-                                editTextExpiryDate.setText(parsedDate);
+                                editTextExpiryDate.setText(finalDate);
                                 if (buttonRescanExpiryDate != null)
                                     buttonRescanExpiryDate.setVisibility(View.VISIBLE);
-                                Toast.makeText(AddProductActivity.this, "Data trovata (OCR): " + parsedDate,
+                                Toast.makeText(AddProductActivity.this, "Data trovata: " + finalDate,
                                         Toast.LENGTH_SHORT).show();
                             });
                         }
@@ -548,6 +561,54 @@ public class AddProductActivity extends AppCompatActivity {
         } catch (Exception exc) {
             Log.e("AddProductActivity", "Use case binding fallito", exc);
         }
+    }
+
+    private String runOcrPass(Bitmap bitmap, int psmMode) {
+        if (bitmap == null)
+            return null;
+        tessBaseAPI.setPageSegMode(psmMode);
+        tessBaseAPI.setImage(bitmap);
+        String resultText = tessBaseAPI.getUTF8Text();
+        return parseExpiryDate(resultText);
+    }
+
+    private Bitmap enhanceBitmapForOcr(Bitmap src, boolean invert) {
+        // 1. Upscaling (2x) per aiutare Tesseract con piccoli font
+        int width = src.getWidth() * 2;
+        int height = src.getHeight() * 2;
+        Bitmap scaled = Bitmap.createScaledBitmap(src, width, height, true);
+
+        // 2. Aumento contrasto e binarizzazione semplice
+        Bitmap enhanced = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        android.graphics.Canvas canvas = new android.graphics.Canvas(enhanced);
+        android.graphics.Paint paint = new android.graphics.Paint();
+
+        android.graphics.ColorMatrix cm = new android.graphics.ColorMatrix();
+        // Aumentiamo il contrasto (1.5x)
+        float contrast = 1.5f;
+        float brightness = -20f;
+        cm.set(new float[] {
+                contrast, 0, 0, 0, brightness,
+                0, contrast, 0, 0, brightness,
+                0, 0, contrast, 0, brightness,
+                0, 0, 0, 1, 0
+        });
+
+        if (invert) {
+            android.graphics.ColorMatrix invertMatrix = new android.graphics.ColorMatrix(new float[] {
+                    -1, 0, 0, 0, 255,
+                    0, -1, 0, 0, 255,
+                    0, 0, -1, 0, 255,
+                    0, 0, 0, 1, 0
+            });
+            invertMatrix.postConcat(cm);
+            cm = invertMatrix;
+        }
+
+        paint.setColorFilter(new android.graphics.ColorMatrixColorFilter(cm));
+        canvas.drawBitmap(scaled, 0, 0, paint);
+
+        return enhanced;
     }
 
     private Bitmap imageProxyToCroppedBitmap(androidx.camera.core.ImageProxy imageProxy) {
@@ -701,41 +762,81 @@ public class AddProductActivity extends AppCompatActivity {
     }
 
     private String parseExpiryDate(String text) {
-        String normalizedText = text.toLowerCase().replace("\n", " ");
-        String[] keywords = { "data di scadenza", "da consumarsi preferibilmente", "da consumarsi", "best before", "bb",
-                "scadenza", "scad", "lotto" };
+        if (text == null || text.trim().isEmpty())
+            return null;
 
-        String sep = "[\\-/.\\s]+";
-        String regexFull = "\\b(0[1-9]|[12][0-9]|3[01])" + sep + "(0[1-9]|1[012])" + sep + "(19|20)\\d\\d\\b";
-        String regexMonthYear = "\\b(0[1-9]|1[012])" + sep + "(19|20)\\d\\d\\b";
-        String regexMonthShortYear = "\\b(0[1-9]|1[012])" + sep + "\\d\\d\\b";
+        // Normalizzazione spinta: sostituiamo comuni errori OCR e uniformiamo
+        // separatori
+        String normalizedText = text.toUpperCase()
+                .replaceAll("[OQ]", "0") // O o Q scambiati per 0
+                .replaceAll("[IL|]", "1") // I, L o | scambiati per 1
+                .replaceAll("[S]", "5") // S scambiato per 5
+                .replaceAll("[B]", "8") // B scambiato per 8
+                .replaceAll("[Z]", "2") // Z scambiato per 2
+                .replace("\n", " ")
+                .toLowerCase();
 
-        String[] patternsToTry = { regexFull, regexMonthYear, regexMonthShortYear };
+        String[] keywords = { "scadenza", "scad", "preferibilmente", "best before", "bb", "exp", "data", "lotto" };
+        String sep = "[\\-/.\\s]*"; // Separatore opzionale o multiplo
 
+        // Regex migliorate
+        String regexDDMMYYYY = "\\b(0[1-9]|[12][0-9]|3[01])" + sep + "(0[1-9]|1[012])" + sep + "(20[2-3][0-9])\\b";
+        String regexDDMMYY = "\\b(0[1-9]|[12][0-9]|3[01])" + sep + "(0[1-9]|1[012])" + sep + "([2-3][0-9])\\b";
+        String regexMMYYYY = "\\b(0[1-9]|1[012])" + sep + "(20[2-3][0-9])\\b";
+        String regexYYYYMMDD = "\\b(20[2-3][0-9])" + sep + "(0[1-9]|1[012])" + sep + "(0[1-9]|[12][0-9]|3[01])\\b";
+
+        String[] patternsToTry = { regexDDMMYYYY, regexYYYYMMDD, regexMMYYYY, regexDDMMYY };
+
+        // 1. Cerca date vicino a parole chiave
         for (String pattern : patternsToTry) {
             Pattern p = Pattern.compile(pattern);
             Matcher m = p.matcher(normalizedText);
             while (m.find()) {
                 String dateFound = m.group();
                 int idx = m.start();
-                String substringBefore = normalizedText.substring(Math.max(0, idx - 40), idx);
+                String substringBefore = normalizedText.substring(Math.max(0, idx - 30), idx);
                 for (String kw : keywords) {
                     if (substringBefore.contains(kw)) {
-                        return dateFound.replaceAll("[\\-/.\\s]+", "/");
+                        return formatFoundDate(dateFound, pattern);
                     }
                 }
             }
         }
 
+        // 2. Cerca qualsiasi data valida se non trovata vicino a keyword
         for (String pattern : patternsToTry) {
             Pattern p = Pattern.compile(pattern);
             Matcher m = p.matcher(normalizedText);
             if (m.find()) {
-                return m.group().replaceAll("[\\-/.\\s]+", "/");
+                return formatFoundDate(m.group(), pattern);
             }
         }
 
         return null;
+    }
+
+    private String formatFoundDate(String rawDate, String pattern) {
+        // Rimuove caratteri non numerici per normalizzare
+        String digits = rawDate.replaceAll("\\D", "");
+
+        if (digits.length() == 8) { // DDMMYYYY o YYYYMMDD
+            if (rawDate.matches(".*20[2-3][0-9].*")) {
+                if (digits.startsWith("20")) { // YYYYMMDD
+                    return digits.substring(6, 8) + "/" + digits.substring(4, 6) + "/" + digits.substring(0, 4);
+                } else { // DDMMYYYY
+                    return digits.substring(0, 2) + "/" + digits.substring(2, 4) + "/" + digits.substring(4, 8);
+                }
+            }
+        } else if (digits.length() == 6) { // DDMMYY o MMYYYY
+            if (pattern.contains("20[2-3]")) { // MMYYYY
+                return "01/" + digits.substring(0, 2) + "/" + digits.substring(2, 6);
+            } else { // DDMMYY
+                return digits.substring(0, 2) + "/" + digits.substring(2, 4) + "/20" + digits.substring(4, 6);
+            }
+        }
+
+        // Fallback: prova a pulire i separatori
+        return rawDate.replaceAll("[\\-/.\\s]+", "/");
     }
 
     private void stopCamera(ProcessCameraProvider cameraProvider) {
