@@ -184,6 +184,18 @@
                         android:inputType="date" />
 
                 </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Pulsante Ri-scansione Data Scadenza -->
+                <ImageButton
+                    android:id="@+id/buttonRescanExpiryDate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@android:drawable/ic_input_delete"
+                    android:contentDescription="Cancella e ri-scansiona la data"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:visibility="gone"
+                    android:padding="8dp"/>
+
             </LinearLayout>
 
             <TextView
