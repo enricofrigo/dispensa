@@ -27,6 +27,7 @@ public interface CategoryDefinitionDao {
 
     @Query("DELETE FROM categories_definitions")
     void deleteAllCategoryDefinitions();
+
     @Query("SELECT * FROM categories_definitions ")
     LiveData<List<CategoryDefinition>> getAllCategoryDefinitions();
 
@@ -35,4 +36,7 @@ public interface CategoryDefinitionDao {
 
     @Query("SELECT * FROM categories_definitions WHERE tag_name = :apiTag")
     CategoryDefinition getCategoryByTagName(String apiTag);
+
+    @Query("SELECT * FROM categories_definitions")
+    List<CategoryDefinition> getAllCategoryDefinitionsSync();
 }

@@ -27,10 +27,16 @@ public interface ProductCategoryLinkDao {
 
     @Query("DELETE FROM product_category_links")
     void deleteAllProductCategoryLink();
+
     @Query("SELECT * FROM product_category_links ")
     LiveData<List<ProductCategoryLink>> getAllProductCategoryLink();
+
     @Query("SELECT * FROM product_category_links WHERE product_id_fk = :id")
     LiveData<List<ProductCategoryLink>> getProductCategoryLinkByProductId(int id);
+
     @Query("DELETE FROM product_category_links WHERE product_id_fk = :id")
     void deleteByProductId(int id);
+
+    @Query("SELECT * FROM product_category_links")
+    List<ProductCategoryLink> getAllProductCategoryLinksSync();
 }

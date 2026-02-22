@@ -49,6 +49,12 @@ import android.view.MenuItem;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
+import eu.frigo.dispensa.data.backup.BackupManager;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -93,6 +99,64 @@ public class MainActivity extends AppCompatActivity
                 if (message != null)
                     showProductSavedSnackbar(message);
             });
+
+    private final ActivityResultLauncher<String> createDocumentLauncher = registerForActivityResult(
+            new ActivityResultContracts.CreateDocument("application/octet-stream"), uri -> {
+                if (uri != null) {
+                    performExport(uri);
+                }
+            });
+
+    private final ActivityResultLauncher<String[]> openDocumentLauncher = registerForActivityResult(
+            new ActivityResultContracts.OpenDocument(), uri -> {
+                if (uri != null) {
+                    confirmImport(uri);
+                }
+            });
+
+    private void performExport(android.net.Uri uri) {
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            try (OutputStream os = getContentResolver().openOutputStream(uri)) {
+                BackupManager backupManager = new BackupManager(this);
+                backupManager.exportData(os);
+                runOnUiThread(() -> Toast.makeText(this, R.string.export_success, Toast.LENGTH_SHORT).show());
+            } catch (Exception e) {
+                Log.e("MainActivity", "Export failed", e);
+                runOnUiThread(() -> Toast
+                        .makeText(this, getString(R.string.export_error, e.getMessage()), Toast.LENGTH_LONG).show());
+            }
+        });
+    }
+
+    private void confirmImport(android.net.Uri uri) {
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.import_confirm_title)
+                .setMessage(R.string.import_confirm_message)
+                .setPositiveButton(R.string.ok, (dialog, which) -> performImport(uri))
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
+    private void performImport(android.net.Uri uri) {
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            try (InputStream is = getContentResolver().openInputStream(uri)) {
+                BackupManager backupManager = new BackupManager(this);
+                backupManager.importData(is);
+                runOnUiThread(() -> {
+                    Toast.makeText(this, R.string.import_success, Toast.LENGTH_LONG).show();
+                    // Restart app to refresh all data and viewmodels
+                    Intent intent = new Intent(this, MainActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    Runtime.getRuntime().exit(0);
+                });
+            } catch (Exception e) {
+                Log.e("MainActivity", "Import failed", e);
+                runOnUiThread(() -> Toast
+                        .makeText(this, getString(R.string.import_error, e.getMessage()), Toast.LENGTH_LONG).show());
+            }
+        });
+    }
 
     private void askForNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -461,6 +525,14 @@ public class MainActivity extends AppCompatActivity
         } else if (id == R.id.action_settings) {
             Intent intent = new Intent(this, SettingsActivity.class);
             startActivity(intent);
+            return true;
+        } else if (id == R.id.action_export) {
+            String fileName = "dispensa_backup_"
+                    + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date()) + ".dsp";
+            createDocumentLauncher.launch(fileName);
+            return true;
+        } else if (id == R.id.action_import) {
+            openDocumentLauncher.launch(new String[] { "*/*" });
             return true;
         }
         return super.onOptionsItemSelected(item);
