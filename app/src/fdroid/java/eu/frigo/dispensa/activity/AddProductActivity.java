@@ -102,6 +102,13 @@ import android.annotation.SuppressLint;
 import java.io.OutputStream;
 import retrofit2.Callback;
 import retrofit2.Response;
+import android.graphics.ImageFormat;
+import android.graphics.Rect;
+import android.graphics.YuvImage;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import java.io.ByteArrayOutputStream;
+import android.widget.FrameLayout;
 
 public class AddProductActivity extends AppCompatActivity {
 
@@ -146,6 +153,8 @@ public class AddProductActivity extends AppCompatActivity {
     // ZXing reader per immagini dalla galleria
     private MultiFormatReader multiFormatReader;
     private boolean isScanning = false;
+    private boolean isAnalysisInProgress = false;
+    private View layoutScannerContainer;
 
     public final static String EXTRA_BARCODE = "SCANNED_BARCODE_DATA";
     public final static String EXTRA_PRODUCT_ID = "PRODUCT_ID";
@@ -232,9 +241,9 @@ public class AddProductActivity extends AppCompatActivity {
         spinnerStorageLocation = findViewById(R.id.spinnerStorageLocation);
         editTextBarcode = findViewById(R.id.editTextBarcode);
         editTextQuantity = findViewById(R.id.editTextQuantity);
-        buttonIncrementQuantityActivity = findViewById(R.id.buttonIncrementQuantityActivity);
         buttonDecrementQuantityActivity = findViewById(R.id.buttonDecrementQuantityActivity);
-        editTextExpiryDate = findViewById(R.id.editTextExpiryDate);
+        buttonIncrementQuantityActivity = findViewById(R.id.buttonIncrementQuantityActivity);
+        layoutScannerContainer = findViewById(R.id.layoutScannerContainer);
         ImageButton buttonScanGallery = findViewById(R.id.buttonScanGallery);
         ImageButton buttonScanCamera = findViewById(R.id.buttonScanCamera);
 
@@ -416,8 +425,17 @@ public class AddProductActivity extends AppCompatActivity {
     }
 
     private void initTesseract() {
+        Log.d("Tesseract", "Inizializzazione Tesseract in corso...");
         tessBaseAPI = new TessBaseAPI();
-        tessBaseAPI.init(dataPath, "ita"); // Impostiamo italiano come default
+        if (!tessBaseAPI.init(dataPath, "ita")) {
+            Log.e("Tesseract", "Inizializzazione di Tesseract fallita");
+            Toast.makeText(this, "Errore inizializzazione OCR", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        // Ottimizzazioni Tesseract
+        tessBaseAPI.setPageSegMode(TessBaseAPI.PageSegMode.PSM_SPARSE_TEXT);
+        tessBaseAPI.setVariable(TessBaseAPI.VAR_CHAR_WHITELIST, "0123456789/-.");
+        Log.d("Tesseract", "Tesseract inizializzato correttamente per 'ita'");
     }
 
     private void startCamera() {
@@ -467,10 +485,16 @@ public class AddProductActivity extends AppCompatActivity {
                 BarcodeFormat.CODE_39));
 
         imageAnalysis.setAnalyzer(cameraExecutor, imageProxy -> {
+            if (!isScanning || isAnalysisInProgress) {
+                imageProxy.close();
+                return;
+            }
+
+            isAnalysisInProgress = true;
             Image mediaImage = imageProxy.getImage();
-            if (mediaImage != null && isScanning) {
-                // Conversione ImageProxy a Bitmap per OCR e ZXing
-                Bitmap bitmap = imageProxyToBitmap(imageProxy);
+            if (mediaImage != null) {
+                // Conversione ImageProxy a Bitmap ottimizzata con Crop ROI
+                Bitmap bitmap = imageProxyToCroppedBitmap(imageProxy);
 
                 if (bitmap != null) {
                     boolean needsBarcode = Objects.requireNonNull(editTextBarcode.getText()).toString().trim()
@@ -481,7 +505,7 @@ public class AddProductActivity extends AppCompatActivity {
                     if (needsBarcode) {
                         String barcode = decodeBarcode(bitmap);
                         if (barcode != null) {
-                            Log.d("BarcodeScanner", "Codice a barre trovato da CameraX: " + barcode);
+                            Log.d("BarcodeScanner", "Codice a barre trovato (Cropped): " + barcode);
                             runOnUiThread(() -> {
                                 editTextBarcode.setText(barcode);
                                 fetchProductDetailsFromApi(barcode);
@@ -494,6 +518,7 @@ public class AddProductActivity extends AppCompatActivity {
                         String resultText = tessBaseAPI.getUTF8Text();
                         String parsedDate = parseExpiryDate(resultText);
                         if (parsedDate != null) {
+                            Log.d("OCR", "Data trovata (Cropped): " + parsedDate);
                             runOnUiThread(() -> {
                                 editTextExpiryDate.setText(parsedDate);
                                 if (buttonRescanExpiryDate != null)
@@ -510,10 +535,11 @@ public class AddProductActivity extends AppCompatActivity {
                     }
                 }
             }
+            isAnalysisInProgress = false;
             imageProxy.close();
         });
 
-        previewViewScanner.setVisibility(View.VISIBLE);
+        layoutScannerContainer.setVisibility(View.VISIBLE);
 
         try {
             cameraProvider.unbindAll();
@@ -524,8 +550,36 @@ public class AddProductActivity extends AppCompatActivity {
         }
     }
 
-    private Bitmap imageProxyToBitmap(androidx.camera.core.ImageProxy imageProxy) {
-        androidx.camera.core.ImageProxy.PlaneProxy[] planes = imageProxy.getPlanes();
+    private Bitmap imageProxyToCroppedBitmap(androidx.camera.core.ImageProxy imageProxy) {
+        int width = imageProxy.getWidth();
+        int height = imageProxy.getHeight();
+
+        // 1. Conversione veloce YUV a YuvImage (NV21)
+        byte[] nv21 = yuv420ToNv21(imageProxy);
+
+        // 2. Crop ROI (Area centrale del mirino)
+        // Definiamo un'area del 30% in altezza e 80% in larghezza al centro
+        int cropWidth = (int) (width * 0.8);
+        int cropHeight = (int) (height * 0.3);
+        int left = (width - cropWidth) / 2;
+        int top = (height - cropHeight) / 2;
+
+        YuvImage yuvImage = new YuvImage(nv21, ImageFormat.NV21, width, height, null);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        yuvImage.compressToJpeg(new Rect(left, top, left + cropWidth, top + cropHeight), 90, out);
+        byte[] imageBytes = out.toByteArray();
+        Bitmap bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+
+        // 3. Rotazione se necessaria
+        int rotation = imageProxy.getImageInfo().getRotationDegrees();
+        if (rotation != 0) {
+            bitmap = rotateBitmap(bitmap, rotation);
+        }
+        return bitmap;
+    }
+
+    private byte[] yuv420ToNv21(androidx.camera.core.ImageProxy image) {
+        androidx.camera.core.ImageProxy.PlaneProxy[] planes = image.getPlanes();
         ByteBuffer yBuffer = planes[0].getBuffer();
         ByteBuffer uBuffer = planes[1].getBuffer();
         ByteBuffer vBuffer = planes[2].getBuffer();
@@ -539,19 +593,7 @@ public class AddProductActivity extends AppCompatActivity {
         vBuffer.get(nv21, ySize, vSize);
         uBuffer.get(nv21, ySize + vSize, uSize);
 
-        android.graphics.YuvImage yuvImage = new android.graphics.YuvImage(nv21, android.graphics.ImageFormat.NV21,
-                imageProxy.getWidth(), imageProxy.getHeight(), null);
-        java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
-        yuvImage.compressToJpeg(new android.graphics.Rect(0, 0, yuvImage.getWidth(), yuvImage.getHeight()), 100, out);
-        byte[] imageBytes = out.toByteArray();
-        Bitmap bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
-
-        // Ruota se necessario
-        int rotation = imageProxy.getImageInfo().getRotationDegrees();
-        if (rotation != 0) {
-            bitmap = rotateBitmap(bitmap, rotation);
-        }
-        return bitmap;
+        return nv21;
     }
 
     private void showOpenFoodFactsBanner() {
@@ -700,8 +742,8 @@ public class AddProductActivity extends AppCompatActivity {
         if (cameraProvider != null) {
             cameraProvider.unbindAll();
         }
-        if (previewViewScanner != null) {
-            previewViewScanner.setVisibility(View.GONE);
+        if (layoutScannerContainer != null) {
+            layoutScannerContainer.setVisibility(View.GONE);
         }
     }
 
