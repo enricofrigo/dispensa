@@ -13,8 +13,10 @@ import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 
+import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -24,7 +26,7 @@ import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowCompat;
+
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
@@ -51,7 +53,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-public class MainActivity extends AppCompatActivity implements SearchView.OnQueryTextListener, ProductListAdapter.OnProductInteractionListener{
+public class MainActivity extends AppCompatActivity
+        implements SearchView.OnQueryTextListener, ProductListAdapter.OnProductInteractionListener {
 
     private ProductViewModel productViewModel;
     private List<ProductWithCategoryDefinitions> allProductsList = new ArrayList<>();
@@ -64,33 +67,37 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     private TabLayout tabLayout;
     private LocationViewPagerAdapter locationViewPagerAdapter;
     private LocationViewModel locationViewModel;
-    private final ActivityResultLauncher<String> requestPermissionLauncher =
-            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+    private final ActivityResultLauncher<String> requestPermissionLauncher = registerForActivityResult(
+            new ActivityResultContracts.RequestPermission(), isGranted -> {
                 if (isGranted) {
                     Toast.makeText(this, getString(R.string.notify_permission_accpeted), Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(this, getString(R.string.notify_permission_denied), Toast.LENGTH_LONG).show();
                 }
             });
-    private final ActivityResultLauncher<Intent> addProductActivityLauncher =
-            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
-                String message = null ;
+    private final ActivityResultLauncher<Intent> addProductActivityLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(), result -> {
+                String message = null;
                 if (result.getResultCode() == AppCompatActivity.RESULT_OK && result.getData() != null) {
                     String productName = result.getData().getStringExtra(AddProductActivity.NEW_PRODUCT_NAME);
                     boolean isEdit = result.getData().getBooleanExtra(AddProductActivity.NEW_PRODUCT_EDIT, false);
                     if (productName != null) {
-                        message = isEdit? String.format(getString(R.string.notify_update_product), productName) : String.format(getString(R.string.notify_add_product), productName);
+                        message = isEdit ? String.format(getString(R.string.notify_update_product), productName)
+                                : String.format(getString(R.string.notify_add_product), productName);
                     } else {
                         message = getString(R.string.notify_add_new_product);
                     }
                 } else if (result.getResultCode() == AppCompatActivity.RESULT_CANCELED) {
                     message = getString(R.string.canceled);
                 }
-                if (message != null) showProductSavedSnackbar(message);
+                if (message != null)
+                    showProductSavedSnackbar(message);
             });
+
     private void askForNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(this,
+                    Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 if (shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
                     new AlertDialog.Builder(this)
                             .setTitle(getString(R.string.notify_permission_title))
@@ -112,8 +119,8 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         askForNotificationPermission();
-        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
-        setContentView(R.layout.activity_main); // Il tuo layout con RecyclerView
+        EdgeToEdge.enable(this);
+        setContentView(R.layout.activity_main);
         mainCoordinatorLayout = findViewById(R.id.main_coordinator_layout);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -132,7 +139,8 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         new TabLayoutMediator(tabLayout, viewPager, (tab, position) -> {
             StorageLocation currentLocation = locationViewPagerAdapter.getLocationAt(position);
             if (currentLocation != null) {
-                Log.d("MainActivity", "Nome della posizione: " + currentLocation.getLocalizedName(getApplicationContext()));
+                Log.d("MainActivity",
+                        "Nome della posizione: " + currentLocation.getLocalizedName(getApplicationContext()));
                 tab.setText(currentLocation.getLocalizedName(getApplicationContext()));
             }
         }).attach();
@@ -158,8 +166,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
                     navigationBarsInsets.left,
                     statusBarsInsets.top,
                     navigationBarsInsets.right,
-                    0
-            );
+                    0);
             ViewGroup.MarginLayoutParams fabParams = (ViewGroup.MarginLayoutParams) fab.getLayoutParams();
             int bottomInset = Math.max(navigationBarsInsets.bottom, imeInsets.bottom);
             fabParams.bottomMargin = originalFabBottomMargin + bottomInset;
@@ -174,13 +181,15 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
             Intent intent = new Intent(MainActivity.this, AddProductActivity.class);
             if (locationViewPagerAdapter != null && locationViewPagerAdapter.getItemCount() > 0) {
                 int currentItemPosition = viewPager.getCurrentItem();
-                String currentLocationInternalKey = locationViewPagerAdapter.getLocationInternalKeyAt(currentItemPosition);
+                String currentLocationInternalKey = locationViewPagerAdapter
+                        .getLocationInternalKeyAt(currentItemPosition);
                 intent.putExtra(AddProductActivity.PRESELECTED_LOCATION_INTERNAL_KEY, currentLocationInternalKey);
             }
             addProductActivityLauncher.launch(intent);
         });
 
     }
+
     private void observeLocationsForTabs() {
         locationViewModel.getLocationsForTabs().observe(this, locations -> {
             if (locations != null) {
@@ -188,12 +197,14 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
             }
         });
     }
+
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         updateLayoutToggleIcon();
         restoreSearchViewQuery();
         return super.onPrepareOptionsMenu(menu);
     }
+
     private void restoreSearchViewQuery() {
         if (searchView != null && productViewModel != null && productViewModel.getSearchQuery().getValue() != null) {
             String currentQueryInViewModel = productViewModel.getSearchQuery().getValue();
@@ -215,14 +226,16 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
             searchView.setIconified(true);
         }
     }
+
     public void updateLayoutToggleIcon() {
-        if (layoutToggleMenuItem == null) return;
+        if (layoutToggleMenuItem == null)
+            return;
 
         Fragment currentFragmentRaw = getSupportFragmentManager().findFragmentByTag("f" + viewPager.getCurrentItem());
         if (!(currentFragmentRaw instanceof ProductListFragment)) {
             return;
         }
-        //layoutToggleMenuItem.setVisible(true);
+        // layoutToggleMenuItem.setVisible(true);
 
         ProductListFragment currentFragment = (ProductListFragment) currentFragmentRaw;
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
@@ -237,6 +250,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
             layoutToggleMenuItem.setTitle(getString(R.string.layout_grid_title));
         }
     }
+
     @Override
     public void onEditActionClicked(ProductWithCategoryDefinitions productWithCategoryDefinitions) {
         Product product = productWithCategoryDefinitions.product;
@@ -250,6 +264,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         intent.putExtra(AddProductActivity.PRESELECTED_LOCATION_INTERNAL_KEY, product.getStorageLocation());
         addProductActivityLauncher.launch(intent);
     }
+
     @Override
     public void onDeleteActionClicked(ProductWithCategoryDefinitions productWithCategoryDefinitions) {
         Product product = productWithCategoryDefinitions.product;
@@ -258,12 +273,14 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
                 .setMessage(String.format(getString(R.string.delete_product_descritpion), product.getProductName()))
                 .setPositiveButton(getString(R.string.delete), (dialog, which) -> {
                     productViewModel.delete(product);
-                    showProductSavedSnackbar(String.format(getString(R.string.notify_delete_product), product.getProductName()));
+                    showProductSavedSnackbar(
+                            String.format(getString(R.string.notify_delete_product), product.getProductName()));
                 })
                 .setNegativeButton(getString(R.string.cancel), null)
                 .setIcon(android.R.drawable.ic_dialog_alert)
                 .show();
     }
+
     @Override
     public void onProductMoveClicked(ProductWithCategoryDefinitions productWithDefs) {
         if (productWithDefs == null || productWithDefs.product == null) {
@@ -281,7 +298,8 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
 
         locationViewModel.getAllLocationsSorted().observe(this, locations -> {
             if (locations == null || locations.isEmpty()) {
-                Toast.makeText(getApplicationContext(), "Nessuna locazione disponibile per lo spostamento.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), "Nessuna locazione disponibile per lo spostamento.",
+                        Toast.LENGTH_SHORT).show();
                 return;
             }
 
@@ -294,13 +312,15 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
             }
 
             if (otherLocations.isEmpty()) {
-                Toast.makeText(getApplicationContext(), "Nessun'altra locazione disponibile per lo spostamento.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), "Nessun'altra locazione disponibile per lo spostamento.",
+                        Toast.LENGTH_SHORT).show();
                 return;
             }
 
             CharSequence[] locationNames = new CharSequence[otherLocations.size()];
             for (int i = 0; i < otherLocations.size(); i++) {
-                locationNames[i] = otherLocations.get(i).getLocalizedName(getApplicationContext()); // O un nome più user-friendly
+                locationNames[i] = otherLocations.get(i).getLocalizedName(getApplicationContext()); // O un nome più
+                                                                                                    // user-friendly
             }
 
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -318,43 +338,53 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
 
                 // Opzionale: Mostra un messaggio di conferma
                 Toast.makeText(getApplicationContext(),
-                        String.format(getString(R.string.product_moved_toast), productToMove.getProductName(), selectedLocation.getLocalizedName(getApplicationContext())),
+                        String.format(getString(R.string.product_moved_toast), productToMove.getProductName(),
+                                selectedLocation.getLocalizedName(getApplicationContext())),
                         Toast.LENGTH_SHORT).show();
 
-                // L'aggiornamento del LiveData dovrebbe far sì che il prodotto scompaia da questo tab
+                // L'aggiornamento del LiveData dovrebbe far sì che il prodotto scompaia da
+                // questo tab
                 // e appaia nel nuovo tab (se i tab osservano LiveData filtrati per locazione).
             });
             builder.setNegativeButton(android.R.string.cancel, null);
             builder.show();
 
-            // IMPORTANTE: Rimuovi l'observer dopo che è stato usato per evitare chiamate multiple
-            // se l'utente clicca "sposta" più volte prima che il dialogo precedente sia chiuso.
+            // IMPORTANTE: Rimuovi l'observer dopo che è stato usato per evitare chiamate
+            // multiple
+            // se l'utente clicca "sposta" più volte prima che il dialogo precedente sia
+            // chiuso.
             // Questo è un punto delicato con LiveData dentro un handler di evento.
-            // Una soluzione migliore potrebbe essere avere la lista di locazioni già disponibile
+            // Una soluzione migliore potrebbe essere avere la lista di locazioni già
+            // disponibile
             // come campo nel Fragment, aggiornato una sola volta.
             // Per ora, lo lasciamo così, ma considera alternative se noti problemi.
-            // O, meglio ancora, recupera le locazioni una volta e passale al metodo del dialogo.
+            // O, meglio ancora, recupera le locazioni una volta e passale al metodo del
+            // dialogo.
         });
     }
+
     @Override
     public void onProductItemClickedForQuantity(ProductWithCategoryDefinitions productWithCategoryDefinitions) {
         Log.d("MainActivity", "onProductItemClickedForQuantity called with product: " + productWithCategoryDefinitions);
-        if (productWithCategoryDefinitions == null) return;
+        if (productWithCategoryDefinitions == null)
+            return;
         Product product = productWithCategoryDefinitions.product;
 
         int currentQuantity = product.getQuantity();
         if (currentQuantity > 1) {
-            Product updatedProduct = product.copyWithNewQuantity(currentQuantity - 1); // Assicurati che Product abbia questo metodo
+            Product updatedProduct = product.copyWithNewQuantity(currentQuantity - 1); // Assicurati che Product abbia
+                                                                                       // questo metodo
             productViewModel.update(updatedProduct);
         } else if (currentQuantity == 1) {
             productViewModel.delete(product);
             Snackbar.make(findViewById(R.id.main_coordinator_layout),
-                            String.format(getString(R.string.notify_used), product.getProductName()),
-                            Snackbar.LENGTH_LONG)
+                    String.format(getString(R.string.notify_used), product.getProductName()),
+                    Snackbar.LENGTH_LONG)
                     .setAction(getString(R.string.cancel).toUpperCase(), v -> productViewModel.insert(product))
                     .show();
         }
     }
+
     public void showProductSavedSnackbar(String message) {
         if (mainCoordinatorLayout != null && fab != null) {
             Snackbar snackbar = Snackbar.make(mainCoordinatorLayout, message, Snackbar.LENGTH_LONG);
@@ -364,6 +394,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
             Toast.makeText(this, message, Toast.LENGTH_LONG).show();
         }
     }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
@@ -383,6 +414,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         updateLayoutToggleIcon();
         return true;
     }
+
     private void setupSearchView() {
         searchView.setQueryHint(getString(R.string.action_search_hint));
 
@@ -416,6 +448,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
             }
         });
     }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
@@ -432,6 +465,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         }
         return super.onOptionsItemSelected(item);
     }
+
     @Override
     public boolean onQueryTextSubmit(String query) {
         filter(query);
@@ -464,6 +498,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
             ;
         }
     }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -479,6 +514,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
             viewPager.unregisterOnPageChangeCallback(pageChangeCallback);
         }
     }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -486,6 +522,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
             viewPager.unregisterOnPageChangeCallback(pageChangeCallback);
         }
     }
+
     private ViewPager2.OnPageChangeCallback pageChangeCallback = new ViewPager2.OnPageChangeCallback() {
         @Override
         public void onPageSelected(int position) {
@@ -493,6 +530,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
             invalidateOptionsMenu();
         }
     };
+
     @Override
     protected void onStop() {
         super.onStop();
