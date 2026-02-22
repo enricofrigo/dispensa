@@ -101,6 +101,7 @@ public class AddProductActivity extends AppCompatActivity {
     private boolean isCameraPermissionGranted;
     private TextInputEditText editTextProductName;
     private ImageView imageViewProduct;
+    private ImageButton buttonRescanExpiryDate;
     private final Calendar calendar = Calendar.getInstance();
     private String currentProductNameFromApi;
     private String currentImageUrlFromApi;
@@ -173,6 +174,7 @@ public class AddProductActivity extends AppCompatActivity {
         editTextBarcode = findViewById(R.id.editTextBarcode);
         ImageButton buttonScanCamera = findViewById(R.id.buttonScanCamera);
         ImageButton buttonScanGallery = findViewById(R.id.buttonScanGallery);
+        buttonRescanExpiryDate = findViewById(R.id.buttonRescanExpiryDate);
         editTextQuantity = findViewById(R.id.editTextQuantity);
         buttonDecrementQuantityActivity = findViewById(R.id.buttonDecrementQuantityActivity);
         buttonIncrementQuantityActivity = findViewById(R.id.buttonIncrementQuantityActivity);
@@ -315,6 +317,15 @@ public class AddProductActivity extends AppCompatActivity {
         buttonScanCamera.setOnClickListener(v -> checkCameraPermissionAndStartScanner());
         buttonScanGallery.setOnClickListener(v -> pickImageForScannerLauncher.launch("image/*"));
 
+        // Pulsante per ri-scansionare la data di scadenza se quella letta era errata
+        if (buttonRescanExpiryDate != null) {
+            buttonRescanExpiryDate.setOnClickListener(v -> {
+                editTextExpiryDate.setText("");
+                buttonRescanExpiryDate.setVisibility(GONE);
+                checkCameraPermissionAndStartScanner();
+            });
+        }
+
         buttonMarkAsClosed.setOnClickListener(v -> {
             currentOpenedDate = 0L;
             updateOpenedDateUI(currentOpenedDate);
@@ -352,6 +363,8 @@ public class AddProductActivity extends AppCompatActivity {
                         if (parsedDate != null) {
                             runOnUiThread(() -> {
                                 editTextExpiryDate.setText(parsedDate);
+                                if (buttonRescanExpiryDate != null)
+                                    buttonRescanExpiryDate.setVisibility(View.VISIBLE);
                                 Toast.makeText(this, "Data trovata: " + parsedDate, Toast.LENGTH_SHORT).show();
                             });
                         }
@@ -666,6 +679,8 @@ public class AddProductActivity extends AppCompatActivity {
                                 if (parsedDate != null) {
                                     runOnUiThread(() -> {
                                         editTextExpiryDate.setText(parsedDate);
+                                        if (buttonRescanExpiryDate != null)
+                                            buttonRescanExpiryDate.setVisibility(View.VISIBLE);
                                         Toast.makeText(AddProductActivity.this, "Data trovata: " + parsedDate,
                                                 Toast.LENGTH_SHORT).show();
                                     });
