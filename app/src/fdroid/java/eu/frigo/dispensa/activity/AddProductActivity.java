@@ -191,21 +191,14 @@ public class AddProductActivity extends AppCompatActivity {
         }
 
         editTextBarcode = findViewById(R.id.editTextBarcode);
-        ImageButton buttonScanBarcodeCamera = findViewById(R.id.buttonScanBarcodeCamera);
-        ImageButton buttonScanBarcodeGallery = findViewById(R.id.buttonScanBarcodeGallery);
-
-        ImageButton buttonScanExpiryCamera = findViewById(R.id.buttonScanExpiryCamera);
-        if (buttonScanExpiryCamera != null)
-            buttonScanExpiryCamera.setVisibility(GONE);
-        ImageButton buttonScanExpiryGallery = findViewById(R.id.buttonScanExpiryGallery);
-        if (buttonScanExpiryGallery != null)
-            buttonScanExpiryGallery.setVisibility(GONE);
+        ImageButton buttonScanCamera = findViewById(R.id.buttonScanCamera);
+        ImageButton buttonScanGallery = findViewById(R.id.buttonScanGallery);
 
         editTextQuantity = findViewById(R.id.editTextQuantity);
         buttonDecrementQuantityActivity = findViewById(R.id.buttonDecrementQuantityActivity);
         buttonIncrementQuantityActivity = findViewById(R.id.buttonIncrementQuantityActivity);
         editTextExpiryDate = findViewById(R.id.editTextExpiryDate);
-        barcodeView = findViewById(R.id.previewViewBarcode);
+        barcodeView = findViewById(R.id.previewViewScanner);
         editTextProductName = findViewById(R.id.editTextProductName);
         imageViewProduct = findViewById(R.id.imageViewProduct);
         spinnerStorageLocation = findViewById(R.id.spinnerStorageLocation);
@@ -289,8 +282,8 @@ public class AddProductActivity extends AppCompatActivity {
             }
             fabButtonSaveProduct.setText(getString(R.string.update_product));
             observeProductForEditMode();
-            buttonScanBarcodeGallery.setVisibility(GONE);
-            buttonScanBarcodeCamera.setVisibility(GONE);
+            buttonScanGallery.setVisibility(GONE);
+            buttonScanCamera.setVisibility(GONE);
             editTextBarcode.setVisibility(GONE);
             barcodeView.setVisibility(GONE);
         } else {
@@ -330,20 +323,20 @@ public class AddProductActivity extends AppCompatActivity {
             showDatePickerDialog();
         });
 
-        buttonScanBarcodeCamera.setOnClickListener(v -> {
+        buttonScanCamera.setOnClickListener(v -> {
             isScanning = true;
             checkCameraPermissionAndStartScanner();
         });
 
-        buttonScanBarcodeGallery.setOnClickListener(v -> pickImageForBarcodeLauncher.launch("image/*"));
+        buttonScanGallery.setOnClickListener(v -> pickImageForBarcodeLauncher.launch("image/*"));
         buttonMarkAsClosed.setOnClickListener(v -> {
             currentOpenedDate = 0L;
             updateOpenedDateUI(currentOpenedDate);
         });
         fabButtonSaveProduct.setOnClickListener(v -> saveOrUpdateProduct());
         if (!openFoodFactsApiEnabled) {
-            buttonScanBarcodeCamera.setVisibility(GONE);
-            buttonScanBarcodeGallery.setVisibility(GONE);
+            buttonScanCamera.setVisibility(GONE);
+            buttonScanGallery.setVisibility(GONE);
             barcodeView.setVisibility(GONE);
         }
     }

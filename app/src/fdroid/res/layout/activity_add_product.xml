@@ -82,34 +82,34 @@
 
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Pulsante Scansione Codice a Barre -->
+                <!-- Pulsante Scansione -->
                 <ImageButton
-                    android:id="@+id/buttonScanBarcodeCamera"
+                    android:id="@+id/buttonScanCamera"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:src="@android:drawable/ic_menu_camera"
-                    android:contentDescription="@string/scan_barcode_description"
+                    android:contentDescription="Scansiona prodotto"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:padding="8dp"/>
 
                 <ImageButton
-                    android:id="@+id/buttonScanBarcodeGallery"
+                    android:id="@+id/buttonScanGallery"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:src="@android:drawable/ic_menu_gallery"
-                    android:contentDescription="@string/scan_barcode_description"
+                    android:contentDescription="Seleziona immagine"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:visibility="visible"
                     android:padding="8dp"/>
             </LinearLayout>
 
             <com.journeyapps.barcodescanner.DecoratedBarcodeView
-                android:id="@+id/previewViewBarcode"
+                android:id="@+id/previewViewScanner"
                 android:layout_width="match_parent"
                 android:layout_height="300dp"
                 android:layout_marginTop="8dp"
                 android:visibility="gone"
-            />
+                />
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/textFieldProductNameLayout"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -197,7 +197,6 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:layout_marginEnd="8dp"
                     android:hint="@string/expiry_date_hint">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -209,35 +208,7 @@
                         android:inputType="date" />
 
                 </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Pulsanti Scansione Scadenza -->
-                <ImageButton
-                    android:id="@+id/buttonScanExpiryCamera"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:src="@android:drawable/ic_menu_camera"
-                    android:contentDescription="Scansiona data di scadenza"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:padding="8dp"/>
-
-                <ImageButton
-                    android:id="@+id/buttonScanExpiryGallery"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:src="@android:drawable/ic_menu_gallery"
-                    android:contentDescription="Seleziona immagine scadenza"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:visibility="visible"
-                    android:padding="8dp"/>
             </LinearLayout>
-
-            <androidx.camera.view.PreviewView
-                android:id="@+id/previewViewExpiryDate"
-                android:layout_width="match_parent"
-                android:layout_height="300dp"
-                android:layout_marginTop="8dp"
-                android:visibility="gone"
-                />
 
             <TextView
                 android:layout_width="match_parent"
