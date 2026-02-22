@@ -35,9 +35,25 @@ import androidx.core.view.ViewCompat;
 
 import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.media3.common.util.Log;
-
+import androidx.camera.core.CameraSelector;
+import androidx.camera.core.ImageAnalysis;
+import androidx.camera.core.Preview;
+import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.camera.view.PreviewView;
 import com.bumptech.glide.Glide;
+import com.googlecode.tesseract.android.TessBaseAPI;
+import android.util.Log;
+import android.util.Size;
+import android.media.Image;
+import java.io.FileOutputStream;
+import java.io.File;
+import java.nio.ByteBuffer;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import com.google.common.util.concurrent.ListenableFuture;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
@@ -82,6 +98,8 @@ import eu.frigo.dispensa.network.openfoodfacts.model.OpenFoodFactsProductRespons
 import eu.frigo.dispensa.util.KeyboardUtils;
 import eu.frigo.dispensa.viewmodel.AddProductViewModel;
 import eu.frigo.dispensa.util.DateConverter;
+import android.annotation.SuppressLint;
+import java.io.OutputStream;
 import retrofit2.Callback;
 import retrofit2.Response;
 
@@ -98,7 +116,12 @@ public class AddProductActivity extends AppCompatActivity {
     private AddProductViewModel addProductViewModel;
     private int currentProductId = -1;
     private boolean isEditMode = false;
-    private DecoratedBarcodeView barcodeView;
+    private PreviewView previewViewScanner;
+    private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
+    private ExecutorService cameraExecutor;
+    private TessBaseAPI tessBaseAPI;
+    private String dataPath;
+    private ImageButton buttonRescanExpiryDate;
     private boolean isCameraPermissionGranted;
     private TextInputEditText editTextProductName;
     private ImageView imageViewProduct;
@@ -149,28 +172,6 @@ public class AddProductActivity extends AppCompatActivity {
                 }
             });
 
-    private final BarcodeCallback barcodeCallback = new BarcodeCallback() {
-        @Override
-        public void barcodeResult(BarcodeResult result) {
-            if (result != null && result.getText() != null && !result.getText().isEmpty() && isScanning) {
-                String barcode = result.getText();
-
-                // Verifica che sia un codice valido per prodotti
-                if (isValidProductBarcode(barcode)) {
-                    isScanning = false;
-                    Log.d("BarcodeScanner",
-                            "Codice a barre trovato: " + barcode + " (Formato: " + result.getBarcodeFormat() + ")");
-
-                    runOnUiThread(() -> {
-                        editTextBarcode.setText(barcode);
-                        stopCamera();
-                        fetchProductDetailsFromApi(barcode);
-                    });
-                }
-            }
-        }
-    };
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -206,9 +207,6 @@ public class AddProductActivity extends AppCompatActivity {
             return windowInsets;
         });
 
-        // Inizializza ZXing reader per galleria
-        initializeZXingReader();
-
         addProductViewModel = new ViewModelProvider(this).get(AddProductViewModel.class);
         Toolbar toolbarAddProduct = findViewById(R.id.toolbar_add_product);
         if (toolbarAddProduct != null) {
@@ -226,18 +224,22 @@ public class AddProductActivity extends AppCompatActivity {
             showOpenFoodFactsBanner();
         }
 
-        editTextBarcode = findViewById(R.id.editTextBarcode);
-        ImageButton buttonScanCamera = findViewById(R.id.buttonScanCamera);
-        ImageButton buttonScanGallery = findViewById(R.id.buttonScanGallery);
-
-        editTextQuantity = findViewById(R.id.editTextQuantity);
-        buttonDecrementQuantityActivity = findViewById(R.id.buttonDecrementQuantityActivity);
-        buttonIncrementQuantityActivity = findViewById(R.id.buttonIncrementQuantityActivity);
-        editTextExpiryDate = findViewById(R.id.editTextExpiryDate);
-        barcodeView = findViewById(R.id.previewViewScanner);
+        previewViewScanner = findViewById(R.id.previewViewScanner);
         editTextProductName = findViewById(R.id.editTextProductName);
         imageViewProduct = findViewById(R.id.imageViewProduct);
+        cameraExecutor = Executors.newSingleThreadExecutor();
+        buttonRescanExpiryDate = findViewById(R.id.buttonRescanExpiryDate);
         spinnerStorageLocation = findViewById(R.id.spinnerStorageLocation);
+        editTextBarcode = findViewById(R.id.editTextBarcode);
+        editTextQuantity = findViewById(R.id.editTextQuantity);
+        buttonIncrementQuantityActivity = findViewById(R.id.buttonIncrementQuantityActivity);
+        buttonDecrementQuantityActivity = findViewById(R.id.buttonDecrementQuantityActivity);
+        editTextExpiryDate = findViewById(R.id.editTextExpiryDate);
+        ImageButton buttonScanGallery = findViewById(R.id.buttonScanGallery);
+        ImageButton buttonScanCamera = findViewById(R.id.buttonScanCamera);
+
+        // Prepara Tesseract
+        prepareTesseract();
 
         if (getIntent().hasExtra(PRESELECTED_LOCATION_INTERNAL_KEY)) {
             preselectedLocationValue = getIntent().getStringExtra(PRESELECTED_LOCATION_INTERNAL_KEY);
@@ -254,26 +256,29 @@ public class AddProductActivity extends AppCompatActivity {
         editTextNewCategory = findViewById(R.id.editTextNewCategory);
         Button buttonAddCategory = findViewById(R.id.buttonAddCategory);
         ExtendedFloatingActionButton fabButtonSaveProduct = finalFab;
-        // Configura ZXing embedded per formati prodotti supermercato
-        List<BarcodeFormat> formats = Arrays.asList(
-                BarcodeFormat.EAN_13,
-                BarcodeFormat.EAN_8,
-                BarcodeFormat.UPC_A,
-                BarcodeFormat.UPC_E,
-                BarcodeFormat.CODE_128,
-                BarcodeFormat.CODE_39);
-        barcodeView.getBarcodeView().setDecoderFactory(new DefaultDecoderFactory(formats));
-        barcodeView.setStatusText("Inquadra il codice a barre del prodotto");
+
+        buttonAddCategory.setOnClickListener(v -> addNewCategoryTag());
+
+        // Inizializza Tesseract API
+        initTesseract();
+
+        if (buttonRescanExpiryDate != null) {
+            buttonRescanExpiryDate.setOnClickListener(v -> {
+                editTextExpiryDate.setText("");
+                buttonRescanExpiryDate.setVisibility(GONE);
+                checkCameraPermissionAndStartScanner();
+            });
+        }
 
         pickImageForBarcodeLauncher = registerForActivityResult(
                 new ActivityResultContracts.GetContent(),
                 uri -> {
                     if (uri != null) {
-                        Log.d("BarcodeScan", "Immagine selezionata dalla galleria per barcode: " + uri.toString());
+                        Log.d("AddProduct", "Immagine selezionata dalla galleria: " + uri.toString());
                         stopCamera();
-                        processImageForBarcode(uri);
+                        processImageForBoth(uri);
                     } else {
-                        Log.d("BarcodeScan", "Selezione immagine per barcode annullata.");
+                        Log.d("AddProduct", "Selezione immagine annullata.");
                     }
                 });
 
@@ -320,7 +325,7 @@ public class AddProductActivity extends AppCompatActivity {
             buttonScanGallery.setVisibility(GONE);
             buttonScanCamera.setVisibility(GONE);
             editTextBarcode.setVisibility(GONE);
-            barcodeView.setVisibility(GONE);
+            previewViewScanner.setVisibility(GONE);
         } else {
             isEditMode = false;
             if (getSupportActionBar() != null) {
@@ -372,8 +377,180 @@ public class AddProductActivity extends AppCompatActivity {
         if (!openFoodFactsApiEnabled) {
             buttonScanCamera.setVisibility(GONE);
             buttonScanGallery.setVisibility(GONE);
-            barcodeView.setVisibility(GONE);
+            previewViewScanner.setVisibility(GONE);
         }
+    }
+
+    private void prepareTesseract() {
+        dataPath = getFilesDir() + "/tesseract/";
+        File dir = new File(dataPath + "tessdata/");
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+        copyTessDataFiles("tessdata");
+    }
+
+    private void copyTessDataFiles(String path) {
+        try {
+            String[] fileList = getAssets().list(path);
+            if (fileList != null) {
+                for (String fileName : fileList) {
+                    String pathToDataFile = dataPath + path + "/" + fileName;
+                    if (!(new File(pathToDataFile)).exists()) {
+                        InputStream in = getAssets().open(path + "/" + fileName);
+                        OutputStream out = new FileOutputStream(pathToDataFile);
+                        byte[] buff = new byte[1024];
+                        int len;
+                        while ((len = in.read(buff)) > 0) {
+                            out.write(buff, 0, len);
+                        }
+                        in.close();
+                        out.close();
+                    }
+                }
+            }
+        } catch (IOException e) {
+            Log.e("Tesseract", "Errore nel copiare i file tessdata", e);
+        }
+    }
+
+    private void initTesseract() {
+        tessBaseAPI = new TessBaseAPI();
+        tessBaseAPI.init(dataPath, "ita"); // Impostiamo italiano come default
+    }
+
+    private void startCamera() {
+        if (!isCameraPermissionGranted) {
+            Log.e("AddProductActivity", "Tentativo di avviare la fotocamera senza permesso.");
+            return;
+        }
+
+        previewViewScanner.setVisibility(View.VISIBLE);
+
+        cameraProviderFuture = ProcessCameraProvider.getInstance(this);
+        cameraProviderFuture.addListener(() -> {
+            try {
+                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+                bindPreviewAndAnalysis(cameraProvider);
+            } catch (ExecutionException | InterruptedException e) {
+                Toast.makeText(this, getString(R.string.err_camera), Toast.LENGTH_SHORT).show();
+                Log.e("AddProductActivity", "Errore nell'avvio della fotocamera", e);
+            }
+        }, ContextCompat.getMainExecutor(this));
+    }
+
+    @SuppressLint("UnsafeOptInUsageError")
+    private void bindPreviewAndAnalysis(@NonNull ProcessCameraProvider cameraProvider) {
+        Preview preview = new Preview.Builder().build();
+        CameraSelector cameraSelector = new CameraSelector.Builder()
+                .requireLensFacing(CameraSelector.LENS_FACING_BACK)
+                .build();
+
+        preview.setSurfaceProvider(previewViewScanner.getSurfaceProvider());
+
+        ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
+                .setTargetResolution(new Size(1280, 720))
+                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                .build();
+
+        // Riutilizziamo il multiFormatReader per ZXing
+        MultiFormatReader reader = new MultiFormatReader();
+        Hashtable<DecodeHintType, Object> hints = new Hashtable<>();
+        hints.put(DecodeHintType.TRY_HARDER, Boolean.TRUE);
+        hints.put(DecodeHintType.POSSIBLE_FORMATS, Arrays.asList(
+                BarcodeFormat.EAN_13,
+                BarcodeFormat.EAN_8,
+                BarcodeFormat.UPC_A,
+                BarcodeFormat.UPC_E,
+                BarcodeFormat.CODE_128,
+                BarcodeFormat.CODE_39));
+
+        imageAnalysis.setAnalyzer(cameraExecutor, imageProxy -> {
+            Image mediaImage = imageProxy.getImage();
+            if (mediaImage != null && isScanning) {
+                // Conversione ImageProxy a Bitmap per OCR e ZXing
+                Bitmap bitmap = imageProxyToBitmap(imageProxy);
+
+                if (bitmap != null) {
+                    boolean needsBarcode = Objects.requireNonNull(editTextBarcode.getText()).toString().trim()
+                            .isEmpty();
+                    boolean needsExpiry = Objects.requireNonNull(editTextExpiryDate.getText()).toString().trim()
+                            .isEmpty();
+
+                    if (needsBarcode) {
+                        String barcode = decodeBarcode(bitmap);
+                        if (barcode != null) {
+                            Log.d("BarcodeScanner", "Codice a barre trovato da CameraX: " + barcode);
+                            runOnUiThread(() -> {
+                                editTextBarcode.setText(barcode);
+                                fetchProductDetailsFromApi(barcode);
+                            });
+                        }
+                    }
+
+                    if (needsExpiry) {
+                        tessBaseAPI.setImage(bitmap);
+                        String resultText = tessBaseAPI.getUTF8Text();
+                        String parsedDate = parseExpiryDate(resultText);
+                        if (parsedDate != null) {
+                            runOnUiThread(() -> {
+                                editTextExpiryDate.setText(parsedDate);
+                                if (buttonRescanExpiryDate != null)
+                                    buttonRescanExpiryDate.setVisibility(View.VISIBLE);
+                                Toast.makeText(AddProductActivity.this, "Data trovata (OCR): " + parsedDate,
+                                        Toast.LENGTH_SHORT).show();
+                            });
+                        }
+                    }
+
+                    if (!needsBarcode && !needsExpiry) {
+                        isScanning = false;
+                        runOnUiThread(() -> stopCamera(cameraProvider));
+                    }
+                }
+            }
+            imageProxy.close();
+        });
+
+        previewViewScanner.setVisibility(View.VISIBLE);
+
+        try {
+            cameraProvider.unbindAll();
+            cameraProvider.bindToLifecycle(
+                    this, cameraSelector, preview, imageAnalysis);
+        } catch (Exception exc) {
+            Log.e("AddProductActivity", "Use case binding fallito", exc);
+        }
+    }
+
+    private Bitmap imageProxyToBitmap(androidx.camera.core.ImageProxy imageProxy) {
+        androidx.camera.core.ImageProxy.PlaneProxy[] planes = imageProxy.getPlanes();
+        ByteBuffer yBuffer = planes[0].getBuffer();
+        ByteBuffer uBuffer = planes[1].getBuffer();
+        ByteBuffer vBuffer = planes[2].getBuffer();
+
+        int ySize = yBuffer.remaining();
+        int uSize = uBuffer.remaining();
+        int vSize = vBuffer.remaining();
+
+        byte[] nv21 = new byte[ySize + uSize + vSize];
+        yBuffer.get(nv21, 0, ySize);
+        vBuffer.get(nv21, ySize, vSize);
+        uBuffer.get(nv21, ySize + vSize, uSize);
+
+        android.graphics.YuvImage yuvImage = new android.graphics.YuvImage(nv21, android.graphics.ImageFormat.NV21,
+                imageProxy.getWidth(), imageProxy.getHeight(), null);
+        java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+        yuvImage.compressToJpeg(new android.graphics.Rect(0, 0, yuvImage.getWidth(), yuvImage.getHeight()), 100, out);
+        byte[] imageBytes = out.toByteArray();
+        Bitmap bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+
+        // Ruota se necessario
+        int rotation = imageProxy.getImageInfo().getRotationDegrees();
+        if (rotation != 0) {
+            bitmap = rotateBitmap(bitmap, rotation);
+        }
+        return bitmap;
     }
 
     private void showOpenFoodFactsBanner() {
@@ -386,138 +563,6 @@ public class AddProductActivity extends AppCompatActivity {
             intent.putExtra("openFoodFactsSection", true);
             startActivity(intent);
         });
-    }
-
-    private void initializeZXingReader() {
-        multiFormatReader = new MultiFormatReader();
-        Map<DecodeHintType, Object> hints = new EnumMap<>(DecodeHintType.class);
-
-        List<BarcodeFormat> formats = Arrays.asList(
-                BarcodeFormat.EAN_13,
-                BarcodeFormat.EAN_8,
-                BarcodeFormat.UPC_A,
-                BarcodeFormat.UPC_E,
-                BarcodeFormat.CODE_128,
-                BarcodeFormat.CODE_39);
-
-        hints.put(DecodeHintType.POSSIBLE_FORMATS, formats);
-        hints.put(DecodeHintType.TRY_HARDER, Boolean.TRUE);
-        multiFormatReader.setHints(hints);
-    }
-
-    private boolean isValidProductBarcode(String barcode) {
-        if (barcode == null || barcode.isEmpty()) {
-            return false;
-        }
-
-        int length = barcode.length();
-        return length == 8 || length == 12 || length == 13 || length == 14;
-    }
-
-    private void processImageForBarcode(Uri imageUri) {
-        try {
-            InputStream inputStream = getContentResolver().openInputStream(imageUri);
-            Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
-            if (inputStream != null) {
-                inputStream.close();
-            }
-
-            if (bitmap != null) {
-                String barcode = decodeBarcode(bitmap);
-                if (barcode != null) {
-                    Log.d("BarcodeScanner", "Codice a barre da immagine trovato: " + barcode);
-                    runOnUiThread(() -> {
-                        editTextBarcode.setText(barcode);
-                        fetchProductDetailsFromApi(barcode);
-                    });
-                } else {
-                    Log.d("BarcodeScanner", "Nessun codice a barre trovato nell'immagine.");
-                    runOnUiThread(() -> Toast
-                            .makeText(this, getString(R.string.no_barcode_in_image), Toast.LENGTH_SHORT).show());
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            Log.e("BarcodeScanner", "Errore nel creare Bitmap da URI", e);
-            Toast.makeText(this, getString(R.string.err_load_image), Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private String decodeBarcode(Bitmap bitmap) {
-        // Ridimensiona se troppo grande
-        final int MAX_SIZE = 1080;
-        int width = bitmap.getWidth();
-        int height = bitmap.getHeight();
-        if (width > MAX_SIZE || height > MAX_SIZE) {
-            float ratio = Math.min((float) MAX_SIZE / width, (float) MAX_SIZE / height);
-            width = Math.round(width * ratio);
-            height = Math.round(height * ratio);
-            bitmap = Bitmap.createScaledBitmap(bitmap, width, height, true);
-        }
-
-        int[] pixels = new int[width * height];
-        bitmap.getPixels(pixels, 0, width, 0, 0, width, height);
-        RGBLuminanceSource source = new RGBLuminanceSource(width, height, pixels);
-
-        MultiFormatReader reader = new MultiFormatReader();
-        Hashtable<DecodeHintType, Object> hints = new Hashtable<>();
-        // Dai istruzione di provare forte e tutti i formati principali
-        hints.put(DecodeHintType.TRY_HARDER, Boolean.TRUE);
-        hints.put(DecodeHintType.POSSIBLE_FORMATS, Arrays.asList(
-                BarcodeFormat.EAN_13,
-                BarcodeFormat.EAN_8,
-                BarcodeFormat.UPC_A,
-                BarcodeFormat.UPC_E,
-                BarcodeFormat.CODE_128,
-                BarcodeFormat.CODE_39,
-                BarcodeFormat.CODE_93,
-                BarcodeFormat.ITF,
-                BarcodeFormat.QR_CODE));
-
-        Bitmap[] bitmaps = new Bitmap[4];
-        bitmaps[0] = bitmap;
-        bitmaps[1] = rotateBitmap(bitmap, 90);
-        bitmaps[2] = rotateBitmap(bitmap, 180);
-        bitmaps[3] = rotateBitmap(bitmap, 270);
-
-        for (Bitmap b : bitmaps) {
-            // Primo tentativo normale
-            String resultText = decodeZXingOnce(b, reader, hints, false);
-            if (resultText != null)
-                return resultText;
-            // Secondo: invertito
-            resultText = decodeZXingOnce(b, reader, hints, true);
-            if (resultText != null)
-                return resultText;
-        }
-        return null;
-    }
-
-    private String decodeZXingOnce(Bitmap bitmap, MultiFormatReader reader, Hashtable<DecodeHintType, Object> hints,
-            boolean inverted) {
-        int width = bitmap.getWidth();
-        int height = bitmap.getHeight();
-        int[] pixels = new int[width * height];
-        bitmap.getPixels(pixels, 0, width, 0, 0, width, height);
-        RGBLuminanceSource source = new RGBLuminanceSource(width, height, pixels);
-
-        BinaryBitmap binaryBitmap = inverted
-                ? new BinaryBitmap(new HybridBinarizer(new InvertedLuminanceSource(source)))
-                : new BinaryBitmap(new HybridBinarizer(source));
-        try {
-            Result result = reader.decode(binaryBitmap, hints);
-            return result.getText();
-        } catch (Exception e) {
-            return null;
-        } finally {
-            reader.reset();
-        }
-    }
-
-    private Bitmap rotateBitmap(Bitmap b, int degrees) {
-        Matrix m = new Matrix();
-        m.postRotate(degrees);
-        return Bitmap.createBitmap(b, 0, 0, b.getWidth(), b.getHeight(), m, true);
     }
 
     private void updateOpenedDateUI(Long openedTimestamp) {
@@ -536,6 +581,15 @@ public class AddProductActivity extends AppCompatActivity {
         }
     }
 
+    private void checkCameraPermissionAndStartScanner() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            isCameraPermissionGranted = true;
+            startCamera();
+        } else {
+            requestPermissionLauncher.launch(Manifest.permission.CAMERA);
+        }
+    }
+
     private String formatDate(Long timestamp) {
         if (timestamp == null || timestamp <= 0)
             return getString(R.string.not_defined);
@@ -549,6 +603,20 @@ public class AddProductActivity extends AppCompatActivity {
                 android.R.layout.simple_spinner_item, locationDisplayNames);
         locationSpinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerStorageLocation.setAdapter(locationSpinnerAdapter);
+
+        spinnerStorageLocation.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (!availableLocations.isEmpty() && position >= 0 && position < availableLocations.size()) {
+                    selectedStorageInternalKey = availableLocations.get(position).getInternalKey();
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                selectedStorageInternalKey = null;
+            }
+        });
 
         addProductViewModel.getAllSelectableLocations().observe(this, locations -> {
             if (locations != null && !locations.isEmpty()) {
@@ -587,22 +655,103 @@ public class AddProductActivity extends AppCompatActivity {
         if (isEditMode && currentProductId != -1) {
             observeProductForEditMode();
         }
+    }
 
-        spinnerStorageLocation.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if (position >= 0 && position < availableLocations.size()) {
-                    selectedStorageInternalKey = availableLocations.get(position).getInternalKey();
-                    Log.d("AddProductActivity", "Location selezionata: " + availableLocations.get(position).getName()
-                            + " (Key: " + selectedStorageInternalKey + ")");
+    private String parseExpiryDate(String text) {
+        String normalizedText = text.toLowerCase().replace("\n", " ");
+        String[] keywords = { "data di scadenza", "da consumarsi preferibilmente", "da consumarsi", "best before", "bb",
+                "scadenza", "scad", "lotto" };
+
+        String sep = "[\\-/.\\s]+";
+        String regexFull = "\\b(0[1-9]|[12][0-9]|3[01])" + sep + "(0[1-9]|1[012])" + sep + "(19|20)\\d\\d\\b";
+        String regexMonthYear = "\\b(0[1-9]|1[012])" + sep + "(19|20)\\d\\d\\b";
+        String regexMonthShortYear = "\\b(0[1-9]|1[012])" + sep + "\\d\\d\\b";
+
+        String[] patternsToTry = { regexFull, regexMonthYear, regexMonthShortYear };
+
+        for (String pattern : patternsToTry) {
+            Pattern p = Pattern.compile(pattern);
+            Matcher m = p.matcher(normalizedText);
+            while (m.find()) {
+                String dateFound = m.group();
+                int idx = m.start();
+                String substringBefore = normalizedText.substring(Math.max(0, idx - 40), idx);
+                for (String kw : keywords) {
+                    if (substringBefore.contains(kw)) {
+                        return dateFound.replaceAll("[\\-/.\\s]+", "/");
+                    }
                 }
             }
+        }
 
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-                selectedStorageInternalKey = null;
+        for (String pattern : patternsToTry) {
+            Pattern p = Pattern.compile(pattern);
+            Matcher m = p.matcher(normalizedText);
+            if (m.find()) {
+                return m.group().replaceAll("[\\-/.\\s]+", "/");
             }
-        });
+        }
+
+        return null;
+    }
+
+    private void stopCamera(ProcessCameraProvider cameraProvider) {
+        if (cameraProvider != null) {
+            cameraProvider.unbindAll();
+        }
+        if (previewViewScanner != null) {
+            previewViewScanner.setVisibility(View.GONE);
+        }
+    }
+
+    private void stopCamera() {
+        isScanning = false;
+        if (cameraProviderFuture != null) {
+            try {
+                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+                stopCamera(cameraProvider);
+            } catch (ExecutionException | InterruptedException e) {
+                Log.e("AddProductActivity", "Errore nello stop della fotocamera", e);
+            }
+        }
+    }
+
+    private void processImageForBoth(Uri imageUri) {
+        try {
+            InputStream inputStream = getContentResolver().openInputStream(imageUri);
+            Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+            if (inputStream != null) {
+                inputStream.close();
+            }
+
+            if (bitmap != null) {
+                // Barcode search
+                String barcode = decodeBarcode(bitmap);
+                if (barcode != null) {
+                    Log.d("BarcodeScanner", "Codice a barre da immagine trovato: " + barcode);
+                    runOnUiThread(() -> {
+                        editTextBarcode.setText(barcode);
+                        fetchProductDetailsFromApi(barcode);
+                    });
+                }
+
+                // OCR search
+                tessBaseAPI.setImage(bitmap);
+                String resultText = tessBaseAPI.getUTF8Text();
+                String parsedDate = parseExpiryDate(resultText);
+                if (parsedDate != null) {
+                    runOnUiThread(() -> {
+                        editTextExpiryDate.setText(parsedDate);
+                        if (buttonRescanExpiryDate != null)
+                            buttonRescanExpiryDate.setVisibility(View.VISIBLE);
+                        Toast.makeText(this, "Data trovata (Gallery OCR): " + parsedDate, Toast.LENGTH_SHORT).show();
+                    });
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            Log.e("Scanner", "Errore nel processare l'immagine della galleria", e);
+        }
     }
 
     private void selectSpinnerLocationByInternalKey(String internalKey) {
@@ -701,35 +850,6 @@ public class AddProductActivity extends AppCompatActivity {
         }
     }
 
-    private void checkCameraPermissionAndStartScanner() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-            isCameraPermissionGranted = true;
-            startCamera();
-        } else {
-            requestPermissionLauncher.launch(Manifest.permission.CAMERA);
-        }
-    }
-
-    private void startCamera() {
-        if (!isCameraPermissionGranted) {
-            Log.e("AddProductActivity", "Tentativo di avviare la fotocamera senza permesso.");
-            return;
-        }
-
-        barcodeView.setVisibility(View.VISIBLE);
-        isScanning = true;
-        barcodeView.decodeContinuous(barcodeCallback);
-        barcodeView.resume();
-    }
-
-    private void stopCamera() {
-        isScanning = false;
-        if (barcodeView != null) {
-            barcodeView.pause();
-            barcodeView.setVisibility(GONE);
-        }
-    }
-
     private void fetchProductDetailsFromApi(String barcode) {
         if (barcode == null || barcode.trim().isEmpty()) {
             Toast.makeText(this, getString(R.string.err_barcode), Toast.LENGTH_SHORT).show();
@@ -824,6 +944,47 @@ public class AddProductActivity extends AppCompatActivity {
 
     }
 
+    private String decodeBarcode(Bitmap bitmap) {
+        MultiFormatReader reader = new MultiFormatReader();
+        Hashtable<DecodeHintType, Object> hints = new Hashtable<>();
+        hints.put(DecodeHintType.TRY_HARDER, Boolean.TRUE);
+        hints.put(DecodeHintType.POSSIBLE_FORMATS, Arrays.asList(
+                BarcodeFormat.EAN_13,
+                BarcodeFormat.EAN_8,
+                BarcodeFormat.UPC_A,
+                BarcodeFormat.UPC_E,
+                BarcodeFormat.CODE_128,
+                BarcodeFormat.CODE_39));
+        reader.setHints(hints);
+
+        try {
+            int[] intArray = new int[bitmap.getWidth() * bitmap.getHeight()];
+            bitmap.getPixels(intArray, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
+            RGBLuminanceSource source = new RGBLuminanceSource(bitmap.getWidth(), bitmap.getHeight(), intArray);
+            BinaryBitmap binaryBitmap = new BinaryBitmap(new HybridBinarizer(source));
+            Result result = reader.decode(binaryBitmap);
+            return result.getText();
+        } catch (Exception e) {
+            // Se fallisce, proviamo con l'immagine invertita
+            try {
+                int[] intArray = new int[bitmap.getWidth() * bitmap.getHeight()];
+                bitmap.getPixels(intArray, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
+                RGBLuminanceSource source = new RGBLuminanceSource(bitmap.getWidth(), bitmap.getHeight(), intArray);
+                BinaryBitmap binaryBitmap = new BinaryBitmap(new HybridBinarizer(new InvertedLuminanceSource(source)));
+                Result result = reader.decode(binaryBitmap);
+                return result.getText();
+            } catch (Exception e2) {
+                return null;
+            }
+        }
+    }
+
+    private Bitmap rotateBitmap(Bitmap bitmap, int rotationDegrees) {
+        Matrix matrix = new Matrix();
+        matrix.postRotate(rotationDegrees);
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+    }
+
     private void clearProductApiFieldsAndData() {
         editTextProductName.setText("");
         imageViewProduct.setImageDrawable(null);
@@ -836,25 +997,17 @@ public class AddProductActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         if (!isEditMode && isCameraPermissionGranted && isScanning) {
-            barcodeView.resume();
+            startCamera();
         }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        if (barcodeView != null) {
-            barcodeView.pause();
-        }
+        stopCamera();
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (barcodeView != null) {
-            barcodeView.pause();
-        }
-    }
+    // Metodo onDestroy rimosso perché duplicato alla fine del file
 
     private void saveOrUpdateProduct() {
         String barcode = editTextBarcode.getText() != null ? editTextBarcode.getText().toString().trim() : "";
@@ -953,9 +1106,14 @@ public class AddProductActivity extends AppCompatActivity {
     }
 
     @Override
-    public boolean onSupportNavigateUp() {
-        onBackPressed();
-        return true;
+    protected void onDestroy() {
+        super.onDestroy();
+        if (cameraExecutor != null) {
+            cameraExecutor.shutdown();
+        }
+        if (tessBaseAPI != null) {
+            tessBaseAPI.recycle();
+        }
     }
 
 }
