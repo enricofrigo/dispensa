@@ -13,9 +13,10 @@ import android.widget.TextView;
 import androidx.annotation.OptIn;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.activity.EdgeToEdge;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowCompat;
+
 import androidx.core.view.WindowInsetsCompat;
 import androidx.media3.common.util.Log;
 import androidx.media3.common.util.UnstableApi;
@@ -30,7 +31,7 @@ public class SettingsActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_settings);
 
         View rootLayout = findViewById(R.id.settings_root_layout);
