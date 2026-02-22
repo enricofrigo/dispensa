@@ -3,7 +3,7 @@ plugins {
 }
 android {
     namespace = "eu.frigo.dispensa"
-    compileSdk = 34
+    compileSdk = 35
     buildFeatures{
         buildConfig = true
     }
@@ -54,6 +54,11 @@ android {
     }
     buildFeatures {
         viewBinding = true
+    }
+    packaging {
+        jniLibs {
+            useLegacyPackaging = false
+        }
     }
 }
 
