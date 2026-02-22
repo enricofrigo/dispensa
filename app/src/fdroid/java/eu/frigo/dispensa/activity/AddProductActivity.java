@@ -334,6 +334,7 @@ public class AddProductActivity extends AppCompatActivity {
             fabButtonSaveProduct.setText(getString(R.string.save_product_button));
             editTextQuantity.setText(DEFAULT_QUANTITY);
             editTextQuantity.setSelection(Objects.requireNonNull(editTextQuantity.getText()).length());
+            isScanning = true;
             checkCameraPermissionAndStartScanner();
         }
 
