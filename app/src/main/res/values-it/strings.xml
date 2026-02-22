@@ -171,5 +171,7 @@ I prodotti in questa location potrebbero dover essere riassegnati.</string>
     <string name="off_banner_text">Open Food Facts non è abilitato.</string>
     <string name="off_banner_button">Vai alle preferenze</string>
     <string name="exp_date_del_rescan">Cancella e ri-scansiona la data</string>
+    <string name="add_product_scan">Scansiona etichetta</string>
+    <string name="add_product_image">Seleziona immagine etichetta</string>
 
 </resources>

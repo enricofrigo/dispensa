@@ -64,7 +64,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:src="@android:drawable/ic_menu_camera"
-                    android:contentDescription="Scansiona etichetta"
+                    android:contentDescription="@string/add_product_scan"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:padding="8dp"/>
 
@@ -73,7 +73,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:src="@android:drawable/ic_menu_gallery"
-                    android:contentDescription="Seleziona immagine etichetta"
+                    android:contentDescription="@string/add_product_image"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:visibility="visible"
                     android:padding="8dp"/>

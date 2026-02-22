@@ -171,5 +171,7 @@
     <string name="off_banner_text">Open Food Facts disabled.</string>
     <string name="off_banner_button">Preferences</string>
     <string name="exp_date_del_rescan">Delete and rescan expiring date</string>
+    <string name="add_product_scan">Scan</string>
+    <string name="add_product_image">Select image</string>
 
 </resources>
