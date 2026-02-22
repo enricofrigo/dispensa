@@ -10,6 +10,7 @@ import android.content.pm.PackageManager;
 import android.media.Image;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.ViewGroup;
 import android.util.Size;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
@@ -32,6 +33,10 @@ import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.media3.common.util.Log;
 
@@ -160,7 +165,39 @@ public class AddProductActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         setContentView(R.layout.activity_add_product);
+
+        View rootLayout = findViewById(R.id.add_product_root_layout);
+        View nestedScrollView = findViewById(R.id.add_product_nested_scroll);
+        final ExtendedFloatingActionButton fabButtonSaveProduct = findViewById(R.id.buttonSaveProduct);
+
+        ViewCompat.setOnApplyWindowInsetsListener(rootLayout, (v, windowInsets) -> {
+            Insets systemBars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
+            Insets ime = windowInsets.getInsets(WindowInsetsCompat.Type.ime());
+
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0);
+
+            if (nestedScrollView != null) {
+                nestedScrollView.setPadding(
+                        nestedScrollView.getPaddingLeft(),
+                        nestedScrollView.getPaddingTop(),
+                        nestedScrollView.getPaddingRight(),
+                        Math.max(systemBars.bottom, ime.bottom)
+                                + (int) (80 * getResources().getDisplayMetrics().density));
+            }
+
+            if (fabButtonSaveProduct != null) {
+                ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) fabButtonSaveProduct
+                        .getLayoutParams();
+                lp.bottomMargin = Math.max(systemBars.bottom, ime.bottom)
+                        + (int) (16 * getResources().getDisplayMetrics().density);
+                fabButtonSaveProduct.setLayoutParams(lp);
+            }
+
+            return windowInsets;
+        });
+
         addProductViewModel = new ViewModelProvider(this).get(AddProductViewModel.class);
         Toolbar toolbarAddProduct = findViewById(R.id.toolbar_add_product);
         if (toolbarAddProduct != null) {
@@ -198,7 +235,6 @@ public class AddProductActivity extends AppCompatActivity {
         chipGroupCategories = findViewById(R.id.chipGroupCategories);
         editTextNewCategory = findViewById(R.id.editTextNewCategory);
         Button buttonAddCategory = findViewById(R.id.buttonAddCategory);
-        ExtendedFloatingActionButton fabButtonSaveProduct = findViewById(R.id.buttonSaveProduct);
 
         BarcodeScannerOptions options = new BarcodeScannerOptions.Builder()
                 .setBarcodeFormats(

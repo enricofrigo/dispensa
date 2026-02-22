@@ -2,6 +2,7 @@ package eu.frigo.dispensa.activity;
 
 import android.content.Context;
 import android.content.Intent;
+import android.view.View;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -12,6 +13,10 @@ import android.widget.TextView;
 import androidx.annotation.OptIn;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.media3.common.util.Log;
 import androidx.media3.common.util.UnstableApi;
 
@@ -25,13 +30,31 @@ public class SettingsActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         setContentView(R.layout.activity_settings);
 
+        View rootLayout = findViewById(R.id.settings_root_layout);
         Toolbar toolbar = findViewById(R.id.toolbar_settings);
         setSupportActionBar(toolbar);
         Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setTitle(getString(R.string.action_settings));
 
+        TextView versionFooterTextView = findViewById(R.id.app_version_footer_text_view);
+        setAppVersionFooter(versionFooterTextView);
+
+        ViewCompat.setOnApplyWindowInsetsListener(rootLayout, (v, windowInsets) -> {
+            Insets systemBars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0);
+
+            if (versionFooterTextView != null) {
+                versionFooterTextView.setPadding(
+                        versionFooterTextView.getPaddingLeft(),
+                        versionFooterTextView.getPaddingTop(),
+                        versionFooterTextView.getPaddingRight(),
+                        systemBars.bottom);
+            }
+            return windowInsets;
+        });
 
         if (savedInstanceState == null) {
             getSupportFragmentManager()
@@ -39,11 +62,11 @@ public class SettingsActivity extends AppCompatActivity {
                     .replace(R.id.settings_container, new SettingsFragment())
                     .commit();
         }
-        TextView versionFooterTextView = findViewById(R.id.app_version_footer_text_view);
-        setAppVersionFooter(versionFooterTextView);
     }
+
     private void setAppVersionFooter(TextView textView) {
-        if (textView == null) return;
+        if (textView == null)
+            return;
 
         String versionName = getAppVersionName(this);
         long versionCode = getAppVersionCode(this);
@@ -60,7 +83,8 @@ public class SettingsActivity extends AppCompatActivity {
         try {
             PackageInfo packageInfo;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                packageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), PackageManager.PackageInfoFlags.of(0));
+                packageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(),
+                        PackageManager.PackageInfoFlags.of(0));
             } else {
                 PackageInfo pi = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
                 packageInfo = pi;
@@ -77,7 +101,8 @@ public class SettingsActivity extends AppCompatActivity {
         try {
             PackageInfo packageInfo;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                packageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), PackageManager.PackageInfoFlags.of(0));
+                packageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(),
+                        PackageManager.PackageInfoFlags.of(0));
             } else {
                 PackageInfo pi = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
                 packageInfo = pi;
@@ -97,16 +122,19 @@ public class SettingsActivity extends AppCompatActivity {
         }
         return super.onOptionsItemSelected(item);
     }
+
     @Override
     public boolean onSupportNavigateUp() {
         navigateToListAndFinish();
         return true;
     }
+
     @Override
     public void onBackPressed() {
         super.onBackPressed();
         navigateToListAndFinish();
     }
+
     private void navigateToListAndFinish() {
         Intent intent = new Intent(this, MainActivity.class); // oppure la tua activity della lista
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
