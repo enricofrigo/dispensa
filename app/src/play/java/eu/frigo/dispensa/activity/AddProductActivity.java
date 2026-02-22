@@ -6,6 +6,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.DatePickerDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.media.Image;
 import android.net.Uri;
@@ -40,6 +41,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.media3.common.util.Log;
+import androidx.preference.PreferenceManager;
 
 import com.bumptech.glide.Glide;
 import com.google.android.material.chip.Chip;
@@ -79,6 +81,7 @@ import eu.frigo.dispensa.data.storage.StorageLocation;
 import eu.frigo.dispensa.network.openfoodfacts.OpenFoodFactsApiService;
 import eu.frigo.dispensa.network.openfoodfacts.OpenFoodFactsRetrofitClient;
 import eu.frigo.dispensa.network.openfoodfacts.model.OpenFoodFactsProductResponse;
+import eu.frigo.dispensa.ui.SettingsFragment;
 import eu.frigo.dispensa.util.KeyboardUtils;
 import eu.frigo.dispensa.viewmodel.AddProductViewModel;
 import eu.frigo.dispensa.util.DateConverter;
@@ -172,6 +175,8 @@ public class AddProductActivity extends AppCompatActivity {
         View rootLayout = findViewById(R.id.add_product_root_layout);
         View nestedScrollView = findViewById(R.id.add_product_nested_scroll);
         final ExtendedFloatingActionButton fabButtonSaveProduct = findViewById(R.id.buttonSaveProduct);
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        prefs.edit().putBoolean(SettingsFragment.KEY_PREF_ENABLE_OFF_API, true).apply();
 
         ViewCompat.setOnApplyWindowInsetsListener(rootLayout, (v, windowInsets) -> {
             Insets systemBars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
