@@ -5,6 +5,7 @@ junitVersion = "1.2.1"
 espressoCore = "3.6.1"
 appcompat = "1.7.1"
 activity = "1.9.3"
+tesseract4android = "4.9.0"
 material = "1.12.0"
 constraintlayout = "2.2.1"
 navigationFragment = "2.9.2"
@@ -74,6 +75,7 @@ androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx"
 androidx-preference-ktx = { group = "androidx.preference", name = "preference-ktx", version.ref = "preferenceKtx" }
 zxing-android-embedded = { group = "com.journeyapps", name = "zxing-android-embedded", version.ref = "zxingAndroidEmbedded" }
 text-recognition = { group = "com.google.mlkit", name = "text-recognition", version.ref = "textRecognition" }
+tesseract4android = { group = "com.github.adaptech-cz.Tesseract4Android", name = "tesseract4android", version.ref = "tesseract4android" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
