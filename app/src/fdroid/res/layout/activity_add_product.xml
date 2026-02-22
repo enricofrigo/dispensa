@@ -103,13 +103,27 @@
                     android:padding="8dp"/>
             </LinearLayout>
 
-            <androidx.camera.view.PreviewView
-                android:id="@+id/previewViewScanner"
+            <FrameLayout
+                android:id="@+id/layoutScannerContainer"
                 android:layout_width="match_parent"
                 android:layout_height="300dp"
                 android:layout_marginTop="8dp"
-                android:visibility="gone"
-                />
+                android:visibility="gone">
+
+                <androidx.camera.view.PreviewView
+                    android:id="@+id/previewViewScanner"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+
+                <View
+                    android:id="@+id/viewfinder"
+                    android:layout_width="match_parent"
+                    android:layout_height="100dp"
+                    android:layout_gravity="center"
+                    android:layout_marginStart="32dp"
+                    android:layout_marginEnd="32dp"
+                    android:background="@drawable/viewfinder_border" />
+            </FrameLayout>
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/textFieldProductNameLayout"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
