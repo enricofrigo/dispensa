@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
 }
 android {
     namespace = "eu.frigo.dispensa"
@@ -56,6 +57,9 @@ android {
     buildFeatures {
         viewBinding = true
     }
+    kotlinOptions {
+        jvmTarget = "21"
+    }
     packaging {
         jniLibs {
             useLegacyPackaging = false
@@ -63,16 +67,7 @@ android {
     }
 }
 
-tasks.withType<JavaCompile>().configureEach {
-    // Ottieni il servizio toolchain di Java
-    val javaToolchains = project.extensions.getByType<JavaToolchainService>()
-   // Specifica che per questo task vuoi usare un compilatore da un JDK 21
-    javaCompiler.set(
-        javaToolchains.compilerFor {
-            languageVersion.set(JavaLanguageVersion.of(21))
-        }
-    )
-}
+// Kotlin toolchain will be configured via compileOptions and kotlinOptions for now
 
 dependencies {
 

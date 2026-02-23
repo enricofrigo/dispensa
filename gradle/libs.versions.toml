@@ -1,5 +1,6 @@
 [versions]
 agp = "8.11.1"
+kotlin = "2.0.21"
 junit = "4.13.2"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
@@ -58,7 +59,7 @@ room-guava = { group = "androidx.room", name = "room-guava", version.ref = "room
 play-services-analytics-impl = { group = "com.google.android.gms", name = "play-services-analytics-impl", version.ref = "playServicesAnalyticsImpl" }
 cardview = { group = "androidx.cardview", name = "cardview", version.ref = "cardview" }
 media3-common = { group = "androidx.media3", name = "media3-common", version.ref = "media3Common" }
-x_implementation_com-material = { group = "  implementation 'com.google.android.material", name = "material", version.ref = "materialVersion" }
+x_implementation_com-material = { group = "com.google.android.material", name = "material", version.ref = "materialVersion" }
 swiperefreshlayout = { group = "androidx.swiperefreshlayout", name = "swiperefreshlayout", version.ref = "swiperefreshlayout" }
 camera-core = { group = "androidx.camera", name = "camera-core", version.ref = "cameraCore" }
 camera-camera2 = { group = "androidx.camera", name = "camera-camera2", version.ref = "cameraCamera2" }
@@ -79,4 +80,4 @@ tesseract4android = { group = "com.github.adaptech-cz.Tesseract4Android", name =
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
