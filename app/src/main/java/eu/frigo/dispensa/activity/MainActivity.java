@@ -37,6 +37,7 @@ import androidx.viewpager2.widget.ViewPager2;
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.adapter.LocationViewPagerAdapter;
 import eu.frigo.dispensa.adapter.ProductListAdapter;
+import eu.frigo.dispensa.data.AppDatabase;
 import eu.frigo.dispensa.data.product.Product;
 import eu.frigo.dispensa.data.category.ProductWithCategoryDefinitions;
 import eu.frigo.dispensa.data.storage.StorageLocation;
