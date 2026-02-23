@@ -12,8 +12,6 @@
     <string name="action_settings">Settings</string>
     <string name="layout_grid_title">Grid</string>
     <string name="layout_list_title">List</string>
-    <string name="action_export">Esporta dati (.dsp)</string>
-    <string name="action_import">Importa dati (.dsp)</string>
 
     <!-- Permissions -->
     <string name="notify_permission_title">Permesso Notifiche Richiesto</string>
@@ -175,10 +173,14 @@
     <string name="exp_date_del_rescan">Delete and rescan expiring date</string>
     <string name="add_product_scan">Scan</string>
     <string name="add_product_image">Select image</string>
-    <string name="export_success">Dati esportati correttamente</string>
-    <string name="export_error">Errore durante l\'esportazione: %s</string>
-    <string name="import_success">Dati importati correttamente. Riavvio in corso...</string>
-    <string name="import_error">Errore durante l\'importazione: %s</string>
-    <string name="import_confirm_title">Conferma Importazione</string>
-    <string name="import_confirm_message">Questa operazione sostituirà tutti i dati attuali con quelli del file selezionato. Vuoi continuare?</string>
+
+    <string name="action_export">Export data</string>
+    <string name="action_import">Import data</string>
+    <string name="export_success">Data exported</string>
+    <string name="export_error">Error during data export: %s</string>
+    <string name="import_success">Data imported successfully. Restarting…</string>
+    <string name="import_error">Error during data import: %s</string>
+    <string name="import_confirm_title">Import confirmation</string>
+    <string name="import_confirm_message">This operation will overwrite all current data with the ones into selected file. Continue?</string>
+
 </resources>

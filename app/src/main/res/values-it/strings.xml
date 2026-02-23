@@ -174,4 +174,13 @@ I prodotti in questa location potrebbero dover essere riassegnati.</string>
     <string name="add_product_scan">Scansiona etichetta</string>
     <string name="add_product_image">Seleziona immagine etichetta</string>
 
+    <string name="action_export">Esporta dati</string>
+    <string name="action_import">Importa dati</string>
+    <string name="export_success">Dati esportati correttamente</string>
+    <string name="export_error">Errore durante l\'esportazione: %s</string>
+    <string name="import_success">Dati importati correttamente. Riavvio in corso…</string>
+    <string name="import_error">Errore durante l\'importazione: %s</string>
+    <string name="import_confirm_title">Conferma Importazione</string>
+    <string name="import_confirm_message">Questa operazione sostituirà tutti i dati attuali con quelli del file selezionato. Vuoi continuare?</string>
+
 </resources>
