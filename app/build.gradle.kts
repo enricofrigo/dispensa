@@ -65,16 +65,6 @@ android {
 
 }
 
-tasks.withType<JavaCompile>().configureEach {
-    // Ottieni il servizio toolchain di Java
-    val javaToolchains = project.extensions.getByType<JavaToolchainService>()
-    // Specifica che per questo task vuoi usare un compilatore da un JDK 21
-    javaCompiler.set(
-        javaToolchains.compilerFor {
-            languageVersion.set(JavaLanguageVersion.of(21))
-        }
-    )
-}
 dependencies {
 
     implementation(libs.appcompat)
