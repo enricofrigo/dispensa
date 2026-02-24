@@ -54,20 +54,19 @@ android {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
     }
+    kotlin {
+        jvmToolchain(21)
+    }
     buildFeatures {
         viewBinding = true
-    }
-    kotlinOptions {
-        jvmTarget = "21"
     }
     packaging {
         jniLibs {
             useLegacyPackaging = false
         }
     }
-}
 
-// Kotlin toolchain will be configured via compileOptions and kotlinOptions for now
+}
 
 dependencies {
 
