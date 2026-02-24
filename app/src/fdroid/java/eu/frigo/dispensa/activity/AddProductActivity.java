@@ -41,7 +41,6 @@ import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import com.bumptech.glide.Glide;
-import com.googlecode.tesseract.android.TessBaseAPI;
 import android.util.Log;
 import android.util.Size;
 import android.media.Image;
@@ -126,8 +125,6 @@ public class AddProductActivity extends AppCompatActivity {
     private PreviewView previewViewScanner;
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
     private ExecutorService cameraExecutor;
-    private TessBaseAPI tessBaseAPI;
-    private String dataPath;
     private ImageButton buttonRescanExpiryDate;
     private boolean isCameraPermissionGranted;
     private TextInputEditText editTextProductName;
@@ -246,9 +243,11 @@ public class AddProductActivity extends AppCompatActivity {
         layoutScannerContainer = findViewById(R.id.layoutScannerContainer);
         ImageButton buttonScanGallery = findViewById(R.id.buttonScanGallery);
         ImageButton buttonScanCamera = findViewById(R.id.buttonScanCamera);
+        editTextExpiryDate = findViewById(R.id.editTextExpiryDate);
+        Button buttonAddCategory = findViewById(R.id.buttonAddCategory);
+        ExtendedFloatingActionButton fabButtonSaveProduct = finalFab;
 
-        // Prepara Tesseract
-        prepareTesseract();
+        buttonAddCategory.setOnClickListener(v -> addNewCategoryTag());
 
         if (getIntent().hasExtra(PRESELECTED_LOCATION_INTERNAL_KEY)) {
             preselectedLocationValue = getIntent().getStringExtra(PRESELECTED_LOCATION_INTERNAL_KEY);
@@ -263,13 +262,9 @@ public class AddProductActivity extends AppCompatActivity {
 
         chipGroupCategories = findViewById(R.id.chipGroupCategories);
         editTextNewCategory = findViewById(R.id.editTextNewCategory);
-        Button buttonAddCategory = findViewById(R.id.buttonAddCategory);
-        ExtendedFloatingActionButton fabButtonSaveProduct = finalFab;
-
-        buttonAddCategory.setOnClickListener(v -> addNewCategoryTag());
-
-        // Inizializza Tesseract API
-        initTesseract();
+        if (buttonRescanExpiryDate != null) {
+            buttonRescanExpiryDate.setVisibility(GONE);
+        }
 
         if (buttonRescanExpiryDate != null) {
             buttonRescanExpiryDate.setOnClickListener(v -> {
@@ -391,53 +386,6 @@ public class AddProductActivity extends AppCompatActivity {
         }
     }
 
-    private void prepareTesseract() {
-        dataPath = getFilesDir() + "/tesseract/";
-        File dir = new File(dataPath + "tessdata/");
-        if (!dir.exists()) {
-            dir.mkdirs();
-        }
-        copyTessDataFiles("tessdata");
-    }
-
-    private void copyTessDataFiles(String path) {
-        try {
-            String[] fileList = getAssets().list(path);
-            if (fileList != null) {
-                for (String fileName : fileList) {
-                    String pathToDataFile = dataPath + path + "/" + fileName;
-                    if (!(new File(pathToDataFile)).exists()) {
-                        InputStream in = getAssets().open(path + "/" + fileName);
-                        OutputStream out = new FileOutputStream(pathToDataFile);
-                        byte[] buff = new byte[1024];
-                        int len;
-                        while ((len = in.read(buff)) > 0) {
-                            out.write(buff, 0, len);
-                        }
-                        in.close();
-                        out.close();
-                    }
-                }
-            }
-        } catch (IOException e) {
-            Log.e("Tesseract", "Errore nel copiare i file tessdata", e);
-        }
-    }
-
-    private void initTesseract() {
-        Log.d("Tesseract", "Inizializzazione Tesseract in corso...");
-        tessBaseAPI = new TessBaseAPI();
-        if (!tessBaseAPI.init(dataPath, "ita")) {
-            Log.e("Tesseract", "Inizializzazione di Tesseract fallita");
-            Toast.makeText(this, "Errore inizializzazione OCR", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        // Ottimizzazioni Tesseract
-        tessBaseAPI.setPageSegMode(TessBaseAPI.PageSegMode.PSM_SPARSE_TEXT);
-        tessBaseAPI.setVariable(TessBaseAPI.VAR_CHAR_WHITELIST, "0123456789/-.");
-        Log.d("Tesseract", "Tesseract inizializzato correttamente per 'ita'");
-    }
-
     private void startCamera() {
         if (!isCameraPermissionGranted) {
             Log.e("AddProductActivity", "Tentativo di avviare la fotocamera senza permesso.");
@@ -472,18 +420,6 @@ public class AddProductActivity extends AppCompatActivity {
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build();
 
-        // Riutilizziamo il multiFormatReader per ZXing
-        MultiFormatReader reader = new MultiFormatReader();
-        Hashtable<DecodeHintType, Object> hints = new Hashtable<>();
-        hints.put(DecodeHintType.TRY_HARDER, Boolean.TRUE);
-        hints.put(DecodeHintType.POSSIBLE_FORMATS, Arrays.asList(
-                BarcodeFormat.EAN_13,
-                BarcodeFormat.EAN_8,
-                BarcodeFormat.UPC_A,
-                BarcodeFormat.UPC_E,
-                BarcodeFormat.CODE_128,
-                BarcodeFormat.CODE_39));
-
         imageAnalysis.setAnalyzer(cameraExecutor, imageProxy -> {
             if (!isScanning || isAnalysisInProgress) {
                 imageProxy.close();
@@ -493,19 +429,16 @@ public class AddProductActivity extends AppCompatActivity {
             isAnalysisInProgress = true;
             Image mediaImage = imageProxy.getImage();
             if (mediaImage != null) {
-                // Conversione ImageProxy a Bitmap ottimizzata con Crop ROI
                 Bitmap bitmap = imageProxyToCroppedBitmap(imageProxy);
 
                 if (bitmap != null) {
                     boolean needsBarcode = Objects.requireNonNull(editTextBarcode.getText()).toString().trim()
                             .isEmpty();
-                    boolean needsExpiry = Objects.requireNonNull(editTextExpiryDate.getText()).toString().trim()
-                            .isEmpty();
 
                     if (needsBarcode) {
                         String barcode = decodeBarcode(bitmap);
                         if (barcode != null) {
-                            Log.d("BarcodeScanner", "Codice a barre trovato (Cropped): " + barcode);
+                            Log.d("BarcodeScanner", "Codice a barre trovato: " + barcode);
                             runOnUiThread(() -> {
                                 editTextBarcode.setText(barcode);
                                 fetchProductDetailsFromApi(barcode);
@@ -513,36 +446,7 @@ public class AddProductActivity extends AppCompatActivity {
                         }
                     }
 
-                    if (needsExpiry) {
-                        // PASS 1: Fast Scan (Standard ROI)
-                        String parsedDate = runOcrPass(bitmap, TessBaseAPI.PageSegMode.PSM_SPARSE_TEXT);
-
-                        // PASS 2: Enhanced Scan (Upscaled + High Contrast)
-                        if (parsedDate == null) {
-                            Bitmap enhancedBitmap = enhanceBitmapForOcr(bitmap, false);
-                            parsedDate = runOcrPass(enhancedBitmap, TessBaseAPI.PageSegMode.PSM_SINGLE_LINE);
-                        }
-
-                        // PASS 3: Inverted Scan (For light text on dark backgrounds)
-                        if (parsedDate == null) {
-                            Bitmap invertedBitmap = enhanceBitmapForOcr(bitmap, true);
-                            parsedDate = runOcrPass(invertedBitmap, TessBaseAPI.PageSegMode.PSM_SINGLE_LINE);
-                        }
-
-                        if (parsedDate != null) {
-                            String finalDate = parsedDate;
-                            Log.d("OCR", "Data trovata con multi-pass: " + finalDate);
-                            runOnUiThread(() -> {
-                                editTextExpiryDate.setText(finalDate);
-                                if (buttonRescanExpiryDate != null)
-                                    buttonRescanExpiryDate.setVisibility(View.VISIBLE);
-                                Toast.makeText(AddProductActivity.this, "Data trovata: " + finalDate,
-                                        Toast.LENGTH_SHORT).show();
-                            });
-                        }
-                    }
-
-                    if (!needsBarcode && !needsExpiry) {
+                    if (!needsBarcode) {
                         isScanning = false;
                         runOnUiThread(() -> stopCamera(cameraProvider));
                     }
@@ -561,54 +465,6 @@ public class AddProductActivity extends AppCompatActivity {
         } catch (Exception exc) {
             Log.e("AddProductActivity", "Use case binding fallito", exc);
         }
-    }
-
-    private String runOcrPass(Bitmap bitmap, int psmMode) {
-        if (bitmap == null)
-            return null;
-        tessBaseAPI.setPageSegMode(psmMode);
-        tessBaseAPI.setImage(bitmap);
-        String resultText = tessBaseAPI.getUTF8Text();
-        return parseExpiryDate(resultText);
-    }
-
-    private Bitmap enhanceBitmapForOcr(Bitmap src, boolean invert) {
-        // 1. Upscaling (2x) per aiutare Tesseract con piccoli font
-        int width = src.getWidth() * 2;
-        int height = src.getHeight() * 2;
-        Bitmap scaled = Bitmap.createScaledBitmap(src, width, height, true);
-
-        // 2. Aumento contrasto e binarizzazione semplice
-        Bitmap enhanced = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        android.graphics.Canvas canvas = new android.graphics.Canvas(enhanced);
-        android.graphics.Paint paint = new android.graphics.Paint();
-
-        android.graphics.ColorMatrix cm = new android.graphics.ColorMatrix();
-        // Aumentiamo il contrasto (1.5x)
-        float contrast = 1.5f;
-        float brightness = -20f;
-        cm.set(new float[] {
-                contrast, 0, 0, 0, brightness,
-                0, contrast, 0, 0, brightness,
-                0, 0, contrast, 0, brightness,
-                0, 0, 0, 1, 0
-        });
-
-        if (invert) {
-            android.graphics.ColorMatrix invertMatrix = new android.graphics.ColorMatrix(new float[] {
-                    -1, 0, 0, 0, 255,
-                    0, -1, 0, 0, 255,
-                    0, 0, -1, 0, 255,
-                    0, 0, 0, 1, 0
-            });
-            invertMatrix.postConcat(cm);
-            cm = invertMatrix;
-        }
-
-        paint.setColorFilter(new android.graphics.ColorMatrixColorFilter(cm));
-        canvas.drawBitmap(scaled, 0, 0, paint);
-
-        return enhanced;
     }
 
     private Bitmap imageProxyToCroppedBitmap(androidx.camera.core.ImageProxy imageProxy) {
@@ -756,87 +612,6 @@ public class AddProductActivity extends AppCompatActivity {
             }
         });
 
-        if (isEditMode && currentProductId != -1) {
-            observeProductForEditMode();
-        }
-    }
-
-    private String parseExpiryDate(String text) {
-        if (text == null || text.trim().isEmpty())
-            return null;
-
-        // Normalizzazione spinta: sostituiamo comuni errori OCR e uniformiamo
-        // separatori
-        String normalizedText = text.toUpperCase()
-                .replaceAll("[OQ]", "0") // O o Q scambiati per 0
-                .replaceAll("[IL|]", "1") // I, L o | scambiati per 1
-                .replaceAll("[S]", "5") // S scambiato per 5
-                .replaceAll("[B]", "8") // B scambiato per 8
-                .replaceAll("[Z]", "2") // Z scambiato per 2
-                .replace("\n", " ")
-                .toLowerCase();
-
-        String[] keywords = { "scadenza", "scad", "preferibilmente", "best before", "bb", "exp", "data", "lotto" };
-        String sep = "[\\-/.\\s]*"; // Separatore opzionale o multiplo
-
-        // Regex migliorate
-        String regexDDMMYYYY = "\\b(0[1-9]|[12][0-9]|3[01])" + sep + "(0[1-9]|1[012])" + sep + "(20[2-3][0-9])\\b";
-        String regexDDMMYY = "\\b(0[1-9]|[12][0-9]|3[01])" + sep + "(0[1-9]|1[012])" + sep + "([2-3][0-9])\\b";
-        String regexMMYYYY = "\\b(0[1-9]|1[012])" + sep + "(20[2-3][0-9])\\b";
-        String regexYYYYMMDD = "\\b(20[2-3][0-9])" + sep + "(0[1-9]|1[012])" + sep + "(0[1-9]|[12][0-9]|3[01])\\b";
-
-        String[] patternsToTry = { regexDDMMYYYY, regexYYYYMMDD, regexMMYYYY, regexDDMMYY };
-
-        // 1. Cerca date vicino a parole chiave
-        for (String pattern : patternsToTry) {
-            Pattern p = Pattern.compile(pattern);
-            Matcher m = p.matcher(normalizedText);
-            while (m.find()) {
-                String dateFound = m.group();
-                int idx = m.start();
-                String substringBefore = normalizedText.substring(Math.max(0, idx - 30), idx);
-                for (String kw : keywords) {
-                    if (substringBefore.contains(kw)) {
-                        return formatFoundDate(dateFound, pattern);
-                    }
-                }
-            }
-        }
-
-        // 2. Cerca qualsiasi data valida se non trovata vicino a keyword
-        for (String pattern : patternsToTry) {
-            Pattern p = Pattern.compile(pattern);
-            Matcher m = p.matcher(normalizedText);
-            if (m.find()) {
-                return formatFoundDate(m.group(), pattern);
-            }
-        }
-
-        return null;
-    }
-
-    private String formatFoundDate(String rawDate, String pattern) {
-        // Rimuove caratteri non numerici per normalizzare
-        String digits = rawDate.replaceAll("\\D", "");
-
-        if (digits.length() == 8) { // DDMMYYYY o YYYYMMDD
-            if (rawDate.matches(".*20[2-3][0-9].*")) {
-                if (digits.startsWith("20")) { // YYYYMMDD
-                    return digits.substring(6, 8) + "/" + digits.substring(4, 6) + "/" + digits.substring(0, 4);
-                } else { // DDMMYYYY
-                    return digits.substring(0, 2) + "/" + digits.substring(2, 4) + "/" + digits.substring(4, 8);
-                }
-            }
-        } else if (digits.length() == 6) { // DDMMYY o MMYYYY
-            if (pattern.contains("20[2-3]")) { // MMYYYY
-                return "01/" + digits.substring(0, 2) + "/" + digits.substring(2, 6);
-            } else { // DDMMYY
-                return digits.substring(0, 2) + "/" + digits.substring(2, 4) + "/20" + digits.substring(4, 6);
-            }
-        }
-
-        // Fallback: prova a pulire i separatori
-        return rawDate.replaceAll("[\\-/.\\s]+", "/");
     }
 
     private void stopCamera(ProcessCameraProvider cameraProvider) {
@@ -869,26 +644,12 @@ public class AddProductActivity extends AppCompatActivity {
             }
 
             if (bitmap != null) {
-                // Barcode search
                 String barcode = decodeBarcode(bitmap);
                 if (barcode != null) {
                     Log.d("BarcodeScanner", "Codice a barre da immagine trovato: " + barcode);
                     runOnUiThread(() -> {
                         editTextBarcode.setText(barcode);
                         fetchProductDetailsFromApi(barcode);
-                    });
-                }
-
-                // OCR search
-                tessBaseAPI.setImage(bitmap);
-                String resultText = tessBaseAPI.getUTF8Text();
-                String parsedDate = parseExpiryDate(resultText);
-                if (parsedDate != null) {
-                    runOnUiThread(() -> {
-                        editTextExpiryDate.setText(parsedDate);
-                        if (buttonRescanExpiryDate != null)
-                            buttonRescanExpiryDate.setVisibility(View.VISIBLE);
-                        Toast.makeText(this, "Data trovata (Gallery OCR): " + parsedDate, Toast.LENGTH_SHORT).show();
                     });
                 }
             }
@@ -1254,9 +1015,6 @@ public class AddProductActivity extends AppCompatActivity {
         super.onDestroy();
         if (cameraExecutor != null) {
             cameraExecutor.shutdown();
-        }
-        if (tessBaseAPI != null) {
-            tessBaseAPI.recycle();
         }
     }
 

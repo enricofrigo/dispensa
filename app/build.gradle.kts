@@ -105,6 +105,5 @@ dependencies {
     "fdroidImplementation"(libs.zxing.android.embedded)
     "playImplementation"(libs.play.services.mlkit.barcode.scanning)
     "playImplementation"(libs.text.recognition)
-    "fdroidImplementation"(libs.tesseract4android)
 
 }
