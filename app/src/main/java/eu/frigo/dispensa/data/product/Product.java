@@ -1,5 +1,6 @@
 package eu.frigo.dispensa.data.product; // Crea un package 'data' o simile
 
+import com.google.gson.annotations.SerializedName;
 import androidx.annotation.NonNull;
 import androidx.room.Entity;
 import androidx.room.Ignore;
@@ -17,22 +18,31 @@ import java.util.Locale;
 })
 public class Product {
 
+    @SerializedName("id")
     @PrimaryKey(autoGenerate = true)
     public int id;
+    @SerializedName("barcode")
     @ColumnInfo(name = "barcode")
     public String barcode;
+    @SerializedName("quantity")
     @ColumnInfo(name = "quantity")
     public int quantity;
+    @SerializedName("expiry_date")
     @ColumnInfo(name = "expiry_date")
     public Long expiryDate;
+    @SerializedName("product_name")
     @ColumnInfo(name = "product_name")
     private String productName;
+    @SerializedName("image_url")
     @ColumnInfo(name = "image_url")
     private String imageUrl;
+    @SerializedName("storage_location")
     @ColumnInfo(name = "storage_location")
     private String storageLocation;
+    @SerializedName("opened_date")
     @ColumnInfo(name = "opened_date", defaultValue = "0")
     public long openedDate = 0L;
+    @SerializedName("shelf_life_after_opening_days")
     @ColumnInfo(name = "shelf_life_after_opening_days", defaultValue = "-1")
     public int shelfLifeAfterOpeningDays = -1;
     @Ignore

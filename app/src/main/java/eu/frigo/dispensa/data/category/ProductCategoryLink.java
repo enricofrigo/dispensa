@@ -1,5 +1,6 @@
 package eu.frigo.dispensa.data.category;
 
+import com.google.gson.annotations.SerializedName;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.ForeignKey;
@@ -7,24 +8,27 @@ import androidx.room.Index;
 
 import eu.frigo.dispensa.data.product.Product;
 
-@Entity(tableName = "product_category_links",
-        primaryKeys = {"product_id_fk", "category_id_fk"}, // Chiave primaria composta
+@Entity(tableName = "product_category_links", primaryKeys = { "product_id_fk", "category_id_fk" }, // Chiave primaria
+                                                                                                   // composta
         foreignKeys = {
-                @ForeignKey(entity = Product.class,
-                        parentColumns = "id",
-                        childColumns = "product_id_fk",
-                        onDelete = ForeignKey.CASCADE),
-                @ForeignKey(entity = CategoryDefinition.class,
-                        parentColumns = "category_id",
-                        childColumns = "category_id_fk",
-                        onDelete = ForeignKey.CASCADE) // O RESTRICT se vuoi impedire la cancellazione di categorie usate
-        },
-        indices = { @Index(value = "product_id_fk"), @Index(value = "category_id_fk")}
-)
+                @ForeignKey(entity = Product.class, parentColumns = "id", childColumns = "product_id_fk", onDelete = ForeignKey.CASCADE),
+                @ForeignKey(entity = CategoryDefinition.class, parentColumns = "category_id", childColumns = "category_id_fk", onDelete = ForeignKey.CASCADE) // O
+                                                                                                                                                              // RESTRICT
+                                                                                                                                                              // se
+                                                                                                                                                              // vuoi
+                                                                                                                                                              // impedire
+                                                                                                                                                              // la
+                                                                                                                                                              // cancellazione
+                                                                                                                                                              // di
+                                                                                                                                                              // categorie
+                                                                                                                                                              // usate
+        }, indices = { @Index(value = "product_id_fk"), @Index(value = "category_id_fk") })
 public class ProductCategoryLink {
+    @SerializedName("product_id_fk")
     @ColumnInfo(name = "product_id_fk")
     public int productIdFk;
 
+    @SerializedName("category_id_fk")
     @ColumnInfo(name = "category_id_fk")
     public int categoryIdFk;
 
