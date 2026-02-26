@@ -73,23 +73,31 @@ public class BackupManager {
         }
 
         db.runInTransaction(() -> {
-            db.productDao().deleteAllProducts();
-            db.productCategoryLinkDao().deleteAllProductCategoryLink();
-            db.categoryDefinitionDao().deleteAllCategoryDefinitions();
-            // We don't delete predefined locations, we replace/update them
-            // but for a full restore, let's clear them all if possible (StorageLocationDao
-            // has no deleteAll but we can clear and insertAll)
             SupportSQLiteDatabase sdb = db.getOpenHelper().getWritableDatabase();
-            sdb.execSQL("DELETE FROM storage_locations");
+            // Disable foreign keys during import to allow bulk replacement without
+            // constraint errors
+            sdb.execSQL("PRAGMA foreign_keys = OFF");
 
-            if (backupData.locations != null)
-                db.storageLocationDao().insertAll(backupData.locations);
-            if (backupData.categories != null)
-                db.categoryDefinitionDao().insertAll(backupData.categories);
-            if (backupData.products != null)
-                db.productDao().insertAll(backupData.products);
-            if (backupData.categoryLinks != null)
-                db.productCategoryLinkDao().insertAll(backupData.categoryLinks);
+            try {
+                // Delete all existing data in proper order (though FKs are OFF, it's cleaner)
+                sdb.execSQL("DELETE FROM product_category_links");
+                db.productDao().deleteAllProducts();
+                db.categoryDefinitionDao().deleteAllCategoryDefinitions();
+                sdb.execSQL("DELETE FROM storage_locations");
+
+                // Insert new data from backup
+                if (backupData.locations != null)
+                    db.storageLocationDao().insertAll(backupData.locations);
+                if (backupData.categories != null)
+                    db.categoryDefinitionDao().insertAll(backupData.categories);
+                if (backupData.products != null)
+                    db.productDao().insertAll(backupData.products);
+                if (backupData.categoryLinks != null)
+                    db.productCategoryLinkDao().insertAll(backupData.categoryLinks);
+            } finally {
+                // Re-enable foreign keys
+                sdb.execSQL("PRAGMA foreign_keys = ON");
+            }
         });
     }
 }
