@@ -527,14 +527,6 @@ public class MainActivity extends AppCompatActivity
             Intent intent = new Intent(this, SettingsActivity.class);
             startActivity(intent);
             return true;
-        } else if (id == R.id.action_export) {
-            String fileName = "dispensa_backup_"
-                    + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date()) + ".dsp";
-            createDocumentLauncher.launch(fileName);
-            return true;
-        } else if (id == R.id.action_import) {
-            openDocumentLauncher.launch(new String[] { "*/*" });
-            return true;
         }
         return super.onOptionsItemSelected(item);
     }
