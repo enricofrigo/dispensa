@@ -1,5 +1,6 @@
 package eu.frigo.dispensa.data.storage;
 
+import com.google.gson.annotations.SerializedName;
 import android.content.Context;
 
 import androidx.room.ColumnInfo;
@@ -7,30 +8,36 @@ import androidx.room.Entity;
 import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
-@Entity(tableName = "storage_locations",
-        indices = {@Index(value = {"internal_key"}, unique = true),
-                @Index(value = {"order_index"})})
+@Entity(tableName = "storage_locations", indices = { @Index(value = { "internal_key" }, unique = true),
+        @Index(value = { "order_index" }) })
 public class StorageLocation {
 
+    @SerializedName("id")
     @PrimaryKey(autoGenerate = true)
     public int id;
 
+    @SerializedName("name")
     @ColumnInfo(name = "name")
     public String name; // Nome visualizzato dall'utente (es. "Frigo", "Dispensa", "Cantina")
 
+    @SerializedName("internal_key")
     @ColumnInfo(name = "internal_key")
     public String internalKey; // Chiave univoca interna (es. "FRIDGE", "PANTRY", "CUSTOM_CELLAR_01")
 
+    @SerializedName("order_index")
     @ColumnInfo(name = "order_index")
     public int orderIndex; // Per l'ordinamento dei tab
 
+    @SerializedName("is_default")
     @ColumnInfo(name = "is_default", defaultValue = "0") // Default a false (0 per SQLite boolean)
     public boolean isDefault;
 
+    @SerializedName("is_predefined")
     @ColumnInfo(name = "is_predefined", defaultValue = "0") // Per marcare le location predefinite
     public boolean isPredefined; // es. FRIDGE, FREEZER, PANTRY iniziali
 
-    public StorageLocation() {}
+    public StorageLocation() {
+    }
 
     public int getId() {
         return id;
@@ -43,10 +50,12 @@ public class StorageLocation {
     public String getName() {
         return name;
     }
+
     public String getLocalizedName(Context context) {
-        if(isPredefined){
-            return PredefinedData.getDisplayLocationName(context,getInternalKey());
-        }else return name;
+        if (isPredefined) {
+            return PredefinedData.getDisplayLocationName(context, getInternalKey());
+        } else
+            return name;
     }
 
     public void setName(String name) {

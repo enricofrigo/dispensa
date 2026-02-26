@@ -1,26 +1,31 @@
 package eu.frigo.dispensa.data.category;
 
+import com.google.gson.annotations.SerializedName;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
-@Entity(tableName = "categories_definitions",
-        indices = {@Index(value = "tag_name", unique = true)})
+@Entity(tableName = "categories_definitions", indices = { @Index(value = "tag_name", unique = true) })
 public class CategoryDefinition {
+    @SerializedName("category_id")
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "category_id")
     public int categoryId;
 
+    @SerializedName("tag_name")
     @ColumnInfo(name = "tag_name") // es. "en:dairy"
     public String tagName;
 
+    @SerializedName("display_name_it")
     @ColumnInfo(name = "display_name_it")
     public String displayNameIt; // Opzionale, per UI
 
+    @SerializedName("language_code")
     @ColumnInfo(name = "language_code")
     public String languageCode; // Opzionale
 
+    @SerializedName("color_hex")
     @ColumnInfo(name = "color_hex")
     public String colorHex; // Opzionale
 
