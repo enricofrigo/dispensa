@@ -19,7 +19,9 @@
 - 🇮🇹 ligue supportate italiano ed inglese (it - en)
 
 ## 🚀 Installazione
-controlla l'ultima <a href="https://github.com/enricofrigo/dispensa/releases">release</a> 
+- <a href="https://f-droid.org/packages/eu.frigo.dispensa">F-Droid</a> 
+- <a href="https://play.google.com/store/apps/details?id=eu.frigo.dispensa">Play Store</a> 
+
 
 ### ✅ Prerequisiti
 - Android Studio (per la versione di sviluppo)
