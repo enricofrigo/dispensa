@@ -5,6 +5,7 @@ import android.content.Context;
 
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
+import androidx.room.Ignore;
 import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
@@ -36,6 +37,7 @@ public class StorageLocation {
     @ColumnInfo(name = "is_predefined", defaultValue = "0") // Per marcare le location predefinite
     public boolean isPredefined; // es. FRIDGE, FREEZER, PANTRY iniziali
 
+    @Ignore
     public StorageLocation() {
     }
 
