@@ -2,29 +2,27 @@ package eu.frigo.dispensa.activity;
 
 import android.content.Context;
 import android.content.Intent;
-import android.view.View;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.TextView;
 
-import androidx.annotation.OptIn;
+import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import androidx.activity.EdgeToEdge;
+import androidx.core.content.pm.PackageInfoCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
-
 import androidx.core.view.WindowInsetsCompat;
 import androidx.media3.common.util.Log;
-import androidx.media3.common.util.UnstableApi;
+
+import java.util.Objects;
 
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.ui.SettingsFragment;
-
-import java.util.Objects;
 
 public class SettingsActivity extends AppCompatActivity {
 
@@ -79,7 +77,6 @@ public class SettingsActivity extends AppCompatActivity {
         }
     }
 
-    @OptIn(markerClass = UnstableApi.class)
     private String getAppVersionName(Context context) {
         try {
             PackageInfo packageInfo;
@@ -87,8 +84,7 @@ public class SettingsActivity extends AppCompatActivity {
                 packageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(),
                         PackageManager.PackageInfoFlags.of(0));
             } else {
-                PackageInfo pi = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
-                packageInfo = pi;
+                packageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
             }
             return packageInfo.versionName;
         } catch (PackageManager.NameNotFoundException e) {
@@ -97,7 +93,6 @@ public class SettingsActivity extends AppCompatActivity {
         }
     }
 
-    @OptIn(markerClass = UnstableApi.class)
     private long getAppVersionCode(Context context) {
         try {
             PackageInfo packageInfo;
@@ -105,10 +100,9 @@ public class SettingsActivity extends AppCompatActivity {
                 packageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(),
                         PackageManager.PackageInfoFlags.of(0));
             } else {
-                PackageInfo pi = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
-                packageInfo = pi;
+                packageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
             }
-            return packageInfo.getLongVersionCode();
+            return PackageInfoCompat.getLongVersionCode(packageInfo);
         } catch (PackageManager.NameNotFoundException e) {
             Log.e("SettingsActivity", "NameNotFoundException while getting versionCode", e);
             return -1L;
