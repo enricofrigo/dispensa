@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.androidx.room)
 }
 android {
     namespace = "eu.frigo.dispensa"
@@ -65,8 +66,9 @@ android {
             useLegacyPackaging = false
         }
     }
-
-}
+    room {
+        schemaDirectory("$projectDir/schemas")
+    }}
 
 dependencies {
 

@@ -50,6 +50,7 @@ public class Product {
     @Ignore
     private String notDefined = "N/D";
 
+    @Ignore
     public Product() {
     }
 
