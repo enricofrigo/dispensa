@@ -7,26 +7,22 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
-import com.google.android.material.tabs.TabLayout;
-import com.google.android.material.tabs.TabLayoutMediator;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-
-import androidx.appcompat.widget.Toolbar;
 import androidx.appcompat.widget.SearchView;
+import androidx.appcompat.widget.Toolbar;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
-
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
@@ -34,37 +30,30 @@ import androidx.media3.common.util.Log;
 import androidx.preference.PreferenceManager;
 import androidx.viewpager2.widget.ViewPager2;
 
-import eu.frigo.dispensa.R;
-import eu.frigo.dispensa.adapter.LocationViewPagerAdapter;
-import eu.frigo.dispensa.adapter.ProductListAdapter;
-import eu.frigo.dispensa.data.AppDatabase;
-import eu.frigo.dispensa.data.product.Product;
-import eu.frigo.dispensa.data.category.ProductWithCategoryDefinitions;
-import eu.frigo.dispensa.data.storage.StorageLocation;
-import eu.frigo.dispensa.ui.ProductListFragment;
-import eu.frigo.dispensa.viewmodel.LocationViewModel;
-import eu.frigo.dispensa.viewmodel.ProductViewModel;
-
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.ViewGroup;
-import android.widget.Toast;
-
-import eu.frigo.dispensa.data.backup.BackupManager;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
+import com.google.android.material.tabs.TabLayout;
+import com.google.android.material.tabs.TabLayoutMediator;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import eu.frigo.dispensa.R;
+import eu.frigo.dispensa.adapter.LocationViewPagerAdapter;
+import eu.frigo.dispensa.adapter.ProductListAdapter;
+import eu.frigo.dispensa.data.category.ProductWithCategoryDefinitions;
+import eu.frigo.dispensa.data.product.Product;
+import eu.frigo.dispensa.data.storage.StorageLocation;
+import eu.frigo.dispensa.ui.ProductListFragment;
+import eu.frigo.dispensa.viewmodel.LocationViewModel;
+import eu.frigo.dispensa.viewmodel.ProductViewModel;
+
 public class MainActivity extends AppCompatActivity
         implements SearchView.OnQueryTextListener, ProductListAdapter.OnProductInteractionListener {
 
     private ProductViewModel productViewModel;
-    private List<ProductWithCategoryDefinitions> allProductsList = new ArrayList<>();
+    private final List<ProductWithCategoryDefinitions> allProductsList = new ArrayList<>();
     private SearchView searchView;
     private FloatingActionButton fab;
     private CoordinatorLayout mainCoordinatorLayout;
@@ -100,64 +89,6 @@ public class MainActivity extends AppCompatActivity
                 if (message != null)
                     showProductSavedSnackbar(message);
             });
-
-    private final ActivityResultLauncher<String> createDocumentLauncher = registerForActivityResult(
-            new ActivityResultContracts.CreateDocument("application/octet-stream"), uri -> {
-                if (uri != null) {
-                    performExport(uri);
-                }
-            });
-
-    private final ActivityResultLauncher<String[]> openDocumentLauncher = registerForActivityResult(
-            new ActivityResultContracts.OpenDocument(), uri -> {
-                if (uri != null) {
-                    confirmImport(uri);
-                }
-            });
-
-    private void performExport(android.net.Uri uri) {
-        AppDatabase.databaseWriteExecutor.execute(() -> {
-            try (OutputStream os = getContentResolver().openOutputStream(uri)) {
-                BackupManager backupManager = new BackupManager(this);
-                backupManager.exportData(os);
-                runOnUiThread(() -> Toast.makeText(this, R.string.export_success, Toast.LENGTH_SHORT).show());
-            } catch (Exception e) {
-                Log.e("MainActivity", "Export failed", e);
-                runOnUiThread(() -> Toast
-                        .makeText(this, getString(R.string.export_error, e.getMessage()), Toast.LENGTH_LONG).show());
-            }
-        });
-    }
-
-    private void confirmImport(android.net.Uri uri) {
-        new AlertDialog.Builder(this)
-                .setTitle(R.string.import_confirm_title)
-                .setMessage(R.string.import_confirm_message)
-                .setPositiveButton(R.string.ok, (dialog, which) -> performImport(uri))
-                .setNegativeButton(R.string.cancel, null)
-                .show();
-    }
-
-    private void performImport(android.net.Uri uri) {
-        AppDatabase.databaseWriteExecutor.execute(() -> {
-            try (InputStream is = getContentResolver().openInputStream(uri)) {
-                BackupManager backupManager = new BackupManager(this);
-                backupManager.importData(is);
-                runOnUiThread(() -> {
-                    Toast.makeText(this, R.string.import_success, Toast.LENGTH_LONG).show();
-                    // Restart app to refresh all data and viewmodels
-                    Intent intent = new Intent(this, MainActivity.class);
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                    startActivity(intent);
-                    Runtime.getRuntime().exit(0);
-                });
-            } catch (Exception e) {
-                Log.e("MainActivity", "Import failed", e);
-                runOnUiThread(() -> Toast
-                        .makeText(this, getString(R.string.import_error, e.getMessage()), Toast.LENGTH_LONG).show());
-            }
-        });
-    }
 
     private void askForNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
