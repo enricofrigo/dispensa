@@ -28,6 +28,8 @@ public class BackupManager {
     private final AppDatabase db;
     private final Gson gson;
 
+    private final int MIN_APP_VERSION = 14;
+
     public BackupManager(Context context) {
         this.db = AppDatabase.getDatabase(context);
         this.gson = new GsonBuilder().setPrettyPrinting().
@@ -61,9 +63,8 @@ public class BackupManager {
             throw new Exception("Invalid backup file");
         }
 
-        if(backupData.appVersion != BuildConfig.VERSION_CODE)
-            throw new Exception("App version (" + backupData.appVersion + ") is different than app version ("
-                    + BuildConfig.VERSION_CODE + ")");
+        if(backupData.appVersion < MIN_APP_VERSION)
+            throw new Exception("Import from app version (" + backupData.appVersion + ") is not supported.");
 
         int currentVersion = db.getOpenHelper().getReadableDatabase().getVersion();
 
