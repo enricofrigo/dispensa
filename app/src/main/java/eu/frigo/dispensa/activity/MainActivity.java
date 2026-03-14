@@ -217,7 +217,10 @@ public class MainActivity extends AppCompatActivity
             StorageLocation currentLocation = locationViewPagerAdapter.getLocationAt(position);
             if (currentLocation != null) {
                 Log.d("MainActivity", "Nome della posizione: " + currentLocation.getLocalizedName(getApplicationContext()));
-                tab.setText(currentLocation.getLocalizedName(getApplicationContext()));
+                if(currentLocation.isPredefined)
+                    tab.setIcon(currentLocation.getIcon());
+                else
+                    tab.setText(currentLocation.getLocalizedName(getApplicationContext()));
             }
         }).attach();
         observeLocationsForTabs();

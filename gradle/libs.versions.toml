@@ -39,6 +39,12 @@ workRuntimeKtx = "2.9.0"
 preferenceKtx = "1.2.1"
 zxingAndroidEmbedded = "4.3.0"
 textRecognition = "16.0.1"
+iconicsCore = "4.3.1"
+iconicsViews = "5.5.0"
+googleMaterialTypeface = "4.0.0.3-kotlin"
+iconicsCoreVersion = "4.0.2"
+googleMaterialTypefaceVersion = "3.0.1.4.original-kotlin"
+iconicsViewsVersion = "4.0.2"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -78,6 +84,12 @@ androidx-preference-ktx = { group = "androidx.preference", name = "preference-kt
 zxing-android-embedded = { group = "com.journeyapps", name = "zxing-android-embedded", version.ref = "zxingAndroidEmbedded" }
 text-recognition = { group = "com.google.mlkit", name = "text-recognition", version.ref = "textRecognition" }
 tesseract4android = { group = "com.github.adaptech-cz.Tesseract4Android", name = "tesseract4android", version.ref = "tesseract4android" }
+iconics-core = { group = "com.mikepenz", name = "iconics-core", version.ref = "iconicsCore" }
+iconics-views = { group = "com.mikepenz", name = "iconics-views", version.ref = "iconicsViews" }
+google-material-typeface = { group = "com.mikepenz", name = "google-material-typeface", version.ref = "googleMaterialTypeface" }
+mikepenz-iconics-core = { group = "com.mikepenz", name = "iconics-core", version.ref = "iconicsCoreVersion" }
+mikepenz-google-material-typeface = { group = "com.mikepenz", name = "google-material-typeface", version.ref = "googleMaterialTypefaceVersion" }
+mikepenz-iconics-views = { group = "com.mikepenz", name = "iconics-views", version.ref = "iconicsViewsVersion" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

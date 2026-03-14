@@ -5,12 +5,6 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
 
-import androidx.work.ExistingPeriodicWorkPolicy;
-import androidx.work.PeriodicWorkRequest;
-import androidx.work.WorkManager;
-
-import java.util.concurrent.TimeUnit;
-
 import eu.frigo.dispensa.util.LocaleHelper;
 import eu.frigo.dispensa.util.ThemeHelper;
 import eu.frigo.dispensa.work.ExpiryCheckWorker;
@@ -40,15 +34,5 @@ public class Dispensa extends Application {
         if (notificationManager != null) {
             notificationManager.createNotificationChannel(channel);
         }
-    }
-    private void scheduleExpiryCheckWorker() {
-        PeriodicWorkRequest expiryCheckRequest =
-                new PeriodicWorkRequest.Builder(ExpiryCheckWorker.class, 1, TimeUnit.DAYS)
-                        .build();
-
-        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-                ExpiryCheckWorkerScheduler.EXPIRY_CHECK_WORK_TAG,
-                ExistingPeriodicWorkPolicy.KEEP,
-                expiryCheckRequest);
     }
 }

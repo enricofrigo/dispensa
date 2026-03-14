@@ -98,7 +98,7 @@
     <string name="delete_location">Elimina Location</string>
     <string name="default_icon">Icona Default</string>
     <string name="add_new_location">Aggiungi nuova location</string>
-    <string name="title_manage_locations">Storage location management</string>
+    <string name="title_manage_locations">Gestione Location</string>
     <string name="hint_new_location">Nome della location</string>
     <string name="error_empty_location">Il nome non può essere vuoto</string>
     <string name="notify_add_location">Location \'%s\' aggiunta</string>
