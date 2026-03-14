@@ -23,36 +23,19 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
-
 import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.camera.core.CameraSelector;
-import androidx.camera.core.ImageAnalysis;
-import androidx.camera.core.Preview;
-import androidx.camera.lifecycle.ProcessCameraProvider;
-import androidx.camera.view.PreviewView;
+
 import com.bumptech.glide.Glide;
-import android.util.Log;
-import android.util.Size;
-import android.media.Image;
-import java.io.FileOutputStream;
-import java.io.File;
-import java.nio.ByteBuffer;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import com.google.common.util.concurrent.ListenableFuture;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
@@ -97,17 +80,8 @@ import eu.frigo.dispensa.network.openfoodfacts.model.OpenFoodFactsProductRespons
 import eu.frigo.dispensa.util.KeyboardUtils;
 import eu.frigo.dispensa.viewmodel.AddProductViewModel;
 import eu.frigo.dispensa.util.DateConverter;
-import android.annotation.SuppressLint;
-import java.io.OutputStream;
 import retrofit2.Callback;
 import retrofit2.Response;
-import android.graphics.ImageFormat;
-import android.graphics.Rect;
-import android.graphics.YuvImage;
-import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
-import java.io.ByteArrayOutputStream;
-import android.widget.FrameLayout;
 
 public class AddProductActivity extends AppCompatActivity {
 
@@ -122,11 +96,12 @@ public class AddProductActivity extends AppCompatActivity {
     private AddProductViewModel addProductViewModel;
     private int currentProductId = -1;
     private boolean isEditMode = false;
-    private PreviewView previewViewScanner;
-    private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
-    private ExecutorService cameraExecutor;
-    private ImageButton buttonRescanExpiryDate;
+
+    // ZXing embedded
+    private DecoratedBarcodeView barcodeView;
     private boolean isCameraPermissionGranted;
+    private boolean isScanning = false;
+
     private TextInputEditText editTextProductName;
     private ImageView imageViewProduct;
     private final Calendar calendar = Calendar.getInstance();
@@ -149,25 +124,22 @@ public class AddProductActivity extends AppCompatActivity {
 
     // ZXing reader per immagini dalla galleria
     private MultiFormatReader multiFormatReader;
-    private boolean isScanning = false;
-    private boolean isAnalysisInProgress = false;
-    private View layoutScannerContainer;
 
-    public final static String EXTRA_BARCODE = "SCANNED_BARCODE_DATA";
-    public final static String EXTRA_PRODUCT_ID = "PRODUCT_ID";
-    public final static String EXTRA_PRODUCT_NAME = "PRODUCT_NAME";
-    public final static String EXTRA_PRODUCT_IMAGE = "PRODUCT_IMAGE";
-    public final static String EXTRA_PRODUCT_QUANTITY = "PRODUCT_QUANTITY";
-    public final static String EXTRA_PRODUCT_EXPIRY_DATE = "PRODUCT_EXPIRY_DATE";
-    public final static String EXTRA_PRODUCT_BARCODE = "PRODUCT_BARCODE";
-    public final static String NEW_PRODUCT_NAME = "NEW_PRODUCT_NAME";
-    public final static String NEW_PRODUCT_EDIT = "NEW_PRODUCT_EDIT";
-    public final static String PRESELECTED_LOCATION_INTERNAL_KEY = "PRESELECTED_LOCATION_INTERNAL_KEY";
+    public static final String EXTRA_BARCODE = "SCANNED_BARCODE_DATA";
+    public static final String EXTRA_PRODUCT_ID = "PRODUCT_ID";
+    public static final String EXTRA_PRODUCT_NAME = "PRODUCT_NAME";
+    public static final String EXTRA_PRODUCT_IMAGE = "PRODUCT_IMAGE";
+    public static final String EXTRA_PRODUCT_QUANTITY = "PRODUCT_QUANTITY";
+    public static final String EXTRA_PRODUCT_EXPIRY_DATE = "PRODUCT_EXPIRY_DATE";
+    public static final String EXTRA_PRODUCT_BARCODE = "PRODUCT_BARCODE";
+    public static final String NEW_PRODUCT_NAME = "NEW_PRODUCT_NAME";
+    public static final String NEW_PRODUCT_EDIT = "NEW_PRODUCT_EDIT";
+    public static final String PRESELECTED_LOCATION_INTERNAL_KEY = "PRESELECTED_LOCATION_INTERNAL_KEY";
 
     private ActivityResultLauncher<String> pickImageForBarcodeLauncher;
 
-    private final ActivityResultLauncher<String> requestPermissionLauncher = registerForActivityResult(
-            new ActivityResultContracts.RequestPermission(), isGranted -> {
+    private final ActivityResultLauncher<String> requestPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
                 if (isGranted) {
                     isCameraPermissionGranted = true;
                     Toast.makeText(this, getString(R.string.camera_permission_accepted), Toast.LENGTH_SHORT).show();
@@ -177,6 +149,28 @@ public class AddProductActivity extends AppCompatActivity {
                     Toast.makeText(this, getString(R.string.camera_permission_denied), Toast.LENGTH_LONG).show();
                 }
             });
+
+    private final BarcodeCallback barcodeCallback = new BarcodeCallback() {
+        @Override
+        public void barcodeResult(BarcodeResult result) {
+            if (result != null && result.getText() != null && !result.getText().isEmpty() && isScanning) {
+                String barcode = result.getText();
+
+                if (isValidProductBarcode(barcode)) {
+                    isScanning = false;
+                    androidx.media3.common.util.Log.d("BarcodeScanner",
+                            "Codice a barre trovato: " + barcode +
+                                    " (Formato: " + result.getBarcodeFormat() + ")");
+
+                    runOnUiThread(() -> {
+                        editTextBarcode.setText(barcode);
+                        stopCamera();
+                        fetchProductDetailsFromApi(barcode);
+                    });
+                }
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -200,11 +194,13 @@ public class AddProductActivity extends AppCompatActivity {
                         nestedScrollView.getPaddingTop(),
                         nestedScrollView.getPaddingRight(),
                         Math.max(systemBars.bottom, ime.bottom)
-                                + (int) (80 * getResources().getDisplayMetrics().density));
+                                + (int) (80 * getResources().getDisplayMetrics().density)
+                );
             }
 
             if (finalFab != null) {
-                ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) finalFab.getLayoutParams();
+                ViewGroup.MarginLayoutParams lp =
+                        (ViewGroup.MarginLayoutParams) finalFab.getLayoutParams();
                 lp.bottomMargin = Math.max(systemBars.bottom, ime.bottom)
                         + (int) (16 * getResources().getDisplayMetrics().density);
                 finalFab.setLayoutParams(lp);
@@ -212,6 +208,8 @@ public class AddProductActivity extends AppCompatActivity {
 
             return windowInsets;
         });
+
+        initializeZXingReader();  // reader per galleria
 
         addProductViewModel = new ViewModelProvider(this).get(AddProductViewModel.class);
         Toolbar toolbarAddProduct = findViewById(R.id.toolbar_add_product);
@@ -223,35 +221,28 @@ public class AddProductActivity extends AppCompatActivity {
             }
         }
 
-        boolean openFoodFactsApiEnabled = OpenFoodFactsRetrofitClient
-                .isOpenFoodFactsApiEnabled(getApplicationContext());
-
+        boolean openFoodFactsApiEnabled =
+                OpenFoodFactsRetrofitClient.isOpenFoodFactsApiEnabled(getApplicationContext());
         if (!openFoodFactsApiEnabled) {
             showOpenFoodFactsBanner();
         }
 
-        previewViewScanner = findViewById(R.id.previewViewScanner);
-        editTextProductName = findViewById(R.id.editTextProductName);
-        imageViewProduct = findViewById(R.id.imageViewProduct);
-        cameraExecutor = Executors.newSingleThreadExecutor();
-        buttonRescanExpiryDate = findViewById(R.id.buttonRescanExpiryDate);
-        spinnerStorageLocation = findViewById(R.id.spinnerStorageLocation);
         editTextBarcode = findViewById(R.id.editTextBarcode);
+        ImageButton buttonScanBarcodeCamera = findViewById(R.id.buttonScanBarcodeCamera);
+        ImageButton buttonScanBarcodeGallery = findViewById(R.id.buttonScanBarcodeGallery);
         editTextQuantity = findViewById(R.id.editTextQuantity);
         buttonDecrementQuantityActivity = findViewById(R.id.buttonDecrementQuantityActivity);
         buttonIncrementQuantityActivity = findViewById(R.id.buttonIncrementQuantityActivity);
-        layoutScannerContainer = findViewById(R.id.layoutScannerContainer);
-        ImageButton buttonScanGallery = findViewById(R.id.buttonScanGallery);
-        ImageButton buttonScanCamera = findViewById(R.id.buttonScanCamera);
         editTextExpiryDate = findViewById(R.id.editTextExpiryDate);
-        Button buttonAddCategory = findViewById(R.id.buttonAddCategory);
-        ExtendedFloatingActionButton fabButtonSaveProduct = finalFab;
-
-        buttonAddCategory.setOnClickListener(v -> addNewCategoryTag());
+        barcodeView = findViewById(R.id.previewViewBarcode);
+        editTextProductName = findViewById(R.id.editTextProductName);
+        imageViewProduct = findViewById(R.id.imageViewProduct);
+        spinnerStorageLocation = findViewById(R.id.spinnerStorageLocation);
 
         if (getIntent().hasExtra(PRESELECTED_LOCATION_INTERNAL_KEY)) {
             preselectedLocationValue = getIntent().getStringExtra(PRESELECTED_LOCATION_INTERNAL_KEY);
-            Log.d("AddProductActivity", "Ricevuta location preselezionata: " + preselectedLocationValue);
+            androidx.media3.common.util.Log.d("AddProductActivity",
+                    "Ricevuta location preselezionata: " + preselectedLocationValue);
         }
         setupStorageLocationSpinner();
 
@@ -262,29 +253,35 @@ public class AddProductActivity extends AppCompatActivity {
 
         chipGroupCategories = findViewById(R.id.chipGroupCategories);
         editTextNewCategory = findViewById(R.id.editTextNewCategory);
-        if (buttonRescanExpiryDate != null) {
-            buttonRescanExpiryDate.setVisibility(GONE);
-        }
+        Button buttonAddCategory = findViewById(R.id.buttonAddCategory);
+        ExtendedFloatingActionButton fabButtonSaveProduct = finalFab;
 
-        if (buttonRescanExpiryDate != null) {
-            buttonRescanExpiryDate.setOnClickListener(v -> {
-                editTextExpiryDate.setText("");
-                buttonRescanExpiryDate.setVisibility(GONE);
-                checkCameraPermissionAndStartScanner();
-            });
-        }
+        // ZXing embedded per codici a barre
+        List<BarcodeFormat> formats = Arrays.asList(
+                BarcodeFormat.EAN_13,
+                BarcodeFormat.EAN_8,
+                BarcodeFormat.UPC_A,
+                BarcodeFormat.UPC_E,
+                BarcodeFormat.CODE_128,
+                BarcodeFormat.CODE_39
+        );
+        barcodeView.getBarcodeView().setDecoderFactory(new DefaultDecoderFactory(formats));
+        barcodeView.setStatusText(getString(R.string.scan_barcode_description));
 
         pickImageForBarcodeLauncher = registerForActivityResult(
                 new ActivityResultContracts.GetContent(),
                 uri -> {
                     if (uri != null) {
-                        Log.d("AddProduct", "Immagine selezionata dalla galleria: " + uri.toString());
+                        androidx.media3.common.util.Log.d("BarcodeScan",
+                                "Immagine selezionata dalla galleria per barcode: " + uri.toString());
                         stopCamera();
-                        processImageForBoth(uri);
+                        processImageForBarcode(uri);
                     } else {
-                        Log.d("AddProduct", "Selezione immagine annullata.");
+                        androidx.media3.common.util.Log.d("BarcodeScan",
+                                "Selezione immagine per barcode annullata.");
                     }
-                });
+                }
+        );
 
         editTextBarcode.setOnFocusChangeListener((v, hasFocus) -> {
             if (!hasFocus) {
@@ -326,10 +323,10 @@ public class AddProductActivity extends AppCompatActivity {
             }
             fabButtonSaveProduct.setText(getString(R.string.update_product));
             observeProductForEditMode();
-            buttonScanGallery.setVisibility(GONE);
-            buttonScanCamera.setVisibility(GONE);
+            buttonScanBarcodeGallery.setVisibility(GONE);
+            buttonScanBarcodeCamera.setVisibility(GONE);
             editTextBarcode.setVisibility(GONE);
-            previewViewScanner.setVisibility(GONE);
+            barcodeView.setVisibility(GONE);
         } else {
             isEditMode = false;
             if (getSupportActionBar() != null) {
@@ -338,7 +335,6 @@ public class AddProductActivity extends AppCompatActivity {
             fabButtonSaveProduct.setText(getString(R.string.save_product_button));
             editTextQuantity.setText(DEFAULT_QUANTITY);
             editTextQuantity.setSelection(Objects.requireNonNull(editTextQuantity.getText()).length());
-            isScanning = true;
             checkCameraPermissionAndStartScanner();
         }
 
@@ -368,274 +364,66 @@ public class AddProductActivity extends AppCompatActivity {
             showDatePickerDialog();
         });
 
-        buttonScanCamera.setOnClickListener(v -> {
+        buttonScanBarcodeCamera.setOnClickListener(v -> {
             isScanning = true;
             checkCameraPermissionAndStartScanner();
         });
 
-        buttonScanGallery.setOnClickListener(v -> pickImageForBarcodeLauncher.launch("image/*"));
+        buttonScanBarcodeGallery.setOnClickListener(v -> pickImageForBarcodeLauncher.launch("image/*"));
+
         buttonMarkAsClosed.setOnClickListener(v -> {
             currentOpenedDate = 0L;
             updateOpenedDateUI(currentOpenedDate);
         });
+
         fabButtonSaveProduct.setOnClickListener(v -> saveOrUpdateProduct());
+
         if (!openFoodFactsApiEnabled) {
-            buttonScanCamera.setVisibility(GONE);
-            buttonScanGallery.setVisibility(GONE);
-            previewViewScanner.setVisibility(GONE);
+            // Se OFF è disabilitato, ha senso nascondere anche lo scanner
+            buttonScanBarcodeCamera.setVisibility(GONE);
+            buttonScanBarcodeGallery.setVisibility(GONE);
+            barcodeView.setVisibility(GONE);
         }
-    }
-
-    private void startCamera() {
-        if (!isCameraPermissionGranted) {
-            Log.e("AddProductActivity", "Tentativo di avviare la fotocamera senza permesso.");
-            return;
-        }
-
-        previewViewScanner.setVisibility(View.VISIBLE);
-
-        cameraProviderFuture = ProcessCameraProvider.getInstance(this);
-        cameraProviderFuture.addListener(() -> {
-            try {
-                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
-                bindPreviewAndAnalysis(cameraProvider);
-            } catch (ExecutionException | InterruptedException e) {
-                Toast.makeText(this, getString(R.string.err_camera), Toast.LENGTH_SHORT).show();
-                Log.e("AddProductActivity", "Errore nell'avvio della fotocamera", e);
-            }
-        }, ContextCompat.getMainExecutor(this));
-    }
-
-    @SuppressLint("UnsafeOptInUsageError")
-    private void bindPreviewAndAnalysis(@NonNull ProcessCameraProvider cameraProvider) {
-        Preview preview = new Preview.Builder().build();
-        CameraSelector cameraSelector = new CameraSelector.Builder()
-                .requireLensFacing(CameraSelector.LENS_FACING_BACK)
-                .build();
-
-        preview.setSurfaceProvider(previewViewScanner.getSurfaceProvider());
-
-        ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
-                .setTargetResolution(new Size(1280, 720))
-                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                .build();
-
-        imageAnalysis.setAnalyzer(cameraExecutor, imageProxy -> {
-            if (!isScanning || isAnalysisInProgress) {
-                imageProxy.close();
-                return;
-            }
-
-            isAnalysisInProgress = true;
-            Image mediaImage = imageProxy.getImage();
-            if (mediaImage != null) {
-                Bitmap bitmap = imageProxyToCroppedBitmap(imageProxy);
-
-                if (bitmap != null) {
-                    boolean needsBarcode = Objects.requireNonNull(editTextBarcode.getText()).toString().trim()
-                            .isEmpty();
-
-                    if (needsBarcode) {
-                        String barcode = decodeBarcode(bitmap);
-                        if (barcode != null) {
-                            Log.d("BarcodeScanner", "Codice a barre trovato: " + barcode);
-                            runOnUiThread(() -> {
-                                editTextBarcode.setText(barcode);
-                                fetchProductDetailsFromApi(barcode);
-                            });
-                        }
-                    }
-
-                    if (!needsBarcode) {
-                        isScanning = false;
-                        runOnUiThread(() -> stopCamera(cameraProvider));
-                    }
-                }
-            }
-            isAnalysisInProgress = false;
-            imageProxy.close();
-        });
-
-        layoutScannerContainer.setVisibility(View.VISIBLE);
-
-        try {
-            cameraProvider.unbindAll();
-            cameraProvider.bindToLifecycle(
-                    this, cameraSelector, preview, imageAnalysis);
-        } catch (Exception exc) {
-            Log.e("AddProductActivity", "Use case binding fallito", exc);
-        }
-    }
-
-    private Bitmap imageProxyToCroppedBitmap(androidx.camera.core.ImageProxy imageProxy) {
-        int width = imageProxy.getWidth();
-        int height = imageProxy.getHeight();
-
-        // 1. Conversione veloce YUV a YuvImage (NV21)
-        byte[] nv21 = yuv420ToNv21(imageProxy);
-
-        // 2. Crop ROI (Area centrale del mirino)
-        // Definiamo un'area del 30% in altezza e 80% in larghezza al centro
-        int cropWidth = (int) (width * 0.8);
-        int cropHeight = (int) (height * 0.3);
-        int left = (width - cropWidth) / 2;
-        int top = (height - cropHeight) / 2;
-
-        YuvImage yuvImage = new YuvImage(nv21, ImageFormat.NV21, width, height, null);
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        yuvImage.compressToJpeg(new Rect(left, top, left + cropWidth, top + cropHeight), 90, out);
-        byte[] imageBytes = out.toByteArray();
-        Bitmap bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
-
-        // 3. Rotazione se necessaria
-        int rotation = imageProxy.getImageInfo().getRotationDegrees();
-        if (rotation != 0) {
-            bitmap = rotateBitmap(bitmap, rotation);
-        }
-        return bitmap;
-    }
-
-    private byte[] yuv420ToNv21(androidx.camera.core.ImageProxy image) {
-        androidx.camera.core.ImageProxy.PlaneProxy[] planes = image.getPlanes();
-        ByteBuffer yBuffer = planes[0].getBuffer();
-        ByteBuffer uBuffer = planes[1].getBuffer();
-        ByteBuffer vBuffer = planes[2].getBuffer();
-
-        int ySize = yBuffer.remaining();
-        int uSize = uBuffer.remaining();
-        int vSize = vBuffer.remaining();
-
-        byte[] nv21 = new byte[ySize + uSize + vSize];
-        yBuffer.get(nv21, 0, ySize);
-        vBuffer.get(nv21, ySize, vSize);
-        uBuffer.get(nv21, ySize + vSize, uSize);
-
-        return nv21;
     }
 
     private void showOpenFoodFactsBanner() {
-        View banner = findViewById(R.id.banner_open_food_facts); // Devi avere questo View nel layout!
+        View banner = findViewById(R.id.banner_open_food_facts);
         Button btnEnableOFF = banner.findViewById(R.id.button_enable_off);
         banner.setVisibility(View.VISIBLE);
         btnEnableOFF.setOnClickListener(v -> {
-            // Vai alle preferenze, es. se hai la SettingsActivity...
             Intent intent = new Intent(this, SettingsActivity.class);
             intent.putExtra("openFoodFactsSection", true);
             startActivity(intent);
         });
     }
 
-    private void updateOpenedDateUI(Long openedTimestamp) {
-        if (buttonMarkAsOpened == null || textViewOpenedDate == null)
-            return;
+    private void initializeZXingReader() {
+        multiFormatReader = new MultiFormatReader();
+        Map<DecodeHintType, Object> hints = new EnumMap<>(DecodeHintType.class);
 
-        if (openedTimestamp != null && openedTimestamp > 0) {
-            textViewOpenedDate.setText(String.format(getString(R.string.open_date), formatDate(openedTimestamp)));
-            textViewOpenedDate.setVisibility(View.VISIBLE);
-            buttonMarkAsOpened.setVisibility(GONE);
-            buttonMarkAsClosed.setVisibility(View.VISIBLE);
-        } else {
-            textViewOpenedDate.setVisibility(GONE);
-            buttonMarkAsOpened.setVisibility(View.VISIBLE);
-            buttonMarkAsClosed.setVisibility(GONE);
+        List<BarcodeFormat> formats = Arrays.asList(
+                BarcodeFormat.EAN_13,
+                BarcodeFormat.EAN_8,
+                BarcodeFormat.UPC_A,
+                BarcodeFormat.UPC_E,
+                BarcodeFormat.CODE_128,
+                BarcodeFormat.CODE_39
+        );
+
+        hints.put(DecodeHintType.POSSIBLE_FORMATS, formats);
+        hints.put(DecodeHintType.TRY_HARDER, Boolean.TRUE);
+        multiFormatReader.setHints(hints);
+    }
+
+    private boolean isValidProductBarcode(String barcode) {
+        if (barcode == null || barcode.isEmpty()) {
+            return false;
         }
+        int length = barcode.length();
+        return length == 8 || length == 12 || length == 13 || length == 14;
     }
 
-    private void checkCameraPermissionAndStartScanner() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-            isCameraPermissionGranted = true;
-            startCamera();
-        } else {
-            requestPermissionLauncher.launch(Manifest.permission.CAMERA);
-        }
-    }
-
-    private String formatDate(Long timestamp) {
-        if (timestamp == null || timestamp <= 0)
-            return getString(R.string.not_defined);
-        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.ITALY);
-        return sdf.format(new Date(timestamp));
-    }
-
-    private void setupStorageLocationSpinner() {
-        List<String> locationDisplayNames = new ArrayList<>();
-        locationSpinnerAdapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_item, locationDisplayNames);
-        locationSpinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerStorageLocation.setAdapter(locationSpinnerAdapter);
-
-        spinnerStorageLocation.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if (!availableLocations.isEmpty() && position >= 0 && position < availableLocations.size()) {
-                    selectedStorageInternalKey = availableLocations.get(position).getInternalKey();
-                }
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-                selectedStorageInternalKey = null;
-            }
-        });
-
-        addProductViewModel.getAllSelectableLocations().observe(this, locations -> {
-            if (locations != null && !locations.isEmpty()) {
-                availableLocations.clear();
-                availableLocations.addAll(locations);
-
-                locationDisplayNames.clear();
-                for (StorageLocation loc : locations) {
-                    locationDisplayNames.add(loc.getLocalizedName(getApplicationContext()));
-                }
-                locationSpinnerAdapter.notifyDataSetChanged();
-
-                String keyToSelect = null;
-                if (preselectedLocationValue != null) {
-                    keyToSelect = preselectedLocationValue;
-                } else if (isEditMode && productBeingEdited != null && productBeingEdited.product != null) {
-                    keyToSelect = productBeingEdited.product.getStorageLocation();
-                }
-
-                if (keyToSelect != null) {
-                    selectSpinnerLocationByInternalKey(keyToSelect);
-                } else if (!availableLocations.isEmpty()) {
-                    spinnerStorageLocation.setSelection(0);
-                    selectedStorageInternalKey = availableLocations.get(0).getInternalKey();
-                    Log.d("AddProductActivity", "Spinner default su: " + availableLocations.get(0).getName());
-                }
-
-            } else {
-                Log.w("AddProductActivity", "Nessuna location disponibile per lo spinner.");
-                availableLocations.clear();
-                locationDisplayNames.clear();
-                locationSpinnerAdapter.notifyDataSetChanged();
-            }
-        });
-
-    }
-
-    private void stopCamera(ProcessCameraProvider cameraProvider) {
-        if (cameraProvider != null) {
-            cameraProvider.unbindAll();
-        }
-        if (layoutScannerContainer != null) {
-            layoutScannerContainer.setVisibility(View.GONE);
-        }
-    }
-
-    private void stopCamera() {
-        isScanning = false;
-        if (cameraProviderFuture != null) {
-            try {
-                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
-                stopCamera(cameraProvider);
-            } catch (ExecutionException | InterruptedException e) {
-                Log.e("AddProductActivity", "Errore nello stop della fotocamera", e);
-            }
-        }
-    }
-
-    private void processImageForBoth(Uri imageUri) {
+    private void processImageForBarcode(Uri imageUri) {
         try {
             InputStream inputStream = getContentResolver().openInputStream(imageUri);
             Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
@@ -646,17 +434,198 @@ public class AddProductActivity extends AppCompatActivity {
             if (bitmap != null) {
                 String barcode = decodeBarcode(bitmap);
                 if (barcode != null) {
-                    Log.d("BarcodeScanner", "Codice a barre da immagine trovato: " + barcode);
+                    androidx.media3.common.util.Log.d("BarcodeScanner",
+                            "Codice a barre da immagine trovato: " + barcode);
                     runOnUiThread(() -> {
                         editTextBarcode.setText(barcode);
                         fetchProductDetailsFromApi(barcode);
                     });
+                } else {
+                    androidx.media3.common.util.Log.d("BarcodeScanner",
+                            "Nessun codice a barre trovato nell'immagine.");
+                    runOnUiThread(() ->
+                            Toast.makeText(this,
+                                    getString(R.string.no_barcode_in_image),
+                                    Toast.LENGTH_SHORT).show()
+                    );
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
-            Log.e("Scanner", "Errore nel processare l'immagine della galleria", e);
+            androidx.media3.common.util.Log.e("BarcodeScanner",
+                    "Errore nel creare Bitmap da URI", e);
+            Toast.makeText(this, getString(R.string.err_load_image), Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private String decodeBarcode(Bitmap bitmap) {
+        final int MAX_SIZE = 1080;
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+        if (width > MAX_SIZE || height > MAX_SIZE) {
+            float ratio = Math.min((float) MAX_SIZE / width, (float) MAX_SIZE / height);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
+            bitmap = Bitmap.createScaledBitmap(bitmap, width, height, true);
+        }
+
+        Bitmap[] bitmaps = new Bitmap[4];
+        bitmaps[0] = bitmap;
+        bitmaps[1] = rotateBitmap(bitmap, 90);
+        bitmaps[2] = rotateBitmap(bitmap, 180);
+        bitmaps[3] = rotateBitmap(bitmap, 270);
+
+        MultiFormatReader reader = new MultiFormatReader();
+        Hashtable<DecodeHintType, Object> hints = new Hashtable<>();
+        hints.put(DecodeHintType.TRY_HARDER, Boolean.TRUE);
+        hints.put(DecodeHintType.POSSIBLE_FORMATS, Arrays.asList(
+                BarcodeFormat.EAN_13,
+                BarcodeFormat.EAN_8,
+                BarcodeFormat.UPC_A,
+                BarcodeFormat.UPC_E,
+                BarcodeFormat.CODE_128,
+                BarcodeFormat.CODE_39,
+                BarcodeFormat.CODE_93,
+                BarcodeFormat.ITF,
+                BarcodeFormat.QR_CODE
+        ));
+
+        for (Bitmap b : bitmaps) {
+            String resultText = decodeZXingOnce(b, reader, hints, false);
+            if (resultText != null) return resultText;
+
+            resultText = decodeZXingOnce(b, reader, hints, true);
+            if (resultText != null) return resultText;
+        }
+        return null;
+    }
+
+    private String decodeZXingOnce(Bitmap bitmap,
+                                   MultiFormatReader reader,
+                                   Hashtable<DecodeHintType, Object> hints,
+                                   boolean inverted) {
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+        int[] pixels = new int[width * height];
+        bitmap.getPixels(pixels, 0, width, 0, 0, width, height);
+        RGBLuminanceSource source = new RGBLuminanceSource(width, height, pixels);
+
+        BinaryBitmap binaryBitmap = inverted
+                ? new BinaryBitmap(new HybridBinarizer(new InvertedLuminanceSource(source)))
+                : new BinaryBitmap(new HybridBinarizer(source));
+        try {
+            Result result = reader.decode(binaryBitmap, hints);
+            return result.getText();
+        } catch (Exception e) {
+            return null;
+        } finally {
+            reader.reset();
+        }
+    }
+
+    private Bitmap rotateBitmap(Bitmap b, int degrees) {
+        Matrix m = new Matrix();
+        m.postRotate(degrees);
+        return Bitmap.createBitmap(b, 0, 0, b.getWidth(), b.getHeight(), m, true);
+    }
+
+    private void updateOpenedDateUI(Long openedTimestamp) {
+        if (buttonMarkAsOpened == null || textViewOpenedDate == null) return;
+
+        if (openedTimestamp != null && openedTimestamp > 0) {
+            textViewOpenedDate.setText(
+                    String.format(getString(R.string.open_date), formatDate(openedTimestamp)));
+            textViewOpenedDate.setVisibility(View.VISIBLE);
+            buttonMarkAsOpened.setVisibility(GONE);
+            buttonMarkAsClosed.setVisibility(View.VISIBLE);
+        } else {
+            textViewOpenedDate.setVisibility(GONE);
+            buttonMarkAsOpened.setVisibility(View.VISIBLE);
+            buttonMarkAsClosed.setVisibility(GONE);
+        }
+    }
+
+    private String formatDate(Long timestamp) {
+        if (timestamp == null || timestamp <= 0) return getString(R.string.not_defined);
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.ITALY);
+        return sdf.format(new Date(timestamp));
+    }
+
+    private void setupStorageLocationSpinner() {
+        List<String> locationDisplayNames = new ArrayList<>();
+        locationSpinnerAdapter = new ArrayAdapter<>(
+                this,
+                android.R.layout.simple_spinner_item,
+                locationDisplayNames
+        );
+        locationSpinnerAdapter.setDropDownViewResource(
+                android.R.layout.simple_spinner_dropdown_item);
+        spinnerStorageLocation.setAdapter(locationSpinnerAdapter);
+
+        addProductViewModel.getAllSelectableLocations().observe(this, locations -> {
+            if (locations != null && !locations.isEmpty()) {
+                availableLocations.clear();
+                availableLocations.addAll(locations);
+
+                locationDisplayNames.clear();
+                for (StorageLocation loc : locations) {
+                    locationDisplayNames.add(
+                            loc.getLocalizedName(getApplicationContext()));
+                }
+                locationSpinnerAdapter.notifyDataSetChanged();
+
+                String keyToSelect = null;
+                if (preselectedLocationValue != null) {
+                    keyToSelect = preselectedLocationValue;
+                } else if (isEditMode && productBeingEdited != null
+                        && productBeingEdited.product != null) {
+                    keyToSelect = productBeingEdited.product.getStorageLocation();
+                }
+
+                if (keyToSelect != null) {
+                    selectSpinnerLocationByInternalKey(keyToSelect);
+                } else if (!availableLocations.isEmpty()) {
+                    spinnerStorageLocation.setSelection(0);
+                    selectedStorageInternalKey =
+                            availableLocations.get(0).getInternalKey();
+                    androidx.media3.common.util.Log.d("AddProductActivity",
+                            "Spinner default su: " + availableLocations.get(0).getName());
+                }
+
+            } else {
+                androidx.media3.common.util.Log.w("AddProductActivity",
+                        "Nessuna location disponibile per lo spinner.");
+                availableLocations.clear();
+                locationDisplayNames.clear();
+                locationSpinnerAdapter.notifyDataSetChanged();
+            }
+        });
+
+        if (isEditMode && currentProductId != -1) {
+            observeProductForEditMode();
+        }
+
+        spinnerStorageLocation.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent,
+                                       View view,
+                                       int position,
+                                       long id) {
+                if (position >= 0 && position < availableLocations.size()) {
+                    selectedStorageInternalKey =
+                            availableLocations.get(position).getInternalKey();
+                    androidx.media3.common.util.Log.d("AddProductActivity",
+                            "Location selezionata: "
+                                    + availableLocations.get(position).getName()
+                                    + " (Key: " + selectedStorageInternalKey + ")");
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                selectedStorageInternalKey = null;
+            }
+        });
     }
 
     private void selectSpinnerLocationByInternalKey(String internalKey) {
@@ -667,13 +636,15 @@ public class AddProductActivity extends AppCompatActivity {
             if (internalKey.equals(availableLocations.get(i).getInternalKey())) {
                 spinnerStorageLocation.setSelection(i);
                 selectedStorageInternalKey = internalKey;
-                Log.d("AddProductActivity",
-                        "Spinner preselezionato (dinamicamente) su: " + availableLocations.get(i).getName());
+                androidx.media3.common.util.Log.d("AddProductActivity",
+                        "Spinner preselezionato (dinamicamente) su: "
+                                + availableLocations.get(i).getName());
                 return;
             }
         }
-        Log.w("AddProductActivity",
-                "Valore di location (internalKey) '" + internalKey + "' non trovato nello spinner dinamico.");
+        androidx.media3.common.util.Log.w("AddProductActivity",
+                "Valore di location (internalKey) '"
+                        + internalKey + "' non trovato nello spinner dinamico.");
     }
 
     private void observeProductForEditMode() {
@@ -682,7 +653,8 @@ public class AddProductActivity extends AppCompatActivity {
                 productBeingEdited = productWithDefs;
                 editTextProductName.setText(productBeingEdited.product.getProductName());
                 editTextBarcode.setText(productBeingEdited.product.getBarcode());
-                editTextQuantity.setText(String.valueOf(productBeingEdited.product.getQuantity()));
+                editTextQuantity.setText(
+                        String.valueOf(productBeingEdited.product.getQuantity()));
 
                 currentImageUrlFromApi = productBeingEdited.product.getImageUrl();
                 currentProductNameFromApi = productBeingEdited.product.getProductName();
@@ -692,7 +664,8 @@ public class AddProductActivity extends AppCompatActivity {
                     updateLabel();
                 }
 
-                if (currentImageUrlFromApi != null && !currentImageUrlFromApi.trim().isEmpty()) {
+                if (currentImageUrlFromApi != null
+                        && !currentImageUrlFromApi.trim().isEmpty()) {
                     Glide.with(AddProductActivity.this)
                             .load(currentImageUrlFromApi)
                             .into(imageViewProduct);
@@ -700,10 +673,12 @@ public class AddProductActivity extends AppCompatActivity {
                 }
 
                 currentOpenedDate = productBeingEdited.product.getOpenedDate();
-                currentShelfLifeDays = productBeingEdited.product.getShelfLifeAfterOpeningDays();
+                currentShelfLifeDays =
+                        productBeingEdited.product.getShelfLifeAfterOpeningDays();
 
                 if (currentShelfLifeDays > 0) {
-                    editTextShelfLifeAfterOpening.setText(String.valueOf(currentShelfLifeDays));
+                    editTextShelfLifeAfterOpening.setText(
+                            String.valueOf(currentShelfLifeDays));
                 } else {
                     editTextShelfLifeAfterOpening.setText("");
                 }
@@ -717,12 +692,16 @@ public class AddProductActivity extends AppCompatActivity {
                     updateChipGroup();
                 }
 
-                if (!availableLocations.isEmpty() && productBeingEdited.product.getStorageLocation() != null) {
-                    selectSpinnerLocationByInternalKey(productBeingEdited.product.getStorageLocation());
+                if (!availableLocations.isEmpty()
+                        && productBeingEdited.product.getStorageLocation() != null) {
+                    selectSpinnerLocationByInternalKey(
+                            productBeingEdited.product.getStorageLocation());
                 }
             } else {
                 productBeingEdited = null;
-                Toast.makeText(this, getString(R.string.err_load_product), Toast.LENGTH_LONG).show();
+                Toast.makeText(this,
+                        getString(R.string.err_load_product),
+                        Toast.LENGTH_LONG).show();
                 finish();
             }
         });
@@ -755,139 +734,148 @@ public class AddProductActivity extends AppCompatActivity {
         }
     }
 
+    private void checkCameraPermissionAndStartScanner() {
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            isCameraPermissionGranted = true;
+            startCamera();
+        } else {
+            requestPermissionLauncher.launch(Manifest.permission.CAMERA);
+        }
+    }
+
+    private void startCamera() {
+        if (!isCameraPermissionGranted) {
+            androidx.media3.common.util.Log.e("AddProductActivity",
+                    "Tentativo di avviare la fotocamera senza permesso.");
+            return;
+        }
+        barcodeView.setVisibility(View.VISIBLE);
+        isScanning = true;
+        barcodeView.decodeContinuous(barcodeCallback);
+        barcodeView.resume();
+    }
+
+    private void stopCamera() {
+        isScanning = false;
+        if (barcodeView != null) {
+            barcodeView.pause();
+            barcodeView.setVisibility(GONE);
+        }
+    }
+
     private void fetchProductDetailsFromApi(String barcode) {
         if (barcode == null || barcode.trim().isEmpty()) {
-            Toast.makeText(this, getString(R.string.err_barcode), Toast.LENGTH_SHORT).show();
+            Toast.makeText(this,
+                    getString(R.string.err_barcode),
+                    Toast.LENGTH_SHORT).show();
             return;
         }
 
-        Log.d("OpenFoodFacts", "Fetching details for barcode: " + barcode);
-        Toast.makeText(this, getString(R.string.notify_load_product), Toast.LENGTH_SHORT).show();
+        androidx.media3.common.util.Log.d("OpenFoodFacts",
+                "Fetching details for barcode: " + barcode);
+        Toast.makeText(this,
+                getString(R.string.notify_load_product),
+                Toast.LENGTH_SHORT).show();
 
-        OpenFoodFactsApiService OffApiService = OpenFoodFactsRetrofitClient.getApiService(getApplicationContext());
+        OpenFoodFactsApiService OffApiService =
+                OpenFoodFactsRetrofitClient.getApiService(getApplicationContext());
         if (OffApiService == null) {
-            Toast.makeText(this, getString(R.string.err_api), Toast.LENGTH_SHORT).show();
+            Toast.makeText(this,
+                    getString(R.string.err_api),
+                    Toast.LENGTH_SHORT).show();
             return;
         }
 
-        if (OffApiService != null) {
-            String fieldsToFetch = "product_name_it,product_name,image_front_url,image_url,categories_tags";
-            retrofit2.Call<OpenFoodFactsProductResponse> call = OffApiService.getProductByBarcode(barcode,
-                    fieldsToFetch);
+        String fieldsToFetch =
+                "product_name_it,product_name,image_front_url,image_url,categories_tags";
+        retrofit2.Call<OpenFoodFactsProductResponse> call =
+                OffApiService.getProductByBarcode(barcode, fieldsToFetch);
 
-            call.enqueue(new Callback<OpenFoodFactsProductResponse>() {
-                @Override
-                public void onResponse(@NonNull retrofit2.Call<OpenFoodFactsProductResponse> call,
-                        @NonNull Response<OpenFoodFactsProductResponse> response) {
-                    if (response.isSuccessful() && response.body() != null) {
-                        OpenFoodFactsProductResponse apiResponse = response.body();
-                        if (apiResponse.getStatus() == 1 && apiResponse.getProduct() != null) {
-                            OpenFoodFactsProductResponse.ProductData productData = apiResponse.getProduct();
-                            String productName = productData.getProductNameIt();
-                            if (productName == null || productName.trim().isEmpty()) {
-                                productName = productData.getProductName();
-                            }
-                            currentProductNameFromApi = productName;
-                            if (productName != null && !productName.trim().isEmpty()) {
-                                editTextProductName.setText(productName);
-                            } else {
-                                editTextProductName.setText(getString(R.string.not_find));
-                                Log.w("OpenFoodFacts", "Nome prodotto non trovato per: " + barcode);
-                            }
-
-                            String imageUrl = productData.getImageFrontUrl();
-                            if (imageUrl == null || imageUrl.trim().isEmpty()) {
-                                imageUrl = productData.getImageUrl();
-                            }
-                            currentImageUrlFromApi = imageUrl;
-                            if (imageUrl != null && !imageUrl.trim().isEmpty()) {
-                                Glide.with(AddProductActivity.this)
-                                        .load(imageUrl)
-                                        .into(imageViewProduct);
-                                imageViewProduct.setVisibility(View.VISIBLE);
-                            } else {
-                                imageViewProduct.setVisibility(GONE);
-                                Log.w("OpenFoodFacts", "URL immagine non trovato per: " + barcode);
-                            }
-                            List<String> fetchedCategories = productData.getCategoriesTags();
-                            if (fetchedCategories != null && !fetchedCategories.isEmpty()) {
-                                currentProductTagsSet.clear();
-                                currentProductTagsSet.addAll(fetchedCategories);
-                                Log.d("OpenFoodFacts", "Categories fetched: " + fetchedCategories);
-                            } else {
-                                Log.d("OpenFoodFacts", "No categories found from API.");
-                            }
-                            updateChipGroup();
-                            Toast.makeText(AddProductActivity.this, getString(R.string.notify_loaded_product),
-                                    Toast.LENGTH_SHORT).show();
-
-                        } else {
-                            Log.w("OpenFoodFacts", "Prodotto non trovato o dati mancanti nell'API per: " + barcode
-                                    + ", Status: " + apiResponse.getStatus());
-                            Toast.makeText(AddProductActivity.this, "Prodotto non trovato su Open Food Facts",
-                                    Toast.LENGTH_LONG).show();
-                            clearProductApiFieldsAndData();
+        call.enqueue(new Callback<OpenFoodFactsProductResponse>() {
+            @Override
+            public void onResponse(@NonNull retrofit2.Call<OpenFoodFactsProductResponse> call,
+                                   @NonNull Response<OpenFoodFactsProductResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    OpenFoodFactsProductResponse apiResponse = response.body();
+                    if (apiResponse.getStatus() == 1 && apiResponse.getProduct() != null) {
+                        OpenFoodFactsProductResponse.ProductData productData =
+                                apiResponse.getProduct();
+                        String productName = productData.getProductNameIt();
+                        if (productName == null || productName.trim().isEmpty()) {
+                            productName = productData.getProductName();
                         }
+                        currentProductNameFromApi = productName;
+                        if (productName != null && !productName.trim().isEmpty()) {
+                            editTextProductName.setText(productName);
+                        } else {
+                            editTextProductName.setText(getString(R.string.not_find));
+                            androidx.media3.common.util.Log.w("OpenFoodFacts",
+                                    "Nome prodotto non trovato per: " + barcode);
+                        }
+
+                        String imageUrl = productData.getImageFrontUrl();
+                        if (imageUrl == null || imageUrl.trim().isEmpty()) {
+                            imageUrl = productData.getImageUrl();
+                        }
+                        currentImageUrlFromApi = imageUrl;
+                        if (imageUrl != null && !imageUrl.trim().isEmpty()) {
+                            Glide.with(AddProductActivity.this)
+                                    .load(imageUrl)
+                                    .into(imageViewProduct);
+                            imageViewProduct.setVisibility(View.VISIBLE);
+                        } else {
+                            imageViewProduct.setVisibility(GONE);
+                            androidx.media3.common.util.Log.w("OpenFoodFacts",
+                                    "URL immagine non trovato per: " + barcode);
+                        }
+                        List<String> fetchedCategories =
+                                productData.getCategoriesTags();
+                        if (fetchedCategories != null && !fetchedCategories.isEmpty()) {
+                            currentProductTagsSet.clear();
+                            currentProductTagsSet.addAll(fetchedCategories);
+                            androidx.media3.common.util.Log.d("OpenFoodFacts",
+                                    "Categories fetched: " + fetchedCategories);
+                        } else {
+                            androidx.media3.common.util.Log.d("OpenFoodFacts",
+                                    "No categories found from API.");
+                        }
+                        updateChipGroup();
+                        Toast.makeText(AddProductActivity.this,
+                                getString(R.string.notify_loaded_product),
+                                Toast.LENGTH_SHORT).show();
+
                     } else {
-                        Log.e("OpenFoodFacts",
-                                "Errore nella risposta API: " + response.code() + " - " + response.message());
-                        Toast.makeText(AddProductActivity.this, "Errore nel caricare i dati: " + response.code(),
+                        androidx.media3.common.util.Log.w("OpenFoodFacts",
+                                "Prodotto non trovato o dati mancanti nell'API per: "
+                                        + barcode + ", Status: " + apiResponse.getStatus());
+                        Toast.makeText(AddProductActivity.this,
+                                "Prodotto non trovato su Open Food Facts",
                                 Toast.LENGTH_LONG).show();
                         clearProductApiFieldsAndData();
                     }
-                }
-
-                @Override
-                public void onFailure(@NonNull retrofit2.Call<OpenFoodFactsProductResponse> call,
-                        @NonNull Throwable t) {
-                    Log.e("OpenFoodFacts", "Fallimento chiamata API", t);
-                    Toast.makeText(AddProductActivity.this, getString(R.string.err_network), Toast.LENGTH_LONG).show();
+                } else {
+                    androidx.media3.common.util.Log.e("OpenFoodFacts",
+                            "Errore nella risposta API: "
+                                    + response.code() + " - " + response.message());
+                    Toast.makeText(AddProductActivity.this,
+                            "Errore nel caricare i dati: " + response.code(),
+                            Toast.LENGTH_LONG).show();
                     clearProductApiFieldsAndData();
                 }
-            });
-        }
-
-    }
-
-    private String decodeBarcode(Bitmap bitmap) {
-        MultiFormatReader reader = new MultiFormatReader();
-        Hashtable<DecodeHintType, Object> hints = new Hashtable<>();
-        hints.put(DecodeHintType.TRY_HARDER, Boolean.TRUE);
-        hints.put(DecodeHintType.POSSIBLE_FORMATS, Arrays.asList(
-                BarcodeFormat.EAN_13,
-                BarcodeFormat.EAN_8,
-                BarcodeFormat.UPC_A,
-                BarcodeFormat.UPC_E,
-                BarcodeFormat.CODE_128,
-                BarcodeFormat.CODE_39));
-        reader.setHints(hints);
-
-        try {
-            int[] intArray = new int[bitmap.getWidth() * bitmap.getHeight()];
-            bitmap.getPixels(intArray, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
-            RGBLuminanceSource source = new RGBLuminanceSource(bitmap.getWidth(), bitmap.getHeight(), intArray);
-            BinaryBitmap binaryBitmap = new BinaryBitmap(new HybridBinarizer(source));
-            Result result = reader.decode(binaryBitmap);
-            return result.getText();
-        } catch (Exception e) {
-            // Se fallisce, proviamo con l'immagine invertita
-            try {
-                int[] intArray = new int[bitmap.getWidth() * bitmap.getHeight()];
-                bitmap.getPixels(intArray, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
-                RGBLuminanceSource source = new RGBLuminanceSource(bitmap.getWidth(), bitmap.getHeight(), intArray);
-                BinaryBitmap binaryBitmap = new BinaryBitmap(new HybridBinarizer(new InvertedLuminanceSource(source)));
-                Result result = reader.decode(binaryBitmap);
-                return result.getText();
-            } catch (Exception e2) {
-                return null;
             }
-        }
-    }
 
-    private Bitmap rotateBitmap(Bitmap bitmap, int rotationDegrees) {
-        Matrix matrix = new Matrix();
-        matrix.postRotate(rotationDegrees);
-        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+            @Override
+            public void onFailure(@NonNull retrofit2.Call<OpenFoodFactsProductResponse> call,
+                                  @NonNull Throwable t) {
+                androidx.media3.common.util.Log.e("OpenFoodFacts",
+                        "Fallimento chiamata API", t);
+                Toast.makeText(AddProductActivity.this,
+                        getString(R.string.err_network),
+                        Toast.LENGTH_LONG).show();
+                clearProductApiFieldsAndData();
+            }
+        });
     }
 
     private void clearProductApiFieldsAndData() {
@@ -902,32 +890,42 @@ public class AddProductActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         if (!isEditMode && isCameraPermissionGranted && isScanning) {
-            startCamera();
+            barcodeView.resume();
         }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        stopCamera();
+        if (barcodeView != null) {
+            barcodeView.pause();
+        }
     }
 
-    // Metodo onDestroy rimosso perché duplicato alla fine del file
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (barcodeView != null) {
+            barcodeView.pause();
+        }
+    }
 
     private void saveOrUpdateProduct() {
-        String barcode = editTextBarcode.getText() != null ? editTextBarcode.getText().toString().trim() : "";
-        String name = editTextProductName.getText() != null ? editTextProductName.getText().toString().trim() : "";
-        String quantityStr = editTextQuantity.getText() != null ? editTextQuantity.getText().toString().trim() : "";
-        String expiryDate = editTextExpiryDate.getText() != null ? editTextExpiryDate.getText().toString().trim() : "";
+        String barcode = editTextBarcode.getText() != null
+                ? editTextBarcode.getText().toString().trim() : "";
+        String name = editTextProductName.getText() != null
+                ? editTextProductName.getText().toString().trim() : "";
+        String quantityStr = editTextQuantity.getText() != null
+                ? editTextQuantity.getText().toString().trim() : "";
+        String expiryDate = editTextExpiryDate.getText() != null
+                ? editTextExpiryDate.getText().toString().trim() : "";
         String shelfLifeStr = editTextShelfLifeAfterOpening.getText() != null
-                ? editTextShelfLifeAfterOpening.getText().toString().trim()
-                : "";
+                ? editTextShelfLifeAfterOpening.getText().toString().trim() : "";
         int shelfLifeDays = -1;
         if (!shelfLifeStr.isEmpty()) {
             try {
                 shelfLifeDays = Integer.parseInt(shelfLifeStr);
-                if (shelfLifeDays < 0)
-                    shelfLifeDays = -1;
+                if (shelfLifeDays < 0) shelfLifeDays = -1;
             } catch (NumberFormatException e) {
                 editTextShelfLifeAfterOpening.setError(getString(R.string.err_days));
                 editTextShelfLifeAfterOpening.requestFocus();
@@ -935,7 +933,9 @@ public class AddProductActivity extends AppCompatActivity {
             }
         }
         if (selectedStorageInternalKey == null || selectedStorageInternalKey.isEmpty()) {
-            Toast.makeText(this, getString(R.string.err_location_select), Toast.LENGTH_SHORT).show();
+            Toast.makeText(this,
+                    getString(R.string.err_location_select),
+                    Toast.LENGTH_SHORT).show();
             return;
         }
         if (barcode.isEmpty()) {
@@ -963,7 +963,9 @@ public class AddProductActivity extends AppCompatActivity {
         }
         if (expiryDate.isEmpty()) {
             editTextExpiryDate.setError(getString(R.string.expiry_date_mandatory));
-            Toast.makeText(this, "La data di scadenza è obbligatoria", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this,
+                    "La data di scadenza è obbligatoria",
+                    Toast.LENGTH_SHORT).show();
             return;
         }
         if (name.isEmpty()) {
@@ -973,9 +975,18 @@ public class AddProductActivity extends AppCompatActivity {
                 name = barcode;
             }
         }
-        Product product = new Product(barcode, quantity, DateConverter.parseDisplayDateToTimestampMs(expiryDate), name,
-                currentImageUrlFromApi, selectedStorageInternalKey, currentOpenedDate, shelfLifeDays);
-        Log.d("AddProductActivity", "Salvataggio prodotto: " + product.toString());
+        Product product = new Product(
+                barcode,
+                quantity,
+                DateConverter.parseDisplayDateToTimestampMs(expiryDate),
+                name,
+                currentImageUrlFromApi,
+                selectedStorageInternalKey,
+                currentOpenedDate,
+                shelfLifeDays
+        );
+        androidx.media3.common.util.Log.d("AddProductActivity",
+                "Salvataggio prodotto: " + product.toString());
         List<String> tagsToSave = new ArrayList<>(currentProductTagsSet);
         if (isEditMode) {
             product.setId(currentProductId);
@@ -983,6 +994,7 @@ public class AddProductActivity extends AppCompatActivity {
         } else {
             addProductViewModel.insert(product, tagsToSave);
         }
+
         clearProductApiFieldsAndData();
         Intent resultIntent = new Intent();
         resultIntent.putExtra(NEW_PRODUCT_NAME, name);
@@ -999,23 +1011,23 @@ public class AddProductActivity extends AppCompatActivity {
             updateLabel();
         };
 
-        new DatePickerDialog(AddProductActivity.this, dateSetListener,
+        new DatePickerDialog(
+                AddProductActivity.this,
+                dateSetListener,
                 calendar.get(Calendar.YEAR),
                 calendar.get(Calendar.MONTH),
-                calendar.get(Calendar.DAY_OF_MONTH))
-                .show();
+                calendar.get(Calendar.DAY_OF_MONTH)
+        ).show();
     }
 
     private void updateLabel() {
-        editTextExpiryDate.setText(DateConverter.formatTimestampToDisplayDate(calendar.getTimeInMillis()));
+        editTextExpiryDate.setText(
+                DateConverter.formatTimestampToDisplayDate(calendar.getTimeInMillis()));
     }
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (cameraExecutor != null) {
-            cameraExecutor.shutdown();
-        }
+    public boolean onSupportNavigateUp() {
+        onBackPressed();
+        return true;
     }
-
 }
