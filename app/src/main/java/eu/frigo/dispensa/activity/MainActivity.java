@@ -52,6 +52,7 @@ import eu.frigo.dispensa.data.category.ProductWithCategoryDefinitions;
 import eu.frigo.dispensa.data.product.Product;
 import eu.frigo.dispensa.data.storage.StorageLocation;
 import eu.frigo.dispensa.ui.ProductListFragment;
+import eu.frigo.dispensa.ui.SettingsFragment;
 import eu.frigo.dispensa.viewmodel.LocationViewModel;
 import eu.frigo.dispensa.viewmodel.ProductViewModel;
 
@@ -168,11 +169,33 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
+    private void setDefaultLocale(){
+        String locale;
+        locale = getResources().getConfiguration().getLocales().get(0).getLanguage();
+        String[] languages = getResources().getStringArray(R.array.language_values);
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        if(prefs.getString(SettingsFragment.KEY_LANGUAGE_PREFERENCE,null)==null){
+            String cl = null;
+            for(String l:languages)
+                if(l.equalsIgnoreCase(locale))
+                    cl = l;
+            if(cl!=null) {
+                prefs.edit().putString(SettingsFragment.KEY_LANGUAGE_PREFERENCE, cl).apply();
+            }else{
+                Log.d("MainActivity","Setting default language to English");
+                prefs.edit().putString(SettingsFragment.KEY_LANGUAGE_PREFERENCE, "en").apply();
+            }
+            Log.i("MainActivity","Set default Locale: "+locale);
+        }
+    }
+
+
     @SuppressLint("UnsafeOptInUsageError")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         askForNotificationPermission();
+        setDefaultLocale();
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
         mainCoordinatorLayout = findViewById(R.id.main_coordinator_layout);
@@ -193,8 +216,7 @@ public class MainActivity extends AppCompatActivity
         new TabLayoutMediator(tabLayout, viewPager, (tab, position) -> {
             StorageLocation currentLocation = locationViewPagerAdapter.getLocationAt(position);
             if (currentLocation != null) {
-                Log.d("MainActivity",
-                        "Nome della posizione: " + currentLocation.getLocalizedName(getApplicationContext()));
+                Log.d("MainActivity", "Nome della posizione: " + currentLocation.getLocalizedName(getApplicationContext()));
                 tab.setText(currentLocation.getLocalizedName(getApplicationContext()));
             }
         }).attach();
