@@ -84,46 +84,33 @@
 
                 <!-- Pulsante Scansione -->
                 <ImageButton
-                    android:id="@+id/buttonScanCamera"
+                    android:id="@+id/buttonScanBarcodeCamera"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:src="@android:drawable/ic_menu_camera"
-                    android:contentDescription="Scansiona prodotto"
+                    android:contentDescription="@string/scan_barcode_description"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:padding="8dp"/>
 
                 <ImageButton
-                    android:id="@+id/buttonScanGallery"
+                    android:id="@+id/buttonScanBarcodeGallery"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:src="@android:drawable/ic_menu_gallery"
-                    android:contentDescription="Seleziona immagine"
+                    android:contentDescription="@string/scan_barcode_description"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:visibility="visible"
                     android:padding="8dp"/>
             </LinearLayout>
 
-            <FrameLayout
-                android:id="@+id/layoutScannerContainer"
+            <com.journeyapps.barcodescanner.DecoratedBarcodeView
+                android:id="@+id/previewViewBarcode"
                 android:layout_width="match_parent"
                 android:layout_height="300dp"
                 android:layout_marginTop="8dp"
-                android:visibility="gone">
+                android:visibility="gone"
+                />
 
-                <androidx.camera.view.PreviewView
-                    android:id="@+id/previewViewScanner"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent" />
-
-                <View
-                    android:id="@+id/viewfinder"
-                    android:layout_width="match_parent"
-                    android:layout_height="100dp"
-                    android:layout_gravity="center"
-                    android:layout_marginStart="32dp"
-                    android:layout_marginEnd="32dp"
-                    android:background="@drawable/viewfinder_border" />
-            </FrameLayout>
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/textFieldProductNameLayout"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
