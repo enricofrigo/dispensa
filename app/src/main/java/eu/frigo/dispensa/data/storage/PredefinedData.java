@@ -1,18 +1,13 @@
 package eu.frigo.dispensa.data.storage;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 
 import androidx.media3.common.util.Log;
-import androidx.preference.PreferenceManager;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 import eu.frigo.dispensa.R;
-import eu.frigo.dispensa.ui.SettingsFragment;
-import eu.frigo.dispensa.util.LocaleHelper;
 
 public class PredefinedData {
 
@@ -50,4 +45,15 @@ public class PredefinedData {
                 return null;
         }
     }
+
+    public static Integer getDisplayLocationIcon(String internalKey) {
+        return switch (internalKey) {
+            case PredefinedData.LOCATION_ALL -> R.drawable.all_asterisk_24_white ;
+            case PredefinedData.LOCATION_PANTRY -> R.drawable.pantry_24px;
+            case PredefinedData.LOCATION_FRIDGE -> R.drawable.ic_fridge;
+            case PredefinedData.LOCATION_FREEZER -> R.drawable.freezer_24;
+            default -> null;
+        };
+    }
+
 }

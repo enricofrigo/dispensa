@@ -105,46 +105,6 @@ public class ManageLocationsFragment extends Fragment implements
         }
     }
 
-    private void showAddEditLocationDialog(@Nullable final StorageLocation locationToEdit) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
-        builder.setTitle(locationToEdit == null ? getString(R.string.add_new_location) : getString(R.string.edit_location));
-
-        final EditText input = new EditText(requireContext());
-        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_WORDS);
-        if (locationToEdit != null) {
-            input.setText(locationToEdit.name);
-            input.setSelection(input.getText().length());
-        } else {
-            input.setHint(getString(R.string.hint_new_location));
-        }
-        builder.setView(input);
-
-        builder.setPositiveButton(locationToEdit == null ? getString(R.string.add) : getString(R.string.save), (dialog, which) -> {
-            String locationName = input.getText().toString().trim();
-            if (locationName.isEmpty()) {
-                Toast.makeText(getContext(), getString(R.string.error_empty_location), Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            if (locationToEdit == null) {
-                String internalKey = "CUSTOM_" + locationName.toUpperCase().replaceAll("\\s+", "_") + "_" + System.currentTimeMillis() % 10000;
-                int currentMaxOrder = adapter.getItemCount();
-                StorageLocation newLocation = new StorageLocation(locationName, internalKey, currentMaxOrder, false, false);
-                locationViewModel.insert(newLocation);
-                Toast.makeText(getContext(), String.format(getString(R.string.notify_add_location), locationName), Toast.LENGTH_SHORT).show();
-            } else {
-                if (!locationToEdit.name.equals(locationName)) {
-                    locationToEdit.name = locationName;
-                    locationViewModel.update(locationToEdit);
-                    Toast.makeText(getContext(), getString(R.string.notify_update_location), Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
-        builder.setNegativeButton("Annulla", (dialog, which) -> dialog.cancel());
-        builder.show();
-    }
-
-
     @Override
     public void onEditLocation(StorageLocation location) {
         showEditLocationDialog(location);

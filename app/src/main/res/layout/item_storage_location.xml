@@ -20,6 +20,15 @@
 
     <!-- Potresti aggiungere un'icona per il drag handle qui se usi ItemTouchHelper per riordinare -->
     <ImageView
+        android:id="@+id/button_default"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_default_select"
+        app:tint="?android:attr/textColorSecondary"
+        android:padding="8dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:layout_marginStart="8dp"/>
+    <ImageView
         android:id="@+id/button_edit_location"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

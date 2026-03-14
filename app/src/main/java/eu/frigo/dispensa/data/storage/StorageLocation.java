@@ -104,6 +104,13 @@ public class StorageLocation {
         this.isPredefined = isPredefined;
     }
 
+    public Integer getIcon(){
+        if(isPredefined)
+            return PredefinedData.getDisplayLocationIcon(internalKey);
+        else
+            return null;
+    }
+
     @Override
     public String toString() {
         return "StorageLocation{" +
