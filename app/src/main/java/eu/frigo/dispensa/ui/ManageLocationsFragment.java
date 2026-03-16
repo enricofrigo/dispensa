@@ -116,10 +116,6 @@ public class ManageLocationsFragment extends Fragment implements
             Toast.makeText(getContext(), getString(R.string.error_delete_default_location), Toast.LENGTH_SHORT).show();
             return;
         }
-        if (location.isDefault) {
-            Toast.makeText(getContext(), getString(R.string.error_delete_default_location), Toast.LENGTH_SHORT).show();
-            return;
-        }
 
         new AlertDialog.Builder(requireContext())
                 .setTitle(getString(R.string.delete_location_confirmation_title))

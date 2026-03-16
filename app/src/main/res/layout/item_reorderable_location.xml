@@ -36,16 +36,6 @@
         android:textAppearance="?attr/textAppearanceListItem"
         tools:text="Nome Location" />
 
-    <RadioButton
-        android:id="@+id/radioButton_default_location"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        android:clickable="false"
-        android:focusable="false"
-        tools:checked="true"
-        android:contentDescription="Set as default" />
-
     <!-- Potresti aggiungere un pulsante di modifica/eliminazione qui se lo desideri -->
     <ImageButton
         android:id="@+id/button_edit_location_item"
@@ -65,6 +55,15 @@
         app:tint="?attr/colorError"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/delete_location"
+        android:layout_marginStart="8dp"/>
+
+    <ImageButton
+        android:id="@+id/button_default_location"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_default_select"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Set as default"
         android:layout_marginStart="8dp"/>
 
 </LinearLayout>
