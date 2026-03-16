@@ -112,7 +112,7 @@
     <string name="version_format_detailed">Version: %1$s (Build: %2$s)</string>
     <string name="version_format_simple">Version: %1$s</string>
     <string name="version_not_available">Version: N/D</string>
-    <string name="loading_version">Version: Loading...</string>
+    <string name="loading_version">Version: Loading…</string>
 
     <!-- Notifiche -->
     <string name="expiry_notification_channel_name">expiry_notification_channel_name</string>
@@ -182,5 +182,6 @@
     <string name="import_error">Error during data import: %s</string>
     <string name="import_confirm_title">Import confirmation</string>
     <string name="import_confirm_message">This operation will overwrite all current data with the ones into selected file. Continue?</string>
+    <string name="set_as_default">Set as default</string>
 
 </resources>
