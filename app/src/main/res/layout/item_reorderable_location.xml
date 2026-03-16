@@ -63,7 +63,7 @@
         android:layout_height="wrap_content"
         android:src="@drawable/ic_default_select"
         android:background="?attr/selectableItemBackgroundBorderless"
-        android:contentDescription="Set as default"
+        android:contentDescription="@string/set_as_default"
         android:layout_marginStart="8dp"/>
 
 </LinearLayout>

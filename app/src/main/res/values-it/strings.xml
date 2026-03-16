@@ -182,5 +182,6 @@ I prodotti in questa location potrebbero dover essere riassegnati.</string>
     <string name="import_error">Errore durante l\'importazione: %s</string>
     <string name="import_confirm_title">Conferma Importazione</string>
     <string name="import_confirm_message">Questa operazione sostituirà tutti i dati attuali con quelli del file selezionato. Vuoi continuare?</string>
+    <string name="set_as_default">Seleziona default</string>
 
 </resources>
