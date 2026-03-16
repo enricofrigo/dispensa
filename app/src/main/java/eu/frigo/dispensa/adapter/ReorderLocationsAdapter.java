@@ -73,11 +73,9 @@ public class ReorderLocationsAdapter extends RecyclerView.Adapter<ReorderLocatio
             }
             holder.editButton.setVisibility(View.GONE);
             holder.deleteButton.setVisibility(View.GONE);
-            holder.defaultButton.setVisibility(View.GONE);
             holder.dragHandle.setOnTouchListener(null);
         } else {
             holder.dragHandle.setVisibility(View.VISIBLE);
-            holder.defaultButton.setVisibility(View.VISIBLE);
             
             if (location.isPredefined()) {
                 holder.editButton.setVisibility(View.GONE);
@@ -105,18 +103,6 @@ public class ReorderLocationsAdapter extends RecyclerView.Adapter<ReorderLocatio
                 holder.locationIcon.setVisibility(View.GONE);
             }
 
-            if (location.isDefault()) {
-                holder.defaultButton.setColorFilter(Color.WHITE);
-            } else {
-                holder.defaultButton.setColorFilter(Color.GRAY);
-            }
-            
-            holder.defaultButton.setOnClickListener(v -> {
-                if (interactionListener != null && !location.isDefault()) {
-                    interactionListener.onSetAsDefault(location);
-                }
-            });
-
             holder.dragHandle.setOnTouchListener((v, event) -> {
                 if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
                     if (dragStartListener != null) {
@@ -126,6 +112,19 @@ public class ReorderLocationsAdapter extends RecyclerView.Adapter<ReorderLocatio
                 return false;
             });
         }
+
+        holder.defaultButton.setVisibility(View.VISIBLE);
+        if (location.isDefault()) {
+            holder.defaultButton.setColorFilter(Color.WHITE);
+        } else {
+            holder.defaultButton.setColorFilter(Color.GRAY);
+        }
+        
+        holder.defaultButton.setOnClickListener(v -> {
+            if (interactionListener != null && !location.isDefault()) {
+                interactionListener.onSetAsDefault(location);
+            }
+        });
     }
 
     @Override
