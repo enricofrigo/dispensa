@@ -30,6 +30,7 @@ import androidx.media3.common.util.Log;
 import androidx.preference.PreferenceManager;
 import androidx.viewpager2.widget.ViewPager2;
 
+import android.widget.ImageButton;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
@@ -209,6 +210,14 @@ public class MainActivity extends AppCompatActivity
 
         viewPager = findViewById(R.id.viewPager);
         tabLayout = findViewById(R.id.tabLayout);
+        ImageButton btnManageLocations = findViewById(R.id.button_manage_locations);
+        if (btnManageLocations != null) {
+            btnManageLocations.setOnClickListener(v -> {
+                Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
+                intent.putExtra("OPEN_MANAGE_LOCATIONS", true);
+                startActivity(intent);
+            });
+        }
 
         locationViewModel = new ViewModelProvider(this).get(LocationViewModel.class);
         locationViewPagerAdapter = new LocationViewPagerAdapter(this);

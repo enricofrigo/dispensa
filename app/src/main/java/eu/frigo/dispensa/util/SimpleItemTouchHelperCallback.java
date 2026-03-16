@@ -33,6 +33,9 @@ public class SimpleItemTouchHelperCallback extends ItemTouchHelper.Callback {
 
     @Override
     public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
+        if (viewHolder.getAdapterPosition() == 0) {
+            return makeMovementFlags(0, 0);
+        }
         int dragFlags = ItemTouchHelper.UP | ItemTouchHelper.DOWN;
         return makeMovementFlags(dragFlags, 0);
     }
@@ -40,6 +43,9 @@ public class SimpleItemTouchHelperCallback extends ItemTouchHelper.Callback {
     @Override
     public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder,
                           @NonNull RecyclerView.ViewHolder target) {
+        if (target.getAdapterPosition() == 0) {
+            return false;
+        }
         mAdapter.onItemMove(viewHolder.getAdapterPosition(), target.getAdapterPosition());
         return true;
     }

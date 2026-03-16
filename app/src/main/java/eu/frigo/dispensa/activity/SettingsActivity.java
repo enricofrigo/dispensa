@@ -56,10 +56,18 @@ public class SettingsActivity extends AppCompatActivity {
         });
 
         if (savedInstanceState == null) {
-            getSupportFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.settings_container, new SettingsFragment())
-                    .commit();
+            boolean openManageLocations = getIntent().getBooleanExtra("OPEN_MANAGE_LOCATIONS", false);
+            if (openManageLocations) {
+                getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.settings_container, new eu.frigo.dispensa.ui.ManageLocationsFragment())
+                        .commit();
+            } else {
+                getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.settings_container, new SettingsFragment())
+                        .commit();
+            }
         }
     }
 
