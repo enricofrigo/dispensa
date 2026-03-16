@@ -1,0 +1,2 @@
+• new Location Tab UI management
+• add default location on open
