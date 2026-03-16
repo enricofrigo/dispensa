@@ -93,7 +93,16 @@ public class ManageLocationsFragment extends Fragment implements
     private void observeLocations() {
         locationViewModel.getAllLocationsSorted().observe(getViewLifecycleOwner(), locations -> {
             if (locations != null) {
-                adapter.submitList(new ArrayList<>(locations));
+                List<StorageLocation> listWithAll = new ArrayList<>();
+                StorageLocation allTab = new StorageLocation();
+                allTab.setInternalKey(LocationViewModel.ALL_PRODUCTS_INTERNAL_KEY);
+                allTab.setId(LocationViewModel.ALL_PRODUCTS_TAB_ID);
+                allTab.setPredefined(true);
+                allTab.setName(getString(R.string.tab_title_all_products));
+                listWithAll.add(allTab);
+                
+                listWithAll.addAll(locations);
+                adapter.submitList(listWithAll);
             }
         });
     }

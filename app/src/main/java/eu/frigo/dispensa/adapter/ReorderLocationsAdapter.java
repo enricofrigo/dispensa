@@ -56,53 +56,76 @@ public class ReorderLocationsAdapter extends RecyclerView.Adapter<ReorderLocatio
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         StorageLocation location = locations.get(position);
         Log.d("ReorderLocationsAdapter", position + "onBindViewHolder: " + location);
-        holder.locationName.setText(location.getLocalizedName(holder.itemView.getContext()));
+        String locationDisplayName = location.getLocalizedName(holder.itemView.getContext());
+        if (location.getIcon() != null) {
+            holder.locationName.setText(String.format("(%s)", locationDisplayName));
+        } else {
+            holder.locationName.setText(locationDisplayName);
+        }
 
-        if (location.isPredefined()) {
+        if (location.getId() == eu.frigo.dispensa.viewmodel.LocationViewModel.ALL_PRODUCTS_TAB_ID) {
+            holder.dragHandle.setVisibility(View.INVISIBLE);
+            holder.locationIcon.setVisibility(View.VISIBLE);
+            if (location.getIcon() != null) {
+                holder.locationIcon.setImageResource(location.getIcon());
+            } else {
+                holder.locationIcon.setImageResource(R.drawable.ic_view_list); // Fallback icon
+            }
             holder.editButton.setVisibility(View.GONE);
             holder.deleteButton.setVisibility(View.GONE);
+            holder.defaultButton.setVisibility(View.GONE);
+            holder.dragHandle.setOnTouchListener(null);
         } else {
-            holder.editButton.setVisibility(View.VISIBLE);
-            holder.deleteButton.setVisibility(View.VISIBLE);
-            holder.editButton.setOnClickListener(v -> {
-                if (interactionListener != null) {
-                    interactionListener.onEditLocation(location);
+            holder.dragHandle.setVisibility(View.VISIBLE);
+            holder.defaultButton.setVisibility(View.VISIBLE);
+            
+            if (location.isPredefined()) {
+                holder.editButton.setVisibility(View.GONE);
+                holder.deleteButton.setVisibility(View.GONE);
+            } else {
+                holder.editButton.setVisibility(View.VISIBLE);
+                holder.deleteButton.setVisibility(View.VISIBLE);
+                holder.editButton.setOnClickListener(v -> {
+                    if (interactionListener != null) {
+                        interactionListener.onEditLocation(location);
+                    }
+                });
+
+                holder.deleteButton.setOnClickListener(v -> {
+                    if (interactionListener != null) {
+                        interactionListener.onDeleteLocation(location);
+                    }
+                });
+            }
+
+            if (location.isPredefined() && location.getIcon() != null) {
+                holder.locationIcon.setVisibility(View.VISIBLE);
+                holder.locationIcon.setImageResource(location.getIcon());
+            } else {
+                holder.locationIcon.setVisibility(View.GONE);
+            }
+
+            if (location.isDefault()) {
+                holder.defaultButton.setColorFilter(Color.WHITE);
+            } else {
+                holder.defaultButton.setColorFilter(Color.GRAY);
+            }
+            
+            holder.defaultButton.setOnClickListener(v -> {
+                if (interactionListener != null && !location.isDefault()) {
+                    interactionListener.onSetAsDefault(location);
                 }
             });
 
-            holder.deleteButton.setOnClickListener(v -> {
-                if (interactionListener != null) {
-                    interactionListener.onDeleteLocation(location);
+            holder.dragHandle.setOnTouchListener((v, event) -> {
+                if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
+                    if (dragStartListener != null) {
+                        dragStartListener.onStartDrag(holder);
+                    }
                 }
+                return false;
             });
         }
-        if (location.isPredefined() && location.getIcon() != null) {
-            holder.locationIcon.setVisibility(View.VISIBLE);
-            holder.locationIcon.setImageResource(location.getIcon());
-        } else {
-            holder.locationIcon.setVisibility(View.GONE);
-        }
-
-        if (location.isDefault()) {
-            holder.defaultButton.setColorFilter(Color.WHITE);
-        } else {
-            holder.defaultButton.setColorFilter(Color.GRAY);
-        }
-
-        holder.defaultButton.setOnClickListener(v -> {
-            if (interactionListener != null && !location.isDefault()) {
-                interactionListener.onSetAsDefault(location);
-            }
-        });
-
-        holder.dragHandle.setOnTouchListener((v, event) -> {
-            if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
-                if (dragStartListener != null) {
-                    dragStartListener.onStartDrag(holder);
-                }
-            }
-            return false;
-        });
     }
 
     @Override
