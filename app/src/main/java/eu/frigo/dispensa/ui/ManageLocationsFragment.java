@@ -93,11 +93,20 @@ public class ManageLocationsFragment extends Fragment implements
     private void observeLocations() {
         locationViewModel.getAllLocationsSorted().observe(getViewLifecycleOwner(), locations -> {
             if (locations != null) {
+                boolean hasDefault = false;
+                for (StorageLocation loc : locations) {
+                    if (loc.isDefault()) {
+                        hasDefault = true;
+                        break;
+                    }
+                }
+
                 List<StorageLocation> listWithAll = new ArrayList<>();
                 StorageLocation allTab = new StorageLocation();
                 allTab.setInternalKey(LocationViewModel.ALL_PRODUCTS_INTERNAL_KEY);
                 allTab.setId(LocationViewModel.ALL_PRODUCTS_TAB_ID);
                 allTab.setPredefined(true);
+                allTab.setDefault(!hasDefault); // Se non c'è nessun default esplicitato, "Tutti" è il default
                 allTab.setName(getString(R.string.tab_title_all_products));
                 listWithAll.add(allTab);
                 
