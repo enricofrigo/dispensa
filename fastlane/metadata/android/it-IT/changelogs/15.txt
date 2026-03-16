@@ -1,0 +1,2 @@
+• nuova gestione delle Location
+• aggiunta gestione della location di default all'apertura
