@@ -62,6 +62,7 @@ public class MainActivity extends AppCompatActivity
     private ProductViewModel productViewModel;
     private final List<ProductWithCategoryDefinitions> allProductsList = new ArrayList<>();
     private SearchView searchView;
+    private boolean isInitialTabSet = false;
     private FloatingActionButton fab;
     private CoordinatorLayout mainCoordinatorLayout;
     private int originalFabBottomMargin;
@@ -104,16 +105,17 @@ public class MainActivity extends AppCompatActivity
                         try (OutputStream os = getContentResolver().openOutputStream(uri)) {
                             BackupManager backupManager = new BackupManager(this);
                             backupManager.exportData(os);
-                            runOnUiThread(() -> Toast.makeText(this, R.string.export_success, Toast.LENGTH_SHORT).show());
+                            runOnUiThread(
+                                    () -> Toast.makeText(this, R.string.export_success, Toast.LENGTH_SHORT).show());
                         } catch (Exception e) {
                             Log.e("MainActivity", "Export failed", e);
                             runOnUiThread(() -> Toast
-                                    .makeText(this, getString(R.string.export_error, e.getMessage()), Toast.LENGTH_LONG).show());
+                                    .makeText(this, getString(R.string.export_error, e.getMessage()), Toast.LENGTH_LONG)
+                                    .show());
                         }
                     });
                 }
             });
-
 
     private final ActivityResultLauncher<String[]> importLauncher = registerForActivityResult(
             new ActivityResultContracts.OpenDocument(), uri -> {
@@ -121,8 +123,7 @@ public class MainActivity extends AppCompatActivity
                     new AlertDialog.Builder(this)
                             .setTitle(R.string.import_confirm_title)
                             .setMessage(R.string.import_confirm_message)
-                            .setPositiveButton(R.string.ok, (dialog, which) ->
-                                    performImport(uri))
+                            .setPositiveButton(R.string.ok, (dialog, which) -> performImport(uri))
                             .setNegativeButton(R.string.cancel, null)
                             .show();
                 }
@@ -169,26 +170,25 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    private void setDefaultLocale(){
+    private void setDefaultLocale() {
         String locale;
         locale = getResources().getConfiguration().getLocales().get(0).getLanguage();
         String[] languages = getResources().getStringArray(R.array.language_values);
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-        if(prefs.getString(SettingsFragment.KEY_LANGUAGE_PREFERENCE,null)==null){
+        if (prefs.getString(SettingsFragment.KEY_LANGUAGE_PREFERENCE, null) == null) {
             String cl = null;
-            for(String l:languages)
-                if(l.equalsIgnoreCase(locale))
+            for (String l : languages)
+                if (l.equalsIgnoreCase(locale))
                     cl = l;
-            if(cl!=null) {
+            if (cl != null) {
                 prefs.edit().putString(SettingsFragment.KEY_LANGUAGE_PREFERENCE, cl).apply();
-            }else{
-                Log.d("MainActivity","Setting default language to English");
+            } else {
+                Log.d("MainActivity", "Setting default language to English");
                 prefs.edit().putString(SettingsFragment.KEY_LANGUAGE_PREFERENCE, "en").apply();
             }
-            Log.i("MainActivity","Set default Locale: "+locale);
+            Log.i("MainActivity", "Set default Locale: " + locale);
         }
     }
-
 
     @SuppressLint("UnsafeOptInUsageError")
     @Override
@@ -216,8 +216,9 @@ public class MainActivity extends AppCompatActivity
         new TabLayoutMediator(tabLayout, viewPager, (tab, position) -> {
             StorageLocation currentLocation = locationViewPagerAdapter.getLocationAt(position);
             if (currentLocation != null) {
-                Log.d("MainActivity", "Nome della posizione: " + currentLocation.getLocalizedName(getApplicationContext()));
-                if(currentLocation.isPredefined)
+                Log.d("MainActivity",
+                        "Nome della posizione: " + currentLocation.getLocalizedName(getApplicationContext()));
+                if (currentLocation.isPredefined)
                     tab.setIcon(currentLocation.getIcon());
                 else
                     tab.setText(currentLocation.getLocalizedName(getApplicationContext()));
@@ -273,6 +274,18 @@ public class MainActivity extends AppCompatActivity
         locationViewModel.getLocationsForTabs().observe(this, locations -> {
             if (locations != null) {
                 locationViewPagerAdapter.setLocations(locations);
+                if (!isInitialTabSet) {
+                    isInitialTabSet = true;
+                    int defaultIndex = 0; // Default to 'All' tab
+                    for (int i = 0; i < locations.size(); i++) {
+                        if (locations.get(i).isDefault()) {
+                            defaultIndex = i;
+                            break;
+                        }
+                    }
+                    final int indexToSelect = defaultIndex;
+                    viewPager.post(() -> viewPager.setCurrentItem(indexToSelect, false));
+                }
             }
         });
     }

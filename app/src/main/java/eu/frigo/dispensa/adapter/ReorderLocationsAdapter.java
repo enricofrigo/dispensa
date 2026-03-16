@@ -8,8 +8,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.RadioButton;
 import android.widget.TextView;
+import android.graphics.Color;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import java.util.Collections;
@@ -83,8 +83,13 @@ public class ReorderLocationsAdapter extends RecyclerView.Adapter<ReorderLocatio
             holder.locationIcon.setVisibility(View.GONE);
         }
 
-        holder.defaultRadioButton.setChecked(location.isDefault());
-        holder.defaultRadioButton.setOnClickListener(v -> {
+        if (location.isDefault()) {
+            holder.defaultButton.setColorFilter(Color.WHITE);
+        } else {
+            holder.defaultButton.setColorFilter(Color.GRAY);
+        }
+
+        holder.defaultButton.setOnClickListener(v -> {
             if (interactionListener != null && !location.isDefault()) {
                 interactionListener.onSetAsDefault(location);
             }
@@ -132,7 +137,7 @@ public class ReorderLocationsAdapter extends RecyclerView.Adapter<ReorderLocatio
         TextView locationName;
         ImageView dragHandle;
         ImageView locationIcon;
-        RadioButton defaultRadioButton;
+        ImageButton defaultButton;
         ImageButton editButton;
         ImageButton deleteButton;
 
@@ -141,7 +146,7 @@ public class ReorderLocationsAdapter extends RecyclerView.Adapter<ReorderLocatio
             locationName = itemView.findViewById(R.id.textView_location_name_reorder);
             dragHandle = itemView.findViewById(R.id.imageView_drag_handle);
             locationIcon = itemView.findViewById(R.id.imageView_location_icon);
-            defaultRadioButton = itemView.findViewById(R.id.radioButton_default_location);
+            defaultButton = itemView.findViewById(R.id.button_default_location);
             editButton = itemView.findViewById(R.id.button_edit_location_item);
             deleteButton = itemView.findViewById(R.id.button_delete_location_item);
         }
