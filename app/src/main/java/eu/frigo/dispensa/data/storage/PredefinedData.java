@@ -28,27 +28,30 @@ public class PredefinedData {
     public static String getDisplayLocationName(Context context, String locationKey) {
         String s = context.getResources().getConfiguration().getLocales().toLanguageTags();
         Log.d("locale", "getDisplayLocationName: "+s);
-        switch (locationKey) {
-            case LOCATION_FRIDGE:
-                Log.d("locale", "getDisplayLocationTabName: "+context.getString(R.string.default_location_fridge_entry));
-               return context.getString(R.string.default_location_fridge_entry);
-            case LOCATION_FREEZER:
-                Log.d("locale", "getDisplayLocationTabName: "+context.getString(R.string.default_location_freezer_entry));
-                return context.getString(R.string.default_location_freezer_entry);
-            case LOCATION_PANTRY:
-                Log.d("locale", "getDisplayLocationTabName: "+context.getString(R.string.default_location_pantry_entry));
-                return context.getString(R.string.default_location_pantry_entry);
-            case LOCATION_ALL:
-                Log.d("locale", "getDisplayLocationTabName: "+context.getString(R.string.tab_title_all_products));
-                return context.getString(R.string.tab_title_all_products);
-            default:
-                return null;
-        }
+        return switch (locationKey) {
+            case LOCATION_FRIDGE -> {
+                Log.d("locale", "getDisplayLocationTabName: " + context.getString(R.string.default_location_fridge_entry));
+                yield context.getString(R.string.default_location_fridge_entry);
+            }
+            case LOCATION_FREEZER -> {
+                Log.d("locale", "getDisplayLocationTabName: " + context.getString(R.string.default_location_freezer_entry));
+                yield context.getString(R.string.default_location_freezer_entry);
+            }
+            case LOCATION_PANTRY -> {
+                Log.d("locale", "getDisplayLocationTabName: " + context.getString(R.string.default_location_pantry_entry));
+                yield context.getString(R.string.default_location_pantry_entry);
+            }
+            case LOCATION_ALL -> {
+                Log.d("locale", "getDisplayLocationTabName: " + context.getString(R.string.tab_title_all_products));
+                yield context.getString(R.string.tab_title_all_products);
+            }
+            default -> null;
+        };
     }
 
     public static Integer getDisplayLocationIcon(String internalKey) {
         return switch (internalKey) {
-            case PredefinedData.LOCATION_ALL -> R.drawable.all_asterisk_24_white ;
+            case PredefinedData.LOCATION_ALL -> R.drawable.location_home_24px ;
             case PredefinedData.LOCATION_PANTRY -> R.drawable.pantry_24px;
             case PredefinedData.LOCATION_FRIDGE -> R.drawable.ic_fridge;
             case PredefinedData.LOCATION_FREEZER -> R.drawable.freezer_24;
