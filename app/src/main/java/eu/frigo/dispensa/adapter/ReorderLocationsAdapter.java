@@ -8,6 +8,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.RadioButton;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -28,14 +29,16 @@ public class ReorderLocationsAdapter extends RecyclerView.Adapter<ReorderLocatio
 
     public interface OnLocationInteractionListener {
         void onEditLocation(StorageLocation location);
+
         void onDeleteLocation(StorageLocation location);
+
         void onSetAsDefault(StorageLocation location);
 
     }
 
     public ReorderLocationsAdapter(List<StorageLocation> locations,
-                                   OnStartDragListener dragStartListener,
-                                   OnLocationInteractionListener interactionListener) {
+            OnStartDragListener dragStartListener,
+            OnLocationInteractionListener interactionListener) {
         this.locations = locations;
         this.dragStartListener = dragStartListener;
         this.interactionListener = interactionListener;
@@ -52,7 +55,7 @@ public class ReorderLocationsAdapter extends RecyclerView.Adapter<ReorderLocatio
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         StorageLocation location = locations.get(position);
-        Log.d("ReorderLocationsAdapter", position+"onBindViewHolder: "+location);
+        Log.d("ReorderLocationsAdapter", position + "onBindViewHolder: " + location);
         holder.locationName.setText(location.getLocalizedName(holder.itemView.getContext()));
 
         if (location.isPredefined()) {
@@ -73,6 +76,20 @@ public class ReorderLocationsAdapter extends RecyclerView.Adapter<ReorderLocatio
                 }
             });
         }
+        if (location.isPredefined() && location.getIcon() != null) {
+            holder.locationIcon.setVisibility(View.VISIBLE);
+            holder.locationIcon.setImageResource(location.getIcon());
+        } else {
+            holder.locationIcon.setVisibility(View.GONE);
+        }
+
+        holder.defaultRadioButton.setChecked(location.isDefault());
+        holder.defaultRadioButton.setOnClickListener(v -> {
+            if (interactionListener != null && !location.isDefault()) {
+                interactionListener.onSetAsDefault(location);
+            }
+        });
+
         holder.dragHandle.setOnTouchListener((v, event) -> {
             if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
                 if (dragStartListener != null) {
@@ -114,12 +131,17 @@ public class ReorderLocationsAdapter extends RecyclerView.Adapter<ReorderLocatio
     static class ViewHolder extends RecyclerView.ViewHolder {
         TextView locationName;
         ImageView dragHandle;
+        ImageView locationIcon;
+        RadioButton defaultRadioButton;
         ImageButton editButton;
         ImageButton deleteButton;
+
         ViewHolder(View itemView) {
             super(itemView);
             locationName = itemView.findViewById(R.id.textView_location_name_reorder);
             dragHandle = itemView.findViewById(R.id.imageView_drag_handle);
+            locationIcon = itemView.findViewById(R.id.imageView_location_icon);
+            defaultRadioButton = itemView.findViewById(R.id.radioButton_default_location);
             editButton = itemView.findViewById(R.id.button_edit_location_item);
             deleteButton = itemView.findViewById(R.id.button_delete_location_item);
         }

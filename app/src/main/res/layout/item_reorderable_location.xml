@@ -17,14 +17,34 @@
         app:tint="?attr/colorControlNormal"
         android:contentDescription="@string/drag_handle_description" />
 
+    <ImageView
+        android:id="@+id/imageView_location_icon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginStart="8dp"
+        app:tint="?attr/colorControlNormal"
+        android:visibility="gone"
+        tools:src="@drawable/ic_fridge"
+        android:importantForAccessibility="no" />
+
     <TextView
         android:id="@+id/textView_location_name_reorder"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:layout_marginStart="16dp"
+        android:layout_marginStart="8dp"
         android:textAppearance="?attr/textAppearanceListItem"
         tools:text="Nome Location" />
+
+    <RadioButton
+        android:id="@+id/radioButton_default_location"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:clickable="false"
+        android:focusable="false"
+        tools:checked="true"
+        android:contentDescription="Set as default" />
 
     <!-- Potresti aggiungere un pulsante di modifica/eliminazione qui se lo desideri -->
     <ImageButton
