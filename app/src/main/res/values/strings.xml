@@ -115,8 +115,7 @@
     <string name="loading_version">Version: Loading…</string>
 
     <!-- Notifiche -->
-    <string name="expiry_notification_channel_name">expiry_notification_channel_name</string>
-    <string name="expiry_notification_channel_description">expiry notification channel description</string>
+    <string name="expiry_notification_channel_name">Expiry notification for dispensa app</string>
     <string name="expiring_products_notification_title">Expiring Products %d</string>
 
     <!-- Preferences -->

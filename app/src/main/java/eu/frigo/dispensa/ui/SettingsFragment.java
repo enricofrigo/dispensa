@@ -1,14 +1,8 @@
 package eu.frigo.dispensa.ui;
 
-import android.app.Activity;
-import android.app.AlarmManager;
-import android.app.PendingIntent;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.Build;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.text.format.DateFormat;
 import android.util.Log;
 
@@ -22,24 +16,21 @@ import androidx.preference.PreferenceManager;
 import com.google.android.material.timepicker.MaterialTimePicker;
 import com.google.android.material.timepicker.TimeFormat;
 
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Locale;
+import java.util.Objects;
+
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.util.LocaleHelper;
-import eu.frigo.dispensa.util.ThemeHelper;
 import eu.frigo.dispensa.work.ExpiryCheckWorkerScheduler;
 
 public class SettingsFragment extends PreferenceFragmentCompat implements SharedPreferences.OnSharedPreferenceChangeListener {
 
     public static String KEY_EXPIRY_DAYS_BEFORE = "pref_expiry_days_before";
-    public static String KEY_THEME_PREFERENCE = "pref_key_theme";
     public static String KEY_LANGUAGE_PREFERENCE = "language_preference";
     public static final String KEY_NOTIFICATION_TIME_HOUR = "pref_notification_time_hour";
     public static final String KEY_NOTIFICATION_TIME_MINUTE = "pref_notification_time_minute";
-    public static final String KEY_PREF_ENABLE_TOSANO_API = "pref_key_enable_tosano_api";
     public static final String KEY_PREF_ENABLE_OFF_API = "pref_key_enable_off_api";
-    public static final String KEY_PREF_DATA = "pref_key_data";
     private Preference notificationTimePreference;
     private ListPreference languagePreference;
 
@@ -119,7 +110,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
     @Override
     public void onResume() {
         super.onResume();
-        getPreferenceManager().getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
+        Objects.requireNonNull(getPreferenceManager().getSharedPreferences()).registerOnSharedPreferenceChangeListener(this);
         updateNotificationTimeSummary();
         if (languagePreference != null) {
             String currentLangValue = PreferenceManager.getDefaultSharedPreferences(requireContext())
@@ -131,7 +122,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
     @Override
     public void onPause() {
         super.onPause();
-        getPreferenceManager().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
+        Objects.requireNonNull(getPreferenceManager().getSharedPreferences()).unregisterOnSharedPreferenceChangeListener(this);
     }
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
@@ -148,19 +139,8 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
             String savedLangCode = sharedPreferences.getString(key, "NOT_FOUND");
             SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(requireContext()).edit();
             editor.putString(KEY_LANGUAGE_PREFERENCE, langCode);
-            boolean success = editor.commit();
             Log.d("localeS", "Valore SALVATO in SharedPreferences per" + key + ":_"+ savedLangCode+"_");
             triggerRebirthWithAlarmManager(context);
-        }
-        else if (KEY_EXPIRY_DAYS_BEFORE.equals(key)) {
-
-        }
-        else if (KEY_THEME_PREFERENCE.equals(key)) {
-            String themeValue = sharedPreferences.getString(key, ThemeHelper.SYSTEM_DEFAULT_MODE);
-            ThemeHelper.applyThemePreference(themeValue);
-            if (getActivity() != null) {
-                getActivity().recreate();
-            }
         }
     }
     private void updateLanguagePreferenceSummary(String languageValue) {

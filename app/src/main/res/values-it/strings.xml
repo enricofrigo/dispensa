@@ -117,8 +117,7 @@ I prodotti in questa location potrebbero dover essere riassegnati.</string>
     <string name="loading_version">Versione: Caricamento…</string>
 
     <!-- Notifiche -->
-    <string name="expiry_notification_channel_name">expiry_notification_channel_name</string>
-    <string name="expiry_notification_channel_description">expiry notification channel description</string>
+    <string name="expiry_notification_channel_name">Notifiche scadenza prodotti per app dispensa</string>
     <string name="expiring_products_notification_title">Prodotti in Scadenza %d</string>
 
     <!-- Preferences -->
