@@ -61,10 +61,12 @@ public class DateConverter {
 
         if (trimmed.matches("\\d{2}/\\d{4}")) {
             formatPattern = "MM/yyyy";
-        } else if (trimmed.matches("\\d{2}/\\d{2}")) {
-            formatPattern = "MM/yy";
         } else if (trimmed.matches("\\d{2}/\\d{2}/\\d{4}")) {
             formatPattern = "dd/MM/yyyy";
+        } else if (trimmed.matches("\\d{2}/\\d{2}/\\d{2}")) {
+            formatPattern = "dd/MM/yy";
+        } else if (trimmed.matches("\\d{2}/\\d{2}")) {
+            formatPattern = "MM/yy";
         } else {
             // Tentativo finale con formati addizionali se sfuggita alla normalizzazione (es. dd-MM-yyyy)
             String[] fallbackFormats = { "dd/MM/yyyy", "dd.MM.yyyy", "dd-MM-yyyy" };
