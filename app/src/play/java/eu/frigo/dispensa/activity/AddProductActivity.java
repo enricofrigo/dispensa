@@ -507,9 +507,12 @@ public class AddProductActivity extends AppCompatActivity {
     private List<Object[]> buildPatterns(boolean fullOnly) {
         String sep = "[\\-/.\\s]+";
         List<Object[]> list = new ArrayList<>();
-        // Data completa: gg/MM/aaaa
+        // Data completa: gg/MM/aaaa (anno 4 cifre)
         list.add(new Object[]{ Pattern.compile(
                 "\\b(0[1-9]|[12][0-9]|3[01])" + sep + "(0[1-9]|1[012])" + sep + "((?:19|20)\\d\\d)\\b"), false });
+        // Data completa: gg/MM/aa (anno 2 cifre, es. 21.12.25)
+        list.add(new Object[]{ Pattern.compile(
+                "\\b(0[1-9]|[12][0-9]|3[01])" + sep + "(0[1-9]|1[012])" + sep + "(\\d{2})\\b"), false });
         if (!fullOnly) {
             // MM/yyyy
             list.add(new Object[]{ Pattern.compile(
