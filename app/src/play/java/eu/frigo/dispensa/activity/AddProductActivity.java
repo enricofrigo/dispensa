@@ -128,6 +128,7 @@ public class AddProductActivity extends AppCompatActivity {
     private TextView textViewOpenedDate;
     private Long currentOpenedDate = 0L;
     private int currentShelfLifeDays = -1;
+    private String lastDiscardedExpiryDate = null;
     public final static String EXTRA_BARCODE = "SCANNED_BARCODE_DATA";
     public final static String EXTRA_PRODUCT_ID = "PRODUCT_ID";
     public final static String EXTRA_PRODUCT_NAME = "PRODUCT_NAME";
@@ -362,6 +363,9 @@ public class AddProductActivity extends AppCompatActivity {
         // Pulsante per ri-scansionare la data di scadenza se quella letta era errata
         if (buttonRescanExpiryDate != null) {
             buttonRescanExpiryDate.setOnClickListener(v -> {
+                if (editTextExpiryDate.getText() != null && !editTextExpiryDate.getText().toString().isEmpty()) {
+                    lastDiscardedExpiryDate = editTextExpiryDate.getText().toString().trim();
+                }
                 editTextExpiryDate.setText("");
                 buttonRescanExpiryDate.setVisibility(GONE);
                 checkCameraPermissionAndStartScanner();
@@ -718,7 +722,8 @@ public class AddProductActivity extends AppCompatActivity {
                             .addOnSuccessListener(text -> {
                                 String resultText = text.getText();
                                 String parsedDate = parseExpiryDate(resultText);
-                                if (parsedDate != null) {
+                                if (parsedDate != null && !parsedDate.equals(lastDiscardedExpiryDate)) {
+                                    lastDiscardedExpiryDate = null;
                                     runOnUiThread(() -> {
                                         editTextExpiryDate.setText(parsedDate);
                                         if (buttonRescanExpiryDate != null)
