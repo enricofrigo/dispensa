@@ -69,7 +69,6 @@ public class MainActivity extends AppCompatActivity
     private int originalFabBottomMargin;
     private MenuItem layoutToggleMenuItem;
     private ViewPager2 viewPager;
-    private TabLayout tabLayout;
     private LocationViewPagerAdapter locationViewPagerAdapter;
     private LocationViewModel locationViewModel;
     private final ActivityResultLauncher<String> requestPermissionLauncher = registerForActivityResult(
@@ -159,9 +158,7 @@ public class MainActivity extends AppCompatActivity
                     new AlertDialog.Builder(this)
                             .setTitle(getString(R.string.notify_permission_title))
                             .setMessage(getString(R.string.notify_permission_description))
-                            .setPositiveButton(getString(R.string.ok), (dialog, which) -> {
-                                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
-                            })
+                            .setPositiveButton(getString(R.string.ok), (dialog, which) -> requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS))
                             .setNegativeButton(getString(R.string.cancel), (dialog, which) -> dialog.dismiss())
                             .create().show();
                 } else {
@@ -172,22 +169,10 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void setDefaultLocale() {
-        String locale;
-        locale = getResources().getConfiguration().getLocales().get(0).getLanguage();
-        String[] languages = getResources().getStringArray(R.array.language_values);
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         if (prefs.getString(SettingsFragment.KEY_LANGUAGE_PREFERENCE, null) == null) {
-            String cl = null;
-            for (String l : languages)
-                if (l.equalsIgnoreCase(locale))
-                    cl = l;
-            if (cl != null) {
-                prefs.edit().putString(SettingsFragment.KEY_LANGUAGE_PREFERENCE, cl).apply();
-            } else {
                 Log.d("MainActivity", "Setting default language to English");
                 prefs.edit().putString(SettingsFragment.KEY_LANGUAGE_PREFERENCE, "en").apply();
-            }
-            Log.i("MainActivity", "Set default Locale: " + locale);
         }
     }
 
@@ -209,7 +194,7 @@ public class MainActivity extends AppCompatActivity
         locationViewModel = new ViewModelProvider(this).get(LocationViewModel.class);
 
         viewPager = findViewById(R.id.viewPager);
-        tabLayout = findViewById(R.id.tabLayout);
+        TabLayout tabLayout = findViewById(R.id.tabLayout);
         ImageButton btnManageLocations = findViewById(R.id.button_manage_locations);
         if (btnManageLocations != null) {
             btnManageLocations.setOnClickListener(v -> {

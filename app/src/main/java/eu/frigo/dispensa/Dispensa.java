@@ -25,10 +25,8 @@ public class Dispensa extends Application {
     }
     private void createNotificationChannel() {
         CharSequence name = getString(R.string.expiry_notification_channel_name);
-        String description = getString(R.string.expiry_notification_channel_description);
         int importance = NotificationManager.IMPORTANCE_DEFAULT;
         NotificationChannel channel = new NotificationChannel(ExpiryCheckWorker.CHANNEL_ID, name, importance);
-        channel.setDescription(description);
 
         NotificationManager notificationManager = getSystemService(NotificationManager.class);
         if (notificationManager != null) {

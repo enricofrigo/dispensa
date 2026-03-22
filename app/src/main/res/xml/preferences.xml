@@ -45,19 +45,6 @@
             android:persistent="true"/>
 
     </PreferenceCategory>
-    <PreferenceCategory app:title="@string/pref_cat_theme_title"
-        app:iconSpaceReserved="false">
-
-        <ListPreference
-            app:key="@string/pref_key_theme"
-            app:title="@string/pref_theme_title"
-            app:summary="%s"
-            app:defaultValue="@string/pref_theme_system"
-            app:entries="@array/theme_entries"
-            app:entryValues="@array/theme_values"
-            app:iconSpaceReserved="false"/>
-
-    </PreferenceCategory>
     <PreferenceCategory app:key="pref_key_data"
         app:title="@string/pref_cat_data_title"
         app:iconSpaceReserved="false">
