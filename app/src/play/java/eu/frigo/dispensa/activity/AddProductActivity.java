@@ -148,6 +148,7 @@ public class AddProductActivity extends AppCompatActivity {
 
     /** URI del file temporaneo per la foto del prodotto scattata con la fotocamera */
     private Uri productPhotoCaptureUri;
+    private String currentPhotoPath; // <-- Per salvare il path assoluto
 
     /** Picker galleria per l'immagine del prodotto */
     private ActivityResultLauncher<String> pickProductImageLauncher;
@@ -296,7 +297,12 @@ public class AddProductActivity extends AppCompatActivity {
                 new ActivityResultContracts.GetContent(),
                 uri -> {
                     if (uri != null) {
-                        onProductImageSelected(uri);
+                        Uri copiedUri = copyImageToInternalStorage(uri);
+                        if (copiedUri != null) {
+                            onProductImageSelected(copiedUri);
+                        } else {
+                            Toast.makeText(this, getString(R.string.err_load_image), Toast.LENGTH_SHORT).show();
+                        }
                     }
                 });
 
@@ -304,8 +310,8 @@ public class AddProductActivity extends AppCompatActivity {
         takeProductPhotoLauncher = registerForActivityResult(
                 new ActivityResultContracts.TakePicture(),
                 success -> {
-                    if (success && productPhotoCaptureUri != null) {
-                        onProductImageSelected(productPhotoCaptureUri);
+                    if (success && currentPhotoPath != null) {
+                        onProductImageSelected(Uri.fromFile(new File(currentPhotoPath)));
                     }
                 });
 
@@ -444,9 +450,39 @@ public class AddProductActivity extends AppCompatActivity {
             }
             String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
             File photoFile = new File(imagesDir, "product_" + timestamp + ".jpg");
+            currentPhotoPath = photoFile.getAbsolutePath();
             return FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", photoFile);
         } catch (Exception e) {
             Log.e("AddProductActivity", "Errore nella creazione del file foto", e);
+            return null;
+        }
+    }
+
+    /**
+     * Copia l'immagine selezionata dalla galleria nello storage interno dell'app,
+     * così da mantenere i permessi di lettura per le aperture future.
+     */
+    private Uri copyImageToInternalStorage(Uri uri) {
+        try {
+            File imagesDir = new File(getExternalFilesDir(null), "product_images");
+            if (!imagesDir.exists() && !imagesDir.mkdirs()) {
+                return null;
+            }
+            String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+            File destFile = new File(imagesDir, "product_" + timestamp + ".jpg");
+            
+            try (java.io.InputStream in = getContentResolver().openInputStream(uri);
+                 java.io.OutputStream out = new java.io.FileOutputStream(destFile)) {
+                if (in == null) return null;
+                byte[] buf = new byte[8192];
+                int len;
+                while ((len = in.read(buf)) > 0) {
+                    out.write(buf, 0, len);
+                }
+            }
+            return Uri.fromFile(destFile);
+        } catch (Exception e) {
+            e.printStackTrace();
             return null;
         }
     }
