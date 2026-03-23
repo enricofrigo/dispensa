@@ -196,4 +196,39 @@ public class Repository {
     public LiveData<List<StorageLocation>> getAllSelectableLocations() {
         return storageLocationDao.getAllLocationsSorted();
     }
+
+    public static void cleanOrphanImages(android.content.Context context, java.util.function.Consumer<Integer> onComplete) {
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            java.io.File imagesDir = new java.io.File(context.getExternalFilesDir(null), "product_images");
+            if (!imagesDir.exists()) {
+                if (onComplete != null) onComplete.accept(0);
+                return;
+            }
+
+            java.util.List<eu.frigo.dispensa.data.product.Product> products = 
+                    AppDatabase.getDatabase(context).productDao().getAllProductsListStatic();
+            
+            java.util.Set<String> validPaths = new java.util.HashSet<>();
+            for (eu.frigo.dispensa.data.product.Product p : products) {
+                if (p.getImageUrl() != null && p.getImageUrl().startsWith("file://")) {
+                    String path = android.net.Uri.parse(p.getImageUrl()).getPath();
+                    if (path != null) validPaths.add(path);
+                }
+            }
+
+            int countDeleted = 0;
+            java.io.File[] files = imagesDir.listFiles();
+            if (files != null) {
+                for (java.io.File file : files) {
+                    if (!validPaths.contains(file.getAbsolutePath())) {
+                        if (file.delete()) countDeleted++;
+                    }
+                }
+            }
+            
+            if (onComplete != null) {
+                onComplete.accept(countDeleted);
+            }
+        });
+    }
 }

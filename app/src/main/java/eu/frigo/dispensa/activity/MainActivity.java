@@ -182,6 +182,7 @@ public class MainActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         askForNotificationPermission();
         setDefaultLocale();
+        eu.frigo.dispensa.data.Repository.cleanOrphanImages(this, null);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
         mainCoordinatorLayout = findViewById(R.id.main_coordinator_layout);
