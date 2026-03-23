@@ -153,6 +153,9 @@
     <string name="pref_tosano_summary">Enable app to download data from Tosano API</string>
     <string name="pref_off_title">Enable Open Food Fact API</string>
     <string name="pref_off_summary">Enable app to download data from Open Food Fact</string>
+    <string name="pref_clean_images_title">Clean unused images</string>
+    <string name="pref_clean_images_summary">Delete image files no longer associated with any product</string>
+    <string name="notify_clean_images_done">Cleaned %d orphaned images</string>
     <string name="err_api">Cannot load data from API please enable Open Food Fact!</string>
 
     <string name="default_location_pantry_entry">Pantry</string>

@@ -37,6 +37,22 @@ public class Repository {
         return allProducts;
     }
 
+    private void deleteLocalImageIfAny(String imageUrl) {
+        if (imageUrl != null && imageUrl.startsWith("file://")) {
+            try {
+                String path = android.net.Uri.parse(imageUrl).getPath();
+                if (path != null) {
+                    java.io.File file = new java.io.File(path);
+                    if (file.exists()) {
+                        file.delete();
+                    }
+                }
+            } catch (Exception e) {
+                Log.e("Repository", "Error deleting image file", e);
+            }
+        }
+    }
+
     public void insert(Product product) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
             productDao.insert(product);
@@ -45,12 +61,18 @@ public class Repository {
 
     public void delete(Product selectedProduct) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
+            deleteLocalImageIfAny(selectedProduct.getImageUrl());
             productDao.delete(selectedProduct);
         });
     }
 
     public void update(Product product) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
+            Product oldProduct = productDao.getProductByIdSync(product.getId());
+            if (oldProduct != null && oldProduct.getImageUrl() != null 
+                    && !oldProduct.getImageUrl().equals(product.getImageUrl())) {
+                deleteLocalImageIfAny(oldProduct.getImageUrl());
+            }
             productDao.update(product);
         });
     }
@@ -93,6 +115,12 @@ public class Repository {
 
     public void updateProductWithApiTags(Product product, List<String> apiTags) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
+            Product oldProduct = productDao.getProductByIdSync(product.getId());
+            if (oldProduct != null && oldProduct.getImageUrl() != null 
+                    && !oldProduct.getImageUrl().equals(product.getImageUrl())) {
+                deleteLocalImageIfAny(oldProduct.getImageUrl());
+            }
+            
             long productIdLong = productDao.insert(product);
             int productId = (int) productIdLong;
 

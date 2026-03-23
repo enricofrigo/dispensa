@@ -153,6 +153,9 @@ I prodotti in questa location potrebbero dover essere riassegnati.</string>
     <string name="pref_cat_data_title">Dati</string>
     <string name="pref_tosano_title">Abilita API Tosano</string>
     <string name="pref_tosano_summary">Consenti all\'app di scaricare dati da Supermercati Tosano</string>
+    <string name="pref_clean_images_title">Pulisci immagini residue</string>
+    <string name="pref_clean_images_summary">Elimina i file immagine non associati ad alcun prodotto</string>
+    <string name="notify_clean_images_done">Eliminate %d immagini orfane</string>
     <string name="err_api">Impossibile caricare i dati dalle API, abilitare le API Open Food Fact!</string>
 
     <!--Dfault Location -->
