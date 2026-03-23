@@ -112,6 +112,34 @@
                 android:scaleType="fitCenter"
                 tools:srcCompat="@tools:sample/avatars" />
 
+            <!-- Pulsanti modifica immagine prodotto -->
+            <LinearLayout
+                android:id="@+id/layoutProductImageButtons"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="4dp"
+                android:orientation="horizontal">
+
+                <ImageButton
+                    android:id="@+id/buttonPickProductImageGallery"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@android:drawable/ic_menu_gallery"
+                    android:contentDescription="@string/pick_product_image_gallery"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="8dp" />
+
+                <ImageButton
+                    android:id="@+id/buttonTakeProductPhoto"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@android:drawable/ic_menu_camera"
+                    android:contentDescription="@string/take_product_photo"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="8dp" />
+            </LinearLayout>
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

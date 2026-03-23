@@ -30,6 +30,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -53,6 +54,7 @@ import com.google.zxing.RGBLuminanceSource;
 import com.google.zxing.Result;
 import com.google.zxing.common.HybridBinarizer;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
@@ -137,6 +139,15 @@ public class AddProductActivity extends AppCompatActivity {
     public static final String PRESELECTED_LOCATION_INTERNAL_KEY = "PRESELECTED_LOCATION_INTERNAL_KEY";
 
     private ActivityResultLauncher<String> pickImageForBarcodeLauncher;
+
+    /** URI del file temporaneo per la foto del prodotto scattata con la fotocamera */
+    private Uri productPhotoCaptureUri;
+
+    /** Picker galleria per l'immagine del prodotto */
+    private ActivityResultLauncher<String> pickProductImageLauncher;
+
+    /** Fotocamera per scattare una nuova foto del prodotto */
+    private ActivityResultLauncher<Uri> takeProductPhotoLauncher;
 
     private final ActivityResultLauncher<String> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
@@ -283,6 +294,24 @@ public class AddProductActivity extends AppCompatActivity {
                 }
         );
 
+        // Picker galleria per immagine del prodotto
+        pickProductImageLauncher = registerForActivityResult(
+                new ActivityResultContracts.GetContent(),
+                uri -> {
+                    if (uri != null) {
+                        onProductImageSelected(uri);
+                    }
+                });
+
+        // Fotocamera per scattare una nuova foto del prodotto
+        takeProductPhotoLauncher = registerForActivityResult(
+                new ActivityResultContracts.TakePicture(),
+                success -> {
+                    if (success && productPhotoCaptureUri != null) {
+                        onProductImageSelected(productPhotoCaptureUri);
+                    }
+                });
+
         editTextBarcode.setOnFocusChangeListener((v, hasFocus) -> {
             if (!hasFocus) {
                 String barcode = Objects.requireNonNull(editTextBarcode.getText()).toString().trim();
@@ -370,6 +399,25 @@ public class AddProductActivity extends AppCompatActivity {
         });
 
         buttonScanBarcodeGallery.setOnClickListener(v -> pickImageForBarcodeLauncher.launch("image/*"));
+
+        // Pulsanti modifica immagine prodotto
+        ImageButton buttonPickProductImageGallery = findViewById(R.id.buttonPickProductImageGallery);
+        ImageButton buttonTakeProductPhoto = findViewById(R.id.buttonTakeProductPhoto);
+        if (buttonPickProductImageGallery != null) {
+            buttonPickProductImageGallery.setOnClickListener(v ->
+                    pickProductImageLauncher.launch("image/*"));
+        }
+        if (buttonTakeProductPhoto != null) {
+            buttonTakeProductPhoto.setOnClickListener(v -> {
+                Uri uri = createProductPhotoUri();
+                if (uri != null) {
+                    productPhotoCaptureUri = uri;
+                    takeProductPhotoLauncher.launch(uri);
+                } else {
+                    Toast.makeText(this, getString(R.string.err_create_photo_file), Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
 
         buttonMarkAsClosed.setOnClickListener(v -> {
             currentOpenedDate = 0L;
@@ -884,6 +932,44 @@ public class AddProductActivity extends AppCompatActivity {
         imageViewProduct.setVisibility(GONE);
         currentProductNameFromApi = null;
         currentImageUrlFromApi = null;
+    }
+
+    /**
+     * Crea un file nella cartella predefinita product_images dell'app
+     * e restituisce il relativo Uri tramite FileProvider.
+     * Usato come destinazione per le foto scattate dalla fotocamera.
+     */
+    private Uri createProductPhotoUri() {
+        try {
+            File imagesDir = new File(getExternalFilesDir(null), "product_images");
+            if (!imagesDir.exists() && !imagesDir.mkdirs()) {
+                androidx.media3.common.util.Log.e("AddProductActivity",
+                        "Impossibile creare la cartella product_images");
+                return null;
+            }
+            String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss",
+                    Locale.getDefault()).format(new Date());
+            File photoFile = new File(imagesDir, "product_" + timestamp + ".jpg");
+            return FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", photoFile);
+        } catch (Exception e) {
+            androidx.media3.common.util.Log.e("AddProductActivity",
+                    "Errore nella creazione del file foto", e);
+            return null;
+        }
+    }
+
+    /**
+     * Callback comune per quando l'utente ha selezionato/scattato un'immagine
+     * da usare come immagine del prodotto.
+     * Aggiorna currentImageUrlFromApi e mostra l'immagine nell'ImageView.
+     */
+    private void onProductImageSelected(Uri uri) {
+        currentImageUrlFromApi = uri.toString();
+        imageViewProduct.setVisibility(View.VISIBLE);
+        Glide.with(this)
+                .load(uri)
+                .into(imageViewProduct);
+        Toast.makeText(this, getString(R.string.image_changed), Toast.LENGTH_SHORT).show();
     }
 
     @Override
