@@ -172,6 +172,10 @@ I prodotti in questa location potrebbero dover essere riassegnati.</string>
     <string name="exp_date_del_rescan">Cancella e ri-scansiona la data</string>
     <string name="add_product_scan">Scansiona etichetta</string>
     <string name="add_product_image">Seleziona immagine etichetta</string>
+    <string name="pick_product_image_gallery">Scegli dalla galleria</string>
+    <string name="take_product_photo">Scatta una foto</string>
+    <string name="err_create_photo_file">Impossibile creare il file per la foto</string>
+    <string name="image_changed">Immagine aggiornata</string>
 
     <string name="action_export">Esporta dati</string>
     <string name="action_import">Importa dati</string>

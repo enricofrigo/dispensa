@@ -172,6 +172,10 @@
     <string name="exp_date_del_rescan">Delete and rescan expiring date</string>
     <string name="add_product_scan">Scan</string>
     <string name="add_product_image">Select image</string>
+    <string name="pick_product_image_gallery">Choose from gallery</string>
+    <string name="take_product_photo">Take a photo</string>
+    <string name="err_create_photo_file">Unable to create photo file</string>
+    <string name="image_changed">Image updated</string>
 
     <string name="action_export">Export data</string>
     <string name="action_import">Import data</string>
