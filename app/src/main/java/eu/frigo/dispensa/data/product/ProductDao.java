@@ -38,6 +38,9 @@ public interface ProductDao {
     @Query("SELECT * FROM products WHERE id = :productId")
     LiveData<Product> getProductById(int productId);
 
+    @Query("SELECT * FROM products WHERE id = :productId LIMIT 1")
+    Product getProductByIdSync(int productId);
+
     @Query("SELECT * FROM products WHERE barcode = :barcode LIMIT 1")
     Product getProductByBarcode(String barcode);
 
