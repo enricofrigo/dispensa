@@ -81,42 +81,10 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
 
     private void cleanOrphanImages() {
         Context context = requireContext();
-        java.io.File imagesDir = new java.io.File(context.getExternalFilesDir(null), "product_images");
-        if (!imagesDir.exists()) {
-            android.widget.Toast.makeText(context, getString(R.string.notify_clean_images_done, 0), android.widget.Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        eu.frigo.dispensa.data.AppDatabase.databaseWriteExecutor.execute(() -> {
-            java.util.List<eu.frigo.dispensa.data.product.Product> products = 
-                    eu.frigo.dispensa.data.AppDatabase.getDatabase(context).productDao().getAllProductsListStatic();
-            
-            java.util.Set<String> validPaths = new java.util.HashSet<>();
-            for (eu.frigo.dispensa.data.product.Product p : products) {
-                if (p.getImageUrl() != null && p.getImageUrl().startsWith("file://")) {
-                    String path = android.net.Uri.parse(p.getImageUrl()).getPath();
-                    if (path != null) {
-                        validPaths.add(path);
-                    }
-                }
-            }
-
-            int countDeleted = 0;
-            java.io.File[] files = imagesDir.listFiles();
-            if (files != null) {
-                for (java.io.File file : files) {
-                    if (!validPaths.contains(file.getAbsolutePath())) {
-                        if (file.delete()) {
-                            countDeleted++;
-                        }
-                    }
-                }
-            }
-            
-            int finalCountDeleted = countDeleted;
+        eu.frigo.dispensa.data.Repository.cleanOrphanImages(context, count -> {
             new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
                 android.widget.Toast.makeText(context, 
-                        getString(R.string.notify_clean_images_done, finalCountDeleted), 
+                        getString(R.string.notify_clean_images_done, count), 
                         android.widget.Toast.LENGTH_SHORT).show();
             });
         });
