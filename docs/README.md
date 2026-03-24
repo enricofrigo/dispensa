@@ -5,10 +5,9 @@
 
 # 📷 Screenshots
 
-<img src="https://github.com/user-attachments/assets/eb90a318-a165-49f5-95aa-638942526294" width="200px" />
-<img src="https://github.com/user-attachments/assets/b925093d-207f-4057-83b0-5517f41ee375" width="200px" />
-<img src="https://github.com/user-attachments/assets/28f09e9e-03a6-4d16-af68-ea9e78bd222f" width="200px" />
-<img src="https://github.com/user-attachments/assets/dd3e217e-8ebc-40bc-98ee-7657ef84af21" width="200px" />
+<img src="https://github.com/user-attachments/assets/0af2eb93-bbd6-44f4-9bfd-bd40b7d0f0b1" width="200px" />
+<img src="https://github.com/user-attachments/assets/9d53fad6-6bac-45f5-bcdc-715f7a067146" width="200px" />
+<img src="https://github.com/user-attachments/assets/fe3ded2b-5946-4882-9675-b92fc12e9792" width="200px" />
 
 
 ## 🧰 Funzionalità principali
