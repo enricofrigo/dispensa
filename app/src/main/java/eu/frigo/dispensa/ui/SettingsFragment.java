@@ -61,6 +61,25 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
                 return false;
             });
         }
+        
+        EditTextPreference defaultShelfLifePref = findPreference("pref_key_default_shelf_life");
+        if (defaultShelfLifePref != null) {
+            defaultShelfLifePref.setOnPreferenceChangeListener((preference, newValue) -> {
+                if (newValue == null || ((String) newValue).trim().isEmpty()) {
+                    return true;
+                }
+                try {
+                    int days = Integer.parseInt((String) newValue);
+                    if (days >= 0 && days <= 3650) {
+                        return true;
+                    }
+                } catch (NumberFormatException e) {
+                    Log.e("SettingsFragment", "Errore conversione default shelf life: " + e.getMessage());
+                }
+                android.widget.Toast.makeText(getContext(), getString(R.string.pref_exp_days_error), android.widget.Toast.LENGTH_SHORT).show();
+                return false;
+            });
+        }
         languagePreference = findPreference(KEY_LANGUAGE_PREFERENCE);
         if (languagePreference != null) {
             String currentLangValue = PreferenceManager.getDefaultSharedPreferences(requireContext())

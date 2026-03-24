@@ -128,6 +128,8 @@ I prodotti in questa location potrebbero dover essere riassegnati.</string>
     <string name="pref_key_exp_time">pref_notification_time</string>
     <string name="pref_key_exp_time_title">Ora della notifica giornaliera</string>
     <string name="pref_key_exp_summary">Seleziona l\'ora in cui ricevere la notifica di scadenza.</string>
+    <string name="pref_default_shelf_life_title">Scadenza di base dopo l\'apertura (giorni)</string>
+    <string name="pref_default_shelf_life_summary">Numero predefinito di giorni di validità per i nuovi prodotti</string>
     <string name="pref_exp_days_error">Inserisci un numero di giorni valido da 0 a 365.</string>
     <string name="pref_exp_time_title">Seleziona ora notifica</string>
 

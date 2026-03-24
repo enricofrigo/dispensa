@@ -21,6 +21,15 @@
             app:summary="@string/pref_key_exp_summary"
             app:iconSpaceReserved="false"/>
 
+        <EditTextPreference
+            app:key="pref_key_default_shelf_life"
+            app:title="@string/pref_default_shelf_life_title"
+            app:summary="@string/pref_default_shelf_life_summary"
+            app:defaultValue=""
+            app:useSimpleSummaryProvider="true"
+            android:inputType="number"
+            app:iconSpaceReserved="false"/>
+
     </PreferenceCategory>
     <PreferenceCategory app:title="@string/pref_cat_locations_title"
         app:iconSpaceReserved="false">
