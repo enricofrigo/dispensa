@@ -728,6 +728,12 @@ public class AddProductActivity extends AppCompatActivity {
         });
         if (isEditMode && currentProductId != -1) {
             observeProductForEditMode();
+        } else {
+            SharedPreferences prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this);
+            String defaultShelfLife = prefs.getString("pref_key_default_shelf_life", "");
+            if (defaultShelfLife != null && !defaultShelfLife.trim().isEmpty()) {
+                editTextShelfLifeAfterOpening.setText(defaultShelfLife);
+            }
         }
         spinnerStorageLocation.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override

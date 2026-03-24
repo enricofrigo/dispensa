@@ -126,6 +126,8 @@
     <string name="pref_key_exp_time">pref_notification_time</string>
     <string name="pref_key_exp_time_title">Notification time</string>
     <string name="pref_key_exp_summary">Select the time to receive the notification.</string>
+    <string name="pref_default_shelf_life_title">Default shelf life after opening (days)</string>
+    <string name="pref_default_shelf_life_summary">Default days to pre-fill when adding a new product</string>
     <string name="pref_exp_days_error">Insert a valid number of days from 0 to 365.</string>
     <string name="pref_exp_time_title">Select notification time</string>
 
