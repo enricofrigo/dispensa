@@ -5,12 +5,14 @@ import static android.view.View.GONE;
 import android.Manifest;
 import android.app.DatePickerDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
@@ -35,6 +37,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.preference.PreferenceManager;
 
 import com.bumptech.glide.Glide;
 import com.google.android.material.chip.Chip;
@@ -79,6 +82,7 @@ import eu.frigo.dispensa.data.storage.StorageLocation;
 import eu.frigo.dispensa.network.openfoodfacts.OpenFoodFactsApiService;
 import eu.frigo.dispensa.network.openfoodfacts.OpenFoodFactsRetrofitClient;
 import eu.frigo.dispensa.network.openfoodfacts.model.OpenFoodFactsProductResponse;
+import eu.frigo.dispensa.ui.SettingsFragment;
 import eu.frigo.dispensa.util.KeyboardUtils;
 import eu.frigo.dispensa.viewmodel.AddProductViewModel;
 import eu.frigo.dispensa.util.DateConverter;
@@ -90,8 +94,6 @@ public class AddProductActivity extends AppCompatActivity {
     private Spinner spinnerStorageLocation;
     private TextInputEditText editTextBarcode;
     private TextInputEditText editTextQuantity;
-    private ImageButton buttonDecrementQuantityActivity;
-    private ImageButton buttonIncrementQuantityActivity;
 
     private static final String DEFAULT_QUANTITY = "1";
     private TextInputEditText editTextExpiryDate;
@@ -124,10 +126,6 @@ public class AddProductActivity extends AppCompatActivity {
     private Long currentOpenedDate = 0L;
     private int currentShelfLifeDays = -1;
 
-    // ZXing reader per immagini dalla galleria
-    private MultiFormatReader multiFormatReader;
-
-    public static final String EXTRA_BARCODE = "SCANNED_BARCODE_DATA";
     public static final String EXTRA_PRODUCT_ID = "PRODUCT_ID";
     public static final String EXTRA_PRODUCT_NAME = "PRODUCT_NAME";
     public static final String EXTRA_PRODUCT_IMAGE = "PRODUCT_IMAGE";
@@ -141,7 +139,6 @@ public class AddProductActivity extends AppCompatActivity {
     private ActivityResultLauncher<String> pickImageForBarcodeLauncher;
 
     /** URI del file temporaneo per la foto del prodotto scattata con la fotocamera */
-    private Uri productPhotoCaptureUri;
     private String currentPhotoPath; // <-- Per salvare il path assoluto
 
     /** Picker galleria per l'immagine del prodotto */
@@ -243,8 +240,8 @@ public class AddProductActivity extends AppCompatActivity {
         ImageButton buttonScanBarcodeCamera = findViewById(R.id.buttonScanBarcodeCamera);
         ImageButton buttonScanBarcodeGallery = findViewById(R.id.buttonScanBarcodeGallery);
         editTextQuantity = findViewById(R.id.editTextQuantity);
-        buttonDecrementQuantityActivity = findViewById(R.id.buttonDecrementQuantityActivity);
-        buttonIncrementQuantityActivity = findViewById(R.id.buttonIncrementQuantityActivity);
+        ImageButton buttonDecrementQuantityActivity = findViewById(R.id.buttonDecrementQuantityActivity);
+        ImageButton buttonIncrementQuantityActivity = findViewById(R.id.buttonIncrementQuantityActivity);
         editTextExpiryDate = findViewById(R.id.editTextExpiryDate);
         barcodeView = findViewById(R.id.previewViewBarcode);
         editTextProductName = findViewById(R.id.editTextProductName);
@@ -266,7 +263,6 @@ public class AddProductActivity extends AppCompatActivity {
         chipGroupCategories = findViewById(R.id.chipGroupCategories);
         editTextNewCategory = findViewById(R.id.editTextNewCategory);
         Button buttonAddCategory = findViewById(R.id.buttonAddCategory);
-        ExtendedFloatingActionButton fabButtonSaveProduct = finalFab;
 
         // ZXing embedded per codici a barre
         List<BarcodeFormat> formats = Arrays.asList(
@@ -285,7 +281,7 @@ public class AddProductActivity extends AppCompatActivity {
                 uri -> {
                     if (uri != null) {
                         androidx.media3.common.util.Log.d("BarcodeScan",
-                                "Immagine selezionata dalla galleria per barcode: " + uri.toString());
+                                "Immagine selezionata dalla galleria per barcode: " + uri);
                         stopCamera();
                         processImageForBarcode(uri);
                     } else {
@@ -329,7 +325,7 @@ public class AddProductActivity extends AppCompatActivity {
 
         buttonIncrementQuantityActivity.setOnClickListener(v -> {
             try {
-                int currentQuantity = Integer.parseInt(editTextQuantity.getText().toString());
+                int currentQuantity = Integer.parseInt(Objects.requireNonNull(editTextQuantity.getText()).toString());
                 currentQuantity++;
                 editTextQuantity.setText(String.valueOf(currentQuantity));
             } catch (NumberFormatException e) {
@@ -339,7 +335,7 @@ public class AddProductActivity extends AppCompatActivity {
 
         buttonDecrementQuantityActivity.setOnClickListener(v -> {
             try {
-                int currentQuantity = Integer.parseInt(editTextQuantity.getText().toString());
+                int currentQuantity = Integer.parseInt(Objects.requireNonNull(editTextQuantity.getText()).toString());
                 if (currentQuantity > 1) {
                     currentQuantity--;
                     editTextQuantity.setText(String.valueOf(currentQuantity));
@@ -356,7 +352,7 @@ public class AddProductActivity extends AppCompatActivity {
             if (getSupportActionBar() != null) {
                 getSupportActionBar().setTitle(getString(R.string.edit_product));
             }
-            fabButtonSaveProduct.setText(getString(R.string.update_product));
+            finalFab.setText(getString(R.string.update_product));
             observeProductForEditMode();
             buttonScanBarcodeGallery.setVisibility(GONE);
             buttonScanBarcodeCamera.setVisibility(GONE);
@@ -367,7 +363,7 @@ public class AddProductActivity extends AppCompatActivity {
             if (getSupportActionBar() != null) {
                 getSupportActionBar().setTitle(getString(R.string.add_product_title));
             }
-            fabButtonSaveProduct.setText(getString(R.string.save_product_button));
+            finalFab.setText(getString(R.string.save_product_button));
             editTextQuantity.setText(DEFAULT_QUANTITY);
             editTextQuantity.setSelection(Objects.requireNonNull(editTextQuantity.getText()).length());
             checkCameraPermissionAndStartScanner();
@@ -399,6 +395,12 @@ public class AddProductActivity extends AppCompatActivity {
             showDatePickerDialog();
         });
 
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        String defaultShelfLife = prefs.getString(SettingsFragment.KEY_PREF_DEFAULT_SHELF_LIFE, "5");
+        if (!defaultShelfLife.trim().isEmpty()) {
+            editTextShelfLifeAfterOpening.setText(defaultShelfLife);
+        }
+
         buttonScanBarcodeCamera.setOnClickListener(v -> {
             isScanning = true;
             checkCameraPermissionAndStartScanner();
@@ -417,7 +419,6 @@ public class AddProductActivity extends AppCompatActivity {
             buttonTakeProductPhoto.setOnClickListener(v -> {
                 Uri uri = createProductPhotoUri();
                 if (uri != null) {
-                    productPhotoCaptureUri = uri;
                     takeProductPhotoLauncher.launch(uri);
                 } else {
                     Toast.makeText(this, getString(R.string.err_create_photo_file), Toast.LENGTH_SHORT).show();
@@ -430,7 +431,7 @@ public class AddProductActivity extends AppCompatActivity {
             updateOpenedDateUI(currentOpenedDate);
         });
 
-        fabButtonSaveProduct.setOnClickListener(v -> saveOrUpdateProduct());
+        finalFab.setOnClickListener(v -> saveOrUpdateProduct());
 
         if (!openFoodFactsApiEnabled) {
             // Se OFF è disabilitato, ha senso nascondere anche lo scanner
@@ -452,7 +453,8 @@ public class AddProductActivity extends AppCompatActivity {
     }
 
     private void initializeZXingReader() {
-        multiFormatReader = new MultiFormatReader();
+        // ZXing reader per immagini dalla galleria
+        MultiFormatReader multiFormatReader = new MultiFormatReader();
         Map<DecodeHintType, Object> hints = new EnumMap<>(DecodeHintType.class);
 
         List<BarcodeFormat> formats = Arrays.asList(
@@ -505,9 +507,7 @@ public class AddProductActivity extends AppCompatActivity {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
-            androidx.media3.common.util.Log.e("BarcodeScanner",
-                    "Errore nel creare Bitmap da URI", e);
+            Log.e("BarcodeScanner", "Errore nel creare Bitmap da URI", e);
             Toast.makeText(this, getString(R.string.err_load_image), Toast.LENGTH_SHORT).show();
         }
     }
@@ -657,12 +657,6 @@ public class AddProductActivity extends AppCompatActivity {
 
         if (isEditMode && currentProductId != -1) {
             observeProductForEditMode();
-        } else {
-            SharedPreferences prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this);
-            String defaultShelfLife = prefs.getString("pref_key_default_shelf_life", "");
-            if (defaultShelfLife != null && !defaultShelfLife.trim().isEmpty()) {
-                editTextShelfLifeAfterOpening.setText(defaultShelfLife);
-            }
         }
 
         spinnerStorageLocation.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -782,7 +776,7 @@ public class AddProductActivity extends AppCompatActivity {
     }
 
     private void addNewCategoryTag() {
-        String newTag = editTextNewCategory.getText().toString().trim();
+        String newTag = Objects.requireNonNull(editTextNewCategory.getText()).toString().trim();
         if (!newTag.isEmpty()) {
             if (!newTag.matches("^[a-z]{2}:.*")) {
                 newTag = "it:" + newTag;
@@ -852,7 +846,7 @@ public class AddProductActivity extends AppCompatActivity {
         retrofit2.Call<OpenFoodFactsProductResponse> call =
                 OffApiService.getProductByBarcode(barcode, fieldsToFetch);
 
-        call.enqueue(new Callback<OpenFoodFactsProductResponse>() {
+        call.enqueue(new Callback<>() {
             @Override
             public void onResponse(@NonNull retrofit2.Call<OpenFoodFactsProductResponse> call,
                                    @NonNull Response<OpenFoodFactsProductResponse> response) {
@@ -995,7 +989,7 @@ public class AddProductActivity extends AppCompatActivity {
             }
             return Uri.fromFile(destFile);
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("AddProductActivity", "Errore nella copia dell'immagine:",e);
             return null;
         }
     }
@@ -1114,7 +1108,7 @@ public class AddProductActivity extends AppCompatActivity {
                 shelfLifeDays
         );
         androidx.media3.common.util.Log.d("AddProductActivity",
-                "Salvataggio prodotto: " + product.toString());
+                "Salvataggio prodotto: " + product);
         List<String> tagsToSave = new ArrayList<>(currentProductTagsSet);
         if (isEditMode) {
             product.setId(currentProductId);

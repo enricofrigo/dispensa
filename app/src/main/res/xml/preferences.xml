@@ -58,17 +58,17 @@
         app:title="@string/pref_cat_data_title"
         app:iconSpaceReserved="false">
 
+        <Preference
+            app:key="pref_clean_images"
+            app:title="@string/pref_clean_images_title"
+            app:summary="@string/pref_clean_images_summary"
+            app:iconSpaceReserved="false"/>
+
         <SwitchPreferenceCompat
             app:key="pref_key_enable_off_api"
             app:title="@string/pref_off_title"
             app:summary="@string/pref_off_summary"
             app:defaultValue="@bool/pref_enable_api"
-            app:iconSpaceReserved="false"/>
-
-        <Preference
-            app:key="pref_clean_images"
-            app:title="@string/pref_clean_images_title"
-            app:summary="@string/pref_clean_images_summary"
             app:iconSpaceReserved="false"/>
 
     </PreferenceCategory>

@@ -31,6 +31,8 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
     public static final String KEY_NOTIFICATION_TIME_HOUR = "pref_notification_time_hour";
     public static final String KEY_NOTIFICATION_TIME_MINUTE = "pref_notification_time_minute";
     public static final String KEY_PREF_ENABLE_OFF_API = "pref_key_enable_off_api";
+    public static final String KEY_PREF_DEFAULT_SHELF_LIFE = "pref_key_default_shelf_life";
+
     private Preference notificationTimePreference;
     private ListPreference languagePreference;
 
@@ -100,13 +102,11 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
 
     private void cleanOrphanImages() {
         Context context = requireContext();
-        eu.frigo.dispensa.data.Repository.cleanOrphanImages(context, count -> {
-            new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
-                android.widget.Toast.makeText(context, 
-                        getString(R.string.notify_clean_images_done, count), 
-                        android.widget.Toast.LENGTH_SHORT).show();
-            });
-        });
+        eu.frigo.dispensa.data.Repository.cleanOrphanImages(context, count ->
+                new android.os.Handler(android.os.Looper.getMainLooper()).post(() ->
+                        android.widget.Toast.makeText(context,
+                getString(R.string.notify_clean_images_done, count),
+                android.widget.Toast.LENGTH_SHORT).show()));
     }
     private void showTimePickerDialog() {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
