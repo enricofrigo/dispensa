@@ -137,6 +137,7 @@ I prodotti in questa location potrebbero dover essere riassegnati.</string>
     <string name="pref_key_location">manage_locations</string>
     <string name="pref_location_title">Gestione degli storage</string>
     <string name="pref_location_summary">Aggiungi, modifica o riordina le tue location</string>
+    <string name="pref_predefined_tab_style_icon">Mostra tab predefiniti come icone</string>
 
     <string name="pref_cat_theme_title">Aspetto</string>
     <string name="pref_key_theme">theme_preference</string>

@@ -20,6 +20,14 @@
             android:layout_height="?attr/actionBarSize"
             app:title="@string/title_manage_locations"/>
 
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switch_tab_style"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginBottom="8dp"
+            android:text="@string/pref_predefined_tab_style_icon" />
+
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.recyclerview.widget.RecyclerView
