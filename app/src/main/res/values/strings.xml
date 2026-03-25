@@ -98,6 +98,7 @@
     <string name="default_icon">Default icon</string>
     <string name="add_new_location">Add a new location</string>
     <string name="title_manage_locations">Storage location management</string>
+    <string name="location_management_description">Reorder your location or select the default on application opening</string>
     <string name="hint_new_location">Location name</string>
     <string name="error_empty_location">Name cannot be empty</string>
     <string name="notify_add_location">Location \'%s\' added</string>

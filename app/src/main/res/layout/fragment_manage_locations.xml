@@ -20,6 +20,15 @@
             android:layout_height="?attr/actionBarSize"
             app:title="@string/title_manage_locations"/>
 
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/location_description"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginBottom="8dp"
+            android:textSize="18sp"
+            android:text="@string/location_management_description" />
+
         <com.google.android.material.switchmaterial.SwitchMaterial
             android:id="@+id/switch_tab_style"
             android:layout_width="match_parent"
@@ -28,6 +37,11 @@
             android:layout_marginBottom="8dp"
             android:text="@string/pref_predefined_tab_style_icon" />
 
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginBottom="8dp"
+            android:background="@android:color/darker_gray"/>
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.recyclerview.widget.RecyclerView
