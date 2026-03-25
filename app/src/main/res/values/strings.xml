@@ -135,6 +135,7 @@
     <string name="pref_key_location">manage_locations</string>
     <string name="pref_location_title">Manage storage</string>
     <string name="pref_location_summary">Add, edit or reorder your locations</string>
+    <string name="pref_predefined_tab_style_icon">Show predefined tabs as icons</string>
 
     <string name="pref_cat_theme_title">Theme</string>
     <string name="pref_key_theme">theme_preference</string>

@@ -1,11 +1,13 @@
 package eu.frigo.dispensa.ui;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -21,6 +23,7 @@ import android.widget.Toast;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.switchmaterial.SwitchMaterial;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,6 +48,7 @@ public class ManageLocationsFragment extends Fragment implements
     private ItemTouchHelper itemTouchHelper;
     private FloatingActionButton fabAddLocation;
     private MaterialToolbar toolbar;
+    private SwitchMaterial switchTabStyle;
 
     public ManageLocationsFragment() {
         // Required empty public constructor
@@ -71,6 +75,13 @@ public class ManageLocationsFragment extends Fragment implements
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         locationViewModel = new ViewModelProvider(requireActivity()).get(LocationViewModel.class);
+
+        switchTabStyle = view.findViewById(R.id.switch_tab_style);
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+        switchTabStyle.setChecked(prefs.getBoolean("pref_predefined_tab_icon", false));
+        switchTabStyle.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            prefs.edit().putBoolean("pref_predefined_tab_icon", isChecked).apply();
+        });
 
         setupRecyclerView();
         observeLocations();

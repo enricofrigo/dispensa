@@ -213,10 +213,18 @@ public class MainActivity extends AppCompatActivity
             if (currentLocation != null) {
                 Log.d("MainActivity",
                         "Nome della posizione: " + currentLocation.getLocalizedName(getApplicationContext()));
-                if (currentLocation.isPredefined)
-                    tab.setIcon(currentLocation.getIcon());
-                else
+                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+                boolean showPredefinedAsIcon = prefs.getBoolean("pref_predefined_tab_icon", false);
+                
+                if (currentLocation.isPredefined) {
+                    if (showPredefinedAsIcon) {
+                        tab.setIcon(currentLocation.getIcon());
+                    } else {
+                        tab.setText(currentLocation.getLocalizedName(getApplicationContext()));
+                    }
+                } else {
                     tab.setText(currentLocation.getLocalizedName(getApplicationContext()));
+                }
             }
         }).attach();
         observeLocationsForTabs();
@@ -598,6 +606,9 @@ public class MainActivity extends AppCompatActivity
         super.onResume();
         if (viewPager != null) {
             viewPager.registerOnPageChangeCallback(pageChangeCallback);
+        }
+        if (locationViewPagerAdapter != null) {
+            locationViewPagerAdapter.notifyDataSetChanged();
         }
     }
 
