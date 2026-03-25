@@ -45,6 +45,7 @@ googleMaterialTypeface = "4.0.0.3-kotlin"
 iconicsCoreVersion = "4.0.2"
 googleMaterialTypefaceVersion = "3.0.1.4.original-kotlin"
 iconicsViewsVersion = "4.0.2"
+balloon = "1.7.5"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -90,6 +91,7 @@ google-material-typeface = { group = "com.mikepenz", name = "google-material-typ
 mikepenz-iconics-core = { group = "com.mikepenz", name = "iconics-core", version.ref = "iconicsCoreVersion" }
 mikepenz-google-material-typeface = { group = "com.mikepenz", name = "google-material-typeface", version.ref = "googleMaterialTypefaceVersion" }
 mikepenz-iconics-views = { group = "com.mikepenz", name = "iconics-views", version.ref = "iconicsViewsVersion" }
+balloon = { group = "com.github.skydoves", name = "balloon", version.ref = "balloon" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

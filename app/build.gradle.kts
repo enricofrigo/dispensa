@@ -98,6 +98,7 @@ dependencies {
     implementation(libs.glide)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.preference.ktx)
+    implementation(libs.balloon)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)

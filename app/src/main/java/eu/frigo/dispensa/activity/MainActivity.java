@@ -271,6 +271,56 @@ public class MainActivity extends AppCompatActivity
             addProductActivityLauncher.launch(intent);
         });
 
+        showHintsIfNeeded();
+    }
+
+    private void showHintsIfNeeded() {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        boolean hintsShown = prefs.getBoolean("hints_shown", false);
+        if (!hintsShown) {
+            prefs.edit().putBoolean("hints_shown", true).apply();
+
+            ImageButton btnManageLocations = findViewById(R.id.button_manage_locations);
+            if (fab != null) {
+                fab.post(() -> {
+                    com.skydoves.balloon.Balloon balloonFab = new com.skydoves.balloon.Balloon.Builder(this)
+                            .setArrowSize(10)
+                            .setArrowOrientation(com.skydoves.balloon.ArrowOrientation.BOTTOM)
+                            .setArrowPosition(0.5f)
+                            .setPadding(8)
+                            .setCornerRadius(8f)
+                            .setAlpha(0.9f)
+                            .setText(getString(R.string.hint_add_product))
+                            .setTextColorResource(R.color.white)
+                            .setBackgroundColorResource(R.color.purple_500)
+                            .setBalloonAnimation(com.skydoves.balloon.BalloonAnimation.FADE)
+                            .setLifecycleOwner(this)
+                            .setDismissWhenTouchOutside(true)
+                            .build();
+                    balloonFab.showAlignTop(fab);
+                });
+            }
+
+            if (btnManageLocations != null) {
+                btnManageLocations.post(() -> {
+                    com.skydoves.balloon.Balloon balloonLoc = new com.skydoves.balloon.Balloon.Builder(this)
+                            .setArrowSize(10)
+                            .setArrowOrientation(com.skydoves.balloon.ArrowOrientation.TOP)
+                            .setArrowPosition(0.5f)
+                            .setPadding(8)
+                            .setCornerRadius(8f)
+                            .setAlpha(0.9f)
+                            .setText(getString(R.string.hint_manage_locations))
+                            .setTextColorResource(R.color.white)
+                            .setBackgroundColorResource(R.color.purple_500)
+                            .setBalloonAnimation(com.skydoves.balloon.BalloonAnimation.FADE)
+                            .setLifecycleOwner(this)
+                            .setDismissWhenTouchOutside(true)
+                            .build();
+                    balloonLoc.showAlignBottom(btnManageLocations);
+                });
+            }
+        }
     }
 
     private void observeLocationsForTabs() {
