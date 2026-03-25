@@ -92,22 +92,23 @@
     <string name="hint_category_new">Nuova Categoria (es. en:dairy)</string>
 
     <!-- Location -->
-    <string name="hint_store_location">Posizione Location</string>
-    <string name="new_location">Nuova Location</string>
-    <string name="edit_location">Modifica Location</string>
-    <string name="delete_location">Elimina Location</string>
+    <string name="hint_store_location">Posizione dispensa</string>
+    <string name="new_location">Nuova dispensa</string>
+    <string name="edit_location">Modifica dispensa</string>
+    <string name="delete_location">Elimina dispensa</string>
     <string name="default_icon">Icona Default</string>
-    <string name="add_new_location">Aggiungi nuova location</string>
-    <string name="title_manage_locations">Gestione Location</string>
-    <string name="hint_new_location">Nome della location</string>
+    <string name="add_new_location">Aggiungi nuova dispensa</string>
+    <string name="title_manage_locations">Gestione dispensa</string>
+    <string name="location_management_description">Riordina le tue dispense o seleziona la dispensa predefinita all\'avvio dell\'applicazione</string>
+    <string name="hint_new_location">Nome della dispensa</string>
     <string name="error_empty_location">Il nome non può essere vuoto</string>
-    <string name="notify_add_location">Location \'%s\' aggiunta</string>
-    <string name="notify_update_location">Location aggiornata</string>
-    <string name="error_delete_default_location">Le location predefinite non possono essere eliminate.</string>
+    <string name="notify_add_location">dispensa \'%s\' aggiunta</string>
+    <string name="notify_update_location">dispensa aggiornata</string>
+    <string name="error_delete_default_location">Le dispense predefinite non possono essere eliminate.</string>
     <string name="delete_location_confirmation_title">Conferma Eliminazione</string>
-    <string name="error_delete_location_confirmation">Sei sicuro di voler eliminare la location \'%s\'?
-I prodotti in questa location potrebbero dover essere riassegnati.</string>
-    <string name="notify_delete_location">Location \'%s\' eliminata</string>
+    <string name="error_delete_location_confirmation">Sei sicuro di voler eliminare la dispensa \'%s\'?
+I prodotti in questa dispensa potrebbero dover essere riassegnati.</string>
+    <string name="notify_delete_location">Dispensa \'%s\' eliminata</string>
     <string name="err_location_select">Seleziona una posizione di archiviazione</string>
 
     <!-- Version -->
