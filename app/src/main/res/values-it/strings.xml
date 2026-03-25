@@ -194,4 +194,8 @@ I prodotti in questa dispensa potrebbero dover essere riassegnati.</string>
     <string name="import_confirm_message">Questa operazione sostituirà tutti i dati attuali con quelli del file selezionato. Vuoi continuare?</string>
     <string name="set_as_default">Seleziona default</string>
 
+    <!-- Tooltips -->
+    <string name="hint_add_product">Aggiungi qui il tuo primo prodotto</string>
+    <string name="hint_manage_locations">Clicca qui per gestire le tue dispense</string>
+
 </resources>
