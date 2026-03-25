@@ -28,7 +28,7 @@
                 android:id="@+id/button_manage_locations"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
-                android:src="@drawable/edit_location_24px"
+                android:src="@drawable/edit_24px"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@string/title_manage_locations"
                 android:layout_marginStart="8dp"
