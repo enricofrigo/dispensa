@@ -46,6 +46,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.adapter.LocationViewPagerAdapter;
@@ -196,6 +197,7 @@ public class MainActivity extends AppCompatActivity
 
         productViewModel = new ViewModelProvider(this).get(ProductViewModel.class);
         locationViewModel = new ViewModelProvider(this).get(LocationViewModel.class);
+        productViewModel.getAllProducts().observe(this, products -> showHintsIfNeeded());
 
         viewPager = findViewById(R.id.viewPager);
         TabLayout tabLayout = findViewById(R.id.tabLayout);
@@ -274,12 +276,13 @@ public class MainActivity extends AppCompatActivity
             addProductActivityLauncher.launch(intent);
         });
 
-        showHintsIfNeeded();
     }
 
     private void showHintsIfNeeded() {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         boolean hintsShown = prefs.getBoolean("main_hints_shown", false);
+        if(!Objects.requireNonNull(productViewModel.getAllProducts().getValue()).isEmpty())
+            prefs.edit().putBoolean("main_hints_shown", true).apply();
         if (!hintsShown) {
             prefs.edit().putBoolean("main_hints_shown", true).apply();
 
