@@ -200,4 +200,10 @@ I prodotti in questa dispensa potrebbero dover essere riassegnati.</string>
     <string name="hint_manage_locations">Clicca qui per gestire le tue dispense</string>
     <string name="hint_manage_settings">Clicca qui per importare/esportare i tuoi prodotti o gestire le tue impostazioni</string>
 
+    <!-- Consume Scanner -->
+    <string name="consume_product_not_found">Nessun prodotto trovato con questo codice a barre</string>
+    <string name="consume_product_confirm">Vuoi consumare 1 di %1$s (Scadenza: %2$s)?</string>
+    <string name="consume_duplicate_title">Più prodotti trovati. Scegli quale consumare:</string>
+    <string name="consume_success">Prodotto consumato correttamente</string>
+    <string name="consume_scan_description">Scansiona prodotto da consumare</string>
 </resources>

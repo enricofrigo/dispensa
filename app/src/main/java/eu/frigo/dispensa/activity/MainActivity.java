@@ -69,6 +69,8 @@ public class MainActivity extends AppCompatActivity
     private SearchView searchView;
     private boolean isInitialTabSet = false;
     private FloatingActionButton fab;
+    private FloatingActionButton fabConsume;
+    private View fabContainer;
     private CoordinatorLayout mainCoordinatorLayout;
     private int originalFabBottomMargin;
     private MenuItem layoutToggleMenuItem;
@@ -100,6 +102,16 @@ public class MainActivity extends AppCompatActivity
                 }
                 if (message != null)
                     showProductSavedSnackbar(message);
+            });
+
+    private final ActivityResultLauncher<Intent> consumeScannerLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getResultCode() == AppCompatActivity.RESULT_OK && result.getData() != null) {
+                    String barcode = result.getData().getStringExtra(ConsumeScannerActivity.EXTRA_SCANNED_BARCODE);
+                    if (barcode != null) {
+                        handleScannedBarcodeForConsume(barcode);
+                    }
+                }
             });
 
     private final ActivityResultLauncher<String> exportLauncher = registerForActivityResult(
@@ -240,8 +252,11 @@ public class MainActivity extends AppCompatActivity
             }
         });
         fab = findViewById(R.id.fab);
-        if (fab.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
-            originalFabBottomMargin = ((ViewGroup.MarginLayoutParams) fab.getLayoutParams()).bottomMargin;
+        fabConsume = findViewById(R.id.fab_consume);
+        fabContainer = findViewById(R.id.fab_container);
+
+        if (fabContainer.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
+            originalFabBottomMargin = ((ViewGroup.MarginLayoutParams) fabContainer.getLayoutParams()).bottomMargin;
         } else {
             originalFabBottomMargin = 0;
         }
@@ -255,10 +270,10 @@ public class MainActivity extends AppCompatActivity
                     statusBarsInsets.top,
                     navigationBarsInsets.right,
                     0);
-            ViewGroup.MarginLayoutParams fabParams = (ViewGroup.MarginLayoutParams) fab.getLayoutParams();
+            ViewGroup.MarginLayoutParams containerParams = (ViewGroup.MarginLayoutParams) fabContainer.getLayoutParams();
             int bottomInset = Math.max(navigationBarsInsets.bottom, imeInsets.bottom);
-            fabParams.bottomMargin = originalFabBottomMargin + bottomInset;
-            fab.setLayoutParams(fabParams);
+            containerParams.bottomMargin = originalFabBottomMargin + bottomInset;
+            fabContainer.setLayoutParams(containerParams);
             if (viewPager != null) {
                 viewPager.registerOnPageChangeCallback(pageChangeCallback);
             }
@@ -274,6 +289,11 @@ public class MainActivity extends AppCompatActivity
                 intent.putExtra(AddProductActivity.PRESELECTED_LOCATION_INTERNAL_KEY, currentLocationInternalKey);
             }
             addProductActivityLauncher.launch(intent);
+        });
+
+        fabConsume.setOnClickListener(view -> {
+            Intent intent = new Intent(MainActivity.this, ConsumeScannerActivity.class);
+            consumeScannerLauncher.launch(intent);
         });
 
     }
@@ -566,12 +586,67 @@ public class MainActivity extends AppCompatActivity
     }
 
     public void showProductSavedSnackbar(String message) {
-        if (mainCoordinatorLayout != null && fab != null) {
+        if (mainCoordinatorLayout != null && fabContainer != null) {
             Snackbar snackbar = Snackbar.make(mainCoordinatorLayout, message, Snackbar.LENGTH_LONG);
-            snackbar.setAnchorView(fab);
+            snackbar.setAnchorView(fabContainer);
             snackbar.show();
         } else {
             Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void handleScannedBarcodeForConsume(String barcode) {
+        productViewModel.getProductsByBarcodeAsync(barcode, products -> {
+            runOnUiThread(() -> {
+                if (products == null || products.isEmpty()) {
+                    Toast.makeText(this, R.string.consume_product_not_found, Toast.LENGTH_LONG).show();
+                } else if (products.size() == 1) {
+                    confirmAndConsume(products.get(0));
+                } else {
+                    showDuplicateBarcodeSelectionDialog(products);
+                }
+            });
+        });
+    }
+
+    private void confirmAndConsume(Product product) {
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.use)
+                .setMessage(String.format(getString(R.string.consume_product_confirm),
+                        product.getProductName(), product.getExpiryDateString()))
+                .setPositiveButton(R.string.ok, (dialog, which) -> {
+                    consumeOne(product);
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
+    private void showDuplicateBarcodeSelectionDialog(List<Product> products) {
+        String[] items = new String[products.size()];
+        for (int i = 0; i < products.size(); i++) {
+            Product p = products.get(i);
+            items[i] = String.format("%s (Scad: %s) - Qta: %d",
+                    p.getProductName(), p.getExpiryDateString(), p.getQuantity());
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.consume_duplicate_title)
+                .setItems(items, (dialog, which) -> {
+                    consumeOne(products.get(which));
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
+    private void consumeOne(Product product) {
+        int currentQuantity = product.getQuantity();
+        if (currentQuantity > 1) {
+            Product updatedProduct = product.copyWithNewQuantity(currentQuantity - 1);
+            productViewModel.update(updatedProduct);
+            Toast.makeText(this, R.string.consume_success, Toast.LENGTH_SHORT).show();
+        } else {
+            productViewModel.delete(product);
+            showProductSavedSnackbar(String.format(getString(R.string.notify_used), product.getProductName()));
         }
     }
 

@@ -80,6 +80,11 @@ public class Repository {
     public void triggerDataRefresh() {
         Log.d("ProductRepository", "triggerDataRefresh() chiamato.");
     }
+
+    public List<Product> getProductsByBarcodeSync(String barcode) {
+        return productDao.getProductsByBarcode(barcode);
+    }
+
     public LiveData<ProductWithCategoryDefinitions> getProductById(int currentProductId) {
         return productDao.getProductWithFullCategoriesById(currentProductId);
     }
