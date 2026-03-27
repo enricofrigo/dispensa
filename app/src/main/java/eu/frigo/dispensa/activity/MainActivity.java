@@ -9,6 +9,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
@@ -17,6 +18,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.ActionMenuView;
 import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
@@ -35,6 +37,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
+import com.skydoves.balloon.ArrowOrientation;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -276,9 +279,9 @@ public class MainActivity extends AppCompatActivity
 
     private void showHintsIfNeeded() {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        boolean hintsShown = prefs.getBoolean("hints_shown", false);
+        boolean hintsShown = prefs.getBoolean("main_hints_shown", false);
         if (!hintsShown) {
-            prefs.edit().putBoolean("hints_shown", true).apply();
+            prefs.edit().putBoolean("main_hints_shown", true).apply();
 
             ImageButton btnManageLocations = findViewById(R.id.button_manage_locations);
             if (fab != null) {
@@ -286,7 +289,7 @@ public class MainActivity extends AppCompatActivity
                     com.skydoves.balloon.Balloon balloonFab = new com.skydoves.balloon.Balloon.Builder(this)
                             .setArrowSize(10)
                             .setArrowOrientation(com.skydoves.balloon.ArrowOrientation.BOTTOM)
-                            .setArrowPosition(0.5f)
+                            .setArrowPosition(0.7f)
                             .setPadding(8)
                             .setCornerRadius(8f)
                             .setAlpha(0.9f)
@@ -305,8 +308,8 @@ public class MainActivity extends AppCompatActivity
                 btnManageLocations.post(() -> {
                     com.skydoves.balloon.Balloon balloonLoc = new com.skydoves.balloon.Balloon.Builder(this)
                             .setArrowSize(10)
-                            .setArrowOrientation(com.skydoves.balloon.ArrowOrientation.TOP)
-                            .setArrowPosition(0.5f)
+                            .setArrowOrientation(ArrowOrientation.TOP)
+                            .setArrowPosition(0.1f)
                             .setPadding(8)
                             .setCornerRadius(8f)
                             .setAlpha(0.9f)
@@ -320,6 +323,36 @@ public class MainActivity extends AppCompatActivity
                     balloonLoc.showAlignBottom(btnManageLocations);
                 });
             }
+
+            Toolbar toolbar = findViewById(R.id.toolbar);
+            toolbar.post(() -> {
+                // Cerchiamo l'icona dell'overflow tra i figli della Toolbar
+                for (int i = 0; i < toolbar.getChildCount(); i++) {
+                    View child = toolbar.getChildAt(i);
+                    if (child instanceof ActionMenuView menuView) {
+                        // L'ultimo elemento dell'ActionMenuView è solitamente l'overflow
+                        View overflowIcon = menuView.getChildAt(menuView.getChildCount() - 1);
+                        if (overflowIcon != null) {
+                            com.skydoves.balloon.Balloon balloonLoc = new com.skydoves.balloon.Balloon.Builder(this)
+                                    .setArrowSize(10)
+                                    .setArrowOrientation(ArrowOrientation.TOP)
+                                    .setArrowPosition(0.9f)
+                                    .setPadding(8)
+                                    .setCornerRadius(8f)
+                                    .setAlpha(0.9f)
+                                    .setText(getString(R.string.hint_manage_settings))
+                                    .setTextColorResource(R.color.white)
+                                    .setBackgroundColorResource(R.color.purple_500)
+                                    .setBalloonAnimation(com.skydoves.balloon.BalloonAnimation.FADE)
+                                    .setLifecycleOwner(this)
+                                    .setDismissWhenTouchOutside(true)
+                                    .build();
+                            balloonLoc.showAlignBottom(overflowIcon);
+                        }
+                        break;
+                    }
+                }
+            });
         }
     }
 
@@ -647,7 +680,6 @@ public class MainActivity extends AppCompatActivity
         Fragment currentFragment = getSupportFragmentManager().findFragmentByTag("f" + viewPager.getCurrentItem());
         if (currentFragment instanceof ProductListFragment) {
             ((ProductListFragment) currentFragment).productListAdapter.submitList(filteredList);
-            ;
         }
     }
 
@@ -678,7 +710,7 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    private ViewPager2.OnPageChangeCallback pageChangeCallback = new ViewPager2.OnPageChangeCallback() {
+    private final ViewPager2.OnPageChangeCallback pageChangeCallback = new ViewPager2.OnPageChangeCallback() {
         @Override
         public void onPageSelected(int position) {
             super.onPageSelected(position);
