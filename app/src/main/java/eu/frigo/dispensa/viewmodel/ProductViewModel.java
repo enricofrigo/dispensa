@@ -53,4 +53,13 @@ public class ProductViewModel extends AndroidViewModel {
     public LiveData<List<ProductWithCategoryDefinitions>> getProductsByLocationInternalKey(String locationInternalKeyFilter) {
         return repository.getProductsByLocationInternalKey(locationInternalKeyFilter);
     }
+
+    public void getProductsByBarcodeAsync(String barcode, java.util.function.Consumer<List<Product>> callback) {
+        eu.frigo.dispensa.data.AppDatabase.databaseWriteExecutor.execute(() -> {
+            List<Product> products = repository.getProductsByBarcodeSync(barcode);
+            if (callback != null) {
+                callback.accept(products);
+            }
+        });
+    }
 }

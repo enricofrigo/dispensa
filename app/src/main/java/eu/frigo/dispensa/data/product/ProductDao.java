@@ -44,6 +44,9 @@ public interface ProductDao {
     @Query("SELECT * FROM products WHERE barcode = :barcode LIMIT 1")
     Product getProductByBarcode(String barcode);
 
+    @Query("SELECT * FROM products WHERE barcode = :barcode ORDER BY expiry_date ASC")
+    List<Product> getProductsByBarcode(String barcode);
+
     @Transaction
     @Query("SELECT * FROM products WHERE id = :productId")
     public LiveData<ProductWithCategoryDefinitions> getProductWithFullCategoriesById(int productId);

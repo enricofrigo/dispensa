@@ -200,4 +200,10 @@
     <string name="hint_manage_locations">Click here to manage your storage locations</string>
     <string name="hint_manage_settings">Click here to import/export your products or manage your settings</string>
 
+    <!-- Consume Scanner -->
+    <string name="consume_product_not_found">No product found for this barcode</string>
+    <string name="consume_product_confirm">Do you want to consume 1 of %1$s (Expiry: %2$s)?</string>
+    <string name="consume_duplicate_title">Multiple products found. Choose which to consume:</string>
+    <string name="consume_success">Product consumed successfully</string>
+    <string name="consume_scan_description">Scan product to consume</string>
 </resources>
