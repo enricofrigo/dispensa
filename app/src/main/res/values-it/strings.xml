@@ -110,6 +110,7 @@
 I prodotti in questa dispensa potrebbero dover essere riassegnati.</string>
     <string name="notify_delete_location">Dispensa \'%s\' eliminata</string>
     <string name="err_location_select">Seleziona una posizione di archiviazione</string>
+    <string name="add_product_camera_preview_hint">Inquadra il codice a barre o la data di scadenza</string>
 
     <!-- Version -->
     <string name="version_format_detailed">Versione: %1$s (Build: %2$s)</string>

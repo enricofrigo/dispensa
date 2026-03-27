@@ -86,6 +86,13 @@
                 android:layout_marginTop="8dp"
                 android:visibility="gone"
                 />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:padding="16dp"
+                android:text="@string/add_product_camera_preview_hint"
+                />
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/textFieldProductNameLayout"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"

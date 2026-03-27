@@ -108,6 +108,7 @@
     <string name="error_delete_location_confirmation">Are you sure you want to delete the location \'%s\'?\nProducts in this location might need to be moved.</string>
     <string name="notify_delete_location">Location \'%s\' deleted</string>
     <string name="err_location_select">Select a location</string>
+    <string name="add_product_camera_preview_hint">Scan barcode or expiry date to add product</string>
 
     <!-- Version -->
     <string name="version_format_detailed">Version: %1$s (Build: %2$s)</string>

@@ -274,7 +274,7 @@ public class AddProductActivity extends AppCompatActivity {
                 BarcodeFormat.CODE_39
         );
         barcodeView.getBarcodeView().setDecoderFactory(new DefaultDecoderFactory(formats));
-        barcodeView.setStatusText(getString(R.string.scan_barcode_description));
+        barcodeView.setStatusText(getString(R.string.add_product_camera_preview_hint));
 
         pickImageForBarcodeLauncher = registerForActivityResult(
                 new ActivityResultContracts.GetContent(),
