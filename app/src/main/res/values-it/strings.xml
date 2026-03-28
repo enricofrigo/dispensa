@@ -197,6 +197,7 @@ I prodotti in questa dispensa potrebbero dover essere riassegnati.</string>
 
     <!-- Tooltips -->
     <string name="hint_add_product">Aggiungi qui il tuo primo prodotto</string>
+    <string name="hint_consume_product">Scansiona per consumare un prodotto</string>
     <string name="hint_manage_locations">Clicca qui per gestire le tue dispense</string>
     <string name="hint_manage_settings">Clicca qui per importare/esportare i tuoi prodotti o gestire le tue impostazioni</string>
 

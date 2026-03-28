@@ -197,6 +197,7 @@
 
     <!-- Tooltips -->
     <string name="hint_add_product">Add your first product here</string>
+    <string name="hint_consume_product">Scan to consume product</string>
     <string name="hint_manage_locations">Click here to manage your storage locations</string>
     <string name="hint_manage_settings">Click here to import/export your products or manage your settings</string>
 
