@@ -311,8 +311,8 @@ public class MainActivity extends AppCompatActivity
                 fab.post(() -> {
                     com.skydoves.balloon.Balloon balloonFab = new com.skydoves.balloon.Balloon.Builder(this)
                             .setArrowSize(10)
-                            .setArrowOrientation(com.skydoves.balloon.ArrowOrientation.BOTTOM)
-                            .setArrowPosition(0.7f)
+                            .setArrowOrientation(ArrowOrientation.END)
+                            .setArrowPosition(0.5f)
                             .setPadding(8)
                             .setCornerRadius(8f)
                             .setAlpha(0.9f)
@@ -323,7 +323,26 @@ public class MainActivity extends AppCompatActivity
                             .setLifecycleOwner(this)
                             .setDismissWhenTouchOutside(true)
                             .build();
-                    balloonFab.showAlignTop(fab);
+                    balloonFab.showAlignStart(fab);
+                });
+            }
+            if (fabConsume != null) {
+                fabConsume.post(() -> {
+                    com.skydoves.balloon.Balloon balloonFab = new com.skydoves.balloon.Balloon.Builder(this)
+                            .setArrowSize(10)
+                            .setArrowOrientation(com.skydoves.balloon.ArrowOrientation.BOTTOM)
+                            .setArrowPosition(0.8f)
+                            .setPadding(8)
+                            .setCornerRadius(8f)
+                            .setAlpha(0.9f)
+                            .setText(getString(R.string.hint_consume_product))
+                            .setTextColorResource(R.color.white)
+                            .setBackgroundColorResource(R.color.purple_500)
+                            .setBalloonAnimation(com.skydoves.balloon.BalloonAnimation.FADE)
+                            .setLifecycleOwner(this)
+                            .setDismissWhenTouchOutside(true)
+                            .build();
+                    balloonFab.showAlignTop(fabConsume);
                 });
             }
 
