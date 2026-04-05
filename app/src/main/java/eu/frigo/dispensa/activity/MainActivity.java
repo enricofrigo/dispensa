@@ -108,8 +108,13 @@ public class MainActivity extends AppCompatActivity
             new ActivityResultContracts.StartActivityForResult(), result -> {
                 if (result.getResultCode() == AppCompatActivity.RESULT_OK && result.getData() != null) {
                     String barcode = result.getData().getStringExtra(ConsumeScannerActivity.EXTRA_SCANNED_BARCODE);
+                    Long scannedDate = null;
+                    if (result.getData().hasExtra(ConsumeScannerActivity.EXTRA_SCANNED_DATE_MATCH)) {
+                        scannedDate = result.getData().getLongExtra(ConsumeScannerActivity.EXTRA_SCANNED_DATE_MATCH, -1);
+                        if (scannedDate == -1) scannedDate = null;
+                    }
                     if (barcode != null) {
-                        handleScannedBarcodeForConsume(barcode);
+                        handleScannedBarcodeForConsume(barcode, scannedDate);
                     }
                 }
             });
@@ -614,7 +619,7 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    private void handleScannedBarcodeForConsume(String barcode) {
+    private void handleScannedBarcodeForConsume(String barcode, Long scannedDate) {
         productViewModel.getProductsByBarcodeAsync(barcode, products -> {
             runOnUiThread(() -> {
                 if (products == null || products.isEmpty()) {
@@ -622,7 +627,16 @@ public class MainActivity extends AppCompatActivity
                 } else if (products.size() == 1) {
                     confirmAndConsume(products.get(0));
                 } else {
-                    showDuplicateBarcodeSelectionDialog(products);
+                    int selectedIndex = -1;
+                    if (scannedDate != null) {
+                        for (int i = 0; i < products.size(); i++) {
+                            if (products.get(i).getExpiryDate() != null && products.get(i).getExpiryDate().equals(scannedDate)) {
+                                selectedIndex = i;
+                                break;
+                            }
+                        }
+                    }
+                    showDuplicateBarcodeSelectionDialog(products, selectedIndex);
                 }
             });
         });
@@ -640,7 +654,7 @@ public class MainActivity extends AppCompatActivity
                 .show();
     }
 
-    private void showDuplicateBarcodeSelectionDialog(List<Product> products) {
+    private void showDuplicateBarcodeSelectionDialog(List<Product> products, int selectedIndex) {
         String[] items = new String[products.size()];
         for (int i = 0; i < products.size(); i++) {
             Product p = products.get(i);
@@ -648,13 +662,27 @@ public class MainActivity extends AppCompatActivity
                     p.getProductName(), p.getExpiryDateString(), p.getQuantity());
         }
 
-        new AlertDialog.Builder(this)
+        final int[] currentSelected = {selectedIndex != -1 ? selectedIndex : -1};
+        AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle(R.string.consume_duplicate_title)
-                .setItems(items, (dialog, which) -> {
-                    consumeOne(products.get(which));
+                .setSingleChoiceItems(items, selectedIndex, (d, which) -> {
+                    currentSelected[0] = which;
+                    ((AlertDialog) d).getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);
+                })
+                .setPositiveButton(R.string.ok, (d, which) -> {
+                    if (currentSelected[0] != -1) {
+                        consumeOne(products.get(currentSelected[0]));
+                    }
                 })
                 .setNegativeButton(R.string.cancel, null)
-                .show();
+                .create();
+        
+        dialog.setOnShowListener(d -> {
+            if (currentSelected[0] == -1) {
+                ((AlertDialog) d).getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
+            }
+        });
+        dialog.show();
     }
 
     private void consumeOne(Product product) {
