@@ -188,21 +188,17 @@ public class ConsumeScannerActivity extends AppCompatActivity {
                     textRecognizer.process(image)
                             .addOnSuccessListener(text -> {
                                 if (isScanned) return;
-                                for (com.google.mlkit.vision.text.Text.TextBlock block : text.getTextBlocks()) {
-                                    for (com.google.mlkit.vision.text.Text.Line line : block.getLines()) {
-                                        String lineText = line.getText();
-                                        String[] words = lineText.split("\\s+");
-                                        for (String word : words) {
-                                            Long parsedDate = DateConverter.parseDisplayDateToTimestampMs(word);
-                                            if (parsedDate != null) {
-                                                Log.d("ConsumeScanner", "Data estratta dal testo: " + word + " -> timestamp: " + parsedDate);
-                                                if (targetExpiryDates.contains(parsedDate)) {
-                                                    Log.d("ConsumeScanner", "MATCH! Data trovata e presente tra i prodotti: " + parsedDate);
-                                                    handler.removeCallbacks(timeoutRunnable);
-                                                    returnResult(scannedBarcode, parsedDate);
-                                                    return;
-                                                }
-                                            }
+                                String resultText = text.getText();
+                                String parsedDateStr = eu.frigo.dispensa.util.ExpiryDateParser.parseExpiryDate(resultText);
+                                if (parsedDateStr != null) {
+                                    Long parsedDate = DateConverter.parseDisplayDateToTimestampMs(parsedDateStr);
+                                    if (parsedDate != null) {
+                                        Log.d("ConsumeScanner", "Data estratta dal testo: " + parsedDateStr + " -> timestamp: " + parsedDate);
+                                        if (targetExpiryDates.contains(parsedDate)) {
+                                            Log.d("ConsumeScanner", "MATCH! Data trovata e presente tra i prodotti: " + parsedDate);
+                                            handler.removeCallbacks(timeoutRunnable);
+                                            returnResult(scannedBarcode, parsedDate);
+                                            return;
                                         }
                                     }
                                 }
