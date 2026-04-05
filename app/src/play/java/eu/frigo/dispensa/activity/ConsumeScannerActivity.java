@@ -148,11 +148,16 @@ public class ConsumeScannerActivity extends AppCompatActivity {
                                 if (!barcodes.isEmpty() && !isTextScanningMode && !isScanned) {
                                     for (Barcode barcode : barcodes) {
                                         String rawValue = barcode.getRawValue();
+                                        Log.d("ConsumeScanner", "Barcode letto: " + rawValue);
                                         isTextScanningMode = true;
                                         scannedBarcode = rawValue;
                                         
-                                        timeoutRunnable = () -> returnResult(scannedBarcode, null);
+                                        timeoutRunnable = () -> {
+                                            Log.d("ConsumeScanner", "Timeout 20 secondi scaduto, restituisco solo barcode.");
+                                            returnResult(scannedBarcode, null);
+                                        };
                                         handler.postDelayed(timeoutRunnable, 20000);
+                                        Log.d("ConsumeScanner", "Timer di 20 secondi avviato per la lettura data.");
                                         
                                         AppDatabase.databaseWriteExecutor.execute(() -> {
                                             List<Product> products = AppDatabase.getDatabase(getApplicationContext())
@@ -164,9 +169,11 @@ public class ConsumeScannerActivity extends AppCompatActivity {
                                                 }
                                             }
                                             targetExpiryDates = dates;
+                                            Log.d("ConsumeScanner", "Trovati " + products.size() + " prodotti. Date target uniche: " + targetExpiryDates.size());
                                             
                                             // Se non ci sono multiple date da risolvere o non ci sono prodotti
                                             if (products.size() <= 1 || targetExpiryDates.isEmpty()) {
+                                                Log.d("ConsumeScanner", "Non ci sono abbastanza date da confrontare, uscita immediata iterazione testo.");
                                                 handler.removeCallbacks(timeoutRunnable);
                                                 runOnUiThread(() -> returnResult(scannedBarcode, null));
                                             }
@@ -187,10 +194,14 @@ public class ConsumeScannerActivity extends AppCompatActivity {
                                         String[] words = lineText.split("\\s+");
                                         for (String word : words) {
                                             Long parsedDate = DateConverter.parseDisplayDateToTimestampMs(word);
-                                            if (parsedDate != null && targetExpiryDates.contains(parsedDate)) {
-                                                handler.removeCallbacks(timeoutRunnable);
-                                                returnResult(scannedBarcode, parsedDate);
-                                                return;
+                                            if (parsedDate != null) {
+                                                Log.d("ConsumeScanner", "Data estratta dal testo: " + word + " -> timestamp: " + parsedDate);
+                                                if (targetExpiryDates.contains(parsedDate)) {
+                                                    Log.d("ConsumeScanner", "MATCH! Data trovata e presente tra i prodotti: " + parsedDate);
+                                                    handler.removeCallbacks(timeoutRunnable);
+                                                    returnResult(scannedBarcode, parsedDate);
+                                                    return;
+                                                }
                                             }
                                         }
                                     }
