@@ -156,8 +156,8 @@ public class ConsumeScannerActivity extends AppCompatActivity {
                                             Log.d("ConsumeScanner", "Timeout 20 secondi scaduto, restituisco solo barcode.");
                                             returnResult(scannedBarcode, null);
                                         };
-                                        handler.postDelayed(timeoutRunnable, 20000);
-                                        Log.d("ConsumeScanner", "Timer di 20 secondi avviato per la lettura data.");
+                                        handler.postDelayed(timeoutRunnable, 5000);
+                                        Log.d("ConsumeScanner", "Timer di 5 secondi avviato per la lettura data.");
                                         
                                         AppDatabase.databaseWriteExecutor.execute(() -> {
                                             List<Product> products = AppDatabase.getDatabase(getApplicationContext())
