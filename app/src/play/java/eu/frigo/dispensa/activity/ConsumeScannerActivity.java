@@ -24,21 +24,43 @@ import com.google.mlkit.vision.barcode.BarcodeScanning;
 import com.google.mlkit.vision.barcode.common.Barcode;
 import com.google.mlkit.vision.common.InputImage;
 
+import com.google.mlkit.vision.text.TextRecognition;
+import com.google.mlkit.vision.text.TextRecognizer;
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import android.os.Handler;
+import android.os.Looper;
+
 import eu.frigo.dispensa.R;
+import eu.frigo.dispensa.data.AppDatabase;
+import eu.frigo.dispensa.data.product.Product;
+import eu.frigo.dispensa.util.DateConverter;
 
 public class ConsumeScannerActivity extends AppCompatActivity {
 
     public static final String EXTRA_SCANNED_BARCODE = "SCANNED_BARCODE_DATA";
+    public static final String EXTRA_SCANNED_DATE_MATCH = "SCANNED_DATE_MATCH";
 
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
     private ExecutorService cameraExecutor;
     private com.google.mlkit.vision.barcode.BarcodeScanner barcodeScanner;
+    private TextRecognizer textRecognizer;
+    
     private boolean isCameraPermissionGranted;
     private boolean isScanned = false; // Prevent multiple scans
+    
+    private boolean isTextScanningMode = false;
+    private String scannedBarcode = null;
+    private Set<Long> targetExpiryDates = new HashSet<>();
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private Runnable timeoutRunnable;
 
     private final ActivityResultLauncher<String> requestPermissionLauncher = registerForActivityResult(
             new ActivityResultContracts.RequestPermission(), isGranted -> {
@@ -69,6 +91,7 @@ public class ConsumeScannerActivity extends AppCompatActivity {
                         Barcode.FORMAT_CODABAR)
                 .build();
         barcodeScanner = BarcodeScanning.getClient(options);
+        textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
         cameraExecutor = Executors.newSingleThreadExecutor();
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
@@ -118,24 +141,64 @@ public class ConsumeScannerActivity extends AppCompatActivity {
             android.media.Image mediaImage = imageProxy.getImage();
             if (mediaImage != null) {
                 InputImage image = InputImage.fromMediaImage(mediaImage, imageProxy.getImageInfo().getRotationDegrees());
-                barcodeScanner.process(image)
-                        .addOnSuccessListener(barcodes -> {
-                            if (!barcodes.isEmpty() && !isScanned) {
-                                for (Barcode barcode : barcodes) {
-                                    String rawValue = barcode.getRawValue();
-                                    isScanned = true;
-                                    runOnUiThread(() -> {
-                                        Intent resultIntent = new Intent();
-                                        resultIntent.putExtra(EXTRA_SCANNED_BARCODE, rawValue);
-                                        setResult(RESULT_OK, resultIntent);
-                                        finish();
-                                    });
-                                    break;
+                
+                if (!isTextScanningMode) {
+                    barcodeScanner.process(image)
+                            .addOnSuccessListener(barcodes -> {
+                                if (!barcodes.isEmpty() && !isTextScanningMode && !isScanned) {
+                                    for (Barcode barcode : barcodes) {
+                                        String rawValue = barcode.getRawValue();
+                                        isTextScanningMode = true;
+                                        scannedBarcode = rawValue;
+                                        
+                                        timeoutRunnable = () -> returnResult(scannedBarcode, null);
+                                        handler.postDelayed(timeoutRunnable, 20000);
+                                        
+                                        AppDatabase.databaseWriteExecutor.execute(() -> {
+                                            List<Product> products = AppDatabase.getDatabase(getApplicationContext())
+                                                    .productDao().getProductsByBarcode(rawValue);
+                                            Set<Long> dates = new HashSet<>();
+                                            for (Product p : products) {
+                                                if (p.getExpiryDate() != null) {
+                                                    dates.add(p.getExpiryDate());
+                                                }
+                                            }
+                                            targetExpiryDates = dates;
+                                            
+                                            // Se non ci sono multiple date da risolvere o non ci sono prodotti
+                                            if (products.size() <= 1 || targetExpiryDates.isEmpty()) {
+                                                handler.removeCallbacks(timeoutRunnable);
+                                                runOnUiThread(() -> returnResult(scannedBarcode, null));
+                                            }
+                                        });
+                                        break;
+                                    }
                                 }
-                            }
-                        })
-                        .addOnFailureListener(e -> Log.e("ConsumeScanner", "Errore", e))
-                        .addOnCompleteListener(task -> imageProxy.close());
+                            })
+                            .addOnFailureListener(e -> Log.e("ConsumeScanner", "Errore scanner barcode", e))
+                            .addOnCompleteListener(task -> imageProxy.close());
+                } else {
+                    textRecognizer.process(image)
+                            .addOnSuccessListener(text -> {
+                                if (isScanned) return;
+                                for (com.google.mlkit.vision.text.Text.TextBlock block : text.getTextBlocks()) {
+                                    for (com.google.mlkit.vision.text.Text.Line line : block.getLines()) {
+                                        String lineText = line.getText();
+                                        String[] words = lineText.split("\\s+");
+                                        for (String word : words) {
+                                            Long parsedDate = DateConverter.parseDisplayDateToTimestampMs(word);
+                                            if (parsedDate != null && targetExpiryDates.contains(parsedDate)) {
+                                                handler.removeCallbacks(timeoutRunnable);
+                                                returnResult(scannedBarcode, parsedDate);
+                                                return;
+                                            }
+                                        }
+                                    }
+                                }
+                            })
+                            .addOnFailureListener(e -> Log.e("ConsumeScanner", "Errore text recognition", e))
+                            .addOnCompleteListener(task -> imageProxy.close());
+                }
             } else {
                 imageProxy.close();
             }
@@ -158,5 +221,23 @@ public class ConsumeScannerActivity extends AppCompatActivity {
         if (barcodeScanner != null) {
             barcodeScanner.close();
         }
+        if (textRecognizer != null) {
+            textRecognizer.close();
+        }
+        if (timeoutRunnable != null) {
+            handler.removeCallbacks(timeoutRunnable);
+        }
+    }
+
+    private void returnResult(String barcode, Long expiryDate) {
+        if (isScanned) return;
+        isScanned = true;
+        Intent resultIntent = new Intent();
+        resultIntent.putExtra(EXTRA_SCANNED_BARCODE, barcode);
+        if (expiryDate != null) {
+            resultIntent.putExtra(EXTRA_SCANNED_DATE_MATCH, expiryDate);
+        }
+        setResult(RESULT_OK, resultIntent);
+        finish();
     }
 }
