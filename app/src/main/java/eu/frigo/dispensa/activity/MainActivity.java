@@ -601,11 +601,14 @@ public class MainActivity extends AppCompatActivity
             productViewModel.update(updatedProduct);
         } else if (currentQuantity == 1) {
             productViewModel.delete(product);
-            Snackbar.make(findViewById(R.id.main_coordinator_layout),
+            Snackbar snackbar = Snackbar.make(mainCoordinatorLayout != null ? mainCoordinatorLayout : findViewById(R.id.main_coordinator_layout),
                     String.format(getString(R.string.notify_used), product.getProductName()),
-                    Snackbar.LENGTH_LONG)
-                    .setAction(getString(R.string.cancel).toUpperCase(), v -> productViewModel.insert(product))
-                    .show();
+                    Snackbar.LENGTH_LONG);
+            if (fabContainer != null) {
+                snackbar.setAnchorView(fabContainer);
+            }
+            snackbar.setAction(getString(R.string.cancel).toUpperCase(), v -> productViewModel.insert(product));
+            snackbar.show();
         }
     }
 
@@ -690,10 +693,26 @@ public class MainActivity extends AppCompatActivity
         if (currentQuantity > 1) {
             Product updatedProduct = product.copyWithNewQuantity(currentQuantity - 1);
             productViewModel.update(updatedProduct);
-            Toast.makeText(this, R.string.consume_success, Toast.LENGTH_SHORT).show();
+            
+            Snackbar snackbar = Snackbar.make(mainCoordinatorLayout != null ? mainCoordinatorLayout : findViewById(R.id.main_coordinator_layout),
+                    R.string.consume_success,
+                    Snackbar.LENGTH_LONG);
+            if (fabContainer != null) {
+                snackbar.setAnchorView(fabContainer);
+            }
+            snackbar.setAction(getString(R.string.cancel).toUpperCase(), v -> productViewModel.update(product));
+            snackbar.show();
         } else {
             productViewModel.delete(product);
-            showProductSavedSnackbar(String.format(getString(R.string.notify_used), product.getProductName()));
+            
+            Snackbar snackbar = Snackbar.make(mainCoordinatorLayout != null ? mainCoordinatorLayout : findViewById(R.id.main_coordinator_layout),
+                    String.format(getString(R.string.notify_used), product.getProductName()),
+                    Snackbar.LENGTH_LONG);
+            if (fabContainer != null) {
+                snackbar.setAnchorView(fabContainer);
+            }
+            snackbar.setAction(getString(R.string.cancel).toUpperCase(), v -> productViewModel.insert(product));
+            snackbar.show();
         }
     }
 
