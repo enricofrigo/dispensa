@@ -61,6 +61,7 @@ public class ConsumeScannerActivity extends AppCompatActivity {
     private Set<Long> targetExpiryDates = new HashSet<>();
     private final Handler handler = new Handler(Looper.getMainLooper());
     private Runnable timeoutRunnable;
+    private int searchForExpirydateTimeout = 5000;
 
     private final ActivityResultLauncher<String> requestPermissionLauncher = registerForActivityResult(
             new ActivityResultContracts.RequestPermission(), isGranted -> {
@@ -153,11 +154,11 @@ public class ConsumeScannerActivity extends AppCompatActivity {
                                         scannedBarcode = rawValue;
                                         
                                         timeoutRunnable = () -> {
-                                            Log.d("ConsumeScanner", "Timeout 20 secondi scaduto, restituisco solo barcode.");
+                                            Log.d("ConsumeScanner", "Timeout "+searchForExpirydateTimeout+" secondi scaduto, restituisco solo barcode.");
                                             returnResult(scannedBarcode, null);
                                         };
-                                        handler.postDelayed(timeoutRunnable, 5000);
-                                        Log.d("ConsumeScanner", "Timer di 5 secondi avviato per la lettura data.");
+                                        handler.postDelayed(timeoutRunnable, searchForExpirydateTimeout);
+                                        Log.d("ConsumeScanner", "Timer di "+searchForExpirydateTimeout+" secondi avviato per la lettura data.");
                                         
                                         AppDatabase.databaseWriteExecutor.execute(() -> {
                                             List<Product> products = AppDatabase.getDatabase(getApplicationContext())

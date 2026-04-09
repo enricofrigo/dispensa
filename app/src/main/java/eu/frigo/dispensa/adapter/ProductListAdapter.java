@@ -199,7 +199,8 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
                     listenerInternal.onProductItemClickedForQuantity(currentProduct); // Esegui l'azione di decremento quantità
                     clickExecutionState = 0; // Resetta lo stato dopo l'azione
                 }
-            });        }
+            });
+        }
         @Override
         public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
             MenuItem edit = menu.add(Menu.NONE, R.id.action_edit_product, 1, itemView.getContext().getString(R.string.edit));
