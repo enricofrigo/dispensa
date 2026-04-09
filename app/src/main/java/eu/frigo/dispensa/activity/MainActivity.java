@@ -101,7 +101,7 @@ public class MainActivity extends AppCompatActivity
                     message = getString(R.string.canceled);
                 }
                 if (message != null)
-                    showProductSavedSnackbar(message);
+                    showSnackbarWithUndo(message, null);
             });
 
     private final ActivityResultLauncher<Intent> consumeScannerLauncher = registerForActivityResult(
@@ -312,95 +312,69 @@ public class MainActivity extends AppCompatActivity
             prefs.edit().putBoolean("main_hints_shown", true).apply();
 
             ImageButton btnManageLocations = findViewById(R.id.button_manage_locations);
-            if (fab != null) {
-                fab.post(() -> {
-                    com.skydoves.balloon.Balloon balloonFab = new com.skydoves.balloon.Balloon.Builder(this)
-                            .setArrowSize(10)
-                            .setArrowOrientation(ArrowOrientation.END)
-                            .setArrowPosition(0.5f)
-                            .setPadding(8)
-                            .setCornerRadius(8f)
-                            .setAlpha(0.9f)
-                            .setText(getString(R.string.hint_add_product))
-                            .setTextColorResource(R.color.white)
-                            .setBackgroundColorResource(R.color.purple_500)
-                            .setBalloonAnimation(com.skydoves.balloon.BalloonAnimation.FADE)
-                            .setLifecycleOwner(this)
-                            .setDismissWhenTouchOutside(true)
-                            .build();
-                    balloonFab.showAlignStart(fab);
-                });
-            }
-            if (fabConsume != null) {
-                fabConsume.post(() -> {
-                    com.skydoves.balloon.Balloon balloonFab = new com.skydoves.balloon.Balloon.Builder(this)
-                            .setArrowSize(10)
-                            .setArrowOrientation(com.skydoves.balloon.ArrowOrientation.BOTTOM)
-                            .setArrowPosition(0.8f)
-                            .setPadding(8)
-                            .setCornerRadius(8f)
-                            .setAlpha(0.9f)
-                            .setText(getString(R.string.hint_consume_product))
-                            .setTextColorResource(R.color.white)
-                            .setBackgroundColorResource(R.color.purple_500)
-                            .setBalloonAnimation(com.skydoves.balloon.BalloonAnimation.FADE)
-                            .setLifecycleOwner(this)
-                            .setDismissWhenTouchOutside(true)
-                            .build();
-                    balloonFab.showAlignTop(fabConsume);
-                });
-            }
-
-            if (btnManageLocations != null) {
-                btnManageLocations.post(() -> {
-                    com.skydoves.balloon.Balloon balloonLoc = new com.skydoves.balloon.Balloon.Builder(this)
-                            .setArrowSize(10)
-                            .setArrowOrientation(ArrowOrientation.TOP)
-                            .setArrowPosition(0.1f)
-                            .setPadding(8)
-                            .setCornerRadius(8f)
-                            .setAlpha(0.9f)
-                            .setText(getString(R.string.hint_manage_locations))
-                            .setTextColorResource(R.color.white)
-                            .setBackgroundColorResource(R.color.purple_500)
-                            .setBalloonAnimation(com.skydoves.balloon.BalloonAnimation.FADE)
-                            .setLifecycleOwner(this)
-                            .setDismissWhenTouchOutside(true)
-                            .build();
-                    balloonLoc.showAlignBottom(btnManageLocations);
-                });
-            }
+            showHintBalloon(fab, getString(R.string.hint_add_product), ArrowOrientation.END, 0.5f);
+            showHintBalloon(fabConsume, getString(R.string.hint_consume_product), ArrowOrientation.BOTTOM, 0.8f);
+            showHintBalloon(btnManageLocations, getString(R.string.hint_manage_locations), ArrowOrientation.TOP, 0.1f);
 
             Toolbar toolbar = findViewById(R.id.toolbar);
-            toolbar.post(() -> {
-                // Cerchiamo l'icona dell'overflow tra i figli della Toolbar
-                for (int i = 0; i < toolbar.getChildCount(); i++) {
-                    View child = toolbar.getChildAt(i);
-                    if (child instanceof ActionMenuView menuView) {
-                        // L'ultimo elemento dell'ActionMenuView è solitamente l'overflow
-                        View overflowIcon = menuView.getChildAt(menuView.getChildCount() - 1);
-                        if (overflowIcon != null) {
-                            com.skydoves.balloon.Balloon balloonLoc = new com.skydoves.balloon.Balloon.Builder(this)
-                                    .setArrowSize(10)
-                                    .setArrowOrientation(ArrowOrientation.TOP)
-                                    .setArrowPosition(0.9f)
-                                    .setPadding(8)
-                                    .setCornerRadius(8f)
-                                    .setAlpha(0.9f)
-                                    .setText(getString(R.string.hint_manage_settings))
-                                    .setTextColorResource(R.color.white)
-                                    .setBackgroundColorResource(R.color.purple_500)
-                                    .setBalloonAnimation(com.skydoves.balloon.BalloonAnimation.FADE)
-                                    .setLifecycleOwner(this)
-                                    .setDismissWhenTouchOutside(true)
-                                    .build();
-                            balloonLoc.showAlignBottom(overflowIcon);
+            if (toolbar != null) {
+                toolbar.post(() -> {
+                    for (int i = 0; i < toolbar.getChildCount(); i++) {
+                        View child = toolbar.getChildAt(i);
+                        if (child instanceof ActionMenuView menuView) {
+                            View overflowIcon = menuView.getChildAt(menuView.getChildCount() - 1);
+                            if (overflowIcon != null) {
+                                // Rimuoviamo il post() extra qui poiché siamo già all'interno di un target handler garantito
+                                com.skydoves.balloon.Balloon balloonLoc = new com.skydoves.balloon.Balloon.Builder(this)
+                                        .setArrowSize(10)
+                                        .setArrowOrientation(ArrowOrientation.TOP)
+                                        .setArrowPosition(0.9f)
+                                        .setPadding(8)
+                                        .setCornerRadius(8f)
+                                        .setAlpha(0.9f)
+                                        .setText(getString(R.string.hint_manage_settings))
+                                        .setTextColorResource(R.color.white)
+                                        .setBackgroundColorResource(R.color.purple_500)
+                                        .setBalloonAnimation(com.skydoves.balloon.BalloonAnimation.FADE)
+                                        .setLifecycleOwner(this)
+                                        .setDismissWhenTouchOutside(true)
+                                        .build();
+                                balloonLoc.showAlignBottom(overflowIcon);
+                            }
+                            break;
                         }
-                        break;
                     }
-                }
-            });
+                });
+            }
         }
+    }
+
+    private void showHintBalloon(View anchor, String text, ArrowOrientation orientation, float arrowPosition) {
+        if (anchor == null) return;
+        anchor.post(() -> {
+            com.skydoves.balloon.Balloon balloon = new com.skydoves.balloon.Balloon.Builder(this)
+                    .setArrowSize(10)
+                    .setArrowOrientation(orientation)
+                    .setArrowPosition(arrowPosition)
+                    .setPadding(8)
+                    .setCornerRadius(8f)
+                    .setAlpha(0.9f)
+                    .setText(text)
+                    .setTextColorResource(R.color.white)
+                    .setBackgroundColorResource(R.color.purple_500)
+                    .setBalloonAnimation(com.skydoves.balloon.BalloonAnimation.FADE)
+                    .setLifecycleOwner(this)
+                    .setDismissWhenTouchOutside(true)
+                    .build();
+
+            if (orientation == ArrowOrientation.BOTTOM) {
+                balloon.showAlignTop(anchor);
+            } else if (orientation == ArrowOrientation.END) {
+                balloon.showAlignStart(anchor);
+            } else {
+                balloon.showAlignBottom(anchor);
+            }
+        });
     }
 
     private void observeLocationsForTabs() {
@@ -497,8 +471,10 @@ public class MainActivity extends AppCompatActivity
                 .setMessage(String.format(getString(R.string.delete_product_descritpion), product.getProductName()))
                 .setPositiveButton(getString(R.string.delete), (dialog, which) -> {
                     productViewModel.delete(product);
-                    showProductSavedSnackbar(
-                            String.format(getString(R.string.notify_delete_product), product.getProductName()));
+                    showSnackbarWithUndo(
+                            String.format(getString(R.string.notify_delete_product), product.getProductName()),
+                            () -> productViewModel.insert(product)
+                    );
                 })
                 .setNegativeButton(getString(R.string.cancel), null)
                 .setIcon(android.R.drawable.ic_dialog_alert)
@@ -601,21 +577,22 @@ public class MainActivity extends AppCompatActivity
             productViewModel.update(updatedProduct);
         } else if (currentQuantity == 1) {
             productViewModel.delete(product);
-            Snackbar snackbar = Snackbar.make(mainCoordinatorLayout != null ? mainCoordinatorLayout : findViewById(R.id.main_coordinator_layout),
+            showSnackbarWithUndo(
                     String.format(getString(R.string.notify_used), product.getProductName()),
-                    Snackbar.LENGTH_LONG);
-            if (fabContainer != null) {
-                snackbar.setAnchorView(fabContainer);
-            }
-            snackbar.setAction(getString(R.string.cancel).toUpperCase(), v -> productViewModel.insert(product));
-            snackbar.show();
+                    () -> productViewModel.insert(product));
         }
     }
 
-    public void showProductSavedSnackbar(String message) {
-        if (mainCoordinatorLayout != null && fabContainer != null) {
-            Snackbar snackbar = Snackbar.make(mainCoordinatorLayout, message, Snackbar.LENGTH_LONG);
-            snackbar.setAnchorView(fabContainer);
+    public void showSnackbarWithUndo(String message, Runnable undoAction) {
+        View targetLayout = mainCoordinatorLayout != null ? mainCoordinatorLayout : findViewById(R.id.main_coordinator_layout);
+        if (targetLayout != null) {
+            Snackbar snackbar = Snackbar.make(targetLayout, message, Snackbar.LENGTH_LONG);
+            if (fabContainer != null) {
+                snackbar.setAnchorView(fabContainer);
+            }
+            if (undoAction != null) {
+                snackbar.setAction(getString(R.string.cancel).toUpperCase(), v -> undoAction.run());
+            }
             snackbar.show();
         } else {
             Toast.makeText(this, message, Toast.LENGTH_LONG).show();
@@ -693,26 +670,12 @@ public class MainActivity extends AppCompatActivity
         if (currentQuantity > 1) {
             Product updatedProduct = product.copyWithNewQuantity(currentQuantity - 1);
             productViewModel.update(updatedProduct);
-            
-            Snackbar snackbar = Snackbar.make(mainCoordinatorLayout != null ? mainCoordinatorLayout : findViewById(R.id.main_coordinator_layout),
-                    R.string.consume_success,
-                    Snackbar.LENGTH_LONG);
-            if (fabContainer != null) {
-                snackbar.setAnchorView(fabContainer);
-            }
-            snackbar.setAction(getString(R.string.cancel).toUpperCase(), v -> productViewModel.update(product));
-            snackbar.show();
+            showSnackbarWithUndo(getString(R.string.consume_success), () -> productViewModel.update(product));
         } else {
             productViewModel.delete(product);
-            
-            Snackbar snackbar = Snackbar.make(mainCoordinatorLayout != null ? mainCoordinatorLayout : findViewById(R.id.main_coordinator_layout),
+            showSnackbarWithUndo(
                     String.format(getString(R.string.notify_used), product.getProductName()),
-                    Snackbar.LENGTH_LONG);
-            if (fabContainer != null) {
-                snackbar.setAnchorView(fabContainer);
-            }
-            snackbar.setAction(getString(R.string.cancel).toUpperCase(), v -> productViewModel.insert(product));
-            snackbar.show();
+                    () -> productViewModel.insert(product));
         }
     }
 
