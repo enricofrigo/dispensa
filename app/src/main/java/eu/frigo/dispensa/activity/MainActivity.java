@@ -62,10 +62,9 @@ import eu.frigo.dispensa.viewmodel.LocationViewModel;
 import eu.frigo.dispensa.viewmodel.ProductViewModel;
 
 public class MainActivity extends AppCompatActivity
-        implements SearchView.OnQueryTextListener, ProductListAdapter.OnProductInteractionListener {
+        implements ProductListAdapter.OnProductInteractionListener {
 
     private ProductViewModel productViewModel;
-    private final List<ProductWithCategoryDefinitions> allProductsList = new ArrayList<>();
     private SearchView searchView;
     private boolean isInitialTabSet = false;
     private FloatingActionButton fab;
@@ -758,37 +757,6 @@ public class MainActivity extends AppCompatActivity
         return super.onOptionsItemSelected(item);
     }
 
-    @Override
-    public boolean onQueryTextSubmit(String query) {
-        filter(query);
-        return false;
-    }
-
-    @Override
-    public boolean onQueryTextChange(String newText) {
-        filter(newText);
-        return true;
-    }
-
-    private void filter(String text) {
-        List<ProductWithCategoryDefinitions> filteredList = new ArrayList<>();
-        String filterPattern = text.toLowerCase(Locale.getDefault()).trim();
-        if (filterPattern.isEmpty()) {
-            filteredList.addAll(allProductsList);
-        } else {
-            for (ProductWithCategoryDefinitions product : allProductsList) {
-                boolean nameMatches = product.product.getProductName() != null &&
-                        product.product.getProductName().toLowerCase(Locale.getDefault()).contains(filterPattern);
-                if (nameMatches) {
-                    filteredList.add(product);
-                }
-            }
-        }
-        Fragment currentFragment = getSupportFragmentManager().findFragmentByTag("f" + viewPager.getCurrentItem());
-        if (currentFragment instanceof ProductListFragment) {
-            ((ProductListFragment) currentFragment).productListAdapter.submitList(filteredList);
-        }
-    }
 
     @Override
     protected void onResume() {
