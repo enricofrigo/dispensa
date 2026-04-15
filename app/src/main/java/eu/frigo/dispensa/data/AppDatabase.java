@@ -25,15 +25,19 @@ import eu.frigo.dispensa.data.storage.PredefinedData;
 import eu.frigo.dispensa.data.storage.StorageLocation;
 import eu.frigo.dispensa.data.storage.StorageLocationDao;
 
+import eu.frigo.dispensa.data.openfoodfacts.OpenFoodFactCacheDao;
+import eu.frigo.dispensa.data.openfoodfacts.OpenFoodFactCacheEntity;
+
 @Database(entities = {Product.class, CategoryDefinition.class,
-        ProductCategoryLink.class, StorageLocation.class },
-        version = 8, exportSchema = true)
+        ProductCategoryLink.class, StorageLocation.class, OpenFoodFactCacheEntity.class },
+        version = 9, exportSchema = true)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract ProductDao productDao();
     public abstract CategoryDefinitionDao categoryDefinitionDao();
     public abstract ProductCategoryLinkDao productCategoryLinkDao();
     public abstract StorageLocationDao storageLocationDao();
+    public abstract OpenFoodFactCacheDao openFoodFactCacheDao();
 
     private static volatile AppDatabase INSTANCE;
     private static final int NUMBER_OF_THREADS = 4;
@@ -54,6 +58,14 @@ public abstract class AppDatabase extends RoomDatabase {
             database.execSQL("CREATE INDEX IF NOT EXISTS index_products_location_internal_key ON products(storage_location)");
         }
     };
+
+    static final Migration MIGRATION_8_9 = new Migration(8, 9) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("CREATE TABLE IF NOT EXISTS `openfoodfact_cache` (`barcode` TEXT NOT NULL, `product_name` TEXT, `image_local_path` TEXT, `categories_tags` TEXT, `timestamp_ms` INTEGER NOT NULL, PRIMARY KEY(`barcode`))");
+        }
+    };
+
     public static AppDatabase getDatabase(final Context context) {
         if (INSTANCE == null) {
             synchronized (AppDatabase.class) {
@@ -96,6 +108,7 @@ public abstract class AppDatabase extends RoomDatabase {
                                     AppDatabase.class, "dispensa_database")
                             .addMigrations(MIGRATION_6_7)
                             .addMigrations(MIGRATION_7_8)
+                            .addMigrations(MIGRATION_8_9)
                             .addCallback(sRoomDatabaseCallback)
                             //.fallbackToDestructiveMigration()
                             .build();

@@ -163,6 +163,17 @@ I prodotti in questa dispensa potrebbero dover essere riassegnati.</string>
     <string name="notify_clean_images_done">Eliminate %d immagini orfane</string>
     <string name="err_api">Impossibile caricare i dati dalle API, abilitare le API Open Food Fact!</string>
 
+    <!-- Cache Settings -->
+    <string name="pref_cat_off_cache_title">Cache Locale Open Food Facts</string>
+    <string name="pref_off_cache_limit_title">Dimensione cache offline</string>
+    <string name="pref_off_cache_limit_summary">Numero massimo di prodotti nella cache (default 100)</string>
+    <string name="pref_off_cache_ttl_title">Durata cache (giorni)</string>
+    <string name="pref_off_cache_ttl_summary">Scadenza dei prodotti nella cache (default 30 giorni)</string>
+    <string name="pref_off_cache_clear_title">Svuota cache</string>
+    <string name="pref_off_cache_clear_summary">Cancella tutti i dati e le immagini offline</string>
+    <string name="notify_cache_cleared">Cache svuotata con successo</string>
+    <string name="notify_loaded_from_cache">Caricato dalla cache offline</string>
+
     <!--Dfault Location -->
     <string name="default_location_pantry_entry">Dispensa</string>
     <string name="default_location_freezer_entry">Freezer</string>

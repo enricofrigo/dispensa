@@ -820,114 +820,137 @@ public class AddProductActivity extends AppCompatActivity {
 
     private void fetchProductDetailsFromApi(String barcode) {
         if (barcode == null || barcode.trim().isEmpty()) {
-            Toast.makeText(this,
-                    getString(R.string.err_barcode),
-                    Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.err_barcode), Toast.LENGTH_SHORT).show();
             return;
         }
 
-        androidx.media3.common.util.Log.d("OpenFoodFacts",
-                "Fetching details for barcode: " + barcode);
-        Toast.makeText(this,
-                getString(R.string.notify_load_product),
-                Toast.LENGTH_SHORT).show();
+        androidx.media3.common.util.Log.d("OpenFoodFacts", "Fetching details for barcode: " + barcode);
+        Toast.makeText(this, getString(R.string.notify_load_product), Toast.LENGTH_SHORT).show();
 
-        OpenFoodFactsApiService OffApiService =
-                OpenFoodFactsRetrofitClient.getApiService(getApplicationContext());
-        if (OffApiService == null) {
-            Toast.makeText(this,
-                    getString(R.string.err_api),
-                    Toast.LENGTH_SHORT).show();
-            return;
-        }
+        java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> {
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+            int cacheLimit = 100;
+            int ttlDays = 30;
+            try {
+                cacheLimit = Integer.parseInt(prefs.getString(SettingsFragment.KEY_OFF_CACHE_LIMIT, "100"));
+                ttlDays = Integer.parseInt(prefs.getString(SettingsFragment.KEY_OFF_CACHE_TTL_DAYS, "30"));
+            } catch (NumberFormatException ignored) {}
+            long ttlMs = ttlDays * 24L * 60L * 60L * 1000L;
 
-        String fieldsToFetch =
-                "product_name_it,product_name,image_front_url,image_url,categories_tags";
-        retrofit2.Call<OpenFoodFactsProductResponse> call =
-                OffApiService.getProductByBarcode(barcode, fieldsToFetch);
+            eu.frigo.dispensa.data.AppDatabase db = eu.frigo.dispensa.data.AppDatabase.getDatabase(getApplicationContext());
+            eu.frigo.dispensa.data.openfoodfacts.OpenFoodFactCacheEntity cached = db.openFoodFactCacheDao().getCacheByBarcode(barcode);
 
-        call.enqueue(new Callback<>() {
-            @Override
-            public void onResponse(@NonNull retrofit2.Call<OpenFoodFactsProductResponse> call,
-                                   @NonNull Response<OpenFoodFactsProductResponse> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    OpenFoodFactsProductResponse apiResponse = response.body();
-                    if (apiResponse.getStatus() == 1 && apiResponse.getProduct() != null) {
-                        OpenFoodFactsProductResponse.ProductData productData =
-                                apiResponse.getProduct();
-                        String productName = productData.getProductNameIt();
-                        if (productName == null || productName.trim().isEmpty()) {
-                            productName = productData.getProductName();
-                        }
-                        currentProductNameFromApi = productName;
-                        if (productName != null && !productName.trim().isEmpty()) {
-                            editTextProductName.setText(productName);
-                        } else {
-                            editTextProductName.setText(getString(R.string.not_find));
-                            androidx.media3.common.util.Log.w("OpenFoodFacts",
-                                    "Nome prodotto non trovato per: " + barcode);
-                        }
-
-                        String imageUrl = productData.getImageFrontUrl();
-                        if (imageUrl == null || imageUrl.trim().isEmpty()) {
-                            imageUrl = productData.getImageUrl();
-                        }
-                        currentImageUrlFromApi = imageUrl;
-                        if (imageUrl != null && !imageUrl.trim().isEmpty()) {
-                            Glide.with(AddProductActivity.this)
-                                    .load(imageUrl)
-                                    .into(imageViewProduct);
-                            imageViewProduct.setVisibility(View.VISIBLE);
-                        } else {
-                            imageViewProduct.setVisibility(GONE);
-                            androidx.media3.common.util.Log.w("OpenFoodFacts",
-                                    "URL immagine non trovato per: " + barcode);
-                        }
-                        List<String> fetchedCategories =
-                                productData.getCategoriesTags();
-                        if (fetchedCategories != null && !fetchedCategories.isEmpty()) {
-                            currentProductTagsSet.clear();
-                            currentProductTagsSet.addAll(fetchedCategories);
-                            androidx.media3.common.util.Log.d("OpenFoodFacts",
-                                    "Categories fetched: " + fetchedCategories);
-                        } else {
-                            androidx.media3.common.util.Log.d("OpenFoodFacts",
-                                    "No categories found from API.");
-                        }
-                        updateChipGroup();
-                        Toast.makeText(AddProductActivity.this,
-                                getString(R.string.notify_loaded_product),
-                                Toast.LENGTH_SHORT).show();
-
+            if (cached != null && (System.currentTimeMillis() - cached.timestampMs) < ttlMs) {
+                runOnUiThread(() -> {
+                    currentProductNameFromApi = cached.productName;
+                    if (cached.productName != null && !cached.productName.trim().isEmpty()) {
+                        editTextProductName.setText(cached.productName);
                     } else {
-                        androidx.media3.common.util.Log.w("OpenFoodFacts",
-                                "Prodotto non trovato o dati mancanti nell'API per: "
-                                        + barcode + ", Status: " + apiResponse.getStatus());
-                        Toast.makeText(AddProductActivity.this,
-                                "Prodotto non trovato su Open Food Facts",
-                                Toast.LENGTH_LONG).show();
-                        clearProductApiFieldsAndData();
+                        editTextProductName.setText(getString(R.string.not_find));
                     }
-                } else {
-                    androidx.media3.common.util.Log.e("OpenFoodFacts",
-                            "Errore nella risposta API: "
-                                    + response.code() + " - " + response.message());
-                    Toast.makeText(AddProductActivity.this,
-                            "Errore nel caricare i dati: " + response.code(),
-                            Toast.LENGTH_LONG).show();
-                    clearProductApiFieldsAndData();
-                }
-            }
+                    currentImageUrlFromApi = cached.imageLocalPath;
+                    if (cached.imageLocalPath != null && !cached.imageLocalPath.trim().isEmpty()) {
+                        Glide.with(AddProductActivity.this).load(cached.imageLocalPath).into(imageViewProduct);
+                        imageViewProduct.setVisibility(View.VISIBLE);
+                    } else {
+                        imageViewProduct.setVisibility(GONE);
+                    }
+                    if (cached.categoriesTags != null && !cached.categoriesTags.trim().isEmpty()) {
+                        currentProductTagsSet.clear();
+                        currentProductTagsSet.addAll(java.util.Arrays.asList(cached.categoriesTags.split(",")));
+                    }
+                    updateChipGroup();
+                    Toast.makeText(AddProductActivity.this, getString(R.string.notify_loaded_from_cache), Toast.LENGTH_SHORT).show();
+                });
+            } else {
+                runOnUiThread(() -> {
+                    OpenFoodFactsApiService OffApiService = OpenFoodFactsRetrofitClient.getApiService(getApplicationContext());
+                    if (OffApiService == null) {
+                        Toast.makeText(this, getString(R.string.err_api), Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    String fieldsToFetch = "product_name_it,product_name,image_front_url,image_url,categories_tags";
+                    retrofit2.Call<OpenFoodFactsProductResponse> call = OffApiService.getProductByBarcode(barcode, fieldsToFetch);
 
-            @Override
-            public void onFailure(@NonNull retrofit2.Call<OpenFoodFactsProductResponse> call,
-                                  @NonNull Throwable t) {
-                androidx.media3.common.util.Log.e("OpenFoodFacts",
-                        "Fallimento chiamata API", t);
-                Toast.makeText(AddProductActivity.this,
-                        getString(R.string.err_network),
-                        Toast.LENGTH_LONG).show();
-                clearProductApiFieldsAndData();
+                    call.enqueue(new Callback<>() {
+                        @Override
+                        public void onResponse(@NonNull retrofit2.Call<OpenFoodFactsProductResponse> call,
+                                @NonNull Response<OpenFoodFactsProductResponse> response) {
+                            if (response.isSuccessful() && response.body() != null) {
+                                OpenFoodFactsProductResponse apiResponse = response.body();
+                                if (apiResponse.getStatus() == 1 && apiResponse.getProduct() != null) {
+                                    OpenFoodFactsProductResponse.ProductData productData = apiResponse.getProduct();
+                                    String productName = productData.getProductNameIt();
+                                    if (productName == null || productName.trim().isEmpty()) {
+                                        productName = productData.getProductName();
+                                    }
+                                    final String finalProductName = productName;
+                                    
+                                    String imageUrl = productData.getImageFrontUrl();
+                                    if (imageUrl == null || imageUrl.trim().isEmpty()) {
+                                        imageUrl = productData.getImageUrl();
+                                    }
+                                    final String finalImageUrl = imageUrl;
+                                    
+                                    List<String> fetchedCategories = productData.getCategoriesTags();
+                                    final String tagsToSave = fetchedCategories != null ? String.join(",", fetchedCategories) : "";
+
+                                    java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> {
+                                        String localPath = eu.frigo.dispensa.data.openfoodfacts.OpenFoodFactCacheManager.downloadAndSaveImage(getApplicationContext(), finalImageUrl, barcode);
+                                        
+                                        eu.frigo.dispensa.data.openfoodfacts.OpenFoodFactCacheEntity newCache = new eu.frigo.dispensa.data.openfoodfacts.OpenFoodFactCacheEntity(
+                                                barcode, finalProductName, localPath, tagsToSave, System.currentTimeMillis()
+                                        );
+                                        db.openFoodFactCacheDao().insertCache(newCache);
+                                        
+                                        try {
+                                            int limit = Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString(SettingsFragment.KEY_OFF_CACHE_LIMIT, "100"));
+                                            long ttl = Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString(SettingsFragment.KEY_OFF_CACHE_TTL_DAYS, "30")) * 24L * 60L * 60L * 1000L;
+                                            eu.frigo.dispensa.data.openfoodfacts.OpenFoodFactCacheManager.cleanExpiredAndOverflow(getApplicationContext(), db, limit, ttl);
+                                        } catch (Exception ignored) {}
+
+                                        runOnUiThread(() -> {
+                                            currentProductNameFromApi = finalProductName;
+                                            if (finalProductName != null && !finalProductName.trim().isEmpty()) {
+                                                editTextProductName.setText(finalProductName);
+                                            } else {
+                                                editTextProductName.setText(getString(R.string.not_find));
+                                            }
+
+                                            currentImageUrlFromApi = localPath;
+                                            if (localPath != null && !localPath.trim().isEmpty()) {
+                                                Glide.with(AddProductActivity.this).load(localPath).into(imageViewProduct);
+                                                imageViewProduct.setVisibility(View.VISIBLE);
+                                            } else {
+                                                imageViewProduct.setVisibility(GONE);
+                                            }
+
+                                            if (fetchedCategories != null && !fetchedCategories.isEmpty()) {
+                                                currentProductTagsSet.clear();
+                                                currentProductTagsSet.addAll(fetchedCategories);
+                                            }
+                                            updateChipGroup();
+                                            Toast.makeText(AddProductActivity.this, getString(R.string.notify_loaded_product), Toast.LENGTH_SHORT).show();
+                                        });
+                                    });
+
+                                } else {
+                                    Toast.makeText(AddProductActivity.this, "Prodotto non trovato su Open Food Facts", Toast.LENGTH_LONG).show();
+                                    clearProductApiFieldsAndData();
+                                }
+                            } else {
+                                Toast.makeText(AddProductActivity.this, "Errore nel caricare i dati: " + response.code(), Toast.LENGTH_LONG).show();
+                                clearProductApiFieldsAndData();
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(@NonNull retrofit2.Call<OpenFoodFactsProductResponse> call, @NonNull Throwable t) {
+                            Toast.makeText(AddProductActivity.this, getString(R.string.err_network), Toast.LENGTH_LONG).show();
+                            clearProductApiFieldsAndData();
+                        }
+                    });
+                });
             }
         });
     }
