@@ -88,7 +88,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
         languagePreference = findPreference(KEY_LANGUAGE_PREFERENCE);
         if (languagePreference != null) {
             String currentLangValue = PreferenceManager.getDefaultSharedPreferences(requireContext())
-                    .getString(KEY_LANGUAGE_PREFERENCE, getString(R.string.language_english));
+                    .getString(KEY_LANGUAGE_PREFERENCE, "en");
             Log.d("localeS", "onCreatePreferences - Valore lingua letto (con chiave hardcoded): " + currentLangValue);
             languagePreference.setValue(currentLangValue);
             updateLanguagePreferenceSummary(currentLangValue);
@@ -173,7 +173,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
         updateNotificationTimeSummary();
         if (languagePreference != null) {
             String currentLangValue = PreferenceManager.getDefaultSharedPreferences(requireContext())
-                    .getString(KEY_LANGUAGE_PREFERENCE, getString(R.string.language_english));
+                    .getString(KEY_LANGUAGE_PREFERENCE, "en");
             Log.d("localeS", "onResume - Valore lingua letto (con chiave hardcoded): " + currentLangValue);
             updateLanguagePreferenceSummary(currentLangValue);
         }
@@ -188,7 +188,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
         Context context = getContext();
         if (KEY_LANGUAGE_PREFERENCE.equals(key)) {
             if (context == null) return;
-            String langCode = sharedPreferences.getString(key, getString(R.string.language_english));
+            String langCode = sharedPreferences.getString(key, "en");
             Log.d("localeS", "Lingua selezionata: " + langCode + " applicata.");
 
             LocaleListCompat appLocale = LocaleListCompat.forLanguageTags(langCode);

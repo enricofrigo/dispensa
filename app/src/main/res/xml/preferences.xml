@@ -49,7 +49,7 @@
             app:summary="%s"
             app:entries="@array/language_entries"
             app:entryValues="@array/language_values"
-            app:defaultValue="@string/language_english"
+            app:defaultValue="en"
             app:iconSpaceReserved="false"
             android:persistent="true"/>
 
