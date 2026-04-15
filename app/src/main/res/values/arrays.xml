@@ -26,10 +26,12 @@
     <string-array name="language_entries">
         <item>@string/language_english</item>
         <item>@string/language_italian</item>
+        <item>@string/language_german</item>
     </string-array>
 
     <string-array name="language_values">
         <item>en</item>
         <item>it</item>
+        <item>de</item>
     </string-array>
 </resources>
