@@ -1,0 +1,219 @@
+<resources>
+    <string name="app_name">Dispensa</string>
+
+    <!-- Toolbar -->
+    <string name="tab_title_all_products">Alle</string>
+    <string name="product_image_description">Bild</string>
+    <string name="add_new_product">Produkt hinzufügen</string>
+    <string name="action_search">Suche</string>
+    <string name="action_search_hint">Suche Produkt…</string>
+    <string name="action_toggle_layout">Layout ändern</string>
+    <string name="drag_handle_description">Verschieben</string>
+    <string name="action_settings">Einstellungen</string>
+    <string name="layout_grid_title">Raster</string>
+    <string name="layout_list_title">Liste</string>
+
+    <!-- Permissions -->
+    <string name="notify_permission_title">Benachrichtigungsberechtigung erforderlich</string>
+    <string name="notify_permission_description">Die App benötigt die Berechtigung, dir Benachrichtigungen über Produkte zu senden, deren Verfallsdatum bald abläuft.</string>
+    <string name="notify_permission_accpeted">Benachrichtigungsberechtigung erteilt</string>
+    <string name="notify_permission_denied">Benachrichtigungsberechtigung verweigert. Benachrichtigungen können nicht gesendet werden.</string>
+    <string name="camera_permission_accepted">Kamera-Zulassung erteilt</string>
+    <string name="camera_permission_denied">Kamera-Berechtigung verweigert. Scannen nicht möglich.</string>
+
+    <!-- Products -->
+    <string name="add_product">Produkt hinzufügen</string>
+    <string name="edit_product">Produkt bearbeiten</string>
+    <string name="update_product">Produkt aktualisieren</string>
+    <string name="barcode_hint">Barcode</string>
+    <string name="barcode_mandatory">Barcode erforderlich</string>
+    <string name="scan_barcode_description">Barcode scannen</string>
+    <string name="scan_barcode_error">Das Scannen ist fehlgeschlagen oder wurde abgebrochen</string>
+    <string name="no_barcode_in_image">Barcode nicht gefunden.</string>
+    <string name="err_scan_from_image">Barcode-Scan fehlgeschlagen.</string>
+    <string name="err_load_image">Fehler beim Laden des Bildes.</string>
+    <string name="quantity_hint">Anzahl</string>
+    <string name="quantity_mandatory">Anzahl ist erforderlich</string>
+    <string name="err_quantity_zero">Die Anzahl muss größer null sein</string>
+    <string name="err_quantity_valid">Geben Sie eine gültige Anzahl ein</string>
+    <string name="expiry_date_hint">Verfallsdatum</string>
+    <string name="save_product_button">Produkt speichern</string>
+    <string name="quantity_label">Anzahl: %d</string>
+    <string name="expiry_date_label">Verfallsdatum: %s</string>
+    <string name="expiry_date_mandatory">Verfallsdatum ist erforderlich</string>
+    <string name="add_product_title">Produkt hinzufügen</string>
+    <string name="exp_date">Verfallsdatum: %s</string>
+    <string name="not_defined">k.A.</string>
+    <string name="notify_load_product">Produktdaten werden geladen…</string>
+    <string name="err_load_product">Fehler beim Laden des zu bearbeitenden Produkts.</string>
+    <string name="err_camera">Fehler beim Starten der Kamera</string>
+    <string name="err_barcode">Ungültiger Barcode</string>
+    <string name="notify_loaded_product">Daten geladen</string>
+    <string name="notify_update_product">Produkt aktualisiert: %s</string>
+    <string name="notify_add_product">Produkt hinzugefügt: %s</string>
+    <string name="notify_add_new_product">Neues Produkt hinzugefügt</string>
+    <string name="delete_product_title">Löschung bestätigen</string>
+    <string name="delete_product_descritpion">Möchten Sie das Produkt \'%s\' wirklich löschen?</string>
+    <string name="notify_delete_product">Produkt gelöscht: %s</string>
+    <string name="notify_used">"\"%s\" gelöscht."</string>
+
+    <!-- Open/close -->
+    <string name="open">Öffnen</string>
+    <string name="open_date_nd">Geöffnet: k.A.</string>
+    <string name="open_date">Geöffnet am: %s</string>
+    <string name="product_opened_icon_description">Geöffnet</string>
+    <string name="days_opened">Nach Anbruch gültig bis (Tage)</string>
+    <string name="close">Schließen</string>
+    <string name="err_days">Geben Sie eine gültige Zahl ein</string>
+
+    <!-- Buttons -->
+    <string name="add">Hinzufügen</string>
+    <string name="delete">Löschen</string>
+    <string name="reomve">Entfernen</string>
+    <string name="edit">Bearbeiten</string>
+    <string name="use">Verbrauchen</string>
+    <string name="save">Speichern</string>
+    <string name="cancel">Abbrechen</string>
+    <string name="ok">OK</string>
+    <string name="move">Verschieben</string>
+
+    <!-- Messages -->
+    <string name="notify_saved">Gespeichert</string>
+    <string name="not_find">Nicht gefunden</string>
+    <string name="err_network">Netzwerkfehler</string>
+    <string name="canceled">Abgebrochen</string>
+
+    <!-- Tags -->
+    <string name="button_add_tag">Hinzufügen</string>
+    <string name="hint_product_name">Produktname</string>
+    <string name="hint_product_image">Produktbild</string>
+    <string name="hint_category_tags">Tags</string>
+    <string name="hint_category_new">Neues Tag (z. B. Milchprodukte)</string>
+
+    <!-- Location -->
+    <string name="hint_store_location">Lagerort</string>
+    <string name="new_location">Neuer Lagerort</string>
+    <string name="edit_location">Lagerort bearbeiten</string>
+    <string name="delete_location">Lagerort löschen</string>
+    <string name="default_icon">Standard-Symbol</string>
+    <string name="add_new_location">Neuen Lagerort hinzufügen</string>
+    <string name="title_manage_locations">Lagerortverwaltung</string>
+    <string name="location_management_description">Ändern Sie die Reihenfolge Ihrer Lagerortverwaltung oder wählen Sie beim Öffnen der App die Standardeinstellung aus</string>
+    <string name="hint_new_location">Lagerortname</string>
+    <string name="error_empty_location">Name darf nicht leer sein</string>
+    <string name="notify_add_location">Lagerort \'%s\' hinzugefügt</string>
+    <string name="notify_update_location">Lagerort aktualisiert</string>
+    <string name="error_delete_default_location">Standard-Lagerort kann nicht gelöscht werden.</string>
+    <string name="delete_location_confirmation_title">Löschung bestätigen</string>
+    <string name="error_delete_location_confirmation">Möchten Sie den Lagerort \'%s\' wirklich löschen?\nProdukte an diesem Lagerort müssen möglicherweise verschoben werden.</string>
+    <string name="notify_delete_location">Lagerort \'%s\' gelöscht</string>
+    <string name="err_location_select">Lagerort auswählen</string>
+    <string name="add_product_camera_preview_hint">Scannen Sie den Barcode oder das Verfallsdatum, um das Produkt hinzuzufügen</string>
+
+    <!-- Version -->
+    <string name="version_format_detailed">Version: %1$s (Build: %2$s)</string>
+    <string name="version_format_simple">Version: %1$s</string>
+    <string name="version_not_available">Version: N/D</string>
+    <string name="loading_version">Version: Lade…</string>
+
+    <!-- Notifiche -->
+    <string name="expiry_notification_channel_name">Benachrichtigung über das Ablaufdatum der Dispensa-App</string>
+    <string name="expiring_products_notification_title">Ablaufende Produkte %d</string>
+
+    <!-- Preferences -->
+    <string name="pref_cat_expiry_title">Benachrichtigungen zum Ablauf</string>
+    <string name="pref_exp_days_title">Tage vor Ablauf</string>
+    <string name="pref_exp_days_summary">Anzahl der Tage vor Ablauf, nach denen die Benachrichtigung erfolgt.</string>
+    <string name="pref_key_exp_days">pref_expiry_days_before</string>
+    <string name="pref_key_exp_time">pref_notification_time</string>
+    <string name="pref_key_exp_time_title">Benachrichtigungszeit</string>
+    <string name="pref_key_exp_summary">Wählen Sie den Zeitpunkt aus, zu dem Sie die Benachrichtigung erhalten möchten.</string>
+    <string name="pref_default_shelf_life_title">Standardhaltbarkeit nach dem Öffnen (Tage)</string>
+    <string name="pref_default_shelf_life_summary">Standardanzahl an Tagen, die beim Hinzufügen eines neuen Produkts automatisch ausgefüllt werden</string>
+    <string name="pref_exp_days_error">Geben Sie eine gültige Anzahl von Tagen zwischen 0 und 365 ein.</string>
+    <string name="pref_exp_time_title">Benachrichtigungszeit auswählen</string>
+
+    <string name="pref_cat_locations_title">Lagerorte</string>
+    <string name="pref_key_location">manage_locations</string>
+    <string name="pref_location_title">Lager verwalten</string>
+    <string name="pref_location_summary">Lagerorte hinzufügen, bearbeiten oder umordnen</string>
+    <string name="pref_predefined_tab_style_icon">Vordefinierte Tabs als Symbole anzeigen</string>
+
+    <string name="pref_cat_theme_title">Thema</string>
+    <string name="pref_key_theme">theme_preference</string>
+    <string name="pref_theme_title">App-Thema</string>
+    <string name="pref_theme_dark_entry">Dunkel</string>
+    <string name="pref_theme_light_entry">Hell</string>
+    <string name="pref_theme_system_entry">Systemstandard</string>
+    <string name="pref_theme_dark">Dunkel</string>
+    <string name="pref_theme_light">Hell</string>
+    <string name="pref_theme_system">System</string>
+
+    <string name="pref_cat_title_language">Sprache</string>
+    <string name="language_english">Englisch</string>
+    <string name="language_italian">Italienisch</string>
+    <string name="language_german">Deutsch</string>
+
+    <string name="pref_cat_data_title">Daten</string>
+    <string name="pref_tosano_title">Tosano-API aktivieren</string>
+    <string name="pref_tosano_summary">Der App das Herunterladen von Daten aus der Tosano-API ermöglichen</string>
+    <string name="pref_off_title">Open Food Fact API aktivieren</string>
+    <string name="pref_off_summary">Der App das Herunterladen von Daten aus Open Food Fact ermöglichen</string>
+    <string name="pref_clean_images_title">Nicht verwendete Bilder löschen</string>
+    <string name="pref_clean_images_summary">Bilddateien löschen, die keinem Produkt mehr zugeordnet sind</string>
+    <string name="notify_clean_images_done">%d verwaiste Bilder wurden gelöscht</string>
+    <string name="err_api">Daten können nicht über die API geladen werden. Bitte aktivieren Sie Open Food Fact!</string>
+
+    <!-- Cache Settings -->
+    <string name="pref_cat_off_cache_title">Open Food Facts Cache</string>
+    <string name="pref_off_cache_limit_title">Offline Cache Limit</string>
+    <string name="pref_off_cache_limit_summary">Maximale Anzahl der zu zwischenspeichernden Produkte (Standard: 100)</string>
+    <string name="pref_off_cache_ttl_title">Cache-TTL (Tage)</string>
+    <string name="pref_off_cache_ttl_summary">Löschfrist für Cache-Einträge (Standard: 30 Tage)</string>
+    <string name="pref_off_cache_clear_title">Cache leeren</string>
+    <string name="pref_off_cache_clear_summary">Alle Offline-Daten und Bilder löschen</string>
+    <string name="notify_cache_cleared">Cache geleert</string>
+    <string name="notify_loaded_from_cache">Aus dem Offline-Cache geladen</string>
+
+    <string name="default_location_pantry_entry">Vorratskammer</string>
+    <string name="default_location_freezer_entry">Gefrierschrank</string>
+    <string name="default_location_fridge_entry">Kühlschrank</string>
+
+    <string name="move_product_to_title">Verschieben nach %s</string>
+    <string name="product_moved_toast">%s verschoben nach %s</string>
+    <string name="product_count_footer_simple">Produkte: %d</string>
+    <string name="product_count_footer">Produkte: %d    Abgelaufen: %d     Bald ablaufend: %d</string>
+
+    <string name="off_banner_text">Open Food Facts deaktiviert.</string>
+    <string name="off_banner_button">Einstellungen</string>
+    <string name="exp_date_del_rescan">Ablaufdatum löschen und erneut scannen</string>
+    <string name="add_product_scan">Scannen</string>
+    <string name="add_product_image">Bild auswählen</string>
+    <string name="pick_product_image_gallery">Aus Galerie auswählen</string>
+    <string name="take_product_photo">Foto machen</string>
+    <string name="err_create_photo_file">Fotodatei konnte nicht erstellt werden</string>
+    <string name="image_changed">Bild aktualisiert</string>
+
+    <string name="action_export">Daten exportieren</string>
+    <string name="action_import">Daten importieren</string>
+    <string name="export_success">Daten exportiert</string>
+    <string name="export_error">Fehler beim Datenexport: %s</string>
+    <string name="import_success">Daten erfolgreich importiert. Neustart…</string>
+    <string name="import_error">Fehler beim Datenimport: %s</string>
+    <string name="import_confirm_title">Importbestätigung</string>
+    <string name="import_confirm_message">Dieser Vorgang überschreibt alle aktuellen Daten mit denen aus der ausgewählten Datei. Fortfahren?</string>
+    <string name="set_as_default">Als Standard festlegen</string>
+
+    <!-- Tooltips -->
+    <string name="hint_add_product">Füge hier dein erstes Produkt hinzu</string>
+    <string name="hint_consume_product">Scannen, um das Produkt zu verbrauchen</string>
+    <string name="hint_manage_locations">Klicken Sie hier, um Ihre Lagerorte zu verwalten</string>
+    <string name="hint_manage_settings">Klicken Sie hier, um Ihre Produkte zu importieren/exportieren oder Ihre Einstellungen zu verwalten</string>
+
+    <!-- Consume Scanner -->
+    <string name="consume_product_not_found">Kein Produkt für diesen Barcode gefunden</string>
+    <string name="consume_product_confirm">Möchten Sie 1 von %1$s (Gültig bis: %2$s) verbrauchen?</string>
+    <string name="consume_duplicate_title">Es wurden mehrere Produkte gefunden. Wählen Sie aus, welches Sie nutzen möchten:</string>
+    <string name="consume_success">Produkt erfolgreich verbraucht</string>
+    <string name="consume_scan_description">Produkt scannen, um es zu verbrauchen</string>
+</resources>

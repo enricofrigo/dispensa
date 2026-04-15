@@ -218,4 +218,5 @@ I prodotti in questa dispensa potrebbero dover essere riassegnati.</string>
     <string name="consume_duplicate_title">Più prodotti trovati. Scegli quale consumare:</string>
     <string name="consume_success">Prodotto consumato correttamente</string>
     <string name="consume_scan_description">Scansiona prodotto da consumare</string>
+    <string name="language_german">Tedesco</string>
 </resources>
