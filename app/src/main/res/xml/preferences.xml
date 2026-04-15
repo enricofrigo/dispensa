@@ -73,5 +73,34 @@
 
     </PreferenceCategory>
 
+    <PreferenceCategory app:title="@string/pref_cat_off_cache_title"
+        app:iconSpaceReserved="false">
+
+        <EditTextPreference
+            app:key="pref_off_cache_limit"
+            app:title="@string/pref_off_cache_limit_title"
+            app:summary="@string/pref_off_cache_limit_summary"
+            app:defaultValue="100"
+            app:useSimpleSummaryProvider="true"
+            android:inputType="number"
+            app:iconSpaceReserved="false"/>
+
+        <EditTextPreference
+            app:key="pref_off_cache_ttl_days"
+            app:title="@string/pref_off_cache_ttl_title"
+            app:summary="@string/pref_off_cache_ttl_summary"
+            app:defaultValue="30"
+            app:useSimpleSummaryProvider="true"
+            android:inputType="number"
+            app:iconSpaceReserved="false"/>
+
+        <Preference
+            app:key="pref_off_cache_clear"
+            app:title="@string/pref_off_cache_clear_title"
+            app:summary="@string/pref_off_cache_clear_summary"
+            app:iconSpaceReserved="false"/>
+
+    </PreferenceCategory>
+
 
 </PreferenceScreen>

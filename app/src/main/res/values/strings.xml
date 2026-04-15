@@ -163,6 +163,17 @@
     <string name="notify_clean_images_done">Cleaned %d orphaned images</string>
     <string name="err_api">Cannot load data from API please enable Open Food Fact!</string>
 
+    <!-- Cache Settings -->
+    <string name="pref_cat_off_cache_title">Open Food Facts Cache</string>
+    <string name="pref_off_cache_limit_title">Offline Cache Limit</string>
+    <string name="pref_off_cache_limit_summary">Max number of products to cache (default 100)</string>
+    <string name="pref_off_cache_ttl_title">Cache TTL (days)</string>
+    <string name="pref_off_cache_ttl_summary">Time to live for cache entries (default 30 days)</string>
+    <string name="pref_off_cache_clear_title">Clear cache</string>
+    <string name="pref_off_cache_clear_summary">Delete all offline data and images</string>
+    <string name="notify_cache_cleared">Cache cleared</string>
+    <string name="notify_loaded_from_cache">Loaded from offline cache</string>
+
     <string name="default_location_pantry_entry">Pantry</string>
     <string name="default_location_freezer_entry">Freezer</string>
     <string name="default_location_fridge_entry">Fridge</string>

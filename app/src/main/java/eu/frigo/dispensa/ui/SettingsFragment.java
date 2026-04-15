@@ -32,6 +32,9 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
     public static final String KEY_NOTIFICATION_TIME_MINUTE = "pref_notification_time_minute";
     public static final String KEY_PREF_ENABLE_OFF_API = "pref_key_enable_off_api";
     public static final String KEY_PREF_DEFAULT_SHELF_LIFE = "pref_key_default_shelf_life";
+    public static final String KEY_OFF_CACHE_LIMIT = "pref_off_cache_limit";
+    public static final String KEY_OFF_CACHE_TTL_DAYS = "pref_off_cache_ttl_days";
+    public static final String KEY_OFF_CACHE_CLEAR = "pref_off_cache_clear";
 
     private Preference notificationTimePreference;
     private ListPreference languagePreference;
@@ -98,6 +101,25 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
                 return true;
             });
         }
+
+        Preference clearCachePref = findPreference(KEY_OFF_CACHE_CLEAR);
+        if (clearCachePref != null) {
+            clearCachePref.setOnPreferenceClickListener(preference -> {
+                clearOpenFoodFactCache();
+                return true;
+            });
+        }
+    }
+
+    private void clearOpenFoodFactCache() {
+        Context context = requireContext();
+        java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> {
+            eu.frigo.dispensa.data.openfoodfacts.OpenFoodFactCacheManager.clearAllCache(
+                context, eu.frigo.dispensa.data.AppDatabase.getDatabase(context));
+            new android.os.Handler(android.os.Looper.getMainLooper()).post(() ->
+                android.widget.Toast.makeText(context, getString(R.string.notify_cache_cleared), android.widget.Toast.LENGTH_SHORT).show()
+            );
+        });
     }
 
     private void cleanOrphanImages() {
