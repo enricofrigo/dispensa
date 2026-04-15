@@ -9,7 +9,6 @@ import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
@@ -24,6 +23,7 @@ import eu.frigo.dispensa.R;
 public class ConsumeScannerActivity extends AppCompatActivity {
 
     public static final String EXTRA_SCANNED_BARCODE = "SCANNED_BARCODE_DATA";
+    public static final String EXTRA_SCANNED_DATE_MATCH = "SCANNED_DATE_MATCH";
 
     private DecoratedBarcodeView barcodeView;
     private boolean isScanned = false; // Prevent multiple scans
@@ -65,8 +65,6 @@ public class ConsumeScannerActivity extends AppCompatActivity {
                 }
             }
 
-            @Override
-            public void possibleResultPoints(List<com.google.zxing.ResultPoint> resultPoints) { }
         });
     }
 
