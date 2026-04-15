@@ -91,7 +91,7 @@
     <string name="hint_category_new">new Tag (es. en:dairy)</string>
 
     <!-- Location -->
-    <string name="hint_store_location">Location Order</string>
+    <string name="hint_store_location">Location</string>
     <string name="new_location">New Location</string>
     <string name="edit_location">Edit Location</string>
     <string name="delete_location">Delete Location</string>
@@ -218,4 +218,5 @@
     <string name="consume_duplicate_title">Multiple products found. Choose which to consume:</string>
     <string name="consume_success">Product consumed successfully</string>
     <string name="consume_scan_description">Scan product to consume</string>
+    <string name="language_german">German</string>
 </resources>
