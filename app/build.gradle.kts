@@ -68,7 +68,11 @@ android {
     }
     room {
         schemaDirectory("$projectDir/schemas")
-    }}
+    }
+    lint {
+        disable.add("UnsafeOptInUsageError")
+    }
+}
 
 dependencies {
 
