@@ -1,0 +1,1 @@
+• add German language (Thanks to @ekansemit: https://github.com/ekansemit)
