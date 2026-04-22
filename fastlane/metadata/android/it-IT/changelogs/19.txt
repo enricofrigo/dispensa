@@ -1,0 +1,1 @@
+• Aggiunta localizzazione in tedesco (Thanks to @ekansemit: https://github.com/ekansemit)
