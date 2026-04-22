@@ -3,6 +3,7 @@ package eu.frigo.dispensa.data.storage;
 import com.google.gson.annotations.SerializedName;
 import android.content.Context;
 
+import androidx.annotation.NonNull;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.Ignore;
@@ -111,6 +112,7 @@ public class StorageLocation {
             return null;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return "StorageLocation{" +

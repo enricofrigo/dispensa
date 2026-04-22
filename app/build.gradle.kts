@@ -14,8 +14,8 @@ android {
         applicationId = "eu.frigo.dispensa"
         minSdk = 26
         targetSdk = 35
-        versionCode = 18
-        versionName = "0.1.8"
+        versionCode = 19
+        versionName = "0.1.9"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -71,6 +71,11 @@ android {
     }
     lint {
         disable.add("UnsafeOptInUsageError")
+    }
+    bundle{
+        language{
+            enableSplit = false
+        }
     }
 }
 

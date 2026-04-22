@@ -35,6 +35,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
     public static final String KEY_OFF_CACHE_LIMIT = "pref_off_cache_limit";
     public static final String KEY_OFF_CACHE_TTL_DAYS = "pref_off_cache_ttl_days";
     public static final String KEY_OFF_CACHE_CLEAR = "pref_off_cache_clear";
+    public static final String KEY_DEFUALT_ICON = "pref_predefined_tab_icon";
 
     private Preference notificationTimePreference;
     private ListPreference languagePreference;
@@ -89,7 +90,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
         if (languagePreference != null) {
             String currentLangValue = PreferenceManager.getDefaultSharedPreferences(requireContext())
                     .getString(KEY_LANGUAGE_PREFERENCE, "en");
-            Log.d("localeS", "onCreatePreferences - Valore lingua letto (con chiave hardcoded): " + currentLangValue);
+            Log.d("locale SettingsFragment", "onCreatePreferences - Valore lingua letto (con chiave hardcoded): " + currentLangValue);
             languagePreference.setValue(currentLangValue);
             updateLanguagePreferenceSummary(currentLangValue);
         }
@@ -174,7 +175,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
         if (languagePreference != null) {
             String currentLangValue = PreferenceManager.getDefaultSharedPreferences(requireContext())
                     .getString(KEY_LANGUAGE_PREFERENCE, "en");
-            Log.d("localeS", "onResume - Valore lingua letto (con chiave hardcoded): " + currentLangValue);
+            Log.d("locale SettingsFragment", "onResume - Valore lingua letto (con chiave hardcoded): " + currentLangValue);
             updateLanguagePreferenceSummary(currentLangValue);
         }
     }
@@ -189,36 +190,34 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
         if (KEY_LANGUAGE_PREFERENCE.equals(key)) {
             if (context == null) return;
             String langCode = sharedPreferences.getString(key, "en");
-            Log.d("localeS", "Lingua selezionata: " + langCode + " applicata.");
-
+            Log.d("locale SettingsFragment", "onSharedPreferenceChanged lingua selezionata: " + langCode + " applicata.");
             LocaleListCompat appLocale = LocaleListCompat.forLanguageTags(langCode);
             AppCompatDelegate.setApplicationLocales(appLocale);
             updateLanguagePreferenceSummary(langCode);
-            // In onSharedPreferenceChanged, dopo che la lingua è cambiata e prima di triggerRebirth
-            String savedLangCode = sharedPreferences.getString(key, "NOT_FOUND");
             SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(requireContext()).edit();
             editor.putString(KEY_LANGUAGE_PREFERENCE, langCode);
-            Log.d("localeS", "Valore SALVATO in SharedPreferences per" + key + ":_"+ savedLangCode+"_");
+            editor.commit();
+            LocaleHelper.setLocale(context,langCode);
             triggerRebirthWithAlarmManager(context);
         }
     }
     private void updateLanguagePreferenceSummary(String languageValue) {
         if (languagePreference == null) {
-            Log.w("localeS", "updateLanguagePreferenceSummary chiamato ma languagePreference è null");
+            Log.w("locale SettingsFragment", "updateLanguagePreferenceSummary chiamato ma languagePreference è null");
             return;
         }
         if (languageValue == null) {
-            Log.w("localeS", "updateLanguagePreferenceSummary chiamato con languageValue null");
+            Log.w("locale SettingsFragment", "updateLanguagePreferenceSummary chiamato con languageValue null");
             return;
         }
 
-        Log.d("localeS", "Aggiornamento summary per languageValue: " + languageValue);
+        Log.d("locale SettingsFragment", "Aggiornamento summary per languageValue: " + languageValue);
 
         CharSequence[] entries = languagePreference.getEntries();
         CharSequence[] entryValues = languagePreference.getEntryValues();
 
         if (entries == null || entryValues == null || entries.length != entryValues.length) {
-            Log.e("localeS", "Entries o EntryValues non validi per languagePreference.");
+            Log.e("locale SettingsFragment", "Entries o EntryValues non validi per languagePreference.");
             languagePreference.setSummary(languageValue); // Fallback al codice lingua
             return;
         }
@@ -227,21 +226,19 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
         for (int i = 0; i < entryValues.length; i++) {
             if (entryValues[i].toString().equals(languageValue)) {
                 languagePreference.setSummary(entries[i]);
-                Log.d("localeS", "Summary impostato a: " + entries[i]);
+                Log.d("locale SettingsFragment", "Summary impostato a: " + entries[i]);
                 found = true;
                 break;
             }
         }
 
         if (!found) {
-            Log.w("localeS", "Nessuna entry corrispondente trovata per languageValue: " + languageValue + ". Uso il valore come summary.");
+            Log.w("locale SettingsFragment", "Nessuna entry corrispondente trovata per languageValue: " + languageValue + ". Uso il valore come summary.");
             languagePreference.setSummary(languageValue);
         }
-        LocaleHelper.setLocale(getContext(),languageValue);
     }
     public static void triggerRebirthWithAlarmManager(Context context) {
         if (context == null) {return;}
-        Log.d("localeS", "triggerRebirthWithAlarmManager chiamato");
         System.exit(0);
     }
     @Override

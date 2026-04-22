@@ -2,6 +2,7 @@ package eu.frigo.dispensa.activity;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -58,6 +59,7 @@ import eu.frigo.dispensa.data.product.Product;
 import eu.frigo.dispensa.data.storage.StorageLocation;
 import eu.frigo.dispensa.ui.ProductListFragment;
 import eu.frigo.dispensa.ui.SettingsFragment;
+import eu.frigo.dispensa.util.LocaleHelper;
 import eu.frigo.dispensa.viewmodel.LocationViewModel;
 import eu.frigo.dispensa.viewmodel.ProductViewModel;
 
@@ -188,12 +190,9 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    private void setDefaultLocale() {
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-        if (prefs.getString(SettingsFragment.KEY_LANGUAGE_PREFERENCE, null) == null) {
-                Log.d("MainActivity", "Setting default language to English");
-                prefs.edit().putString(SettingsFragment.KEY_LANGUAGE_PREFERENCE, "en").apply();
-        }
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(LocaleHelper.onAttach(newBase));
     }
 
     @SuppressLint("UnsafeOptInUsageError")
@@ -201,9 +200,9 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         askForNotificationPermission();
-        setDefaultLocale();
         eu.frigo.dispensa.data.Repository.cleanOrphanImages(this, null);
         EdgeToEdge.enable(this);
+        LocaleHelper.applyLocaleOnCreate(this);
         setContentView(R.layout.activity_main);
         mainCoordinatorLayout = findViewById(R.id.main_coordinator_layout);
 
@@ -232,19 +231,16 @@ public class MainActivity extends AppCompatActivity
         new TabLayoutMediator(tabLayout, viewPager, (tab, position) -> {
             StorageLocation currentLocation = locationViewPagerAdapter.getLocationAt(position);
             if (currentLocation != null) {
-                Log.d("MainActivity",
-                        "Nome della posizione: " + currentLocation.getLocalizedName(getApplicationContext()));
                 SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-                boolean showPredefinedAsIcon = prefs.getBoolean("pref_predefined_tab_icon", false);
-                
+                boolean showPredefinedAsIcon = prefs.getBoolean(SettingsFragment.KEY_DEFUALT_ICON, false);
                 if (currentLocation.isPredefined) {
                     if (showPredefinedAsIcon) {
                         tab.setIcon(currentLocation.getIcon());
                     } else {
-                        tab.setText(currentLocation.getLocalizedName(getApplicationContext()));
+                        tab.setText(currentLocation.getLocalizedName(this));
                     }
                 } else {
-                    tab.setText(currentLocation.getLocalizedName(getApplicationContext()));
+                    tab.setText(currentLocation.getName());
                 }
             }
         }).attach();
@@ -491,13 +487,13 @@ public class MainActivity extends AppCompatActivity
         // Assumendo che LocationViewModel esponga LiveData<List<LocationEntity>>
         if (locationViewModel == null) { // Fallback se locationViewModel non è inizializzato
             Log.e("MainActivity", "LocationViewModel is null, cannot show move dialog.");
-            Toast.makeText(getApplicationContext(), "Impossibile caricare le locazioni.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Impossibile caricare le locazioni.", Toast.LENGTH_SHORT).show();
             return;
         }
 
         locationViewModel.getAllLocationsSorted().observe(this, locations -> {
             if (locations == null || locations.isEmpty()) {
-                Toast.makeText(getApplicationContext(), "Nessuna locazione disponibile per lo spostamento.",
+                Toast.makeText(this, "Nessuna locazione disponibile per lo spostamento.",
                         Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -511,14 +507,14 @@ public class MainActivity extends AppCompatActivity
             }
 
             if (otherLocations.isEmpty()) {
-                Toast.makeText(getApplicationContext(), "Nessun'altra locazione disponibile per lo spostamento.",
+                Toast.makeText(this, "Nessun'altra locazione disponibile per lo spostamento.",
                         Toast.LENGTH_SHORT).show();
                 return;
             }
 
             CharSequence[] locationNames = new CharSequence[otherLocations.size()];
             for (int i = 0; i < otherLocations.size(); i++) {
-                locationNames[i] = otherLocations.get(i).getLocalizedName(getApplicationContext()); // O un nome più
+                locationNames[i] = otherLocations.get(i).getLocalizedName(this); // O un nome più
                                                                                                     // user-friendly
             }
 
@@ -536,9 +532,9 @@ public class MainActivity extends AppCompatActivity
                 productViewModel.update(productToMove);
 
                 // Opzionale: Mostra un messaggio di conferma
-                Toast.makeText(getApplicationContext(),
+                Toast.makeText(this,
                         String.format(getString(R.string.product_moved_toast), productToMove.getProductName(),
-                                selectedLocation.getLocalizedName(getApplicationContext())),
+                                selectedLocation.getLocalizedName(this)),
                         Toast.LENGTH_SHORT).show();
 
                 // L'aggiornamento del LiveData dovrebbe far sì che il prodotto scompaia da
@@ -599,26 +595,24 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void handleScannedBarcodeForConsume(String barcode, Long scannedDate) {
-        productViewModel.getProductsByBarcodeAsync(barcode, products -> {
-            runOnUiThread(() -> {
-                if (products == null || products.isEmpty()) {
-                    Toast.makeText(this, R.string.consume_product_not_found, Toast.LENGTH_LONG).show();
-                } else if (products.size() == 1) {
-                    confirmAndConsume(products.get(0));
-                } else {
-                    int selectedIndex = -1;
-                    if (scannedDate != null) {
-                        for (int i = 0; i < products.size(); i++) {
-                            if (products.get(i).getExpiryDate() != null && products.get(i).getExpiryDate().equals(scannedDate)) {
-                                selectedIndex = i;
-                                break;
-                            }
+        productViewModel.getProductsByBarcodeAsync(barcode, products -> runOnUiThread(() -> {
+            if (products == null || products.isEmpty()) {
+                Toast.makeText(this, R.string.consume_product_not_found, Toast.LENGTH_LONG).show();
+            } else if (products.size() == 1) {
+                confirmAndConsume(products.get(0));
+            } else {
+                int selectedIndex = -1;
+                if (scannedDate != null) {
+                    for (int i = 0; i < products.size(); i++) {
+                        if (products.get(i).getExpiryDate() != null && products.get(i).getExpiryDate().equals(scannedDate)) {
+                            selectedIndex = i;
+                            break;
                         }
                     }
-                    showDuplicateBarcodeSelectionDialog(products, selectedIndex);
                 }
-            });
-        });
+                showDuplicateBarcodeSelectionDialog(products, selectedIndex);
+            }
+        }));
     }
 
     private void confirmAndConsume(Product product) {
@@ -626,9 +620,7 @@ public class MainActivity extends AppCompatActivity
                 .setTitle(R.string.use)
                 .setMessage(String.format(getString(R.string.consume_product_confirm),
                         product.getProductName(), product.getExpiryDateString()))
-                .setPositiveButton(R.string.ok, (dialog, which) -> {
-                    consumeOne(product);
-                })
+                .setPositiveButton(R.string.ok, (dialog, which) -> consumeOne(product))
                 .setNegativeButton(R.string.cancel, null)
                 .show();
     }
@@ -641,7 +633,7 @@ public class MainActivity extends AppCompatActivity
                     p.getProductName(), p.getExpiryDateString(), p.getQuantity());
         }
 
-        final int[] currentSelected = {selectedIndex != -1 ? selectedIndex : -1};
+        final int[] currentSelected = {selectedIndex};
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle(R.string.consume_duplicate_title)
                 .setSingleChoiceItems(items, selectedIndex, (d, which) -> {
