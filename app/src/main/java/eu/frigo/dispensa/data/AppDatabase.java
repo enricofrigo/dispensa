@@ -30,7 +30,7 @@ import eu.frigo.dispensa.data.openfoodfacts.OpenFoodFactCacheEntity;
 
 @Database(entities = {Product.class, CategoryDefinition.class,
         ProductCategoryLink.class, StorageLocation.class, OpenFoodFactCacheEntity.class },
-        version = 9, exportSchema = true)
+        version = 9)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract ProductDao productDao();
@@ -78,7 +78,7 @@ public abstract class AppDatabase extends RoomDatabase {
                             Log.d("AppDatabase", "Database onCreate - Prepopolamento StorageLocations");
                             StorageLocationDao dao = INSTANCE.storageLocationDao();
                             if (dao.countLocations() == 0) { // Controlla se è veramente vuoto
-                                dao.insertAll(PredefinedData.getInitialStorageLocations(context.getApplicationContext()));
+                                dao.insertAll(PredefinedData.getInitialStorageLocations());
                                 Log.d("AppDatabase", "Prepopolamento StorageLocations completato.");
                             }
                         });
@@ -91,7 +91,7 @@ public abstract class AppDatabase extends RoomDatabase {
                         Executors.newSingleThreadExecutor().execute(() -> {
                             Log.d("AppDatabase", "Database onOpen - Verifica/Aggiornamento StorageLocations predefinite");
                             StorageLocationDao dao = INSTANCE.storageLocationDao();
-                            List<StorageLocation> predefined = PredefinedData.getInitialStorageLocations(context.getApplicationContext());
+                            List<StorageLocation> predefined = PredefinedData.getInitialStorageLocations();
                             for (StorageLocation loc : predefined) {
                                 StorageLocation existing = dao.getLocationByInternalKeySync(loc.internalKey);
                                 if (existing == null) {

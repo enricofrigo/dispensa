@@ -624,7 +624,7 @@ public class AddProductActivity extends AppCompatActivity {
                 locationDisplayNames.clear();
                 for (StorageLocation loc : locations) {
                     locationDisplayNames.add(
-                            loc.getLocalizedName(getApplicationContext()));
+                            loc.getLocalizedName(this));
                 }
                 locationSpinnerAdapter.notifyDataSetChanged();
 
@@ -828,7 +828,7 @@ public class AddProductActivity extends AppCompatActivity {
         Toast.makeText(this, getString(R.string.notify_load_product), Toast.LENGTH_SHORT).show();
 
         java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> {
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
             int cacheLimit = 100;
             int ttlDays = 30;
             try {
@@ -837,7 +837,7 @@ public class AddProductActivity extends AppCompatActivity {
             } catch (NumberFormatException ignored) {}
             long ttlMs = ttlDays * 24L * 60L * 60L * 1000L;
 
-            eu.frigo.dispensa.data.AppDatabase db = eu.frigo.dispensa.data.AppDatabase.getDatabase(getApplicationContext());
+            eu.frigo.dispensa.data.AppDatabase db = eu.frigo.dispensa.data.AppDatabase.getDatabase(this);
             eu.frigo.dispensa.data.openfoodfacts.OpenFoodFactCacheEntity cached = db.openFoodFactCacheDao().getCacheByBarcode(barcode);
 
             if (cached != null && (System.currentTimeMillis() - cached.timestampMs) < ttlMs) {
@@ -864,7 +864,7 @@ public class AddProductActivity extends AppCompatActivity {
                 });
             } else {
                 runOnUiThread(() -> {
-                    OpenFoodFactsApiService OffApiService = OpenFoodFactsRetrofitClient.getApiService(getApplicationContext());
+                    OpenFoodFactsApiService OffApiService = OpenFoodFactsRetrofitClient.getApiService(this);
                     if (OffApiService == null) {
                         Toast.makeText(this, getString(R.string.err_api), Toast.LENGTH_SHORT).show();
                         return;

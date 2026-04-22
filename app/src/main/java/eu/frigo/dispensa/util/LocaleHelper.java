@@ -5,13 +5,16 @@ import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Build;
-import android.preference.PreferenceManager; // Oppure androidx.preference.PreferenceManager
+import android.util.Log;
+
+import androidx.preference.PreferenceManager;
 
 import java.util.Locale;
 
+import eu.frigo.dispensa.ui.SettingsFragment;
+
 public class LocaleHelper {
 
-    private static final String SELECTED_LANGUAGE = "Locale.Helper.Selected.Language";
     public static final String DEFAULT_LANGUAGE_CODE = "english";
 
     public static Context onAttach(Context context) {
@@ -24,10 +27,6 @@ public class LocaleHelper {
         setLocale(context, lang);
     }
 
-
-    public static String getLanguage(Context context) {
-        return getPersistedData(context, Locale.getDefault().getLanguage());
-    }
 
     public static Context setLocale(Context context, String languageCode) {
         persist(context, languageCode);
@@ -49,14 +48,14 @@ public class LocaleHelper {
     }
 
     private static String getPersistedData(Context context, String defaultLanguage) {
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
-        return preferences.getString(SELECTED_LANGUAGE, defaultLanguage);
+        return PreferenceManager.getDefaultSharedPreferences(context).getString(SettingsFragment.KEY_LANGUAGE_PREFERENCE, defaultLanguage);
     }
 
     private static void persist(Context context, String language) {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
         SharedPreferences.Editor editor = preferences.edit();
-        editor.putString(SELECTED_LANGUAGE, language);
+        editor.putString(SettingsFragment.KEY_LANGUAGE_PREFERENCE, language);
+        Log.d("locale","Set locale to "+language);
         editor.commit();
     }
 
