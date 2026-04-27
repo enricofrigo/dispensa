@@ -97,3 +97,4 @@ balloon = { group = "com.github.skydoves", name = "balloon", version.ref = "ball
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 androidx-room = { id = "androidx.room", version.ref = "room" }
+android-library = { id = "com.android.library", version.ref = "agp" }

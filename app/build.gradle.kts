@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.androidx.room)
 }
 android {
     namespace = "eu.frigo.dispensa"
@@ -66,9 +65,6 @@ android {
             useLegacyPackaging = false
         }
     }
-    room {
-        schemaDirectory("$projectDir/schemas")
-    }
     lint {
         disable.add("UnsafeOptInUsageError")
     }
@@ -87,12 +83,7 @@ dependencies {
     implementation(libs.constraintlayout)
     implementation(libs.navigation.fragment)
     implementation(libs.navigation.ui)
-    implementation(libs.room.runtime)
-    implementation(libs.room.ktx)
-    implementation(libs.room.paging)
-    implementation(libs.room.rxjava2)
-    implementation(libs.room.rxjava3)
-    implementation(libs.room.guava)
+    implementation(project(":dbcore"))
     implementation(libs.cardview)
     implementation(libs.media3.common)
     implementation(libs.swiperefreshlayout)
@@ -112,7 +103,6 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
-    annotationProcessor(libs.room.compiler)
 
     "fdroidImplementation"(libs.zxing.android.embedded)
     "playImplementation"(libs.play.services.mlkit.barcode.scanning)

@@ -56,8 +56,8 @@ public class ReorderLocationsAdapter extends RecyclerView.Adapter<ReorderLocatio
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         StorageLocation location = locations.get(position);
         Log.d("ReorderLocationsAdapter", position + "onBindViewHolder: " + location);
-        String locationDisplayName = location.getLocalizedName(holder.itemView.getContext());
-        if (location.getIcon() != null) {
+        String locationDisplayName = eu.frigo.dispensa.util.LocationFormatter.getLocalizedName(holder.itemView.getContext(), location);
+        if (eu.frigo.dispensa.util.LocationFormatter.getIcon(location) != null) {
             holder.locationName.setText(String.format("(%s)", locationDisplayName));
         } else {
             holder.locationName.setText(locationDisplayName);
@@ -66,8 +66,8 @@ public class ReorderLocationsAdapter extends RecyclerView.Adapter<ReorderLocatio
         if (location.getId() == eu.frigo.dispensa.viewmodel.LocationViewModel.ALL_PRODUCTS_TAB_ID) {
             holder.dragHandle.setVisibility(View.INVISIBLE);
             holder.locationIcon.setVisibility(View.VISIBLE);
-            if (location.getIcon() != null) {
-                holder.locationIcon.setImageResource(location.getIcon());
+            if (eu.frigo.dispensa.util.LocationFormatter.getIcon(location) != null) {
+                holder.locationIcon.setImageResource(eu.frigo.dispensa.util.LocationFormatter.getIcon(location));
             } else {
                 holder.locationIcon.setImageResource(R.drawable.ic_view_list); // Fallback icon
             }
@@ -96,9 +96,9 @@ public class ReorderLocationsAdapter extends RecyclerView.Adapter<ReorderLocatio
                 });
             }
 
-            if (location.isPredefined() && location.getIcon() != null) {
+            if (location.isPredefined() && eu.frigo.dispensa.util.LocationFormatter.getIcon(location) != null) {
                 holder.locationIcon.setVisibility(View.VISIBLE);
-                holder.locationIcon.setImageResource(location.getIcon());
+                holder.locationIcon.setImageResource(eu.frigo.dispensa.util.LocationFormatter.getIcon(location));
             } else {
                 holder.locationIcon.setVisibility(View.GONE);
             }

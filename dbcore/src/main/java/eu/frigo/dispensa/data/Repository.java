@@ -173,7 +173,7 @@ public class Repository {
     public void deleteLocation(StorageLocation location) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
             StorageLocation defaultLoc = storageLocationDao.getDefaultLocationSync();
-            String fallbackKey = defaultLoc != null ? defaultLoc.internalKey : eu.frigo.dispensa.viewmodel.LocationViewModel.ALL_PRODUCTS_INTERNAL_KEY;
+            String fallbackKey = defaultLoc != null ? defaultLoc.internalKey : eu.frigo.dispensa.data.storage.PredefinedData.LOCATION_ALL;
             productDao.updateProductLocation(location.internalKey, fallbackKey);
             storageLocationDao.delete(location);
         });
