@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="DatePickerSpinnerTheme" parent="android:Theme.Material.Light.Dialog">
+        <item name="android:datePickerStyle">@style/SpinnerWidgetStyle</item>
+    </style>
+
+    <style name="SpinnerWidgetStyle" parent="android:Widget.Material.DatePicker">
+        <item name="android:datePickerMode">spinner</item>
+        <item name="android:calendarViewShown">false</item>
+    </style>
+</resources>
