@@ -208,6 +208,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    app:startIconDrawable="@drawable/ic_calendar"
                     android:hint="@string/expiry_date_hint">
 
                     <com.google.android.material.textfield.TextInputEditText

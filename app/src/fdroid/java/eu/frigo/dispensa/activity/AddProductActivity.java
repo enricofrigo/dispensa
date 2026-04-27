@@ -231,7 +231,7 @@ public class AddProductActivity extends AppCompatActivity {
         }
 
         boolean openFoodFactsApiEnabled =
-                OpenFoodFactsRetrofitClient.isOpenFoodFactsApiEnabled(getApplicationContext());
+                OpenFoodFactsRetrofitClient.isOpenFoodFactsApiEnabled(this);
         if (!openFoodFactsApiEnabled) {
             showOpenFoodFactsBanner();
         }
@@ -1158,6 +1158,7 @@ public class AddProductActivity extends AppCompatActivity {
 
         new DatePickerDialog(
                 AddProductActivity.this,
+                R.style.DatePickerSpinnerTheme,
                 dateSetListener,
                 calendar.get(Calendar.YEAR),
                 calendar.get(Calendar.MONTH),
