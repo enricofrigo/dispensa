@@ -216,4 +216,14 @@
     <string name="consume_duplicate_title">Es wurden mehrere Produkte gefunden. Wählen Sie aus, welches Sie nutzen möchten:</string>
     <string name="consume_success">Produkt erfolgreich verbraucht</string>
     <string name="consume_scan_description">Produkt scannen, um es zu verbrauchen</string>
+
+    <!-- Shopping List -->
+    <string name="shopping_list_title">Einkaufsliste</string>
+    <string name="shopping_list_empty">Deine Einkaufsliste ist leer</string>
+    <string name="shopping_list_add">Zur Einkaufsliste hinzufügen</string>
+    <string name="shopping_list_remove">Von der Einkaufsliste entfernen</string>
+    <string name="shopping_list_clear_checked">Gekaufte Artikel löschen</string>
+    <string name="shopping_list_clear_confirm">Alle gekauften Artikel aus der Liste entfernen?</string>
+    <string name="shopping_list_badge_description">Einkaufsliste: %d Artikel</string>
+    <string name="shopping_list_quantity">x%d</string>
 </resources>

@@ -12,6 +12,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.Toast;
 import eu.frigo.dispensa.BuildConfig;
 
@@ -34,7 +35,8 @@ import androidx.media3.common.util.Log;
 import androidx.preference.PreferenceManager;
 import androidx.viewpager2.widget.ViewPager2;
 
-import android.widget.ImageButton;
+import com.google.android.material.badge.BadgeDrawable;
+import com.google.android.material.badge.BadgeUtils;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
@@ -46,9 +48,11 @@ import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Set;
 
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.adapter.LocationViewPagerAdapter;
@@ -63,6 +67,7 @@ import eu.frigo.dispensa.ui.SettingsFragment;
 import eu.frigo.dispensa.util.LocaleHelper;
 import eu.frigo.dispensa.viewmodel.LocationViewModel;
 import eu.frigo.dispensa.viewmodel.ProductViewModel;
+import eu.frigo.dispensa.viewmodel.ShoppingListViewModel;
 
 public class MainActivity extends AppCompatActivity
         implements ProductListAdapter.OnProductInteractionListener {
@@ -79,6 +84,8 @@ public class MainActivity extends AppCompatActivity
     private ViewPager2 viewPager;
     private LocationViewPagerAdapter locationViewPagerAdapter;
     private LocationViewModel locationViewModel;
+    private ShoppingListViewModel shoppingListViewModel;
+    private BadgeDrawable shoppingBadge;
     private final ActivityResultLauncher<String> requestPermissionLauncher = registerForActivityResult(
             new ActivityResultContracts.RequestPermission(), isGranted -> {
                 if (isGranted) {
@@ -225,6 +232,23 @@ public class MainActivity extends AppCompatActivity
                 startActivity(intent);
             });
         }
+
+        // Shopping list button
+        ImageButton btnShoppingList = findViewById(R.id.button_shopping_list);
+        if (btnShoppingList != null) {
+            btnShoppingList.setOnClickListener(v -> {
+                Intent intent = new Intent(MainActivity.this, ShoppingListActivity.class);
+                startActivity(intent);
+            });
+        }
+
+        // ShoppingList ViewModel + badge
+        shoppingListViewModel = new ViewModelProvider(this).get(ShoppingListViewModel.class);
+
+        // Osserva il conteggio non comprati per il badge
+        shoppingListViewModel.getUncheckedCount().observe(this, count -> {
+            updateShoppingBadge(count != null ? count : 0);
+        });
 
         locationViewModel = new ViewModelProvider(this).get(LocationViewModel.class);
         locationViewPagerAdapter = new LocationViewPagerAdapter(this);
@@ -576,6 +600,41 @@ public class MainActivity extends AppCompatActivity
             showSnackbarWithUndo(
                     String.format(getString(R.string.notify_used), product.getProductName()),
                     () -> productViewModel.insert(product));
+        }
+    }
+
+    @Override
+    public void onShoppingCartToggled(ProductWithCategoryDefinitions product, boolean currentlyInList) {
+        String productName = product.product.getProductName();
+        if (productName == null || productName.isEmpty()) return;
+        if (currentlyInList) {
+            shoppingListViewModel.removeItem(productName);
+        } else {
+            shoppingListViewModel.addItem(productName);
+        }
+    }
+
+    @SuppressLint("UnsafeOptInUsageError")
+    private void updateShoppingBadge(int count) {
+        ImageButton btnShoppingList = findViewById(R.id.button_shopping_list);
+        if (btnShoppingList == null) return;
+
+        if (shoppingBadge == null) {
+            shoppingBadge = BadgeDrawable.create(this);
+            shoppingBadge.setBackgroundColor(ContextCompat.getColor(this, R.color.product_expired_stroke));
+            shoppingBadge.setBadgeTextColor(ContextCompat.getColor(this, R.color.white));
+            shoppingBadge.setHorizontalOffset(12);
+            shoppingBadge.setVerticalOffset(12);
+        }
+
+        if (count > 0) {
+            shoppingBadge.setVisible(true);
+            shoppingBadge.setNumber(count);
+            btnShoppingList.post(() -> BadgeUtils.attachBadgeDrawable(shoppingBadge, btnShoppingList));
+        } else {
+            shoppingBadge.setVisible(false);
+            shoppingBadge.clearNumber();
+            BadgeUtils.detachBadgeDrawable(shoppingBadge, btnShoppingList);
         }
     }
 

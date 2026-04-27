@@ -44,6 +44,23 @@
                 app:tabMode="scrollable"
                 app:tabTextAppearance="@style/CustomTabTextStyle"/>
 
+            <FrameLayout
+                android:id="@+id/shopping_cart_container"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginEnd="8dp">
+
+                <ImageButton
+                    android:id="@+id/button_shopping_list"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:src="@drawable/ic_shopping_cart"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/shopping_list_title"
+                    app:tint="?attr/colorControlNormal" />
+
+            </FrameLayout>
+
         </LinearLayout>
 
     </com.google.android.material.appbar.AppBarLayout>
