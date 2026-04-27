@@ -121,7 +121,7 @@
     <string name="expiring_products_notification_title">Ablaufende Produkte %d</string>
 
     <!-- Preferences -->
-    <string name="pref_cat_expiry_title">Benachrichtigungen zum Ablauf</string>
+    <string name="pref_cat_expiry_title">Benachrichtigungen</string>
     <string name="pref_exp_days_title">Tage vor Ablauf</string>
     <string name="pref_exp_days_summary">Anzahl der Tage vor Ablauf, nach denen die Benachrichtigung erfolgt.</string>
     <string name="pref_key_exp_days">pref_expiry_days_before</string>
@@ -154,7 +154,7 @@
     <string name="language_italian">Italienisch</string>
     <string name="language_german">Deutsch</string>
 
-    <string name="pref_cat_data_title">Daten</string>
+    <string name="pref_cat_data_title">Cache und Integrationen</string>
     <string name="pref_tosano_title">Tosano-API aktivieren</string>
     <string name="pref_tosano_summary">Der App das Herunterladen von Daten aus der Tosano-API ermöglichen</string>
     <string name="pref_off_title">Open Food Fact API aktivieren</string>

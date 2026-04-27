@@ -121,13 +121,13 @@
     <string name="expiring_products_notification_title">Expiring Products %d</string>
 
     <!-- Preferences -->
-    <string name="pref_cat_expiry_title">Expiry notifications</string>
+    <string name="pref_cat_expiry_title">Notifications</string>
     <string name="pref_exp_days_title">Days before expiry</string>
     <string name="pref_exp_days_summary">Number of days before expiry to receive the notification.</string>
     <string name="pref_key_exp_days">pref_expiry_days_before</string>
     <string name="pref_key_exp_time">pref_notification_time</string>
     <string name="pref_key_exp_time_title">Notification time</string>
-    <string name="pref_key_exp_summary">Select the time to receive the notification.</string>
+    <string name="pref_key_exp_summary">Select time for notification.</string>
     <string name="pref_default_shelf_life_title">Default shelf life after opening (days)</string>
     <string name="pref_default_shelf_life_summary">Default days to pre-fill when adding a new product</string>
     <string name="pref_exp_days_error">Insert a valid number of days from 0 to 365.</string>
@@ -153,7 +153,7 @@
     <string name="language_english">English</string>
     <string name="language_italian">Italian</string>
 
-    <string name="pref_cat_data_title">Data</string>
+    <string name="pref_cat_data_title">Cache and Integrations</string>
     <string name="pref_tosano_title">Enable Tosano API</string>
     <string name="pref_tosano_summary">Enable app to download data from Tosano API</string>
     <string name="pref_off_title">Enable Open Food Fact API</string>
