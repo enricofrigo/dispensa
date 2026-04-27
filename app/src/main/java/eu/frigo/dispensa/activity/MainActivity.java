@@ -48,11 +48,9 @@ import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.Set;
 
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.adapter.LocationViewPagerAdapter;
@@ -65,6 +63,7 @@ import eu.frigo.dispensa.data.storage.StorageLocation;
 import eu.frigo.dispensa.ui.ProductListFragment;
 import eu.frigo.dispensa.ui.SettingsFragment;
 import eu.frigo.dispensa.util.LocaleHelper;
+import eu.frigo.dispensa.util.LocationFormatter;
 import eu.frigo.dispensa.viewmodel.LocationViewModel;
 import eu.frigo.dispensa.viewmodel.ProductViewModel;
 import eu.frigo.dispensa.viewmodel.ShoppingListViewModel;
@@ -247,7 +246,7 @@ public class MainActivity extends AppCompatActivity
 
         // Osserva il conteggio non comprati per il badge
         shoppingListViewModel.getUncheckedCount().observe(this, count -> {
-            updateShoppingBadge(count != null ? count : 0);
+            updateShoppingBadge(Objects.requireNonNullElse(count, 0));
         });
 
         locationViewModel = new ViewModelProvider(this).get(LocationViewModel.class);
@@ -260,9 +259,9 @@ public class MainActivity extends AppCompatActivity
                 boolean showPredefinedAsIcon = prefs.getBoolean(SettingsFragment.KEY_DEFUALT_ICON, false);
                 if (currentLocation.isPredefined) {
                     if (showPredefinedAsIcon) {
-                        tab.setIcon(eu.frigo.dispensa.util.LocationFormatter.getIcon(currentLocation));
+                        tab.setIcon(LocationFormatter.getIcon(currentLocation));
                     } else {
-                        tab.setText(eu.frigo.dispensa.util.LocationFormatter.getLocalizedName(this, currentLocation));
+                        tab.setText(LocationFormatter.getLocalizedName(this, currentLocation));
                     }
                 } else {
                     tab.setText(currentLocation.getName());
@@ -626,9 +625,9 @@ public class MainActivity extends AppCompatActivity
             shoppingBadge.setHorizontalOffset(12);
             shoppingBadge.setVerticalOffset(12);
         }
+        shoppingBadge.setVisible(false);
 
         if (count > 0) {
-            shoppingBadge.setVisible(true);
             shoppingBadge.setNumber(count);
             btnShoppingList.post(() -> BadgeUtils.attachBadgeDrawable(shoppingBadge, btnShoppingList));
         } else {

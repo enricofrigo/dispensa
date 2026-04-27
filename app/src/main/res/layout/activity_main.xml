@@ -22,7 +22,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:gravity="center_vertical"
+            android:clipChildren="true"
+            android:clipToPadding="true"> <!-- Impedisce ai tab di "uscire" dai bordi -->
 
             <ImageButton
                 android:id="@+id/button_manage_locations"
@@ -34,30 +36,29 @@
                 android:layout_marginStart="8dp"
                 app:tint="?attr/colorControlNormal" />
 
-            <com.google.android.material.tabs.TabLayout
-                android:id="@+id/tabLayout"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:requiresFadingEdge="horizontal"
-                android:fadingEdgeLength="30dp"
-                app:tabMode="scrollable"
-                app:tabTextAppearance="@style/CustomTabTextStyle"/>
-
-            <FrameLayout
-                android:id="@+id/shopping_cart_container"
+            <ImageButton
+                android:id="@+id/button_shopping_list"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
-                android:layout_marginEnd="8dp">
+                android:src="@drawable/shopping_cart_24px"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/shopping_list_title"
+                app:tint="?attr/colorControlNormal" />
 
-                <ImageButton
-                    android:id="@+id/button_shopping_list"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:src="@drawable/ic_shopping_cart"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="@string/shopping_list_title"
-                    app:tint="?attr/colorControlNormal" />
+            <FrameLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1">
+
+                <com.google.android.material.tabs.TabLayout
+                    android:id="@+id/tabLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@android:color/transparent"
+                    app:tabMode="scrollable"
+                    app:tabIndicatorFullWidth="false"
+                    app:tabTextAppearance="@style/CustomTabTextStyle"/>
+                <!-- Rimosso fadingEdge per eliminare il pixel rosso -->
 
             </FrameLayout>
 
