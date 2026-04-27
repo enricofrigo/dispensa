@@ -1,7 +1,6 @@
 package eu.frigo.dispensa.adapter; // Crea un package adapter o simile
 
 import android.annotation.SuppressLint;
-import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
 import android.view.ContextMenu;
@@ -92,7 +91,7 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
         private static final long CLICK_TIMEOUT = 250;
         private final android.os.Handler clickHandler = new android.os.Handler(android.os.Looper.getMainLooper());
         private int clickExecutionState = 0;
-        private ImageView imageViewOpenedIcon;
+        private final ImageView imageViewOpenedIcon;
 
         ProductViewHolder(View itemView, OnProductInteractionListener listener, Set<String> shoppingListNames) {
             super(itemView);
@@ -144,6 +143,7 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
                 if (listenerInternal != null && currentProduct != null) {
                     String name = currentProduct.product.getProductName();
                     boolean currentlyInList = name != null && shoppingListNames.contains(name);
+
                     listenerInternal.onShoppingCartToggled(currentProduct, currentlyInList);
                 }
             });
@@ -258,10 +258,6 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
                 return true;
             });
         }
-    }
-
-    public ProductWithCategoryDefinitions getProductAt(int position) {
-        return getItem(position);
     }
 
     public static class ProductDiff extends DiffUtil.ItemCallback<ProductWithCategoryDefinitions> {
