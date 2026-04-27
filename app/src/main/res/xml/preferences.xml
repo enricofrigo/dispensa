@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:android="http://schemas.android.com/apk/res/android">
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    app:theme="@style/Base.Theme.Dispensa">
 
     <PreferenceCategory
         app:title="@string/pref_cat_expiry_title"
+        app:layout="@layout/custom_category"
         app:iconSpaceReserved="false">
 
         <EditTextPreference
@@ -12,6 +14,7 @@
             app:summary="@string/pref_exp_days_summary"
             app:defaultValue="3"
             app:useSimpleSummaryProvider="true"
+            app:layout="@layout/preference_single_line"
             android:inputType="number"
             app:iconSpaceReserved="false"/>
 
@@ -19,28 +22,23 @@
             app:key="@string/pref_key_exp_time"
             app:title="@string/pref_key_exp_time_title"
             app:summary="@string/pref_key_exp_summary"
+            app:layout="@layout/preference_single_line"
+            app:defaultValue="18:00"
             app:iconSpaceReserved="false"/>
 
         <EditTextPreference
             app:key="pref_key_default_shelf_life"
             app:title="@string/pref_default_shelf_life_title"
             app:summary="@string/pref_default_shelf_life_summary"
-            app:defaultValue=""
+            app:layout="@layout/preference_single_line"
+            app:defaultValue="5"
             app:useSimpleSummaryProvider="true"
             android:inputType="number"
             app:iconSpaceReserved="false"/>
 
     </PreferenceCategory>
-    <PreferenceCategory app:title="@string/pref_cat_locations_title"
-        app:iconSpaceReserved="false">
-        <Preference
-            app:key="@string/pref_key_location"
-            app:title="@string/pref_location_title"
-            app:summary="@string/pref_location_summary"
-            app:iconSpaceReserved="false"/>
-
-    </PreferenceCategory>
     <PreferenceCategory app:title="@string/pref_cat_title_language"
+        app:layout="@layout/custom_category"
         app:iconSpaceReserved="false">
 
         <ListPreference
@@ -50,37 +48,28 @@
             app:entries="@array/language_entries"
             app:entryValues="@array/language_values"
             app:defaultValue="en"
+            app:layout="@layout/preference_single_line"
             app:iconSpaceReserved="false"
             android:persistent="true"/>
 
     </PreferenceCategory>
     <PreferenceCategory app:key="pref_key_data"
+        app:layout="@layout/custom_category"
         app:title="@string/pref_cat_data_title"
         app:iconSpaceReserved="false">
 
         <Preference
-            app:key="pref_clean_images"
-            app:title="@string/pref_clean_images_title"
-            app:summary="@string/pref_clean_images_summary"
+            app:key="pref_off_cache_clear"
+            app:title="@string/pref_off_cache_clear_title"
+            app:summary="@string/pref_off_cache_clear_summary"
             app:iconSpaceReserved="false"/>
-
-        <SwitchPreferenceCompat
-            app:key="pref_key_enable_off_api"
-            app:title="@string/pref_off_title"
-            app:summary="@string/pref_off_summary"
-            app:defaultValue="@bool/pref_enable_api"
-            app:iconSpaceReserved="false"/>
-
-    </PreferenceCategory>
-
-    <PreferenceCategory app:title="@string/pref_cat_off_cache_title"
-        app:iconSpaceReserved="false">
 
         <EditTextPreference
             app:key="pref_off_cache_limit"
             app:title="@string/pref_off_cache_limit_title"
             app:summary="@string/pref_off_cache_limit_summary"
             app:defaultValue="100"
+            app:layout="@layout/preference_single_line"
             app:useSimpleSummaryProvider="true"
             android:inputType="number"
             app:iconSpaceReserved="false"/>
@@ -90,14 +79,22 @@
             app:title="@string/pref_off_cache_ttl_title"
             app:summary="@string/pref_off_cache_ttl_summary"
             app:defaultValue="30"
+            app:layout="@layout/preference_single_line"
             app:useSimpleSummaryProvider="true"
             android:inputType="number"
             app:iconSpaceReserved="false"/>
 
+        <SwitchPreferenceCompat
+            app:key="pref_key_enable_off_api"
+            app:title="@string/pref_off_title"
+            app:summary="@string/pref_off_summary"
+            app:defaultValue="@bool/pref_enable_api"
+            app:iconSpaceReserved="false"/>
+
         <Preference
-            app:key="pref_off_cache_clear"
-            app:title="@string/pref_off_cache_clear_title"
-            app:summary="@string/pref_off_cache_clear_summary"
+            app:key="pref_clean_images"
+            app:title="@string/pref_clean_images_title"
+            app:summary="@string/pref_clean_images_summary"
             app:iconSpaceReserved="false"/>
 
     </PreferenceCategory>
