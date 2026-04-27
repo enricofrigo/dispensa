@@ -21,6 +21,8 @@ import eu.frigo.dispensa.data.category.ProductCategoryLink;
 import eu.frigo.dispensa.data.category.ProductCategoryLinkDao;
 import eu.frigo.dispensa.data.product.Product;
 import eu.frigo.dispensa.data.product.ProductDao;
+import eu.frigo.dispensa.data.shoppinglist.ShoppingItem;
+import eu.frigo.dispensa.data.shoppinglist.ShoppingItemDao;
 import eu.frigo.dispensa.data.storage.PredefinedData;
 import eu.frigo.dispensa.data.storage.StorageLocation;
 import eu.frigo.dispensa.data.storage.StorageLocationDao;
@@ -29,8 +31,9 @@ import eu.frigo.dispensa.data.openfoodfacts.OpenFoodFactCacheDao;
 import eu.frigo.dispensa.data.openfoodfacts.OpenFoodFactCacheEntity;
 
 @Database(entities = {Product.class, CategoryDefinition.class,
-        ProductCategoryLink.class, StorageLocation.class, OpenFoodFactCacheEntity.class },
-        version = 9)
+        ProductCategoryLink.class, StorageLocation.class, OpenFoodFactCacheEntity.class,
+        ShoppingItem.class },
+        version = 10)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract ProductDao productDao();
@@ -38,6 +41,7 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract ProductCategoryLinkDao productCategoryLinkDao();
     public abstract StorageLocationDao storageLocationDao();
     public abstract OpenFoodFactCacheDao openFoodFactCacheDao();
+    public abstract ShoppingItemDao shoppingItemDao();
 
     private static volatile AppDatabase INSTANCE;
     private static final int NUMBER_OF_THREADS = 4;
@@ -63,6 +67,13 @@ public abstract class AppDatabase extends RoomDatabase {
         @Override
         public void migrate(SupportSQLiteDatabase database) {
             database.execSQL("CREATE TABLE IF NOT EXISTS `openfoodfact_cache` (`barcode` TEXT NOT NULL, `product_name` TEXT, `image_local_path` TEXT, `categories_tags` TEXT, `timestamp_ms` INTEGER NOT NULL, PRIMARY KEY(`barcode`))");
+        }
+    };
+
+    static final Migration MIGRATION_9_10 = new Migration(9, 10) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("CREATE TABLE IF NOT EXISTS `shopping_items` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT, `quantity` INTEGER NOT NULL, `checked` INTEGER NOT NULL)");
         }
     };
 
@@ -109,6 +120,7 @@ public abstract class AppDatabase extends RoomDatabase {
                             .addMigrations(MIGRATION_6_7)
                             .addMigrations(MIGRATION_7_8)
                             .addMigrations(MIGRATION_8_9)
+                            .addMigrations(MIGRATION_9_10)
                             .addCallback(sRoomDatabaseCallback)
                             //.fallbackToDestructiveMigration()
                             .build();

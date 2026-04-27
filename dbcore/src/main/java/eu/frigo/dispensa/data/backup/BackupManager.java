@@ -19,6 +19,8 @@ import eu.frigo.dispensa.data.category.ProductCategoryLink;
 import eu.frigo.dispensa.data.category.ProductCategoryLinkDao;
 import eu.frigo.dispensa.data.product.Product;
 import eu.frigo.dispensa.data.product.ProductDao;
+import eu.frigo.dispensa.data.shoppinglist.ShoppingItem;
+import eu.frigo.dispensa.data.shoppinglist.ShoppingItemDao;
 import eu.frigo.dispensa.data.storage.StorageLocation;
 import eu.frigo.dispensa.data.storage.StorageLocationDao;
 
@@ -40,15 +42,17 @@ public class BackupManager {
         StorageLocationDao locationDao = db.storageLocationDao();
         CategoryDefinitionDao categoryDao = db.categoryDefinitionDao();
         ProductCategoryLinkDao linkDao = db.productCategoryLinkDao();
+        ShoppingItemDao shoppingItemDao = db.shoppingItemDao();
 
         int version = db.getOpenHelper().getReadableDatabase().getVersion();
         List<Product> products = productDao.getAllProductsListStatic();
         List<StorageLocation> locations = locationDao.getAllLocationsSortedSync();
         List<CategoryDefinition> categories = categoryDao.getAllCategoryDefinitionsSync();
         List<ProductCategoryLink> links = linkDao.getAllProductCategoryLinksSync();
+        List<ShoppingItem> shoppingItems = shoppingItemDao.getAllItemsSync();
 
         try (OutputStreamWriter writer = new OutputStreamWriter(outputStream)) {
-            gson.toJson(new BackupData(version, appVersion, products, locations, categories, links), writer);
+            gson.toJson(new BackupData(version, appVersion, products, locations, categories, links, shoppingItems), writer);
         }
     }
 
@@ -87,6 +91,8 @@ public class BackupManager {
                 db.productDao().insertAll(backupData.products);
             if (backupData.categoryLinks != null)
                 db.productCategoryLinkDao().insertAll(backupData.categoryLinks);
+            if (backupData.shoppingItems != null)
+                db.shoppingItemDao().insertAll(backupData.shoppingItems);
         });
     }
 }

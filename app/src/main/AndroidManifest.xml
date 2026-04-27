@@ -55,6 +55,15 @@
                 android:value=".activity.MainActivity" />
         </activity>
 
+        <activity
+            android:name=".activity.ShoppingListActivity"
+            android:label="@string/shopping_list_title"
+            android:parentActivityName=".activity.MainActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".activity.MainActivity" />
+        </activity>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

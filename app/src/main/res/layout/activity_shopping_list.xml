@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/shopping_list_coordinator"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".activity.ShoppingListActivity">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:theme="@style/Base.Theme.Dispensa">
+
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar_shopping_list"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:navigationIcon="?attr/homeAsUpIndicator"
+            app:popupTheme="@style/ThemeOverlay.AppCompat.DayNight" />
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewShoppingList"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingBottom="16dp"
+            tools:listitem="@layout/list_item_shopping" />
+
+        <TextView
+            android:id="@+id/textViewEmptyShoppingList"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="@string/shopping_list_empty"
+            android:textAppearance="?attr/textAppearanceBody1"
+            android:textColor="@color/grey_text"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+    </FrameLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

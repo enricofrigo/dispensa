@@ -35,6 +35,7 @@ import eu.frigo.dispensa.data.category.ProductWithCategoryDefinitions;
 import eu.frigo.dispensa.util.DateConverter;
 import eu.frigo.dispensa.viewmodel.LocationViewModel;
 import eu.frigo.dispensa.viewmodel.ProductViewModel;
+import eu.frigo.dispensa.viewmodel.ShoppingListViewModel;
 
 public class ProductListFragment extends Fragment implements SharedPreferences.OnSharedPreferenceChangeListener {
 
@@ -42,6 +43,7 @@ public class ProductListFragment extends Fragment implements SharedPreferences.O
     private static final String ARG_IS_ALL_PRODUCTS_MODE = "is_all_products_mode";
     public String storageLocationFilter;
     private ProductViewModel productViewModel;
+    private ShoppingListViewModel shoppingListViewModel;
     public ProductListAdapter productListAdapter;
     private RecyclerView recyclerView;
     private SwipeRefreshLayout swipeRefreshLayout;
@@ -82,6 +84,7 @@ public class ProductListFragment extends Fragment implements SharedPreferences.O
             Log.w("ProductListFragment", "onCreate: getArguments() is null.");
         }        currentLayoutPreferenceKey = PREF_LAYOUT_MANAGER_KEY;
         productViewModel = new ViewModelProvider(requireActivity()).get(ProductViewModel.class);
+        shoppingListViewModel = new ViewModelProvider(requireActivity()).get(ShoppingListViewModel.class);
         PreferenceManager.getDefaultSharedPreferences(requireContext())
                 .registerOnSharedPreferenceChangeListener(this);
         Log.d("ProductListFragment", "onCreate called with storageLocationFilter: " + storageLocationFilter);
@@ -117,6 +120,16 @@ public class ProductListFragment extends Fragment implements SharedPreferences.O
         Log.d("ProductListFragment", "Fragment (" + getUniqueKeyPart() + "): Query iniziale impostata a: '" + currentSearchQuery + "' in onViewCreated");
         observeProducts();
         observeSearchQuery();
+        observeShoppingList();
+    }
+
+    private void observeShoppingList() {
+        shoppingListViewModel.getAllItemNames().observe(getViewLifecycleOwner(), names -> {
+            if (productListAdapter != null) {
+                java.util.Set<String> nameSet = names != null ? new java.util.HashSet<>(names) : new java.util.HashSet<>();
+                productListAdapter.updateShoppingListNames(nameSet);
+            }
+        });
     }
     private void setupRecyclerViewLayout() {
         if (recyclerView == null || productListAdapter == null) return;

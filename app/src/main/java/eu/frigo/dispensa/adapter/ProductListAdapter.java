@@ -10,6 +10,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
@@ -23,6 +24,8 @@ import com.bumptech.glide.Glide;
 import com.google.android.material.card.MaterialCardView;
 
 import java.util.Calendar;
+import java.util.HashSet;
+import java.util.Set;
 
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.data.category.ProductWithCategoryDefinitions;
@@ -32,12 +35,14 @@ import eu.frigo.dispensa.util.DateConverter;
 public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitions, ProductListAdapter.ProductViewHolder> {
 
     private final OnProductInteractionListener interactionListener;
+    private Set<String> shoppingListProductNames = new HashSet<>();
 
     public interface OnProductInteractionListener {
         void onProductItemClickedForQuantity(ProductWithCategoryDefinitions product);
         void onEditActionClicked(ProductWithCategoryDefinitions product);
         void onDeleteActionClicked(ProductWithCategoryDefinitions product);
         void onProductMoveClicked(ProductWithCategoryDefinitions product);
+        void onShoppingCartToggled(ProductWithCategoryDefinitions product, boolean currentlyInList);
     }
 
     public ProductListAdapter(@NonNull DiffUtil.ItemCallback<ProductWithCategoryDefinitions> diffCallback, OnProductInteractionListener listener) {
@@ -50,7 +55,7 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
     public ProductViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View itemView = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.list_item_product, parent, false);
-        return new ProductViewHolder(itemView,interactionListener);
+        return new ProductViewHolder(itemView,interactionListener, shoppingListProductNames);
     }
 
     @SuppressLint("UnsafeOptInUsageError")
@@ -67,6 +72,11 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
 
     }
 
+    public void updateShoppingListNames(Set<String> names) {
+        this.shoppingListProductNames = names != null ? names : new HashSet<>();
+        notifyDataSetChanged();
+    }
+
     static class ProductViewHolder extends RecyclerView.ViewHolder implements View.OnCreateContextMenuListener{
         private final TextView textViewQuantity;
         private final TextView textViewExpiryDate;
@@ -74,6 +84,8 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
         private final ImageView imageViewProduct;
         private final MaterialCardView cardProductItem;
         private final OnProductInteractionListener listenerInternal;
+        private final ImageButton buttonShoppingCart;
+        private final Set<String> shoppingListNames;
         private ProductWithCategoryDefinitions currentProduct;
         private static final int SINGLE_CLICK_ACTION = 1;
         private static final int DOUBLE_CLICK_ACTION = 2;
@@ -82,15 +94,17 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
         private int clickExecutionState = 0;
         private ImageView imageViewOpenedIcon;
 
-        ProductViewHolder(View itemView, OnProductInteractionListener listener) {
+        ProductViewHolder(View itemView, OnProductInteractionListener listener, Set<String> shoppingListNames) {
             super(itemView);
             this.listenerInternal = listener;
+            this.shoppingListNames = shoppingListNames;
             textViewQuantity = itemView.findViewById(R.id.textViewItemQuantity);
             textViewExpiryDate = itemView.findViewById(R.id.textViewItemExpiryDate);
             textViewProductName = itemView.findViewById(R.id.textViewItemProductName);
             imageViewProduct = itemView.findViewById(R.id.imageViewItemProduct);
             cardProductItem = itemView.findViewById(R.id.card_product_item);
             imageViewOpenedIcon = itemView.findViewById(R.id.imageViewOpenedIcon);
+            buttonShoppingCart = itemView.findViewById(R.id.buttonShoppingCart);
             itemView.setOnCreateContextMenuListener(this);
         }
 
@@ -115,6 +129,24 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
             } else {
                 imageViewProduct.setImageResource(R.drawable.ic_placeholder_image);
             }
+
+            // Shopping cart button
+            String productName = product.product.getProductName();
+            boolean inList = productName != null && shoppingListNames.contains(productName);
+            if (inList) {
+                buttonShoppingCart.setImageResource(R.drawable.ic_cart_minus);
+                buttonShoppingCart.setContentDescription(itemView.getContext().getString(R.string.shopping_list_remove));
+            } else {
+                buttonShoppingCart.setImageResource(R.drawable.ic_cart_plus);
+                buttonShoppingCart.setContentDescription(itemView.getContext().getString(R.string.shopping_list_add));
+            }
+            buttonShoppingCart.setOnClickListener(v -> {
+                if (listenerInternal != null && currentProduct != null) {
+                    String name = currentProduct.product.getProductName();
+                    boolean currentlyInList = name != null && shoppingListNames.contains(name);
+                    listenerInternal.onShoppingCartToggled(currentProduct, currentlyInList);
+                }
+            });
             
             if (product.product.getExpiryDate() != null) {
                 textViewExpiryDate.setText(String.format(textViewExpiryDate.getContext().getString(R.string.exp_date), product.product.getActualExpiryDateString()));

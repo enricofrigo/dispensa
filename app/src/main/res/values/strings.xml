@@ -219,4 +219,14 @@
     <string name="consume_success">Product consumed successfully</string>
     <string name="consume_scan_description">Scan product to consume</string>
     <string name="language_german">German</string>
+
+    <!-- Shopping List -->
+    <string name="shopping_list_title">Shopping list</string>
+    <string name="shopping_list_empty">Your shopping list is empty</string>
+    <string name="shopping_list_add">Add to shopping list</string>
+    <string name="shopping_list_remove">Remove from shopping list</string>
+    <string name="shopping_list_clear_checked">Clear purchased items</string>
+    <string name="shopping_list_clear_confirm">Remove all purchased items from the list?</string>
+    <string name="shopping_list_badge_description">Shopping list: %d items</string>
+    <string name="shopping_list_quantity">x%d</string>
 </resources>

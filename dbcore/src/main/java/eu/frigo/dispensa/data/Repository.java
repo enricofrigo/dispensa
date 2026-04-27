@@ -14,6 +14,8 @@ import eu.frigo.dispensa.data.category.ProductCategoryLinkDao;
 import eu.frigo.dispensa.data.category.ProductWithCategoryDefinitions;
 import eu.frigo.dispensa.data.product.Product;
 import eu.frigo.dispensa.data.product.ProductDao;
+import eu.frigo.dispensa.data.shoppinglist.ShoppingItem;
+import eu.frigo.dispensa.data.shoppinglist.ShoppingItemDao;
 import eu.frigo.dispensa.data.storage.StorageLocation;
 import eu.frigo.dispensa.data.storage.StorageLocationDao;
 
@@ -22,6 +24,7 @@ public class Repository {
     private final CategoryDefinitionDao categoryDefinitionDao;
     private final ProductCategoryLinkDao productCategoryLinkDao;
     private final StorageLocationDao storageLocationDao;
+    private final ShoppingItemDao shoppingItemDao;
     private final LiveData<List<ProductWithCategoryDefinitions>> allProducts;
 
     public Repository(Application application) {
@@ -30,6 +33,7 @@ public class Repository {
         categoryDefinitionDao = db.categoryDefinitionDao();
         productCategoryLinkDao = db.productCategoryLinkDao();
         storageLocationDao = db.storageLocationDao();
+        shoppingItemDao = db.shoppingItemDao();
         allProducts = productDao.getAllProductsWithFullCategories();
     }
 
@@ -234,6 +238,57 @@ public class Repository {
             if (onComplete != null) {
                 onComplete.accept(countDeleted);
             }
+        });
+    }
+
+    // ---- Shopping List ----
+
+    public LiveData<List<ShoppingItem>> getAllShoppingItems() {
+        return shoppingItemDao.getAllItems();
+    }
+
+    public LiveData<Integer> getUncheckedShoppingCount() {
+        return shoppingItemDao.getUncheckedCount();
+    }
+
+    public LiveData<List<String>> getAllShoppingItemNames() {
+        return shoppingItemDao.getAllItemNames();
+    }
+
+    public void addToShoppingList(String productName) {
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            ShoppingItem existing = shoppingItemDao.getItemByNameSync(productName);
+            if (existing != null) {
+                existing.setQuantity(existing.getQuantity() + 1);
+                shoppingItemDao.update(existing);
+            } else {
+                ShoppingItem newItem = new ShoppingItem(productName, 1, false);
+                shoppingItemDao.insert(newItem);
+            }
+        });
+    }
+
+    public void removeFromShoppingList(String productName) {
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            shoppingItemDao.deleteByName(productName);
+        });
+    }
+
+    public void updateShoppingItem(ShoppingItem item) {
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            shoppingItemDao.update(item);
+        });
+    }
+
+    public void deleteShoppingItem(ShoppingItem item) {
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            shoppingItemDao.delete(item);
+        });
+    }
+
+    public void clearCheckedShoppingItems() {
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            shoppingItemDao.deleteChecked();
         });
     }
 }
