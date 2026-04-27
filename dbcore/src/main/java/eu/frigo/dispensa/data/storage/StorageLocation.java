@@ -1,7 +1,6 @@
 package eu.frigo.dispensa.data.storage;
 
 import com.google.gson.annotations.SerializedName;
-import android.content.Context;
 
 import androidx.annotation.NonNull;
 import androidx.room.ColumnInfo;
@@ -54,12 +53,6 @@ public class StorageLocation {
         return name;
     }
 
-    public String getLocalizedName(Context context) {
-        if (isPredefined) {
-            return PredefinedData.getDisplayLocationName(context, getInternalKey());
-        } else
-            return name;
-    }
 
     public void setName(String name) {
         this.name = name;
@@ -105,12 +98,6 @@ public class StorageLocation {
         this.isPredefined = isPredefined;
     }
 
-    public Integer getIcon(){
-        if(isPredefined)
-            return PredefinedData.getDisplayLocationIcon(internalKey);
-        else
-            return null;
-    }
 
     @NonNull
     @Override

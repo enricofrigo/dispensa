@@ -47,7 +47,7 @@ public class LocationViewPagerAdapter extends FragmentStateAdapter {
 
     public String getPageTitle(int position) {
         if (position >= 0 && position < storageLocations.size()) {
-            return storageLocations.get(position).getLocalizedName(context);
+            return eu.frigo.dispensa.util.LocationFormatter.getLocalizedName(context, storageLocations.get(position));
         }
         return null;
     }

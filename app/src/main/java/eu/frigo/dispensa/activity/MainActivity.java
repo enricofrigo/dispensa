@@ -13,6 +13,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
+import eu.frigo.dispensa.BuildConfig;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
@@ -126,7 +127,7 @@ public class MainActivity extends AppCompatActivity
                     AppDatabase.databaseWriteExecutor.execute(() -> {
                         try (OutputStream os = getContentResolver().openOutputStream(uri)) {
                             BackupManager backupManager = new BackupManager(this);
-                            backupManager.exportData(os);
+                            backupManager.exportData(os, BuildConfig.VERSION_CODE);
                             runOnUiThread(
                                     () -> Toast.makeText(this, R.string.export_success, Toast.LENGTH_SHORT).show());
                         } catch (Exception e) {
@@ -235,9 +236,9 @@ public class MainActivity extends AppCompatActivity
                 boolean showPredefinedAsIcon = prefs.getBoolean(SettingsFragment.KEY_DEFUALT_ICON, false);
                 if (currentLocation.isPredefined) {
                     if (showPredefinedAsIcon) {
-                        tab.setIcon(currentLocation.getIcon());
+                        tab.setIcon(eu.frigo.dispensa.util.LocationFormatter.getIcon(currentLocation));
                     } else {
-                        tab.setText(currentLocation.getLocalizedName(this));
+                        tab.setText(eu.frigo.dispensa.util.LocationFormatter.getLocalizedName(this, currentLocation));
                     }
                 } else {
                     tab.setText(currentLocation.getName());
@@ -514,7 +515,7 @@ public class MainActivity extends AppCompatActivity
 
             CharSequence[] locationNames = new CharSequence[otherLocations.size()];
             for (int i = 0; i < otherLocations.size(); i++) {
-                locationNames[i] = otherLocations.get(i).getLocalizedName(this); // O un nome più
+                locationNames[i] = eu.frigo.dispensa.util.LocationFormatter.getLocalizedName(this, otherLocations.get(i)); // O un nome più
                                                                                                     // user-friendly
             }
 
@@ -534,7 +535,7 @@ public class MainActivity extends AppCompatActivity
                 // Opzionale: Mostra un messaggio di conferma
                 Toast.makeText(this,
                         String.format(getString(R.string.product_moved_toast), productToMove.getProductName(),
-                                selectedLocation.getLocalizedName(this)),
+                                eu.frigo.dispensa.util.LocationFormatter.getLocalizedName(this, selectedLocation)),
                         Toast.LENGTH_SHORT).show();
 
                 // L'aggiornamento del LiveData dovrebbe far sì che il prodotto scompaia da

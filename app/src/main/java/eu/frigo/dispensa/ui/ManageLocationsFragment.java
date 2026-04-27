@@ -194,7 +194,7 @@ public class ManageLocationsFragment extends Fragment implements
         filters[0] = new InputFilter.LengthFilter(MAX_LOCATION_NAME_LENGTH);
         input.setFilters(filters);
         if (existingLocation != null) {
-            input.setText(existingLocation.getLocalizedName(getContext()));
+            input.setText(eu.frigo.dispensa.util.LocationFormatter.getLocalizedName(getContext(), existingLocation));
             if (existingLocation.isPredefined()) {
                 input.setEnabled(false);
             }

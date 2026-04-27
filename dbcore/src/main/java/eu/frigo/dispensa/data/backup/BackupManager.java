@@ -12,7 +12,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.List;
 
-import eu.frigo.dispensa.BuildConfig;
 import eu.frigo.dispensa.data.AppDatabase;
 import eu.frigo.dispensa.data.category.CategoryDefinition;
 import eu.frigo.dispensa.data.category.CategoryDefinitionDao;
@@ -36,7 +35,7 @@ public class BackupManager {
                 create();
     }
 
-    public void exportData(OutputStream outputStream) throws Exception {
+    public void exportData(OutputStream outputStream, int appVersion) throws Exception {
         ProductDao productDao = db.productDao();
         StorageLocationDao locationDao = db.storageLocationDao();
         CategoryDefinitionDao categoryDao = db.categoryDefinitionDao();
@@ -49,7 +48,7 @@ public class BackupManager {
         List<ProductCategoryLink> links = linkDao.getAllProductCategoryLinksSync();
 
         try (OutputStreamWriter writer = new OutputStreamWriter(outputStream)) {
-            gson.toJson(new BackupData(version, products, locations, categories, links), writer);
+            gson.toJson(new BackupData(version, appVersion, products, locations, categories, links), writer);
         }
     }
 

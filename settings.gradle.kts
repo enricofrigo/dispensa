@@ -21,4 +21,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "dispensa"
-include(":app")
+include(":app", ":dbcore")

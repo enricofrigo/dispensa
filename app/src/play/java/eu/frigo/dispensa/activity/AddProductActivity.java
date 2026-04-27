@@ -590,7 +590,7 @@ public class AddProductActivity extends AppCompatActivity {
 
                 locationDisplayNames.clear();
                 for (StorageLocation loc : locations) {
-                    locationDisplayNames.add(loc.getLocalizedName(getApplicationContext()));
+                    locationDisplayNames.add(eu.frigo.dispensa.util.LocationFormatter.getLocalizedName(getApplicationContext(), loc));
                 }
                 locationSpinnerAdapter.notifyDataSetChanged();
 
