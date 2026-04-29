@@ -256,13 +256,17 @@ public class Repository {
     }
 
     public void addToShoppingList(String productName) {
+        addToShoppingList(productName, 1);
+    }
+
+    public void addToShoppingList(String productName, int quantity) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
             ShoppingItem existing = shoppingItemDao.getItemByNameSync(productName);
             if (existing != null) {
-                existing.setQuantity(existing.getQuantity() + 1);
+                existing.setQuantity(existing.getQuantity() + quantity);
                 shoppingItemDao.update(existing);
             } else {
-                ShoppingItem newItem = new ShoppingItem(productName, 1, false);
+                ShoppingItem newItem = new ShoppingItem(productName, quantity, false);
                 shoppingItemDao.insert(newItem);
             }
         });

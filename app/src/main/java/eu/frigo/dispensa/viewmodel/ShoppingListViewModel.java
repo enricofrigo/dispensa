@@ -42,6 +42,10 @@ public class ShoppingListViewModel extends AndroidViewModel {
         repository.addToShoppingList(productName);
     }
 
+    public void addItem(String productName, int quantity) {
+        repository.addToShoppingList(productName, quantity);
+    }
+
     public void removeItem(String productName) {
         repository.removeFromShoppingList(productName);
     }

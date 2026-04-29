@@ -3,7 +3,6 @@ package eu.frigo.dispensa.data.backup;
 import android.content.Context;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 
-import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import java.io.InputStream;
@@ -56,6 +55,11 @@ public class BackupManager {
         }
     }
 
+    private boolean isCompatible(int curVersion, int version){
+        if(curVersion==version) return true;
+        return curVersion == 10 && version == 9;
+    }
+
     public void importData(InputStream inputStream) throws Exception {
         BackupData backupData;
         try (InputStreamReader reader = new InputStreamReader(inputStream)) {
@@ -71,7 +75,7 @@ public class BackupManager {
 
         int currentVersion = db.getOpenHelper().getReadableDatabase().getVersion();
 
-        if (backupData.dbVersion != currentVersion) {
+        if (!isCompatible(currentVersion,backupData.dbVersion)) {
             throw new Exception("Backup version (" + backupData.dbVersion + ") is different than database version ("
                     + currentVersion + ")");
         }
