@@ -54,21 +54,13 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
     public ProductViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View itemView = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.list_item_product, parent, false);
-        return new ProductViewHolder(itemView,interactionListener, shoppingListProductNames);
+        return new ProductViewHolder(itemView, interactionListener);
     }
 
     @SuppressLint("UnsafeOptInUsageError")
     @Override
     public void onBindViewHolder(@NonNull ProductViewHolder holder, int position) {
-        ProductWithCategoryDefinitions currentProduct = getItem(position);
-        holder.textViewExpiryDate.setText(String.format("Scade il: %s", currentProduct.product.getActualExpiryDateString()));
-        if (currentProduct.product.isOpened()) {
-            holder.imageViewOpenedIcon.setVisibility(View.VISIBLE);
-        } else {
-            holder.imageViewOpenedIcon.setVisibility(View.GONE);
-        }
-        holder.bind(currentProduct);
-
+        holder.bind(getItem(position), shoppingListProductNames);
     }
 
     public void updateShoppingListNames(Set<String> names) {
@@ -76,7 +68,7 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
         notifyDataSetChanged();
     }
 
-    static class ProductViewHolder extends RecyclerView.ViewHolder implements View.OnCreateContextMenuListener{
+    static class ProductViewHolder extends RecyclerView.ViewHolder implements View.OnCreateContextMenuListener {
         private final TextView textViewQuantity;
         private final TextView textViewExpiryDate;
         private final TextView textViewProductName;
@@ -84,7 +76,6 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
         private final MaterialCardView cardProductItem;
         private final OnProductInteractionListener listenerInternal;
         private final ImageButton buttonShoppingCart;
-        private final Set<String> shoppingListNames;
         private ProductWithCategoryDefinitions currentProduct;
         private static final int SINGLE_CLICK_ACTION = 1;
         private static final int DOUBLE_CLICK_ACTION = 2;
@@ -93,10 +84,9 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
         private int clickExecutionState = 0;
         private final ImageView imageViewOpenedIcon;
 
-        ProductViewHolder(View itemView, OnProductInteractionListener listener, Set<String> shoppingListNames) {
+        ProductViewHolder(View itemView, OnProductInteractionListener listener) {
             super(itemView);
             this.listenerInternal = listener;
-            this.shoppingListNames = shoppingListNames;
             textViewQuantity = itemView.findViewById(R.id.textViewItemQuantity);
             textViewExpiryDate = itemView.findViewById(R.id.textViewItemExpiryDate);
             textViewProductName = itemView.findViewById(R.id.textViewItemProductName);
@@ -107,8 +97,14 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
             itemView.setOnCreateContextMenuListener(this);
         }
 
-        void bind(ProductWithCategoryDefinitions product) {
+        void bind(ProductWithCategoryDefinitions product, Set<String> shoppingListNames) {
             this.currentProduct = product;
+
+            if (product.product.isOpened()) {
+                imageViewOpenedIcon.setVisibility(View.VISIBLE);
+            } else {
+                imageViewOpenedIcon.setVisibility(View.GONE);
+            }
             if (product.product.getProductName() != null && !product.product.getProductName().isEmpty()) {
                 textViewProductName.setText(product.product.getProductName());
                 textViewProductName.setVisibility(View.VISIBLE);

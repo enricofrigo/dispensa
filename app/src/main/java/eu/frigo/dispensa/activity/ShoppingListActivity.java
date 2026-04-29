@@ -5,6 +5,8 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AlertDialog;
@@ -63,6 +65,29 @@ public class ShoppingListActivity extends AppCompatActivity
                 textViewEmpty.setVisibility(View.VISIBLE);
                 recyclerView.setVisibility(View.GONE);
             }
+        });
+
+        EditText editTextName = findViewById(R.id.editTextItemName);
+        EditText editTextQuantity = findViewById(R.id.editTextItemQuantity);
+        ImageButton buttonAdd = findViewById(R.id.buttonAddItem);
+
+        buttonAdd.setOnClickListener(v -> {
+            String name = editTextName.getText().toString().trim();
+            if (name.isEmpty()) {
+                editTextName.setError(getString(R.string.error_empty_location));
+                return;
+            }
+
+            int quantity = 1;
+            try {
+                quantity = Integer.parseInt(editTextQuantity.getText().toString());
+            } catch (NumberFormatException ignored) {}
+
+            shoppingListViewModel.addItem(name, quantity);
+
+            editTextName.setText("");
+            editTextQuantity.setText("1");
+            editTextName.requestFocus();
         });
     }
 
