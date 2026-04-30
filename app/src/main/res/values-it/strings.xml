@@ -229,4 +229,6 @@ I prodotti in questa dispensa potrebbero dover essere riassegnati.</string>
     <string name="shopping_list_clear_confirm">Rimuovere tutti i prodotti comprati dalla lista?</string>
     <string name="shopping_list_badge_description">Lista della spesa: %d prodotti</string>
     <string name="shopping_list_quantity">x%d</string>
+    <string name="action_share">Condividi</string>
+    <string name="share_shopping_list_title">Lista della spesa</string>
 </resources>
