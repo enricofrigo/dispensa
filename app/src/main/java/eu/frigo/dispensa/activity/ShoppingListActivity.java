@@ -129,11 +129,6 @@ public class ShoppingListActivity extends AppCompatActivity
         StringBuilder sb = new StringBuilder();
         sb.append(getString(R.string.share_shopping_list_title)).append(":\n\n");
         for (ShoppingItem item : currentItems) {
-            if (!item.isChecked()) {
-                sb.append("☐ ");
-            } else {
-                sb.append("☑ ");
-            }
             sb.append(item.getName());
             if (item.getQuantity() > 1) {
                 sb.append(" (x").append(item.getQuantity()).append(")");
