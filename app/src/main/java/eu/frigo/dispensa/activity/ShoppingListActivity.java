@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.content.Intent;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
@@ -16,8 +17,11 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.List;
+
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.adapter.ShoppingListAdapter;
+import eu.frigo.dispensa.data.shoppinglist.ShoppingItem;
 import eu.frigo.dispensa.util.LocaleHelper;
 import eu.frigo.dispensa.viewmodel.ShoppingListViewModel;
 
@@ -27,6 +31,7 @@ public class ShoppingListActivity extends AppCompatActivity
     private ShoppingListViewModel shoppingListViewModel;
     private ShoppingListAdapter adapter;
     private TextView textViewEmpty;
+    private List<ShoppingItem> currentItems;
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -56,6 +61,7 @@ public class ShoppingListActivity extends AppCompatActivity
 
         shoppingListViewModel = new ViewModelProvider(this).get(ShoppingListViewModel.class);
         shoppingListViewModel.getAllItems().observe(this, items -> {
+            this.currentItems = items;
             if (items != null && !items.isEmpty()) {
                 adapter.submitList(items);
                 textViewEmpty.setVisibility(View.GONE);
@@ -108,8 +114,40 @@ public class ShoppingListActivity extends AppCompatActivity
                     .setNegativeButton(R.string.cancel, null)
                     .show();
             return true;
+        } else if (item.getItemId() == R.id.action_share) {
+            shareShoppingList();
+            return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void shareShoppingList() {
+        if (currentItems == null || currentItems.isEmpty()) {
+            return;
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(getString(R.string.share_shopping_list_title)).append(":\n\n");
+        for (ShoppingItem item : currentItems) {
+            if (!item.isChecked()) {
+                sb.append("☐ ");
+            } else {
+                sb.append("☑ ");
+            }
+            sb.append(item.getName());
+            if (item.getQuantity() > 1) {
+                sb.append(" (x").append(item.getQuantity()).append(")");
+            }
+            sb.append("\n");
+        }
+
+        Intent sendIntent = new Intent();
+        sendIntent.setAction(Intent.ACTION_SEND);
+        sendIntent.putExtra(Intent.EXTRA_TEXT, sb.toString());
+        sendIntent.setType("text/plain");
+
+        Intent shareIntent = Intent.createChooser(sendIntent, null);
+        startActivity(shareIntent);
     }
 
     @Override

@@ -229,4 +229,6 @@
     <string name="shopping_list_clear_confirm">Remove all purchased items from the list?</string>
     <string name="shopping_list_badge_description">Shopping list: %d items</string>
     <string name="shopping_list_quantity">x%d</string>
+    <string name="action_share">Share</string>
+    <string name="share_shopping_list_title">My Shopping List</string>
 </resources>
