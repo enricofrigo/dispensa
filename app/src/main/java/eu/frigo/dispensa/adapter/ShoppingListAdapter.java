@@ -64,19 +64,12 @@ public class ShoppingListAdapter extends ListAdapter<ShoppingItem, ShoppingListA
             checkBox.setOnCheckedChangeListener(null);
             checkBox.setChecked(item.isChecked());
 
-            // Stile visivo: barrato e attenuato se comprato
-            if (item.isChecked()) {
-                textViewName.setPaintFlags(textViewName.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
-                textViewQuantity.setPaintFlags(textViewQuantity.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
-                itemView.setAlpha(0.5f);
-            } else {
-                textViewName.setPaintFlags(textViewName.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
-                textViewQuantity.setPaintFlags(textViewQuantity.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
-                itemView.setAlpha(1.0f);
-            }
+            // Stile visivo iniziale
+            updateVisualState(item.isChecked());
 
             // Listener per la checkbox
             checkBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                updateVisualState(isChecked);
                 if (listener != null) {
                     listener.onItemCheckedChanged(item);
                 }
@@ -86,6 +79,18 @@ public class ShoppingListAdapter extends ListAdapter<ShoppingItem, ShoppingListA
             itemView.setOnClickListener(v -> {
                 checkBox.setChecked(!checkBox.isChecked());
             });
+        }
+
+        private void updateVisualState(boolean isChecked) {
+            if (isChecked) {
+                textViewName.setPaintFlags(textViewName.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+                textViewQuantity.setPaintFlags(textViewQuantity.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+                itemView.setAlpha(0.5f);
+            } else {
+                textViewName.setPaintFlags(textViewName.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
+                textViewQuantity.setPaintFlags(textViewQuantity.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
+                itemView.setAlpha(1.0f);
+            }
         }
     }
 
