@@ -2,6 +2,11 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
+        android:id="@+id/action_share"
+        android:icon="@drawable/ic_share_24"
+        android:title="@string/action_share"
+        app:showAsAction="ifRoom" />
+    <item
         android:id="@+id/action_clear_checked"
         android:title="@string/shopping_list_clear_checked"
         app:showAsAction="never" />
