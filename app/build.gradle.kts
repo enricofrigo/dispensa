@@ -105,6 +105,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-common-java8:2.8.6")
     implementation("io.reactivex.rxjava3:rxandroid:3.0.2")
     implementation("io.reactivex.rxjava3:rxjava:3.1.8")
+    implementation("com.google.zxing:core:3.5.3")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
