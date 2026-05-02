@@ -1,5 +1,6 @@
 package eu.frigo.dispensa.ui;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
@@ -28,6 +29,7 @@ import com.google.android.material.switchmaterial.SwitchMaterial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import android.view.MenuItem;
 
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.adapter.ReorderLocationsAdapter;
@@ -89,6 +91,22 @@ public class ManageLocationsFragment extends Fragment implements
         fabAddLocation.setOnClickListener(v -> showAddLocationDialog());
 
         toolbar.setTitle(getString(R.string.title_manage_locations));
+        toolbar.inflateMenu(R.menu.menu_manage_locations);
+        toolbar.setOnMenuItemClickListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.action_share_pantry) {
+                Intent intent = new Intent(requireContext(), eu.frigo.dispensa.sync.ui.SyncOnboardingActivity.class);
+                intent.putExtra(eu.frigo.dispensa.sync.ui.SyncOnboardingActivity.EXTRA_MODE, eu.frigo.dispensa.sync.ui.SyncOnboardingActivity.MODE_SHARE);
+                startActivity(intent);
+                return true;
+            } else if (id == R.id.action_join_pantry) {
+                Intent intent = new Intent(requireContext(), eu.frigo.dispensa.sync.ui.SyncOnboardingActivity.class);
+                intent.putExtra(eu.frigo.dispensa.sync.ui.SyncOnboardingActivity.EXTRA_MODE, eu.frigo.dispensa.sync.ui.SyncOnboardingActivity.MODE_JOIN);
+                startActivity(intent);
+                return true;
+            }
+            return false;
+        });
     }
 
     private void setupRecyclerView() {

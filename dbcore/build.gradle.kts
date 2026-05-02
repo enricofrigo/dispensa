@@ -28,6 +28,8 @@ android {
 dependencies {
     api(libs.room.runtime)
     api(libs.room.ktx)
+    api(project(":sync-core"))
+
     implementation(libs.room.paging)
     implementation(libs.room.rxjava2)
     implementation(libs.room.rxjava3)

@@ -1,6 +1,7 @@
 package eu.frigo.dispensa.ui;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.format.DateFormat;
@@ -36,13 +37,40 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
     public static final String KEY_OFF_CACHE_TTL_DAYS = "pref_off_cache_ttl_days";
     public static final String KEY_OFF_CACHE_CLEAR = "pref_off_cache_clear";
     public static final String KEY_DEFUALT_ICON = "pref_predefined_tab_icon";
+    public static final String KEY_SYNC_ENABLED = "pref_sync_enabled";
+    public static final String KEY_SYNC_NOW = "pref_sync_now";
+    public static final String KEY_SYNC_CONFIG = "pref_sync_config";
+    public static final String KEY_SYNC_STATUS = "pref_sync_status";
 
     private Preference notificationTimePreference;
     private ListPreference languagePreference;
+    private Preference syncStatusPreference;
 
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         setPreferencesFromResource(R.xml.preferences, rootKey);
+        
+        syncStatusPreference = findPreference(KEY_SYNC_STATUS);
+        updateSyncStatus();
+
+        Preference syncNowPref = findPreference(KEY_SYNC_NOW);
+        if (syncNowPref != null) {
+            syncNowPref.setOnPreferenceClickListener(preference -> {
+                eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl.getInstance(requireContext()).triggerManualSync();
+                android.widget.Toast.makeText(getContext(), getString(R.string.pref_sync_now_title), android.widget.Toast.LENGTH_SHORT).show();
+                return true;
+            });
+        }
+
+        Preference syncConfigPref = findPreference(KEY_SYNC_CONFIG);
+        if (syncConfigPref != null) {
+            syncConfigPref.setOnPreferenceClickListener(preference -> {
+                Intent intent = new Intent(requireContext(), eu.frigo.dispensa.sync.ui.SyncConfigActivity.class);
+                startActivity(intent);
+                return true;
+            });
+        }
+
         notificationTimePreference = findPreference(getString(R.string.pref_key_exp_time));
         if (notificationTimePreference != null) {
             updateNotificationTimeSummary();
@@ -90,7 +118,6 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
         if (languagePreference != null) {
             String currentLangValue = PreferenceManager.getDefaultSharedPreferences(requireContext())
                     .getString(KEY_LANGUAGE_PREFERENCE, "en");
-            Log.d("locale SettingsFragment", "onCreatePreferences - Valore lingua letto (con chiave hardcoded): " + currentLangValue);
             languagePreference.setValue(currentLangValue);
             updateLanguagePreferenceSummary(currentLangValue);
         }
@@ -190,7 +217,6 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
         if (KEY_LANGUAGE_PREFERENCE.equals(key)) {
             if (context == null) return;
             String langCode = sharedPreferences.getString(key, "en");
-            Log.d("locale SettingsFragment", "onSharedPreferenceChanged lingua selezionata: " + langCode + " applicata.");
             LocaleListCompat appLocale = LocaleListCompat.forLanguageTags(langCode);
             AppCompatDelegate.setApplicationLocales(appLocale);
             updateLanguagePreferenceSummary(langCode);
@@ -211,8 +237,6 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
             return;
         }
 
-        Log.d("locale SettingsFragment", "Aggiornamento summary per languageValue: " + languageValue);
-
         CharSequence[] entries = languagePreference.getEntries();
         CharSequence[] entryValues = languagePreference.getEntryValues();
 
@@ -226,17 +250,30 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
         for (int i = 0; i < entryValues.length; i++) {
             if (entryValues[i].toString().equals(languageValue)) {
                 languagePreference.setSummary(entries[i]);
-                Log.d("locale SettingsFragment", "Summary impostato a: " + entries[i]);
                 found = true;
                 break;
             }
         }
 
         if (!found) {
-            Log.w("locale SettingsFragment", "Nessuna entry corrispondente trovata per languageValue: " + languageValue + ". Uso il valore come summary.");
             languagePreference.setSummary(languageValue);
         }
     }
+
+    private void updateSyncStatus() {
+        if (syncStatusPreference != null) {
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+            boolean enabled = prefs.getBoolean(KEY_SYNC_ENABLED, false);
+            if (!enabled) {
+                syncStatusPreference.setSummary(R.string.sync_status_disconnected);
+            } else {
+                long lastSync = prefs.getLong("last_sync_timestamp", 0);
+                String time = lastSync == 0 ? "Never" : DateFormat.getTimeFormat(requireContext()).format(new java.util.Date(lastSync));
+                syncStatusPreference.setSummary(getString(R.string.sync_last_time, time));
+            }
+        }
+    }
+
     public static void triggerRebirthWithAlarmManager(Context context) {
         if (context == null) {return;}
         System.exit(0);

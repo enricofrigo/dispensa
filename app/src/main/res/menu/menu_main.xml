@@ -14,6 +14,11 @@
         app:iconTint="@android:color/white"
         app:showAsAction="ifRoom" />
     <item
+        android:id="@+id/action_sync_now"
+        android:orderInCategory="100"
+        android:title="@string/pref_sync_now_title"
+        app:showAsAction="never"/>
+    <item
         android:id="@+id/action_export"
         android:orderInCategory="100"
         android:title="@string/action_export"

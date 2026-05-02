@@ -1,0 +1,13 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_share_pantry"
+        android:title="@string/share_pantry"
+        android:icon="@drawable/ic_share_24"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_join_pantry"
+        android:title="@string/join_pantry"
+        android:icon="@drawable/ic_add_24"
+        app:showAsAction="ifRoom" />
+</menu>

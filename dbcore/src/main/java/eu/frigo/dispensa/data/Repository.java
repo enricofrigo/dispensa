@@ -18,6 +18,10 @@ import eu.frigo.dispensa.data.shoppinglist.ShoppingItem;
 import eu.frigo.dispensa.data.shoppinglist.ShoppingItemDao;
 import eu.frigo.dispensa.data.storage.StorageLocation;
 import eu.frigo.dispensa.data.storage.StorageLocationDao;
+import eu.frigo.dispensa.data.sync.SyncOutbox;
+import eu.frigo.dispensa.data.sync.SyncOutboxDao;
+import com.google.gson.Gson;
+import java.util.UUID;
 
 public class Repository {
     private final ProductDao productDao;
@@ -25,6 +29,8 @@ public class Repository {
     private final ProductCategoryLinkDao productCategoryLinkDao;
     private final StorageLocationDao storageLocationDao;
     private final ShoppingItemDao shoppingItemDao;
+    private final SyncOutboxDao syncOutboxDao;
+    private final Gson gson;
     private final LiveData<List<ProductWithCategoryDefinitions>> allProducts;
 
     public Repository(Application application) {
@@ -34,7 +40,28 @@ public class Repository {
         productCategoryLinkDao = db.productCategoryLinkDao();
         storageLocationDao = db.storageLocationDao();
         shoppingItemDao = db.shoppingItemDao();
+        syncOutboxDao = db.syncOutboxDao();
+        gson = new Gson();
         allProducts = productDao.getAllProductsWithFullCategories();
+    }
+
+    private void recordSyncEvent(String action, Object payload) {
+        SyncOutbox entry = new SyncOutbox();
+        entry.syncId = UUID.randomUUID().toString();
+        entry.dataType = action;
+        entry.payload = gson.toJson(payload);
+        entry.timestamp = System.currentTimeMillis();
+        syncOutboxDao.insert(entry);
+        
+        // Signal that a local change happened
+        try {
+            Class<?> syncBusClass = Class.forName("eu.frigo.dispensa.sync.core.event.SyncBus");
+            Object syncBusInstance = syncBusClass.getMethod("getInstance").invoke(null);
+            Object eventInstance = Class.forName("eu.frigo.dispensa.sync.core.event.SyncBus$LocalChangeDetected").newInstance();
+            syncBusClass.getMethod("post", Class.forName("eu.frigo.dispensa.sync.core.event.SyncEvent")).invoke(syncBusInstance, eventInstance);
+        } catch (Exception ignored) {
+            // Sync module might not be present or initialized
+        }
     }
 
     public LiveData<List<ProductWithCategoryDefinitions>> getAllProducts() {
@@ -60,6 +87,7 @@ public class Repository {
     public void insert(Product product) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
             productDao.insert(product);
+            recordSyncEvent("UPSERT_PRODUCT", product);
         });
     }
 
@@ -67,6 +95,7 @@ public class Repository {
         AppDatabase.databaseWriteExecutor.execute(() -> {
             deleteLocalImageIfAny(selectedProduct.getImageUrl());
             productDao.delete(selectedProduct);
+            recordSyncEvent("DELETE_PRODUCT", selectedProduct);
         });
     }
 
@@ -78,6 +107,7 @@ public class Repository {
                 deleteLocalImageIfAny(oldProduct.getImageUrl());
             }
             productDao.update(product);
+            recordSyncEvent("UPSERT_PRODUCT", product);
         });
     }
 
@@ -99,6 +129,7 @@ public class Repository {
         AppDatabase.databaseWriteExecutor.execute(() -> {
             long productIdLong = productDao.insert(product);
             int productId = (int) productIdLong;
+            product.setId(productId);
 
             if (apiTags != null && !apiTags.isEmpty()) {
                 List<ProductCategoryLink> linksToInsert = new ArrayList<>();
@@ -119,6 +150,7 @@ public class Repository {
                     productCategoryLinkDao.insertAll(linksToInsert);
                 }
             }
+            recordSyncEvent("UPSERT_PRODUCT", product);
         });
     }
 
@@ -130,8 +162,8 @@ public class Repository {
                 deleteLocalImageIfAny(oldProduct.getImageUrl());
             }
             
-            long productIdLong = productDao.insert(product);
-            int productId = (int) productIdLong;
+            productDao.update(product);
+            int productId = product.getId();
 
             if (apiTags != null && !apiTags.isEmpty()) {
                 List<ProductCategoryLink> linksToInsert = new ArrayList<>();
@@ -153,6 +185,7 @@ public class Repository {
                     productCategoryLinkDao.insertAll(linksToInsert);
                 }
             }
+            recordSyncEvent("UPSERT_PRODUCT", product);
         });
     }
     public LiveData<List<StorageLocation>> getAllLocationsSorted() {
@@ -166,12 +199,14 @@ public class Repository {
     public void insertLocation(StorageLocation location) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
             storageLocationDao.insert(location);
+            recordSyncEvent("UPSERT_LOCATION", location);
         });
     }
 
     public void updateLocation(StorageLocation location) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
             storageLocationDao.update(location);
+            recordSyncEvent("UPSERT_LOCATION", location);
         });
     }
     public void deleteLocation(StorageLocation location) {
@@ -180,6 +215,7 @@ public class Repository {
             String fallbackKey = defaultLoc != null ? defaultLoc.internalKey : eu.frigo.dispensa.data.storage.PredefinedData.LOCATION_ALL;
             productDao.updateProductLocation(location.internalKey, fallbackKey);
             storageLocationDao.delete(location);
+            recordSyncEvent("DELETE_LOCATION", location);
         });
     }
 
@@ -265,9 +301,11 @@ public class Repository {
             if (existing != null) {
                 existing.setQuantity(existing.getQuantity() + quantity);
                 shoppingItemDao.update(existing);
+                recordSyncEvent("UPSERT_SHOPPING_ITEM", existing);
             } else {
                 ShoppingItem newItem = new ShoppingItem(productName, quantity, false);
                 shoppingItemDao.insert(newItem);
+                recordSyncEvent("UPSERT_SHOPPING_ITEM", newItem);
             }
         });
     }
@@ -281,12 +319,14 @@ public class Repository {
     public void updateShoppingItem(ShoppingItem item) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
             shoppingItemDao.update(item);
+            recordSyncEvent("UPSERT_SHOPPING_ITEM", item);
         });
     }
 
     public void deleteShoppingItem(ShoppingItem item) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
             shoppingItemDao.delete(item);
+            recordSyncEvent("DELETE_SHOPPING_ITEM", item);
         });
     }
 
