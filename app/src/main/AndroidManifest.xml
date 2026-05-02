@@ -64,6 +64,23 @@
                 android:value=".activity.MainActivity" />
         </activity>
 
+        <activity
+            android:name=".sync.ui.SyncConfigActivity"
+            android:label="@string/sync_setup_title"
+            android:parentActivityName=".activity.SettingsActivity" />
+
+        <activity
+            android:name=".sync.ui.SyncOnboardingActivity"
+            android:label="@string/sync_setup_title"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="dispensa" android:host="sync" android:path="/join" />
+            </intent-filter>
+        </activity>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

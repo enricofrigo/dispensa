@@ -99,5 +99,51 @@
 
     </PreferenceCategory>
 
+    <PreferenceCategory
+        app:key="pref_cat_sync"
+        app:title="@string/pref_cat_sync_title"
+        app:layout="@layout/custom_category"
+        app:iconSpaceReserved="false">
+
+        <SwitchPreferenceCompat
+            app:key="pref_sync_enabled"
+            app:title="@string/pref_sync_enabled_title"
+            app:summary="@string/pref_sync_enabled_summary"
+            app:defaultValue="false"
+            app:iconSpaceReserved="false"/>
+
+        <ListPreference
+            app:key="pref_sync_provider"
+            app:title="@string/pref_sync_provider_title"
+            app:entries="@array/sync_provider_entries"
+            app:entryValues="@array/sync_provider_values"
+            app:defaultValue="webdav"
+            app:dependency="pref_sync_enabled"
+            app:layout="@layout/preference_single_line"
+            app:iconSpaceReserved="false"/>
+
+        <Preference
+            app:key="pref_sync_config"
+            app:title="@string/pref_sync_config_title"
+            app:dependency="pref_sync_enabled"
+            app:layout="@layout/preference_single_line"
+            app:iconSpaceReserved="false"/>
+
+        <Preference
+            app:key="pref_sync_now"
+            app:title="@string/pref_sync_now_title"
+            app:dependency="pref_sync_enabled"
+            app:layout="@layout/preference_single_line"
+            app:iconSpaceReserved="false"/>
+
+        <Preference
+            app:key="pref_sync_status"
+            app:title="@string/pref_sync_status_title"
+            app:dependency="pref_sync_enabled"
+            app:layout="@layout/preference_single_line"
+            app:iconSpaceReserved="false"
+            app:selectable="false"/>
+
+    </PreferenceCategory>
 
 </PreferenceScreen>

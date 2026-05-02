@@ -231,4 +231,27 @@
     <string name="shopping_list_quantity">x%d</string>
     <string name="action_share">Share</string>
     <string name="share_shopping_list_title">My Shopping List</string>
+
+    <!-- Sync -->
+    <string name="pref_cat_sync_title">Cloud Sync</string>
+    <string name="pref_sync_enabled_title">Enable Cloud Sync</string>
+    <string name="pref_sync_enabled_summary">Synchronize your pantry across devices</string>
+    <string name="pref_sync_provider_title">Sync Provider</string>
+    <string name="pref_sync_config_title">Configure Connection</string>
+    <string name="pref_sync_now_title">Sync Now</string>
+    <string name="pref_sync_status_title">Sync Status</string>
+    <string name="sync_status_connected">Connected as %s</string>
+    <string name="sync_status_disconnected">Disconnected</string>
+    <string name="sync_last_time">Last synced: %s</string>
+    <string name="share_pantry">Share Pantry</string>
+    <string name="join_pantry">Join Pantry</string>
+    <string name="pairing_code_title">Pairing Code</string>
+    <string name="pairing_code_hint">Enter code (e.g. AB-CDEF)</string>
+    <string name="sync_setup_title">Sync Setup</string>
+    <string name="sync_webdav_url">WebDAV URL</string>
+    <string name="sync_webdav_user">Username</string>
+    <string name="sync_webdav_pass">Password / App Token</string>
+    <string name="sync_webdav_path">Remote Folder Path</string>
+    <string name="sync_pairing_success">Pantry joined successfully!</string>
+    <string name="sync_pairing_error">Invalid pairing code or QR data</string>
 </resources>

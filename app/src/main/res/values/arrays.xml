@@ -34,4 +34,12 @@
         <item>it</item>
         <item>de</item>
     </string-array>
+
+    <string-array name="sync_provider_entries">
+        <item>WebDAV (Nextcloud, etc.)</item>
+    </string-array>
+
+    <string-array name="sync_provider_values">
+        <item>webdav</item>
+    </string-array>
 </resources>
