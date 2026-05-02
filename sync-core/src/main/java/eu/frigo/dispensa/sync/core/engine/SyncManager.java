@@ -1,10 +1,12 @@
 package eu.frigo.dispensa.sync.core.engine;
 
 import android.content.Context;
-import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import eu.frigo.dispensa.sync.core.provider.SyncProvider;
+import eu.frigo.dispensa.sync.core.provider.SyncProviderLoader;
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
 
 public class SyncManager {
@@ -17,9 +19,10 @@ public class SyncManager {
     public static final String DEFAULT_PATH = "/dispensa/";
     public static final String DEFAULT_MAIN_PANTRY = "main_pantry";
     public static final String DEFAULT_PANTRY_PATH = "dispensa-sync/pantries/";
-
+    
     private static SyncManager instance;
     private final BehaviorSubject<SyncProvider> currentProvider = BehaviorSubject.create();
+    private final Map<String, SyncProviderLoader> loaders = new HashMap<>();
 
     private SyncManager() {}
 
@@ -28,6 +31,10 @@ public class SyncManager {
             instance = new SyncManager();
         }
         return instance;
+    }
+
+    public void registerLoader(SyncProviderLoader loader) {
+        loaders.put(loader.getProviderType(), loader);
     }
 
     public void setProvider(SyncProvider provider) {
@@ -42,45 +49,14 @@ public class SyncManager {
         SyncProvider active = currentProvider.getValue();
         if (active != null) return active;
 
-        // Try to reconstruct from SharedPreferences
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        String url = prefs.getString(KEY_WEBDAV_URL, "");
-        String user = prefs.getString(KEY_WEBDAV_USER, "");
-        String pass = prefs.getString(KEY_WEBDAV_PASS, "");
-        boolean enabled = prefs.getBoolean(KEY_SYNC_ENABLED, false);
-
-        if (enabled && !url.isEmpty() && !user.isEmpty()) {
-            try {
-                // Reflection/Manual init to avoid circular dependency if needed, 
-                // but here we can just instantiate WebDavSyncProvider as it's known.
-                // Note: In a pure agnostic core, this would be a factory.
-                Class<?> clazz = Class.forName("eu.frigo.dispensa.sync.webdav.WebDavSyncProvider");
-                java.lang.reflect.Constructor<?> constructor = clazz.getConstructor(String.class, eu.frigo.dispensa.sync.core.provider.RemoteStore.class, 
-                        Class.forName("eu.frigo.dispensa.sync.webdav.client.WebDavClient"), String.class, String.class);
-                
-                String deviceId = android.provider.Settings.Secure.getString(context.getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
-                String path = prefs.getString(KEY_WEBDAV_PATH, DEFAULT_PATH);
-                String pantryKey = prefs.getString(SYNC_WEBDAV_PANTRY_KEY, DEFAULT_MAIN_PANTRY);
-                
-                String normalizedBase = path.endsWith("/") ? path : path + "/";
-                if (normalizedBase.startsWith("/")) normalizedBase = normalizedBase.substring(1);
-                String pantryPath = normalizedBase + DEFAULT_PANTRY_PATH + pantryKey + "/";
-
-                Object client = Class.forName("eu.frigo.dispensa.sync.webdav.client.WebDavClient")
-                        .getConstructor(String.class, String.class, String.class)
-                        .newInstance(url, user, pass);
-                
-                Object remoteStore = Class.forName("eu.frigo.dispensa.sync.webdav.WebDavRemoteStoreImpl")
-                        .getConstructor(Class.forName("eu.frigo.dispensa.sync.webdav.client.WebDavClient"))
-                        .newInstance(client);
-
-                SyncProvider provider = (SyncProvider) constructor.newInstance("webdav", remoteStore, client, deviceId, pantryPath);
+        for (SyncProviderLoader loader : loaders.values()) {
+            SyncProvider provider = loader.load(context);
+            if (provider != null) {
                 setProvider(provider);
                 return provider;
-            } catch (Exception e) {
-                android.util.Log.e("SyncManager", "Failed to auto-init provider", e);
             }
         }
+
         return null;
     }
 }

@@ -58,14 +58,7 @@ public class Repository {
         Log.d("SyncFlow", "Event creato: " + action + " [ID: " + entry.syncId + "]");
         
         // Signal that a local change happened
-        try {
-            Class<?> syncBusClass = Class.forName("eu.frigo.dispensa.sync.core.event.SyncBus");
-            Object syncBusInstance = syncBusClass.getMethod("getInstance").invoke(null);
-            Object eventInstance = Class.forName("eu.frigo.dispensa.sync.core.event.SyncBus$LocalChangeDetected").newInstance();
-            syncBusClass.getMethod("post", Class.forName("eu.frigo.dispensa.sync.core.event.SyncEvent")).invoke(syncBusInstance, eventInstance);
-        } catch (Exception ignored) {
-            // Sync module might not be present or initialized
-        }
+        SyncBus.getInstance().post(new SyncBus.LocalChangeDetected());
     }
 
     public LiveData<List<ProductWithCategoryDefinitions>> getAllProducts() {
@@ -224,9 +217,7 @@ public class Repository {
     }
 
     public void setLocationAsDefault(String internalKey) {
-        AppDatabase.databaseWriteExecutor.execute(() -> {
-            storageLocationDao.setAsDefault(internalKey);
-        });
+        AppDatabase.databaseWriteExecutor.execute(() -> storageLocationDao.setAsDefault(internalKey));
     }
 
     public void updateLocationOrder(List<StorageLocation> orderedLocations) {
@@ -315,9 +306,7 @@ public class Repository {
     }
 
     public void removeFromShoppingList(String productName) {
-        AppDatabase.databaseWriteExecutor.execute(() -> {
-            shoppingItemDao.deleteByName(productName);
-        });
+        AppDatabase.databaseWriteExecutor.execute(() -> shoppingItemDao.deleteByName(productName));
     }
 
     public void updateShoppingItem(ShoppingItem item) {
@@ -335,8 +324,6 @@ public class Repository {
     }
 
     public void clearCheckedShoppingItems() {
-        AppDatabase.databaseWriteExecutor.execute(() -> {
-            shoppingItemDao.deleteChecked();
-        });
+        AppDatabase.databaseWriteExecutor.execute(shoppingItemDao::deleteChecked);
     }
 }
