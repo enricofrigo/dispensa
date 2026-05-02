@@ -1,8 +1,10 @@
 package eu.frigo.dispensa.sync.core.engine;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.util.Log;
 import androidx.lifecycle.LifecycleOwner;
+import androidx.preference.PreferenceManager;
 import eu.frigo.dispensa.sync.core.event.SyncBus;
 import eu.frigo.dispensa.sync.core.event.SyncEvent;
 import eu.frigo.dispensa.sync.core.pairing.PairingPayload;
@@ -55,8 +57,28 @@ public class SyncCoordinatorImpl implements SyncCoordinator {
     }
 
     public void applyOnboarding(PairingPayload payload) {
-        // 1. Store credentials in EncryptedSharedPreferences (persistent)
+        Log.d("SyncFlow", "Applicazione onboarding per provider: " + payload.providerId);
+        
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        SharedPreferences.Editor editor = prefs.edit();
+
+        if ("webdav".equals(payload.providerId)) {
+            editor.putString(SyncManager.KEY_WEBDAV_URL, payload.data.get("url"));
+            editor.putString(SyncManager.KEY_WEBDAV_USER, payload.data.get("user"));
+            editor.putString(SyncManager.KEY_WEBDAV_PASS, payload.data.get("pass"));
+            editor.putString(SyncManager.KEY_WEBDAV_PATH, payload.data.get("path"));
+        } else {
+            Log.e("SyncFlow", "Provider non supportato per onboarding: " + payload.providerId);
+            return;
+        }
+
+        editor.putBoolean(SyncManager.KEY_SYNC_ENABLED, true);
+        editor.apply();
+
         // 2. Initialize the correct SyncProvider
+        SyncManager.getInstance().getOrInitProvider(context);
+
         // 3. Trigger initial sync
+        triggerManualSync();
     }
 }
