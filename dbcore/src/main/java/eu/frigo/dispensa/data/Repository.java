@@ -20,6 +20,8 @@ import eu.frigo.dispensa.data.storage.StorageLocation;
 import eu.frigo.dispensa.data.storage.StorageLocationDao;
 import eu.frigo.dispensa.data.sync.SyncOutbox;
 import eu.frigo.dispensa.data.sync.SyncOutboxDao;
+import eu.frigo.dispensa.sync.core.event.SyncBus;
+
 import com.google.gson.Gson;
 import java.util.UUID;
 
@@ -52,6 +54,8 @@ public class Repository {
         entry.payload = gson.toJson(payload);
         entry.timestamp = System.currentTimeMillis();
         syncOutboxDao.insert(entry);
+        
+        Log.d("SyncFlow", "Event creato: " + action + " [ID: " + entry.syncId + "]");
         
         // Signal that a local change happened
         try {

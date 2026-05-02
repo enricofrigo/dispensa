@@ -47,6 +47,7 @@ googleMaterialTypefaceVersion = "3.0.1.4.original-kotlin"
 iconicsViewsVersion = "4.0.2"
 balloon = "1.7.5"
 guava = "33.3.1-android"
+preference = "1.2.1"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -94,6 +95,7 @@ mikepenz-google-material-typeface = { group = "com.mikepenz", name = "google-mat
 mikepenz-iconics-views = { group = "com.mikepenz", name = "iconics-views", version.ref = "iconicsViewsVersion" }
 balloon = { group = "com.github.skydoves", name = "balloon", version.ref = "balloon" }
 guava = { group = "com.google.guava", name = "guava", version.ref = "guava" }
+androidx-preference = { group = "androidx.preference", name = "preference", version.ref = "preference" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
