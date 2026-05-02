@@ -34,6 +34,11 @@ public class WebDavSyncProvider implements SyncProvider {
     @Override
     public RemoteStore getRemoteStore() { return remoteStore; }
 
+    @Override
+    public Class<? extends androidx.work.ListenableWorker> getWorkerClass() {
+        return eu.frigo.dispensa.sync.webdav.worker.WebDavSyncWorker.class;
+    }
+
     public WebDavSyncEngine getEngine(Context context) {
         if (engine == null) {
             engine = new WebDavSyncEngine(
