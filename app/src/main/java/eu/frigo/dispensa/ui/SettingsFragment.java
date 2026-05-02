@@ -22,6 +22,7 @@ import java.util.Locale;
 import java.util.Objects;
 
 import eu.frigo.dispensa.R;
+import eu.frigo.dispensa.sync.core.engine.SyncManager;
 import eu.frigo.dispensa.util.LocaleHelper;
 import eu.frigo.dispensa.work.ExpiryCheckWorkerScheduler;
 
@@ -37,7 +38,6 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
     public static final String KEY_OFF_CACHE_TTL_DAYS = "pref_off_cache_ttl_days";
     public static final String KEY_OFF_CACHE_CLEAR = "pref_off_cache_clear";
     public static final String KEY_DEFUALT_ICON = "pref_predefined_tab_icon";
-    public static final String KEY_SYNC_ENABLED = "pref_sync_enabled";
     public static final String KEY_SYNC_NOW = "pref_sync_now";
     public static final String KEY_SYNC_CONFIG = "pref_sync_config";
     public static final String KEY_SYNC_STATUS = "pref_sync_status";
@@ -263,7 +263,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
     private void updateSyncStatus() {
         if (syncStatusPreference != null) {
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
-            boolean enabled = prefs.getBoolean(KEY_SYNC_ENABLED, false);
+            boolean enabled = prefs.getBoolean(SyncManager.KEY_SYNC_ENABLED, false);
             if (!enabled) {
                 syncStatusPreference.setSummary(R.string.sync_status_disconnected);
             } else {

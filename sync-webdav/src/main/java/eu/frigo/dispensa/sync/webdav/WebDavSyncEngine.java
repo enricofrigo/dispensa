@@ -1,6 +1,7 @@
 package eu.frigo.dispensa.sync.webdav;
 
 import com.google.gson.Gson;
+import android.util.Log;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,12 +23,14 @@ public class WebDavSyncEngine implements SyncEngine {
     private final SyncCursorStore cursorStore;
     private final OutboxRepository outbox;
     private final String deviceId;
+    private final String pantryPath;
 
-    public WebDavSyncEngine(WebDavClient client, SyncCursorStore cursorStore, OutboxRepository outbox, String deviceId) {
+    public WebDavSyncEngine(WebDavClient client, SyncCursorStore cursorStore, OutboxRepository outbox, String deviceId, String pantryPath) {
         this.client = client;
         this.cursorStore = cursorStore;
         this.outbox = outbox;
         this.deviceId = deviceId;
+        this.pantryPath = pantryPath.endsWith("/") ? pantryPath : pantryPath + "/";
         this.gson = new Gson();
     }
 
@@ -53,7 +56,7 @@ public class WebDavSyncEngine implements SyncEngine {
     }
 
     private WebDavManifest fetchManifest() throws IOException {
-        try (Response response = client.get("manifest.json")) {
+        try (Response response = client.get(pantryPath + "manifest.json")) {
             if (response.isSuccessful() && response.body() != null) {
                 WebDavManifest manifest = gson.fromJson(response.body().string(), WebDavManifest.class);
                 manifest.etag = response.header("ETag");
@@ -86,6 +89,8 @@ public class WebDavSyncEngine implements SyncEngine {
         List<SyncPayload> pending = outbox.getPendingChanges().blockingGet();
         if (pending.isEmpty()) return;
 
+        Log.d("SyncFlow", "Trovati " + pending.size() + " eventi locali pronti per il push su WebDAV.");
+
         for (SyncPayload payload : pending) {
             WebDavEvent event = new WebDavEvent();
             event.eventId = payload.getSyncId();
@@ -95,10 +100,15 @@ public class WebDavSyncEngine implements SyncEngine {
             // payload.getContent() is already JSON
             event.payload = gson.fromJson(payload.getContent(), java.util.Map.class);
 
-            String fileName = "events/ev_" + deviceId + "_" + event.timestamp + ".json";
+            String fileName = pantryPath + "events/ev_" + deviceId + "_" + event.timestamp + ".json";
+            Log.d("SyncFlow", "Preparazione push evento: " + event.action + " -> " + fileName);
+
             try (Response response = client.put(fileName, gson.toJson(event).getBytes(), null)) {
                 if (response.isSuccessful()) {
-                    updateManifestWithNewEvent(fileName, event.timestamp);
+                    Log.d("SyncFlow", "Evento pushato con successo: " + fileName);
+                    updateManifestWithNewEvent("events/ev_" + deviceId + "_" + event.timestamp + ".json", event.timestamp);
+                } else {
+                    Log.e("SyncFlow", "Errore nel push dell'evento " + fileName + ": " + response.code());
                 }
             }
         }
@@ -106,9 +116,11 @@ public class WebDavSyncEngine implements SyncEngine {
         List<String> ids = new ArrayList<>();
         for (SyncPayload p : pending) ids.add(p.getSyncId());
         outbox.markAsSynced(ids).blockingAwait();
+        Log.d("SyncFlow", "Tutti gli eventi pendenti sono stati marcati come sincronizzati localmente.");
     }
 
     private void updateManifestWithNewEvent(String eventFileName, long timestamp) throws IOException {
+        Log.d("SyncFlow", "Aggiornamento manifest.json con il nuovo evento: " + eventFileName);
         WebDavManifest manifest = fetchManifest();
         if (manifest == null) {
             manifest = new WebDavManifest();
@@ -116,7 +128,13 @@ public class WebDavSyncEngine implements SyncEngine {
         manifest.activeEventFiles.add(eventFileName);
         manifest.lastGlobalTimestamp = Math.max(manifest.lastGlobalTimestamp, timestamp);
         
-        client.put("manifest.json", gson.toJson(manifest).getBytes(), manifest.etag);
+        try (Response response = client.put(pantryPath + "manifest.json", gson.toJson(manifest).getBytes(), manifest.etag)) {
+            if (response.isSuccessful()) {
+                Log.d("SyncFlow", "Manifest aggiornato con successo.");
+            } else {
+                Log.e("SyncFlow", "Errore nell'aggiornamento del manifest: " + response.code());
+            }
+        }
     }
 
     private void performCompaction(WebDavManifest manifest) throws IOException {

@@ -1,6 +1,7 @@
 package eu.frigo.dispensa.sync.core.engine;
 
 import android.content.Context;
+import android.util.Log;
 import androidx.lifecycle.LifecycleOwner;
 import eu.frigo.dispensa.sync.core.event.SyncBus;
 import eu.frigo.dispensa.sync.core.event.SyncEvent;
@@ -40,6 +41,7 @@ public class SyncCoordinatorImpl implements SyncCoordinator {
 
     @Override
     public void triggerManualSync() {
+        Log.d("SyncFlow", "Trigger sync manuale o richiesto da cambiamento locale.");
         SyncScheduler.enqueueOneTimeSync(context);
     }
 

@@ -19,6 +19,7 @@ android {
 
 dependencies {
 
+    implementation(libs.androidx.preference)
     implementation(libs.room.rxjava3)
     implementation("io.reactivex.rxjava3:rxandroid:3.0.2")
     implementation("io.reactivex.rxjava3:rxjava:3.1.8")

@@ -1130,8 +1130,6 @@ public class AddProductActivity extends AppCompatActivity {
                 currentOpenedDate,
                 shelfLifeDays
         );
-        androidx.media3.common.util.Log.d("AddProductActivity",
-                "Salvataggio prodotto: " + product);
         List<String> tagsToSave = new ArrayList<>(currentProductTagsSet);
         if (isEditMode) {
             product.setId(currentProductId);
