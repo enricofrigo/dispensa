@@ -83,6 +83,7 @@ public class Repository {
 
     public void insert(Product product) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
+            product.lastModified = System.currentTimeMillis();
             productDao.insert(product);
             recordSyncEvent("UPSERT_PRODUCT", product);
         });
@@ -91,6 +92,7 @@ public class Repository {
     public void delete(Product selectedProduct) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
             deleteLocalImageIfAny(selectedProduct.getImageUrl());
+            selectedProduct.lastModified = System.currentTimeMillis();
             productDao.delete(selectedProduct);
             recordSyncEvent("DELETE_PRODUCT", selectedProduct);
         });
@@ -98,6 +100,7 @@ public class Repository {
 
     public void update(Product product) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
+            product.lastModified = System.currentTimeMillis();
             Product oldProduct = productDao.getProductByIdSync(product.getId());
             if (oldProduct != null && oldProduct.getImageUrl() != null 
                     && !oldProduct.getImageUrl().equals(product.getImageUrl())) {
@@ -124,9 +127,11 @@ public class Repository {
     }
     public void insertProductWithApiTags(Product product, List<String> apiTags) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
+            product.lastModified = System.currentTimeMillis();
             long productIdLong = productDao.insert(product);
             int productId = (int) productIdLong;
             product.setId(productId);
+            // ... (tags logic)
 
             if (apiTags != null && !apiTags.isEmpty()) {
                 List<ProductCategoryLink> linksToInsert = new ArrayList<>();
@@ -153,6 +158,7 @@ public class Repository {
 
     public void updateProductWithApiTags(Product product, List<String> apiTags) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
+            product.lastModified = System.currentTimeMillis();
             Product oldProduct = productDao.getProductByIdSync(product.getId());
             if (oldProduct != null && oldProduct.getImageUrl() != null 
                     && !oldProduct.getImageUrl().equals(product.getImageUrl())) {
@@ -195,6 +201,7 @@ public class Repository {
 
     public void insertLocation(StorageLocation location) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
+            location.lastModified = System.currentTimeMillis();
             storageLocationDao.insert(location);
             recordSyncEvent("UPSERT_LOCATION", location);
         });
@@ -202,12 +209,14 @@ public class Repository {
 
     public void updateLocation(StorageLocation location) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
+            location.lastModified = System.currentTimeMillis();
             storageLocationDao.update(location);
             recordSyncEvent("UPSERT_LOCATION", location);
         });
     }
     public void deleteLocation(StorageLocation location) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
+            location.lastModified = System.currentTimeMillis();
             StorageLocation defaultLoc = storageLocationDao.getDefaultLocationSync();
             String fallbackKey = defaultLoc != null ? defaultLoc.internalKey : eu.frigo.dispensa.data.storage.PredefinedData.LOCATION_ALL;
             productDao.updateProductLocation(location.internalKey, fallbackKey);
@@ -293,12 +302,15 @@ public class Repository {
     public void addToShoppingList(String productName, int quantity) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
             ShoppingItem existing = shoppingItemDao.getItemByNameSync(productName);
+            long now = System.currentTimeMillis();
             if (existing != null) {
+                existing.lastModified = now;
                 existing.setQuantity(existing.getQuantity() + quantity);
                 shoppingItemDao.update(existing);
                 recordSyncEvent("UPSERT_SHOPPING_ITEM", existing);
             } else {
                 ShoppingItem newItem = new ShoppingItem(productName, quantity, false);
+                newItem.lastModified = now;
                 shoppingItemDao.insert(newItem);
                 recordSyncEvent("UPSERT_SHOPPING_ITEM", newItem);
             }
@@ -306,11 +318,19 @@ public class Repository {
     }
 
     public void removeFromShoppingList(String productName) {
-        AppDatabase.databaseWriteExecutor.execute(() -> shoppingItemDao.deleteByName(productName));
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            ShoppingItem item = shoppingItemDao.getItemByNameSync(productName);
+            if (item != null) {
+                item.lastModified = System.currentTimeMillis();
+                shoppingItemDao.deleteByName(productName);
+                recordSyncEvent("DELETE_SHOPPING_ITEM", item);
+            }
+        });
     }
 
     public void updateShoppingItem(ShoppingItem item) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
+            item.lastModified = System.currentTimeMillis();
             shoppingItemDao.update(item);
             recordSyncEvent("UPSERT_SHOPPING_ITEM", item);
         });
@@ -318,12 +338,23 @@ public class Repository {
 
     public void deleteShoppingItem(ShoppingItem item) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
+            item.lastModified = System.currentTimeMillis();
             shoppingItemDao.delete(item);
             recordSyncEvent("DELETE_SHOPPING_ITEM", item);
         });
     }
 
     public void clearCheckedShoppingItems() {
-        AppDatabase.databaseWriteExecutor.execute(shoppingItemDao::deleteChecked);
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            List<ShoppingItem> checked = shoppingItemDao.getCheckedItemsSync();
+            if (checked != null) {
+                long now = System.currentTimeMillis();
+                for (ShoppingItem item : checked) {
+                    item.lastModified = now;
+                    recordSyncEvent("DELETE_SHOPPING_ITEM", item);
+                }
+            }
+            shoppingItemDao.deleteChecked();
+        });
     }
 }

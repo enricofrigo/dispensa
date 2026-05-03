@@ -37,6 +37,10 @@ public class StorageLocation {
     @ColumnInfo(name = "is_predefined", defaultValue = "0") // Per marcare le location predefinite
     public boolean isPredefined; // es. FRIDGE, FREEZER, PANTRY iniziali
 
+    @SerializedName("last_modified")
+    @ColumnInfo(name = "last_modified", defaultValue = "0")
+    public long lastModified = 0L;
+
     @Ignore
     public StorageLocation() {
     }

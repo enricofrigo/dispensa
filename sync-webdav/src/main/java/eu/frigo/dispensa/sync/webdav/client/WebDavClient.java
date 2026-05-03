@@ -39,7 +39,8 @@ public class WebDavClient {
                 .put(RequestBody.create(content, MediaType.parse("application/json")));
 
         if (eTag != null) {
-            builder.header("If-Match", eTag);
+            //fix per weak ETag
+            builder.header("If-Match", eTag.replace("W/", ""));
         }
 
         return okHttpClient.newCall(builder.build()).execute();

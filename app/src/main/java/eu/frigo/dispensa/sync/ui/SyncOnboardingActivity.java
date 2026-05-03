@@ -26,7 +26,6 @@ import eu.frigo.dispensa.sync.core.pairing.PairingPayloadCodecImpl;
 import eu.frigo.dispensa.sync.webdav.WebDavConfig;
 import eu.frigo.dispensa.sync.webdav.WebDavPairingHandler;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class SyncOnboardingActivity extends AppCompatActivity {
@@ -109,6 +108,11 @@ public class SyncOnboardingActivity extends AppCompatActivity {
             qrView.setImageBitmap(qrBitmap);
             
             Log.d("SyncOnboarding", "QR generato con successo per il codice: " + currentPairingCode);
+
+            // FORCE SYNC: L'host carica i suoi dati attuali per renderli disponibili al guest
+            eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl.getInstance(this).triggerManualSync();
+            Log.d("SyncOnboarding", "Triggered manual sync for Host before sharing.");
+
         } catch (Exception e) {
             Log.e("SyncOnboarding", "Errore nella generazione del QR", e);
             Toast.makeText(this, "Errore generazione QR: " + e.getMessage(), Toast.LENGTH_SHORT).show();
