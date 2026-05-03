@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "eu.frigo.dispensa",
+      "sha256_cert_fingerprints": [
+        "0B:F4:72:9A:76:96:DA:2F:AE:54:0D:32:FC:6F:47:F0:99:E0:F1:20:BD:0C:24:7F:D9:41:EB:1C:97:02:85:F7"
+      ]
+    }
+  }
+]

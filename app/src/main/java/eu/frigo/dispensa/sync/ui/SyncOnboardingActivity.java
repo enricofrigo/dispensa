@@ -1,5 +1,6 @@
 package eu.frigo.dispensa.sync.ui;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.os.Bundle;
@@ -26,6 +27,7 @@ import eu.frigo.dispensa.sync.core.pairing.PairingPayloadCodecImpl;
 import eu.frigo.dispensa.sync.webdav.WebDavConfig;
 import eu.frigo.dispensa.sync.webdav.WebDavPairingHandler;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class SyncOnboardingActivity extends AppCompatActivity {
@@ -42,12 +44,30 @@ public class SyncOnboardingActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sync_onboarding);
 
+        android.net.Uri data = getIntent().getData();
+        if (data != null && ("dispensa".equals(data.getScheme()) || "https".equals(data.getScheme()))) {
+            // Started via Deep Link or App Link
+            scannedQrData = data.getQueryParameter("data");
+            if (scannedQrData != null) {
+                setupJoinMode();
+                showPairingCodeInput();
+                return;
+            }
+        }
+
         String mode = getIntent().getStringExtra(EXTRA_MODE);
         if (MODE_SHARE.equals(mode)) {
             setupShareMode();
         } else {
             setupJoinMode();
         }
+    }
+
+    private void showPairingCodeInput() {
+        if (barcodeView != null) barcodeView.setVisibility(View.GONE);
+        findViewById(R.id.til_pairing_code).setVisibility(View.VISIBLE);
+        findViewById(R.id.btn_confirm_onboarding).setVisibility(View.VISIBLE);
+        Toast.makeText(this, "Link rilevato. Inserisci il codice di accoppiamento.", Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -72,8 +92,11 @@ public class SyncOnboardingActivity extends AppCompatActivity {
         
         ImageView qrView = findViewById(R.id.iv_qr_code);
         TextView codeView = findViewById(R.id.tv_pairing_code);
+        Button shareBtn = findViewById(R.id.btn_share_link);
+        
         qrView.setVisibility(View.VISIBLE);
         codeView.setVisibility(View.VISIBLE);
+        if (shareBtn != null) shareBtn.setVisibility(View.VISIBLE);
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         String url = prefs.getString(SyncManager.KEY_WEBDAV_URL, "");
@@ -103,11 +126,26 @@ public class SyncOnboardingActivity extends AppCompatActivity {
             PairingPayloadCodecImpl codec = new PairingPayloadCodecImpl(cleanCode);
             String wireData = codec.encode(payload);
             
-            // 4. Generate QR
-            Bitmap qrBitmap = QrCodeGenerator.generate(wireData, 512);
+            // 4. Wrap in Deep Link for easier sharing/scanning
+            String deepLink = "https://enricofrigo.github.io/dispensa/syncjoin?data=" + wireData;
+            
+            // 5. Generate QR
+            Bitmap qrBitmap = QrCodeGenerator.generate(deepLink, 512);
             qrView.setImageBitmap(qrBitmap);
             
-            Log.d("SyncOnboarding", "QR generato con successo per il codice: " + currentPairingCode);
+            if (shareBtn != null) {
+                shareBtn.setOnClickListener(v -> {
+                    Intent sendIntent = new Intent();
+                    sendIntent.setAction(Intent.ACTION_SEND);
+                    sendIntent.putExtra(Intent.EXTRA_TEXT, "Unisciti alla mia dispensa condivisa!\n\nLink: " + deepLink + "\n\nCodice di accoppiamento: " + currentPairingCode);
+                    sendIntent.setType("text/plain");
+
+                    Intent shareIntent = Intent.createChooser(sendIntent, null);
+                    startActivity(shareIntent);
+                });
+            }
+
+            Log.d("SyncOnboarding", "QR generato con Deep Link: " + deepLink);
 
             // FORCE SYNC: L'host carica i suoi dati attuali per renderli disponibili al guest
             eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl.getInstance(this).triggerManualSync();
@@ -132,7 +170,8 @@ public class SyncOnboardingActivity extends AppCompatActivity {
         barcodeView.setStatusText(getString(R.string.add_product_camera_preview_hint));
 
         barcodeView.decodeSingle(result -> {
-            scannedQrData = result.getText();
+            String rawData = result.getText();
+            scannedQrData = extractDataFromLink(rawData);
             Log.d("SyncOnboarding", "QR scansionato con successo");
             runOnUiThread(() -> {
                 barcodeView.setVisibility(View.GONE);
@@ -168,5 +207,14 @@ public class SyncOnboardingActivity extends AppCompatActivity {
                         Toast.makeText(this, R.string.sync_pairing_error, Toast.LENGTH_LONG).show();
                     });
         });
+    }
+
+    private String extractDataFromLink(String rawData) {
+        if (rawData != null && (rawData.startsWith("dispensa://") || rawData.startsWith("https://enricofrigo.github.io/dispensa/syncjoin"))) {
+            android.net.Uri uri = android.net.Uri.parse(rawData);
+            String dataParam = uri.getQueryParameter("data");
+            return dataParam != null ? dataParam : rawData;
+        }
+        return rawData;
     }
 }
