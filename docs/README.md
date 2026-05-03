@@ -3,6 +3,10 @@
 > **Gestisci la tua dispensa in modo semplice ed efficiente.**  
 > A pantry manager to track what you have, avoid waste, and plan better.
 
+## 🚀 Installazione
+- <a href="https://play.google.com/store/apps/details?id=eu.frigo.dispensa">Playstore</a>
+- <a href="https://github.com/enricofrigo/dispensa/releases">Releases</a>
+
 # 📷 Screenshots
 
 <img src="https://github.com/user-attachments/assets/0af2eb93-bbd6-44f4-9bfd-bd40b7d0f0b1" width="200px" />
@@ -15,11 +19,7 @@
 - 📝 Aggiungi, modifica ed elimina articoli nella tua dispensa (usa Open Food Facts per recuperare le informazioni)
 - 🔔 Ricevi notifiche per prodotti in scadenza  
 - 📦 Location personalizzabili
-- 🇮🇹 ligue supportate italiano ed inglese (it - en)
-
-## 🚀 Installazione
-- <a href="https://play.google.com/store/apps/details?id=eu.frigo.dispensa">Playstore</a>
-- <a href="https://github.com/enricofrigo/dispensa/releases">Releases</a> 
+- 🇮🇹 ligue supportate italiano ed inglese (it - en - de)
 
 ### ✅ Prerequisiti
 - Android Studio (per la versione di sviluppo)
