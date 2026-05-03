@@ -254,4 +254,7 @@
     <string name="sync_webdav_path">Remote Folder Path</string>
     <string name="sync_pairing_success">Pantry joined successfully!</string>
     <string name="sync_pairing_error">Invalid pairing code or QR data</string>
+    <string name="overwrite">Overwrite</string>
+    <string name="sync_webdav_warn_existing">Existing configuration</string>
+    <string name="sync_webdav_warn_existing_desc">An existing sync configuration was found in this folder. Do you want to overwrite or cancel it?</string>
 </resources>
