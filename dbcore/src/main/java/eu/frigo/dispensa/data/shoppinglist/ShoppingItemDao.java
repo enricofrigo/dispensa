@@ -40,6 +40,9 @@ public interface ShoppingItemDao {
     @Query("SELECT * FROM shopping_items WHERE name = :name LIMIT 1")
     ShoppingItem getItemByNameSync(String name);
 
+    @Query("SELECT * FROM shopping_items WHERE checked = 1")
+    List<ShoppingItem> getCheckedItemsSync();
+
     @Query("SELECT COUNT(*) FROM shopping_items WHERE checked = 0")
     LiveData<Integer> getUncheckedCount();
 

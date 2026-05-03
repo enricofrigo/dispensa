@@ -36,7 +36,7 @@ import eu.frigo.dispensa.data.openfoodfacts.OpenFoodFactCacheEntity;
 @Database(entities = {Product.class, CategoryDefinition.class,
         ProductCategoryLink.class, StorageLocation.class, OpenFoodFactCacheEntity.class,
         ShoppingItem.class, SyncOutbox.class },
-        version = 11)
+        version = 12)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract ProductDao productDao();
@@ -56,6 +56,15 @@ public abstract class AppDatabase extends RoomDatabase {
         @Override
         public void migrate(SupportSQLiteDatabase database) {
             database.execSQL("CREATE TABLE IF NOT EXISTS `sync_outbox` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `syncId` TEXT, `dataType` TEXT, `payload` TEXT, `timestamp` INTEGER NOT NULL, `isSynced` INTEGER NOT NULL)");
+        }
+    };
+
+    static final Migration MIGRATION_11_12 = new Migration(11, 12) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("ALTER TABLE products ADD COLUMN last_modified INTEGER DEFAULT 0 NOT NULL");
+            database.execSQL("ALTER TABLE storage_locations ADD COLUMN last_modified INTEGER DEFAULT 0 NOT NULL");
+            database.execSQL("ALTER TABLE shopping_items ADD COLUMN last_modified INTEGER DEFAULT 0 NOT NULL");
         }
     };
 
@@ -133,6 +142,7 @@ public abstract class AppDatabase extends RoomDatabase {
                             .addMigrations(MIGRATION_8_9)
                             .addMigrations(MIGRATION_9_10)
                             .addMigrations(MIGRATION_10_11)
+                            .addMigrations(MIGRATION_11_12)
                             .addCallback(sRoomDatabaseCallback)
                             //.fallbackToDestructiveMigration()
                             .build();

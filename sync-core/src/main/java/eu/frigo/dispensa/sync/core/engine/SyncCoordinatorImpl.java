@@ -75,6 +75,10 @@ public class SyncCoordinatorImpl implements SyncCoordinator {
         editor.putBoolean(SyncManager.KEY_SYNC_ENABLED, true);
         editor.apply();
 
+        // Resetta il cursore per forzare il download completo dal cloud
+        new eu.frigo.dispensa.sync.core.store.SyncCursorStoreImpl(context).clear();
+        Log.d("SyncFlow", "Cursore resettato per nuovo onboarding.");
+
         // 2. Initialize the correct SyncProvider
         SyncManager.getInstance().getOrInitProvider(context);
 

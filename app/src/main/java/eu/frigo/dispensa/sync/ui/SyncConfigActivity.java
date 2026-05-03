@@ -9,8 +9,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.PreferenceManager;
 import com.google.android.material.textfield.TextInputEditText;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 
 import eu.frigo.dispensa.R;
@@ -64,6 +62,8 @@ public class SyncConfigActivity extends AppCompatActivity {
                                     .putString(SyncManager.KEY_WEBDAV_USER, user)
                                     .putString(SyncManager.KEY_WEBDAV_PASS, pass)
                                     .putString(SyncManager.KEY_WEBDAV_PATH, path)
+                                    .putString(SyncManager.SYNC_WEBDAV_PANTRY_KEY, SyncManager.DEFAULT_MAIN_PANTRY)
+                                    .putBoolean(SyncManager.KEY_SYNC_ENABLED, true)
                                     .apply();
 
                             // Initialize provider
@@ -79,6 +79,9 @@ public class SyncConfigActivity extends AppCompatActivity {
 
                             SyncManager.getInstance().setProvider(provider);
                             
+                            // Trigger initial sync to create the first snapshot/export if needed
+                            eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl.getInstance(this).triggerManualSync();
+
                             Toast.makeText(this, "Connessione riuscita e configurazione salvata", Toast.LENGTH_SHORT).show();
                             finish();
                         } else {
@@ -118,21 +121,21 @@ public class SyncConfigActivity extends AppCompatActivity {
             String devicesDir = pantryPath + "devices/";
             if (!ensureFolderExists(client, devicesDir)) return false;
 
+            String snapshotsDir = pantryPath + "snapshots/";
+            if (!ensureFolderExists(client, snapshotsDir)) return false;
+
             // 2. Verify/Create manifest.json
             String manifestPath = pantryPath + "manifest.json";
             try (Response response = client.propfind(manifestPath)) {
                 if (response.code() == 404) {
-                    Map<String, Object> manifest = new HashMap<>();
-                    manifest.put("version", 1);
-                    manifest.put("pantryKey", pantryKey);
-                    manifest.put("createdAt", System.currentTimeMillis());
-                    manifest.put("createdByDevice", deviceId);
-                    manifest.put("provider", "webdav");
-                    manifest.put("snapshotPresent", false);
-                    manifest.put("snapshotVersion", 0);
-                    manifest.put("lastEventSequence", 0);
-                    manifest.put("eventsPath", "events/");
-                    manifest.put("devicesPath", "devices/");
+                    eu.frigo.dispensa.sync.webdav.model.WebDavManifest manifest = new eu.frigo.dispensa.sync.webdav.model.WebDavManifest();
+                    manifest.version = 1;
+                    manifest.pantryKey = pantryKey;
+                    manifest.createdAt = System.currentTimeMillis();
+                    manifest.createdByDevice = deviceId;
+                    manifest.provider = "webdav";
+                    manifest.latestSnapshotId = null;
+                    manifest.lastGlobalTimestamp = 0;
 
                     String json = new com.google.gson.Gson().toJson(manifest);
                     try (Response putResp = client.put(manifestPath, json.getBytes(), null)) {
