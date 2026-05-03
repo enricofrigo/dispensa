@@ -2,9 +2,11 @@ package eu.frigo.dispensa.sync.ui;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.util.Log;
+import android.view.View;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.Toast;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.PreferenceManager;
 import com.google.android.material.textfield.TextInputEditText;
@@ -23,16 +25,25 @@ import okhttp3.Response;
 
 public class SyncConfigActivity extends AppCompatActivity {
 
+    private TextInputEditText urlEdit, userEdit, passEdit, pathEdit;
+    private Button saveBtn;
+    private ProgressBar progressBar;
+
+    private static final int RESULT_SUCCESS = 0;
+    private static final int RESULT_MANIFEST_EXISTS = 1;
+    private static final int RESULT_FAILED = 2;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sync_config);
 
-        TextInputEditText urlEdit = findViewById(R.id.edit_webdav_url);
-        TextInputEditText userEdit = findViewById(R.id.edit_webdav_user);
-        TextInputEditText passEdit = findViewById(R.id.edit_webdav_pass);
-        TextInputEditText pathEdit = findViewById(R.id.edit_webdav_path);
-        Button saveBtn = findViewById(R.id.btn_save_sync_config);
+        urlEdit = findViewById(R.id.edit_webdav_url);
+        userEdit = findViewById(R.id.edit_webdav_user);
+        passEdit = findViewById(R.id.edit_webdav_pass);
+        pathEdit = findViewById(R.id.edit_webdav_path);
+        saveBtn = findViewById(R.id.btn_save_sync_config);
+        progressBar = findViewById(R.id.progress_sync_config);
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         urlEdit.setText(prefs.getString(SyncManager.KEY_WEBDAV_URL, ""));
@@ -40,140 +51,140 @@ public class SyncConfigActivity extends AppCompatActivity {
         passEdit.setText(prefs.getString(SyncManager.KEY_WEBDAV_PASS, ""));
         pathEdit.setText(prefs.getString(SyncManager.KEY_WEBDAV_PATH, SyncManager.DEFAULT_PATH));
 
-        saveBtn.setOnClickListener(v -> {
-            String url = Objects.requireNonNull(urlEdit.getText()).toString().trim();
-            String user = Objects.requireNonNull(userEdit.getText()).toString().trim();
-            String pass = Objects.requireNonNull(passEdit.getText()).toString().trim();
-            String path = pathEdit.getText()!=null?pathEdit.getText().toString().trim():"";
-
-            if (url.isEmpty() || user.isEmpty() || pass.isEmpty()) {
-                Toast.makeText(this, "Compila tutti i campi obbligatori", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            saveBtn.setEnabled(false);
-            testConnection(url, user, pass, path)
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(success -> {
-                        if (success) {
-                            prefs.edit()
-                                    .putString(SyncManager.KEY_WEBDAV_URL, url)
-                                    .putString(SyncManager.KEY_WEBDAV_USER, user)
-                                    .putString(SyncManager.KEY_WEBDAV_PASS, pass)
-                                    .putString(SyncManager.KEY_WEBDAV_PATH, path)
-                                    .putString(SyncManager.SYNC_WEBDAV_PANTRY_KEY, SyncManager.DEFAULT_MAIN_PANTRY)
-                                    .putBoolean(SyncManager.KEY_SYNC_ENABLED, true)
-                                    .apply();
-
-                            // Initialize provider
-                            String deviceId = android.provider.Settings.Secure.getString(getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
-
-                            String normalizedBase = path.endsWith("/") ? path : path + "/";
-                            if (normalizedBase.startsWith("/")) normalizedBase = normalizedBase.substring(1);
-                            String pantryPath = normalizedBase + SyncManager.DEFAULT_PANTRY_PATH+ SyncManager.DEFAULT_MAIN_PANTRY + "/";
-
-                            WebDavClient client = new WebDavClient(url, user, pass);
-                            WebDavRemoteStoreImpl remoteStore = new WebDavRemoteStoreImpl(client);
-                            WebDavSyncProvider provider = new WebDavSyncProvider("webdav", remoteStore, client, deviceId, pantryPath);
-
-                            SyncManager.getInstance().setProvider(provider);
-                            
-                            // Trigger initial sync to create the first snapshot/export if needed
-                            eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl.getInstance(this).triggerManualSync();
-
-                            Toast.makeText(this, "Connessione riuscita e configurazione salvata", Toast.LENGTH_SHORT).show();
-                            finish();
-                        } else {
-                            saveBtn.setEnabled(true);
-                            Toast.makeText(this, "Connessione fallita. Controlla i parametri.", Toast.LENGTH_LONG).show();
-                        }
-                    }, throwable -> {
-                        saveBtn.setEnabled(true);
-                        Toast.makeText(this, "Errore: " + throwable.getMessage(), Toast.LENGTH_LONG).show();
-                    });
-        });
+        saveBtn.setOnClickListener(v -> startSetupFlow(false));
     }
 
-    private Single<Boolean> testConnection(String url, String user, String pass, String basePath) {
+    private void setUILocked(boolean locked) {
+        urlEdit.setEnabled(!locked);
+        userEdit.setEnabled(!locked);
+        passEdit.setEnabled(!locked);
+        pathEdit.setEnabled(!locked);
+        saveBtn.setEnabled(!locked);
+        progressBar.setVisibility(locked ? View.VISIBLE : View.GONE);
+    }
+
+    private void startSetupFlow(boolean forceOverwrite) {
+        String url = Objects.requireNonNull(urlEdit.getText()).toString().trim();
+        String user = Objects.requireNonNull(userEdit.getText()).toString().trim();
+        String pass = Objects.requireNonNull(passEdit.getText()).toString().trim();
+        String path = pathEdit.getText() != null ? pathEdit.getText().toString().trim() : "";
+
+        if (url.isEmpty() || user.isEmpty() || pass.isEmpty()) {
+            Toast.makeText(this, "Compila tutti i campi obbligatori", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        setUILocked(true);
+        verifyAndSetup(url, user, pass, path, forceOverwrite)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(result -> {
+                    if (result == RESULT_SUCCESS) {
+                        saveAndFinish(url, user, pass, path);
+                    } else if (result == RESULT_MANIFEST_EXISTS) {
+                        setUILocked(false);
+                        showOverwriteDialog();
+                    } else {
+                        setUILocked(false);
+                        Toast.makeText(this, "Connessione o configurazione fallita.", Toast.LENGTH_LONG).show();
+                    }
+                }, throwable -> {
+                    setUILocked(false);
+                    Toast.makeText(this, "Errore: " + throwable.getMessage(), Toast.LENGTH_LONG).show();
+                });
+    }
+
+    private void showOverwriteDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle(getString(R.string.sync_webdav_warn_existing))
+                .setMessage(getString(R.string.sync_webdav_warn_existing_desc))
+                .setPositiveButton(getString(R.string.overwrite), (dialog, which) -> startSetupFlow(true))
+                .setNegativeButton(getString(R.string.cancel), (dialog, which) -> dialog.dismiss())
+                .show();
+    }
+
+    private void saveAndFinish(String url, String user, String pass, String path) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        prefs.edit()
+                .putString(SyncManager.KEY_WEBDAV_URL, url)
+                .putString(SyncManager.KEY_WEBDAV_USER, user)
+                .putString(SyncManager.KEY_WEBDAV_PASS, pass)
+                .putString(SyncManager.KEY_WEBDAV_PATH, path)
+                .putString(SyncManager.SYNC_WEBDAV_PANTRY_KEY, SyncManager.DEFAULT_MAIN_PANTRY)
+                .putBoolean(SyncManager.KEY_SYNC_ENABLED, true)
+                .apply();
+
+        String deviceId = android.provider.Settings.Secure.getString(getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
+        String normalizedBase = path.endsWith("/") ? path : path + "/";
+        if (normalizedBase.startsWith("/")) normalizedBase = normalizedBase.substring(1);
+        String pantryPath = normalizedBase + SyncManager.DEFAULT_PANTRY_PATH + SyncManager.DEFAULT_MAIN_PANTRY + "/";
+
+        WebDavClient client = new WebDavClient(url, user, pass);
+        WebDavRemoteStoreImpl remoteStore = new WebDavRemoteStoreImpl(client);
+        WebDavSyncProvider provider = new WebDavSyncProvider("webdav", remoteStore, client, deviceId, pantryPath);
+
+        SyncManager.getInstance().setProvider(provider);
+        eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl.getInstance(this).triggerManualSync();
+
+        Toast.makeText(this, "Configurazione salvata con successo", Toast.LENGTH_SHORT).show();
+        finish();
+    }
+
+    private Single<Integer> verifyAndSetup(String url, String user, String pass, String basePath, boolean forceOverwrite) {
         return Single.fromCallable(() -> {
             WebDavClient client = new WebDavClient(url, user, pass);
             String deviceId = android.provider.Settings.Secure.getString(getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
-            String pantryKey = SyncManager.DEFAULT_MAIN_PANTRY; // V1 default pantry key
+            String pantryKey = SyncManager.DEFAULT_MAIN_PANTRY;
 
-            // Standardize base path (ensure it ends with /)
             String normalizedBase = basePath.endsWith("/") ? basePath : basePath + "/";
             if (normalizedBase.startsWith("/")) normalizedBase = normalizedBase.substring(1);
 
             // 1. Verify/Create Folder Structure
-            String syncRoot = normalizedBase + "dispensa-sync/";
-            if (!ensureFolderExists(client, syncRoot)) return false;
+            if (!ensureFolderExists(client, normalizedBase + SyncManager.DEFAULT_SYNC_PATH )) return RESULT_FAILED;
+            if (!ensureFolderExists(client, normalizedBase + SyncManager.DEFAULT_PANTRY_PATH )) return RESULT_FAILED;
+            String pantryPath = normalizedBase + SyncManager.DEFAULT_PANTRY_PATH  + pantryKey + "/";
+            if (!ensureFolderExists(client, pantryPath)) return RESULT_FAILED;
+            if (!ensureFolderExists(client, pantryPath + SyncManager.DEFAULT_EVENTS_FOLDER)) return RESULT_FAILED;
+            if (!ensureFolderExists(client, pantryPath + SyncManager.DEFAULT_DEVICES_FOLDER)) return RESULT_FAILED;
+            if (!ensureFolderExists(client, pantryPath + SyncManager.DEFAULT_SNAPSHOTS_FOLDER)) return RESULT_FAILED;
 
-            String pantriesDir = syncRoot + "pantries/";
-            if (!ensureFolderExists(client, pantriesDir)) return false;
-
-            String pantryPath = pantriesDir + pantryKey + "/";
-            if (!ensureFolderExists(client, pantryPath)) return false;
-
-            String eventsDir = pantryPath + "events/";
-            if (!ensureFolderExists(client, eventsDir)) return false;
-
-            String devicesDir = pantryPath + "devices/";
-            if (!ensureFolderExists(client, devicesDir)) return false;
-
-            String snapshotsDir = pantryPath + "snapshots/";
-            if (!ensureFolderExists(client, snapshotsDir)) return false;
-
-            // 2. Verify/Create manifest.json
-            String manifestPath = pantryPath + "manifest.json";
+            // 2. Check manifest.json
+            String manifestPath = pantryPath + SyncManager.MANIFEST_JSON;
             try (Response response = client.propfind(manifestPath)) {
-                if (response.code() == 404) {
-                    eu.frigo.dispensa.sync.webdav.model.WebDavManifest manifest = new eu.frigo.dispensa.sync.webdav.model.WebDavManifest();
-                    manifest.version = 1;
-                    manifest.pantryKey = pantryKey;
-                    manifest.createdAt = System.currentTimeMillis();
-                    manifest.createdByDevice = deviceId;
-                    manifest.provider = "webdav";
-                    manifest.latestSnapshotId = null;
-                    manifest.lastGlobalTimestamp = 0;
-
-                    String json = new com.google.gson.Gson().toJson(manifest);
-                    try (Response putResp = client.put(manifestPath, json.getBytes(), null)) {
-                        if (!putResp.isSuccessful()) {
-                            Log.w("SyncConfigActivity", "Failed to create manifest.json: " + putResp.code());
-                            return false;
-                        }
+                if (response.isSuccessful() || response.code() == 207) {
+                    if (!forceOverwrite) {
+                        return RESULT_MANIFEST_EXISTS;
                     }
-                } else if (!response.isSuccessful() && response.code() != 207) {
-                    Log.w("SyncConfigActivity", "Error checking manifest.json: " + response.code());
-                    return false;
+                } else if (response.code() != 404) {
+                    return RESULT_FAILED;
                 }
             }
 
-            return true;
+            // 3. Create/Overwrite manifest.json
+            eu.frigo.dispensa.sync.webdav.model.WebDavManifest manifest = new eu.frigo.dispensa.sync.webdav.model.WebDavManifest();
+            manifest.version = 1;
+            manifest.pantryKey = pantryKey;
+            manifest.createdAt = System.currentTimeMillis();
+            manifest.createdByDevice = deviceId;
+            manifest.provider = "webdav";
+            manifest.latestSnapshotId = null;
+            manifest.lastGlobalTimestamp = 0;
+
+            String json = new com.google.gson.Gson().toJson(manifest);
+            try (Response putResp = client.put(manifestPath, json.getBytes(), null)) {
+                return putResp.isSuccessful() ? RESULT_SUCCESS : RESULT_FAILED;
+            }
         });
     }
 
     private boolean ensureFolderExists(WebDavClient client, String folderPath) throws Exception {
-        // MKCOL often fails if there is a trailing slash on certain servers
         String cleanPath = folderPath.endsWith("/") ? folderPath.substring(0, folderPath.length() - 1) : folderPath;
-        
         try (Response response = client.propfind(cleanPath + "/")) {
-            if (response.isSuccessful() || response.code() == 207) {
-                return true;
-            }
-            if (response.code() != 404) {
-                Log.w("SyncConfigActivity", "PROPFIND failed for " + cleanPath + ": " + response.code());
-                return false;
-            }
+            if (response.isSuccessful() || response.code() == 207) return true;
+            if (response.code() != 404) return false;
         }
-        
         try (Response response = client.mkcol(cleanPath)) {
-            boolean created = response.isSuccessful() || response.code() == 201;
-            if (!created) {
-                Log.w("SyncConfigActivity", "MKCOL failed for " + cleanPath + ": " + response.code());
-            }
-            return created;
+            return response.isSuccessful() || response.code() == 201;
         }
     }
 }

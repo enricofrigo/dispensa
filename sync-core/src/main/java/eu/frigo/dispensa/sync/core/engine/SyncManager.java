@@ -18,8 +18,13 @@ public class SyncManager {
     public static final String SYNC_WEBDAV_PANTRY_KEY = "sync_webdav_pantry_key";
     public static final String DEFAULT_PATH = "/dispensa/";
     public static final String DEFAULT_MAIN_PANTRY = "main_pantry";
-    public static final String DEFAULT_PANTRY_PATH = "dispensa-sync/pantries/";
-    
+    public static final String DEFAULT_SYNC_PATH = "dispensa-sync/";
+    public static final String DEFAULT_PANTRY_PATH = DEFAULT_SYNC_PATH+"pantries/";
+    public static final String DEFAULT_EVENTS_FOLDER = "events/";
+    public static final String DEFAULT_DEVICES_FOLDER = "devices/";
+    public static final String DEFAULT_SNAPSHOTS_FOLDER = "snapshots/";
+    public static final String MANIFEST_JSON = "manifest.json";
+
     private static SyncManager instance;
     private final BehaviorSubject<SyncProvider> currentProvider = BehaviorSubject.create();
     private final Map<String, SyncProviderLoader> loaders = new HashMap<>();
