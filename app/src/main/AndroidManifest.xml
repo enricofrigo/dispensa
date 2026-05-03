@@ -73,11 +73,14 @@
             android:name=".sync.ui.SyncOnboardingActivity"
             android:label="@string/sync_setup_title"
             android:exported="true">
-            <intent-filter>
+            <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="dispensa" android:host="sync" android:path="/join" />
+
+                <data android:scheme="https"
+                    android:host="enricofrigo.github.io"
+                    android:pathPrefix="/dispensa" />
             </intent-filter>
         </activity>
 
