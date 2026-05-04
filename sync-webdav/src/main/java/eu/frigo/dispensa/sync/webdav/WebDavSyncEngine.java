@@ -88,7 +88,11 @@ public class WebDavSyncEngine implements SyncEngine {
         int retries = 3;
         while (retries > 0) {
             WebDavManifest manifest = fetchManifest();
-            if (manifest == null) manifest = new WebDavManifest();
+            if (manifest == null) {
+                manifest = new WebDavManifest();
+                manifest.createdByDevice = deviceId;
+                manifest.createdAt = System.currentTimeMillis();
+            }
             
             updater.accept(manifest);
             String json = gson.toJson(manifest);

@@ -24,11 +24,27 @@ public class PairingPayloadCodecImpl implements PairingPayloadCodec {
 
     @Override
     public PairingPayload decode(String wireData) throws Exception {
-        if (!wireData.startsWith("v1|")) {
+        if (wireData == null) {
+            throw new IllegalArgumentException("Data is null");
+        }
+
+        String dataToProcess = wireData;
+        if (wireData.contains("%")) {
+            try {
+                dataToProcess = java.net.URLDecoder.decode(wireData, java.nio.charset.StandardCharsets.UTF_8.name());
+            } catch (Exception e) {
+                // Ignore decoding error and try with raw data
+            }
+        }
+
+        // Fix potential space-instead-of-plus issue from URL decoding
+        String sanitizedData = dataToProcess.replace(" ", "+");
+        
+        if (!sanitizedData.startsWith("v1|")) {
             throw new IllegalArgumentException("Unsupported payload version");
         }
         
-        String[] parts = wireData.split("\\|");
+        String[] parts = sanitizedData.split("\\|");
         if (parts.length != 4) {
             throw new IllegalArgumentException("Invalid payload format");
         }

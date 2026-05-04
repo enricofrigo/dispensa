@@ -50,6 +50,15 @@ public class SyncManager {
         return currentProvider;
     }
 
+    public boolean isCurrentDeviceOwner(Context context, String createdByDevice) {
+        return InstallationIdProvider.isCurrentInstallationGroupOwner(context, createdByDevice);
+    }
+
+    public boolean isLinkedToRemoteGroup(Context context) {
+        android.content.SharedPreferences prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
+        return prefs.contains(SYNC_WEBDAV_PANTRY_KEY);
+    }
+
     public SyncProvider getOrInitProvider(Context context) {
         SyncProvider active = currentProvider.getValue();
         if (active != null) return active;

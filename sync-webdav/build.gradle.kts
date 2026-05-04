@@ -24,6 +24,7 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("io.reactivex.rxjava3:rxjava:3.1.8")
     implementation("androidx.work:work-runtime:2.9.0")
+    implementation(libs.androidx.preference)
     implementation(libs.guava)
     implementation(libs.converter.gson)
 

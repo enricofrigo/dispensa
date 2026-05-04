@@ -12,6 +12,8 @@ public class WebDavPairingHandler {
         data.put("user", config.username);
         data.put("pass", config.password);
         data.put("path", config.path);
+        data.put("pantryKey", config.pantryKey);
+        data.put("providerId", "webdav");
         
         return new PairingPayload("webdav", deviceName, data);
     }
@@ -25,7 +27,8 @@ public class WebDavPairingHandler {
             payload.data.get("url"),
             payload.data.get("user"),
             payload.data.get("pass"),
-            payload.data.get("path")
+            payload.data.get("path"),
+            payload.data.get("pantryKey")
         );
     }
 }
