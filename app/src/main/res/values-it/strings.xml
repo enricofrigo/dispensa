@@ -256,4 +256,7 @@ I prodotti in questa dispensa potrebbero dover essere riassegnati.</string>
     <string name="sync_pairing_error">Codice di abbinamento o dati QR non validi</string>
     <string name="sync_webdav_warn_existing">Configurazione Esistente</string>
     <string name="sync_webdav_warn_existing_desc">È stata trovata una configurazione di sincronizzazione esistente in questa cartella. Vuoi sovrascriverla o annullare?</string>
+    <string name="action_manage_devices">Gestione Dispositivi</string>
+    <string name="title_manage_devices">Dispositivi Registrati</string>
+    <string name="no_devices_found">Nessun dispositivo trovato</string>
 </resources>
