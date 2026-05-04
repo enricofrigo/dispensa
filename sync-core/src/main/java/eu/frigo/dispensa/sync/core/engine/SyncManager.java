@@ -14,6 +14,7 @@ public class SyncManager {
     public static final String KEY_WEBDAV_USER = "sync_webdav_user";
     public static final String KEY_WEBDAV_PASS = "sync_webdav_pass";
     public static final String KEY_WEBDAV_PATH = "sync_webdav_path";
+    public static final String KEY_WEBDAV_MODE_SHARED = "sync_webdav_mode_shared";
     public static final String KEY_SYNC_ENABLED = "pref_sync_enabled";
     public static final String SYNC_WEBDAV_PANTRY_KEY = "sync_webdav_pantry_key";
     public static final String DEFAULT_PATH = "/dispensa/";

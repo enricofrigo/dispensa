@@ -69,6 +69,7 @@ public class SyncCoordinatorImpl implements SyncCoordinator {
             editor.putString(SyncManager.KEY_WEBDAV_PASS, payload.data.get("pass"));
             editor.putString(SyncManager.KEY_WEBDAV_PATH, payload.data.get("path"));
             editor.putString(SyncManager.SYNC_WEBDAV_PANTRY_KEY, payload.data.get("pantryKey"));
+            editor.putBoolean(SyncManager.KEY_WEBDAV_MODE_SHARED, Boolean.parseBoolean(payload.data.get("isShared")));
         } else {
             Log.e("SyncFlow", "Provider non supportato per onboarding: " + providerId);
             return;

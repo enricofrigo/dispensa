@@ -251,6 +251,7 @@ I prodotti in questa dispensa potrebbero dover essere riassegnati.</string>
     <string name="sync_webdav_user">Nome utente</string>
     <string name="sync_webdav_pass">Password / Token app</string>
     <string name="sync_webdav_path">Percorso cartella remota</string>
+    <string name="sync_webdav_shared_mode">Cartella Condivisa (Solo password)</string>
     <string name="sync_pairing_success">Dispensa aggiunta con successo!</string>
     <string name="sync_pairing_error">Codice di abbinamento o dati QR non validi</string>
     <string name="sync_webdav_warn_existing">Configurazione Esistente</string>

@@ -23,7 +23,15 @@
             android:inputType="textUri" />
     </com.google.android.material.textfield.TextInputLayout>
 
+    <com.google.android.material.materialswitch.MaterialSwitch
+        android:id="@+id/switch_webdav_shared_mode"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/sync_webdav_shared_mode" />
+
     <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/til_webdav_user"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
@@ -35,9 +43,11 @@
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/til_webdav_pass"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
+        app:endIconMode="password_toggle"
         android:hint="@string/sync_webdav_pass">
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/edit_webdav_pass"

@@ -26,9 +26,10 @@ public class WebDavSyncProviderLoader implements SyncProviderLoader {
         String url = prefs.getString(SyncManager.KEY_WEBDAV_URL, "");
         String user = prefs.getString(SyncManager.KEY_WEBDAV_USER, "");
         String pass = prefs.getString(SyncManager.KEY_WEBDAV_PASS, "");
+        boolean isShared = prefs.getBoolean(SyncManager.KEY_WEBDAV_MODE_SHARED, false);
         boolean enabled = prefs.getBoolean(SyncManager.KEY_SYNC_ENABLED, false);
 
-        if (enabled && !url.isEmpty() && !user.isEmpty()) {
+        if (enabled && !url.isEmpty() && (!user.isEmpty() || isShared)) {
             String deviceId = InstallationIdProvider.getOrCreateInstallationId(context);
             String path = prefs.getString(SyncManager.KEY_WEBDAV_URL, "");
             path = prefs.getString(SyncManager.KEY_WEBDAV_PATH, SyncManager.DEFAULT_PATH);
