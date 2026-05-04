@@ -76,6 +76,7 @@
     <string name="cancel">Annulla</string>
     <string name="ok">OK</string>
     <string name="move">Sposta</string>
+    <string name="overwrite">Sovrascrivi</string>
 
 
     <!-- Messages -->
@@ -231,4 +232,31 @@ I prodotti in questa dispensa potrebbero dover essere riassegnati.</string>
     <string name="shopping_list_quantity">x%d</string>
     <string name="action_share">Condividi</string>
     <string name="share_shopping_list_title">Lista della spesa</string>
+    <string name="pref_cat_sync_title">Condividi su Cloud</string>
+    <string name="pref_sync_enabled_title">Abilita la sincronizzazione Cloud Sync</string>
+    <string name="pref_sync_enabled_summary">Sincronizza la tua dispensa su tutti i dispositivi</string>
+    <string name="pref_sync_provider_title">Provider di sincronizzazione</string>
+    <string name="pref_sync_config_title">Configura la connessione</string>
+    <string name="pref_sync_now_title">Sincronizza ora</string>
+    <string name="pref_sync_status_title">Stato della sincronizzazione</string>
+    <string name="sync_status_connected">Connesso come %s</string>
+    <string name="sync_status_disconnected">Disconnesso</string>
+    <string name="sync_last_time">Ultima sincronizzazione: %s</string>
+    <string name="share_pantry">Condividi la dispensa</string>
+    <string name="join_pantry">Unisciti alla dispensa</string>
+    <string name="pairing_code_title">Codice di abbinamento</string>
+    <string name="pairing_code_hint">Inserisci il codice (es. AB-CDEF)</string>
+    <string name="sync_setup_title">Configurazione della sincronizzazione</string>
+    <string name="sync_webdav_url">URL WebDAV</string>
+    <string name="sync_webdav_user">Nome utente</string>
+    <string name="sync_webdav_pass">Password / Token app</string>
+    <string name="sync_webdav_path">Percorso cartella remota</string>
+    <string name="sync_webdav_shared_mode">Cartella Condivisa (Solo password)</string>
+    <string name="sync_pairing_success">Dispensa aggiunta con successo!</string>
+    <string name="sync_pairing_error">Codice di abbinamento o dati QR non validi</string>
+    <string name="sync_webdav_warn_existing">Configurazione Esistente</string>
+    <string name="sync_webdav_warn_existing_desc">È stata trovata una configurazione di sincronizzazione esistente in questa cartella. Vuoi sovrascriverla o annullare?</string>
+    <string name="action_manage_devices">Gestione Dispositivi</string>
+    <string name="title_manage_devices">Dispositivi Registrati</string>
+    <string name="no_devices_found">Nessun dispositivo trovato</string>
 </resources>

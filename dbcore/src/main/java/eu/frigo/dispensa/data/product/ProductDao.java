@@ -47,6 +47,9 @@ public interface ProductDao {
     @Query("SELECT * FROM products WHERE barcode = :barcode ORDER BY expiry_date ASC")
     List<Product> getProductsByBarcode(String barcode);
 
+    @Query("SELECT * FROM products WHERE barcode = :barcode AND expiry_date = :expiryDate AND storage_location = :storageLocation LIMIT 1")
+    Product getProductByLotKeySync(String barcode, Long expiryDate, String storageLocation);
+
     @Transaction
     @Query("SELECT * FROM products WHERE id = :productId")
     public LiveData<ProductWithCategoryDefinitions> getProductWithFullCategoriesById(int productId);

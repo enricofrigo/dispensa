@@ -45,6 +45,11 @@ public class Product {
     @SerializedName("shelf_life_after_opening_days")
     @ColumnInfo(name = "shelf_life_after_opening_days", defaultValue = "-1")
     public int shelfLifeAfterOpeningDays = -1;
+
+    @SerializedName("last_modified")
+    @ColumnInfo(name = "last_modified", defaultValue = "0")
+    public long lastModified = 0L;
+
     @Ignore
     private String myFormat = "dd/MM/yyyy";
     @Ignore

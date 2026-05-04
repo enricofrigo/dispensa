@@ -21,4 +21,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "dispensa"
-include(":app", ":dbcore")
+include(":app", ":dbcore", ":sync-core", ":sync-webdav")

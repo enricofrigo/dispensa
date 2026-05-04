@@ -26,6 +26,10 @@ public class ShoppingItem {
     @ColumnInfo(name = "checked")
     public boolean checked;
 
+    @SerializedName("last_modified")
+    @ColumnInfo(name = "last_modified", defaultValue = "0")
+    public long lastModified = 0L;
+
     public ShoppingItem() {
     }
 

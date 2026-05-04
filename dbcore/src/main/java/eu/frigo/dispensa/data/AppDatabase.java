@@ -27,13 +27,16 @@ import eu.frigo.dispensa.data.storage.PredefinedData;
 import eu.frigo.dispensa.data.storage.StorageLocation;
 import eu.frigo.dispensa.data.storage.StorageLocationDao;
 
+import eu.frigo.dispensa.data.sync.SyncOutbox;
+import eu.frigo.dispensa.data.sync.SyncOutboxDao;
+
 import eu.frigo.dispensa.data.openfoodfacts.OpenFoodFactCacheDao;
 import eu.frigo.dispensa.data.openfoodfacts.OpenFoodFactCacheEntity;
 
 @Database(entities = {Product.class, CategoryDefinition.class,
         ProductCategoryLink.class, StorageLocation.class, OpenFoodFactCacheEntity.class,
-        ShoppingItem.class },
-        version = 10)
+        ShoppingItem.class, SyncOutbox.class },
+        version = 12)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract ProductDao productDao();
@@ -42,11 +45,28 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract StorageLocationDao storageLocationDao();
     public abstract OpenFoodFactCacheDao openFoodFactCacheDao();
     public abstract ShoppingItemDao shoppingItemDao();
+    public abstract SyncOutboxDao syncOutboxDao();
 
     private static volatile AppDatabase INSTANCE;
     private static final int NUMBER_OF_THREADS = 4;
     public static final ExecutorService databaseWriteExecutor =
             Executors.newFixedThreadPool(NUMBER_OF_THREADS);
+
+    static final Migration MIGRATION_10_11 = new Migration(10, 11) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("CREATE TABLE IF NOT EXISTS `sync_outbox` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `syncId` TEXT, `dataType` TEXT, `payload` TEXT, `timestamp` INTEGER NOT NULL, `isSynced` INTEGER NOT NULL)");
+        }
+    };
+
+    static final Migration MIGRATION_11_12 = new Migration(11, 12) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("ALTER TABLE products ADD COLUMN last_modified INTEGER DEFAULT 0 NOT NULL");
+            database.execSQL("ALTER TABLE storage_locations ADD COLUMN last_modified INTEGER DEFAULT 0 NOT NULL");
+            database.execSQL("ALTER TABLE shopping_items ADD COLUMN last_modified INTEGER DEFAULT 0 NOT NULL");
+        }
+    };
 
     static final Migration MIGRATION_6_7 = new Migration(6,7) {
         @Override
@@ -121,6 +141,8 @@ public abstract class AppDatabase extends RoomDatabase {
                             .addMigrations(MIGRATION_7_8)
                             .addMigrations(MIGRATION_8_9)
                             .addMigrations(MIGRATION_9_10)
+                            .addMigrations(MIGRATION_10_11)
+                            .addMigrations(MIGRATION_11_12)
                             .addCallback(sRoomDatabaseCallback)
                             //.fallbackToDestructiveMigration()
                             .build();

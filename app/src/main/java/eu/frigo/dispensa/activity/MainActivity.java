@@ -60,6 +60,7 @@ import eu.frigo.dispensa.data.backup.BackupManager;
 import eu.frigo.dispensa.data.category.ProductWithCategoryDefinitions;
 import eu.frigo.dispensa.data.product.Product;
 import eu.frigo.dispensa.data.storage.StorageLocation;
+import eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl;
 import eu.frigo.dispensa.ui.ProductListFragment;
 import eu.frigo.dispensa.ui.SettingsFragment;
 import eu.frigo.dispensa.util.LocaleHelper;
@@ -791,6 +792,10 @@ public class MainActivity extends AppCompatActivity
             if (currentFragment instanceof ProductListFragment) {
                 ((ProductListFragment) currentFragment).toggleLayoutManager();
             }
+            return true;
+        } else if (id == R.id.action_sync_now) {
+            SyncCoordinatorImpl.getInstance(this).triggerManualSync();
+            Toast.makeText(this, R.string.pref_sync_now_title, Toast.LENGTH_SHORT).show();
             return true;
         } else if (id == R.id.action_settings) {
             Intent intent = new Intent(this, SettingsActivity.class);
