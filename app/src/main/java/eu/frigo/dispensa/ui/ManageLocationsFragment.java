@@ -1,5 +1,6 @@
 package eu.frigo.dispensa.ui;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
@@ -33,6 +34,7 @@ import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.adapter.ReorderLocationsAdapter;
 import eu.frigo.dispensa.data.AppDatabase;
 import eu.frigo.dispensa.data.storage.StorageLocation;
+import eu.frigo.dispensa.sync.ui.SyncOnboardingActivity;
 import eu.frigo.dispensa.util.SimpleItemTouchHelperCallback;
 import eu.frigo.dispensa.viewmodel.LocationViewModel;
 
@@ -78,10 +80,8 @@ public class ManageLocationsFragment extends Fragment implements
 
         switchTabStyle = view.findViewById(R.id.switch_tab_style);
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
-        switchTabStyle.setChecked(prefs.getBoolean("pref_predefined_tab_icon", false));
-        switchTabStyle.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            prefs.edit().putBoolean("pref_predefined_tab_icon", isChecked).apply();
-        });
+        switchTabStyle.setChecked(prefs.getBoolean(SettingsFragment.KEY_DEFUALT_ICON, false));
+        switchTabStyle.setOnCheckedChangeListener((buttonView, isChecked) -> prefs.edit().putBoolean(SettingsFragment.KEY_DEFUALT_ICON, isChecked).apply());
 
         setupRecyclerView();
         observeLocations();
@@ -89,6 +89,26 @@ public class ManageLocationsFragment extends Fragment implements
         fabAddLocation.setOnClickListener(v -> showAddLocationDialog());
 
         toolbar.setTitle(getString(R.string.title_manage_locations));
+        toolbar.inflateMenu(R.menu.menu_manage_locations);
+        toolbar.setOnMenuItemClickListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.action_share_pantry) {
+                Intent intent = new Intent(requireContext(), SyncOnboardingActivity.class);
+                intent.putExtra(SyncOnboardingActivity.EXTRA_MODE, SyncOnboardingActivity.MODE_SHARE);
+                startActivity(intent);
+                return true;
+            } else if (id == R.id.action_join_pantry) {
+                Intent intent = new Intent(requireContext(), SyncOnboardingActivity.class);
+                intent.putExtra(SyncOnboardingActivity.EXTRA_MODE, SyncOnboardingActivity.MODE_JOIN);
+                startActivity(intent);
+                return true;
+            } else if (id == R.id.action_manage_devices) {
+                Intent intent = new Intent(requireContext(), eu.frigo.dispensa.sync.ui.ManageDevicesActivity.class);
+                startActivity(intent);
+                return true;
+            }
+            return false;
+        });
     }
 
     private void setupRecyclerView() {
