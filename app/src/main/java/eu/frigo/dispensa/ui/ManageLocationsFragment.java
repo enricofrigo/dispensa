@@ -102,6 +102,10 @@ public class ManageLocationsFragment extends Fragment implements
                 intent.putExtra(SyncOnboardingActivity.EXTRA_MODE, SyncOnboardingActivity.MODE_JOIN);
                 startActivity(intent);
                 return true;
+            } else if (id == R.id.action_manage_devices) {
+                Intent intent = new Intent(requireContext(), eu.frigo.dispensa.sync.ui.ManageDevicesActivity.class);
+                startActivity(intent);
+                return true;
             }
             return false;
         });

@@ -258,4 +258,7 @@
     <string name="overwrite">Overwrite</string>
     <string name="sync_webdav_warn_existing">Existing configuration</string>
     <string name="sync_webdav_warn_existing_desc">An existing sync configuration was found in this folder. Do you want to overwrite or cancel it?</string>
+    <string name="action_manage_devices">Manage Devices</string>
+    <string name="title_manage_devices">Registered Devices</string>
+    <string name="no_devices_found">No devices found</string>
 </resources>

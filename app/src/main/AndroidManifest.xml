@@ -84,6 +84,11 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".sync.ui.ManageDevicesActivity"
+            android:label="@string/title_manage_devices"
+            android:parentActivityName=".activity.MainActivity" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
