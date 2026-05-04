@@ -253,4 +253,7 @@
     <string name="overwrite">Überschreiben</string>
     <string name="sync_webdav_warn_existing">Vorhandene Konfiguration</string>
     <string name="sync_webdav_warn_existing_desc">In diesem Ordner wurde eine vorhandene Synchronisierungskonfiguration gefunden. Möchten Sie diese überschreiben oder abbrechen?</string>
+    <string name="action_manage_devices">Geräte verwalten</string>
+    <string name="title_manage_devices">Registrierte Geräte</string>
+    <string name="no_devices_found">Keine Geräte gefunden</string>
 </resources>
