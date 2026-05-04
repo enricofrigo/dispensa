@@ -57,18 +57,20 @@ public class SyncCoordinatorImpl implements SyncCoordinator {
     }
 
     public void applyOnboarding(PairingPayload payload) {
-        Log.d("SyncFlow", "Applicazione onboarding per provider: " + payload.providerId);
+        String providerId = payload.providerId != null ? payload.providerId : payload.data.get("providerId");
+        Log.d("SyncFlow", "Applicazione onboarding per provider: " + providerId);
         
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         SharedPreferences.Editor editor = prefs.edit();
 
-        if ("webdav".equals(payload.providerId)) {
+        if ("webdav".equals(providerId)) {
             editor.putString(SyncManager.KEY_WEBDAV_URL, payload.data.get("url"));
             editor.putString(SyncManager.KEY_WEBDAV_USER, payload.data.get("user"));
             editor.putString(SyncManager.KEY_WEBDAV_PASS, payload.data.get("pass"));
             editor.putString(SyncManager.KEY_WEBDAV_PATH, payload.data.get("path"));
+            editor.putString(SyncManager.SYNC_WEBDAV_PANTRY_KEY, payload.data.get("pantryKey"));
         } else {
-            Log.e("SyncFlow", "Provider non supportato per onboarding: " + payload.providerId);
+            Log.e("SyncFlow", "Provider non supportato per onboarding: " + providerId);
             return;
         }
 

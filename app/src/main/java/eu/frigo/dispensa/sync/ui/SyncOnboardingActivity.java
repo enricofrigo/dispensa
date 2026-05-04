@@ -26,9 +26,11 @@ import eu.frigo.dispensa.sync.core.pairing.PairingPayload;
 import eu.frigo.dispensa.sync.core.pairing.PairingPayloadCodecImpl;
 import eu.frigo.dispensa.sync.webdav.WebDavConfig;
 import eu.frigo.dispensa.sync.webdav.WebDavPairingHandler;
+import eu.frigo.dispensa.sync.webdav.client.WebDavClient;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.schedulers.Schedulers;
+import okhttp3.Response;
 
 public class SyncOnboardingActivity extends AppCompatActivity {
     public static final String EXTRA_MODE = "mode";
@@ -103,6 +105,7 @@ public class SyncOnboardingActivity extends AppCompatActivity {
         String user = prefs.getString(SyncManager.KEY_WEBDAV_USER, "");
         String pass = prefs.getString(SyncManager.KEY_WEBDAV_PASS, "");
         String path = prefs.getString(SyncManager.KEY_WEBDAV_PATH, SyncManager.DEFAULT_PATH);
+        String pantryKey = prefs.getString(SyncManager.SYNC_WEBDAV_PANTRY_KEY, "");
 
         if (url.isEmpty() || user.isEmpty()) {
             Toast.makeText(this, "Configura prima il sync nelle impostazioni", Toast.LENGTH_LONG).show();
@@ -115,19 +118,18 @@ public class SyncOnboardingActivity extends AppCompatActivity {
 
         try {
             // 1. Prepare WebDAV config
-            WebDavConfig config = new WebDavConfig(url, user, pass, path);
+            WebDavConfig config = new WebDavConfig(url, user, pass, path, pantryKey);
             
             // 2. Create encrypted payload
             String deviceName = android.os.Build.MODEL;
             PairingPayload payload = WebDavPairingHandler.createPayload(deviceName, config);
             
             // 3. Encode with pairing code
-            String cleanCode = currentPairingCode.replace("-", "").toUpperCase();
-            PairingPayloadCodecImpl codec = new PairingPayloadCodecImpl(cleanCode);
+            PairingPayloadCodecImpl codec = new PairingPayloadCodecImpl(currentPairingCode);
             String wireData = codec.encode(payload);
             
             // 4. Wrap in Deep Link for easier sharing/scanning
-            String deepLink = "https://enricofrigo.github.io/dispensa/syncjoin?data=" + wireData;
+            String deepLink = "https://enricofrigo.github.io/dispensa/syncjoin?data=" + android.net.Uri.encode(wireData);
             
             // 5. Generate QR
             Bitmap qrBitmap = QrCodeGenerator.generate(deepLink, 512);
@@ -194,18 +196,103 @@ public class SyncOnboardingActivity extends AppCompatActivity {
             }
 
             confirm.setEnabled(false);
-            new OnboardingCoordinator().joinPantry(pairingCode, scannedQrData)
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(payload -> {
-                        eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl.getInstance(this).applyOnboarding(payload);
-                        Toast.makeText(this, R.string.sync_pairing_success, Toast.LENGTH_LONG).show();
-                        finish();
-                    }, throwable -> {
-                        confirm.setEnabled(true);
-                        Log.e("SyncOnboarding", "Errore decriptazione pairing", throwable);
-                        Toast.makeText(this, R.string.sync_pairing_error, Toast.LENGTH_LONG).show();
-                    });
+            Single<PairingPayload> pd = new OnboardingCoordinator().joinPantry(pairingCode, scannedQrData);
+            pd.flatMap(payload -> {
+                String providerId = payload.providerId != null ? payload.providerId : payload.data.get("providerId");
+                if ("webdav".equals(providerId)) {
+                    return checkDeviceAlreadyRegistered(payload)
+                            .flatMap(exists -> {
+                                if (exists) {
+                                    return Single.error(new IllegalStateException("DEVICE_ALREADY_REGISTERED"));
+                                }
+                                // If not registered, register it now
+                                return registerDevice(payload).map(success -> payload);
+                            });
+                }
+                return Single.just(payload);
+            })
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(payload -> {
+                eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl.getInstance(this).applyOnboarding(payload);
+                Toast.makeText(this, R.string.sync_pairing_success, Toast.LENGTH_LONG).show();
+                finish();
+            }, throwable -> {
+                confirm.setEnabled(true);
+                Log.e("SyncOnboarding", "Errore decriptazione pairing", throwable);
+                if ("DEVICE_ALREADY_REGISTERED".equals(throwable.getMessage())) {
+                    Toast.makeText(this, "Questo dispositivo è già registrato in questa dispensa.", Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(this, R.string.sync_pairing_error, Toast.LENGTH_LONG).show();
+                }
+            });
+        });
+    }
+
+    private Single<Boolean> checkDeviceAlreadyRegistered(PairingPayload payload) {
+        return Single.fromCallable(() -> {
+            String url = payload.data.get("url");
+            String user = payload.data.get("user");
+            String pass = payload.data.get("pass");
+            String path = payload.data.get("path");
+            String pantryKey = payload.data.get("pantryKey");
+
+            if (url == null || user == null || pass == null || pantryKey == null) {
+                return false;
+            }
+
+            String effectivePath = path != null ? path : SyncManager.DEFAULT_PATH;
+            
+            String deviceId = eu.frigo.dispensa.sync.core.engine.InstallationIdProvider.getOrCreateInstallationId(this);
+            
+            String normalizedBase = effectivePath.endsWith("/") ? effectivePath : effectivePath + "/";
+            if (normalizedBase.startsWith("/")) normalizedBase = normalizedBase.substring(1);
+            String pantryPath = normalizedBase + SyncManager.DEFAULT_PANTRY_PATH + pantryKey + "/";
+            String devicePath = pantryPath + SyncManager.DEFAULT_DEVICES_FOLDER + deviceId + ".json";
+
+            WebDavClient client = new WebDavClient(url, user, pass);
+            try (Response response = client.propfind(devicePath)) {
+                return response.isSuccessful() || response.code() == 207;
+            } catch (Exception e) {
+                Log.e("SyncOnboardingActivity",url,e);
+                return false;
+            }
+        });
+    }
+
+    private Single<Boolean> registerDevice(PairingPayload payload) {
+        return Single.fromCallable(() -> {
+            String url = payload.data.get("url");
+            String user = payload.data.get("user");
+            String pass = payload.data.get("pass");
+            String path = payload.data.get("path");
+            String pantryKey = payload.data.get("pantryKey");
+
+            if (url == null || user == null || pass == null || pantryKey == null) {
+                return false;
+            }
+
+            String effectivePath = path != null ? path : SyncManager.DEFAULT_PATH;
+            String deviceId = eu.frigo.dispensa.sync.core.engine.InstallationIdProvider.getOrCreateInstallationId(this);
+            
+            String normalizedBase = effectivePath.endsWith("/") ? effectivePath : effectivePath + "/";
+            if (normalizedBase.startsWith("/")) normalizedBase = normalizedBase.substring(1);
+            String pantryPath = normalizedBase + SyncManager.DEFAULT_PANTRY_PATH + pantryKey + "/";
+            String devicePath = pantryPath + SyncManager.DEFAULT_DEVICES_FOLDER + deviceId + ".json";
+
+            eu.frigo.dispensa.sync.webdav.model.WebDavDevice device = new eu.frigo.dispensa.sync.webdav.model.WebDavDevice();
+            device.deviceId = deviceId;
+            device.deviceName = android.os.Build.MODEL;
+            device.lastSeen = System.currentTimeMillis();
+
+            String deviceJson = new com.google.gson.Gson().toJson(device);
+            WebDavClient client = new WebDavClient(url, user, pass);
+            try (Response devResp = client.put(devicePath, deviceJson.getBytes(), null)) {
+                return devResp.isSuccessful();
+            } catch (Exception e) {
+                Log.e("SyncOnboardingActivity", "Failed to register device", e);
+                return false;
+            }
         });
     }
 

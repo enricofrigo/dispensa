@@ -144,6 +144,19 @@
             app:iconSpaceReserved="false"
             app:selectable="false"/>
 
+        <Preference
+            android:key="separator_sync"
+            android:layout="@layout/pref_separator"
+            android:selectable="false"
+            android:enabled="false"
+            android:shouldDisableView="false" />
+
+        <Preference
+            app:key="app_installation_id"
+            app:layout="@layout/preference_single_line"
+            app:iconSpaceReserved="false"
+            app:selectable="false"/>
+
     </PreferenceCategory>
 
 </PreferenceScreen>

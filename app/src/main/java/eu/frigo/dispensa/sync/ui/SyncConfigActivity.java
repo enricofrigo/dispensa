@@ -32,6 +32,7 @@ public class SyncConfigActivity extends AppCompatActivity {
     private static final int RESULT_SUCCESS = 0;
     private static final int RESULT_MANIFEST_EXISTS = 1;
     private static final int RESULT_FAILED = 2;
+    private static final int RESULT_DEVICE_EXISTS = 3;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,11 +80,14 @@ public class SyncConfigActivity extends AppCompatActivity {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(result -> {
-                    if (result == RESULT_SUCCESS) {
-                        saveAndFinish(url, user, pass, path);
-                    } else if (result == RESULT_MANIFEST_EXISTS) {
+                    if (result.status == RESULT_SUCCESS) {
+                        saveAndFinish(url, user, pass, path, result.pantryKey);
+                    } else if (result.status == RESULT_MANIFEST_EXISTS) {
                         setUILocked(false);
                         showOverwriteDialog();
+                    } else if (result.status == RESULT_DEVICE_EXISTS) {
+                        setUILocked(false);
+                        Toast.makeText(this, "Questo dispositivo è già registrato in questa dispensa.", Toast.LENGTH_LONG).show();
                     } else {
                         setUILocked(false);
                         Toast.makeText(this, "Connessione o configurazione fallita.", Toast.LENGTH_LONG).show();
@@ -103,21 +107,21 @@ public class SyncConfigActivity extends AppCompatActivity {
                 .show();
     }
 
-    private void saveAndFinish(String url, String user, String pass, String path) {
+    private void saveAndFinish(String url, String user, String pass, String path, String pantryKey) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         prefs.edit()
                 .putString(SyncManager.KEY_WEBDAV_URL, url)
                 .putString(SyncManager.KEY_WEBDAV_USER, user)
                 .putString(SyncManager.KEY_WEBDAV_PASS, pass)
                 .putString(SyncManager.KEY_WEBDAV_PATH, path)
-                .putString(SyncManager.SYNC_WEBDAV_PANTRY_KEY, SyncManager.DEFAULT_MAIN_PANTRY)
+                .putString(SyncManager.SYNC_WEBDAV_PANTRY_KEY, pantryKey)
                 .putBoolean(SyncManager.KEY_SYNC_ENABLED, true)
                 .apply();
 
-        String deviceId = android.provider.Settings.Secure.getString(getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
+        String deviceId = eu.frigo.dispensa.sync.core.engine.InstallationIdProvider.getOrCreateInstallationId(this);
         String normalizedBase = path.endsWith("/") ? path : path + "/";
         if (normalizedBase.startsWith("/")) normalizedBase = normalizedBase.substring(1);
-        String pantryPath = normalizedBase + SyncManager.DEFAULT_PANTRY_PATH + SyncManager.DEFAULT_MAIN_PANTRY + "/";
+        String pantryPath = normalizedBase + SyncManager.DEFAULT_PANTRY_PATH + pantryKey + "/";
 
         WebDavClient client = new WebDavClient(url, user, pass);
         WebDavRemoteStoreImpl remoteStore = new WebDavRemoteStoreImpl(client);
@@ -130,33 +134,55 @@ public class SyncConfigActivity extends AppCompatActivity {
         finish();
     }
 
-    private Single<Integer> verifyAndSetup(String url, String user, String pass, String basePath, boolean forceOverwrite) {
+    private static class SetupResult {
+        final int status;
+        final String pantryKey;
+        SetupResult(int status, String pantryKey) {
+            this.status = status;
+            this.pantryKey = pantryKey;
+        }
+    }
+
+    private Single<SetupResult> verifyAndSetup(String url, String user, String pass, String basePath, boolean forceOverwrite) {
         return Single.fromCallable(() -> {
             WebDavClient client = new WebDavClient(url, user, pass);
-            String deviceId = android.provider.Settings.Secure.getString(getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
-            String pantryKey = SyncManager.DEFAULT_MAIN_PANTRY;
+            String deviceId = eu.frigo.dispensa.sync.core.engine.InstallationIdProvider.getOrCreateInstallationId(this);
+            
+            // Append group ID to pantry key
+            String groupSuffix = eu.frigo.dispensa.sync.core.pairing.OnboardingCoordinator.generatePairingCode();
+            String pantryKey = SyncManager.DEFAULT_MAIN_PANTRY + "_" + groupSuffix;
 
             String normalizedBase = basePath.endsWith("/") ? basePath : basePath + "/";
             if (normalizedBase.startsWith("/")) normalizedBase = normalizedBase.substring(1);
 
             // 1. Verify/Create Folder Structure
-            if (!ensureFolderExists(client, normalizedBase + SyncManager.DEFAULT_SYNC_PATH )) return RESULT_FAILED;
-            if (!ensureFolderExists(client, normalizedBase + SyncManager.DEFAULT_PANTRY_PATH )) return RESULT_FAILED;
+            if (!ensureFolderExists(client, normalizedBase + SyncManager.DEFAULT_SYNC_PATH )) return new SetupResult(RESULT_FAILED, null);
+            if (!ensureFolderExists(client, normalizedBase + SyncManager.DEFAULT_PANTRY_PATH )) return new SetupResult(RESULT_FAILED, null);
             String pantryPath = normalizedBase + SyncManager.DEFAULT_PANTRY_PATH  + pantryKey + "/";
-            if (!ensureFolderExists(client, pantryPath)) return RESULT_FAILED;
-            if (!ensureFolderExists(client, pantryPath + SyncManager.DEFAULT_EVENTS_FOLDER)) return RESULT_FAILED;
-            if (!ensureFolderExists(client, pantryPath + SyncManager.DEFAULT_DEVICES_FOLDER)) return RESULT_FAILED;
-            if (!ensureFolderExists(client, pantryPath + SyncManager.DEFAULT_SNAPSHOTS_FOLDER)) return RESULT_FAILED;
+            if (!ensureFolderExists(client, pantryPath)) return new SetupResult(RESULT_FAILED, null);
+            if (!ensureFolderExists(client, pantryPath + SyncManager.DEFAULT_EVENTS_FOLDER)) return new SetupResult(RESULT_FAILED, null);
+            if (!ensureFolderExists(client, pantryPath + SyncManager.DEFAULT_DEVICES_FOLDER)) return new SetupResult(RESULT_FAILED, null);
+            if (!ensureFolderExists(client, pantryPath + SyncManager.DEFAULT_SNAPSHOTS_FOLDER)) return new SetupResult(RESULT_FAILED, null);
+
+            // 1b. Check if device is already registered
+            String devicePath = pantryPath + SyncManager.DEFAULT_DEVICES_FOLDER + deviceId + ".json";
+            try (Response response = client.propfind(devicePath)) {
+                if (response.isSuccessful() || response.code() == 207) {
+                    if (!forceOverwrite) {
+                        return new SetupResult(RESULT_DEVICE_EXISTS, null);
+                    }
+                }
+            }
 
             // 2. Check manifest.json
             String manifestPath = pantryPath + SyncManager.MANIFEST_JSON;
             try (Response response = client.propfind(manifestPath)) {
                 if (response.isSuccessful() || response.code() == 207) {
                     if (!forceOverwrite) {
-                        return RESULT_MANIFEST_EXISTS;
+                        return new SetupResult(RESULT_MANIFEST_EXISTS, null);
                     }
                 } else if (response.code() != 404) {
-                    return RESULT_FAILED;
+                    return new SetupResult(RESULT_FAILED, null);
                 }
             }
 
@@ -172,7 +198,18 @@ public class SyncConfigActivity extends AppCompatActivity {
 
             String json = new com.google.gson.Gson().toJson(manifest);
             try (Response putResp = client.put(manifestPath, json.getBytes(), null)) {
-                return putResp.isSuccessful() ? RESULT_SUCCESS : RESULT_FAILED;
+                if (!putResp.isSuccessful()) return new SetupResult(RESULT_FAILED, null);
+            }
+
+            // 4. Register current device
+            eu.frigo.dispensa.sync.webdav.model.WebDavDevice device = new eu.frigo.dispensa.sync.webdav.model.WebDavDevice();
+            device.deviceId = deviceId;
+            device.deviceName = android.os.Build.MODEL;
+            device.lastSeen = System.currentTimeMillis();
+            
+            String deviceJson = new com.google.gson.Gson().toJson(device);
+            try (Response devResp = client.put(devicePath, deviceJson.getBytes(), null)) {
+                return devResp.isSuccessful() ? new SetupResult(RESULT_SUCCESS, pantryKey) : new SetupResult(RESULT_FAILED, null);
             }
         });
     }

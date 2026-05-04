@@ -22,6 +22,7 @@ import java.util.Locale;
 import java.util.Objects;
 
 import eu.frigo.dispensa.R;
+import eu.frigo.dispensa.sync.core.engine.InstallationIdProvider;
 import eu.frigo.dispensa.sync.core.engine.SyncManager;
 import eu.frigo.dispensa.util.LocaleHelper;
 import eu.frigo.dispensa.work.ExpiryCheckWorkerScheduler;
@@ -137,6 +138,8 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
                 return true;
             });
         }
+        Preference appId = findPreference(InstallationIdProvider.PREF_INSTALLATION_ID);
+        appId.setSummary(InstallationIdProvider.getOrCreateInstallationId(null));
     }
 
     private void clearOpenFoodFactCache() {
