@@ -252,6 +252,7 @@
     <string name="sync_webdav_user">Username</string>
     <string name="sync_webdav_pass">Password / App Token</string>
     <string name="sync_webdav_path">Remote Folder Path</string>
+    <string name="sync_webdav_shared_mode">Shared Folder (Password only)</string>
     <string name="sync_pairing_success">Pantry joined successfully!</string>
     <string name="sync_pairing_error">Invalid pairing code or QR data</string>
     <string name="overwrite">Overwrite</string>

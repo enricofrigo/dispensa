@@ -106,8 +106,9 @@ public class SyncOnboardingActivity extends AppCompatActivity {
         String pass = prefs.getString(SyncManager.KEY_WEBDAV_PASS, "");
         String path = prefs.getString(SyncManager.KEY_WEBDAV_PATH, SyncManager.DEFAULT_PATH);
         String pantryKey = prefs.getString(SyncManager.SYNC_WEBDAV_PANTRY_KEY, "");
+        boolean isShared = prefs.getBoolean(SyncManager.KEY_WEBDAV_MODE_SHARED, false);
 
-        if (url.isEmpty() || user.isEmpty()) {
+        if (url.isEmpty() || (user.isEmpty() && !isShared)) {
             Toast.makeText(this, "Configura prima il sync nelle impostazioni", Toast.LENGTH_LONG).show();
             finish();
             return;
@@ -118,7 +119,7 @@ public class SyncOnboardingActivity extends AppCompatActivity {
 
         try {
             // 1. Prepare WebDAV config
-            WebDavConfig config = new WebDavConfig(url, user, pass, path, pantryKey);
+            WebDavConfig config = new WebDavConfig(url, user, pass, path, pantryKey, isShared);
             
             // 2. Create encrypted payload
             String deviceName = android.os.Build.MODEL;
