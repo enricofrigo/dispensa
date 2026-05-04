@@ -237,8 +237,9 @@ public class SyncOnboardingActivity extends AppCompatActivity {
             String pass = payload.data.get("pass");
             String path = payload.data.get("path");
             String pantryKey = payload.data.get("pantryKey");
+            boolean isShared = Boolean.parseBoolean(payload.data.get("isShared"));
 
-            if (url == null || user == null || pass == null || pantryKey == null) {
+            if (url == null || (!isShared && user == null) || pass == null || pantryKey == null) {
                 return false;
             }
 
@@ -268,8 +269,9 @@ public class SyncOnboardingActivity extends AppCompatActivity {
             String pass = payload.data.get("pass");
             String path = payload.data.get("path");
             String pantryKey = payload.data.get("pantryKey");
+            boolean isShared = Boolean.parseBoolean(payload.data.get("isShared"));
 
-            if (url == null || user == null || pass == null || pantryKey == null) {
+            if (url == null || (!isShared && user == null) || pass == null || pantryKey == null) {
                 return false;
             }
 
