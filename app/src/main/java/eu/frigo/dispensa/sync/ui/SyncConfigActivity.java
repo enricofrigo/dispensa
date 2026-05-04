@@ -23,6 +23,7 @@ import eu.frigo.dispensa.sync.core.engine.SyncManager;
 import eu.frigo.dispensa.sync.webdav.WebDavRemoteStoreImpl;
 import eu.frigo.dispensa.sync.webdav.WebDavSyncProvider;
 import eu.frigo.dispensa.sync.webdav.client.WebDavClient;
+import eu.frigo.dispensa.sync.webdav.client.WebDavClientFactory;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.schedulers.Schedulers;
@@ -169,7 +170,7 @@ public class SyncConfigActivity extends AppCompatActivity {
         if (normalizedBase.startsWith("/")) normalizedBase = normalizedBase.substring(1);
         String pantryPath = normalizedBase + SyncManager.DEFAULT_PANTRY_PATH + pantryKey + "/";
 
-        WebDavClient client = new WebDavClient(url, user, pass);
+        WebDavClient client = WebDavClientFactory.getInstance().getClient(url, user, pass);
         WebDavRemoteStoreImpl remoteStore = new WebDavRemoteStoreImpl(client);
         WebDavSyncProvider provider = new WebDavSyncProvider("webdav", remoteStore, client, deviceId, pantryPath);
 
@@ -191,7 +192,7 @@ public class SyncConfigActivity extends AppCompatActivity {
 
     private Single<SetupResult> verifyAndSetup(String url, String user, String pass, String basePath, boolean forceOverwrite) {
         return Single.fromCallable(() -> {
-            WebDavClient client = new WebDavClient(url, user, pass);
+            WebDavClient client = WebDavClientFactory.getInstance().getClient(url, user, pass);
             String deviceId = InstallationIdProvider.getOrCreateInstallationId(this);
             
             // Append group ID to pantry key
