@@ -247,6 +247,7 @@
     <string name="sync_webdav_user">Benutzername</string>
     <string name="sync_webdav_pass">Passwort / App-Token</string>
     <string name="sync_webdav_path">Pfad zum Remote-Ordner</string>
+    <string name="sync_webdav_shared_mode">Gemeinsamer Ordner (nur Passwort)</string>
     <string name="sync_pairing_success">Vorratskammer erfolgreich beigetreten!</string>
     <string name="sync_pairing_error">Ungültiger Kopplungscode oder ungültige QR-Daten</string>
     <string name="overwrite">Überschreiben</string>
