@@ -10,4 +10,9 @@
         android:title="@string/join_pantry"
         android:icon="@drawable/ic_add_24"
         app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_manage_devices"
+        android:title="@string/action_manage_devices"
+        android:icon="@drawable/ic_devices_24"
+        app:showAsAction="never" />
 </menu>
