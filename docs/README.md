@@ -9,9 +9,10 @@
 
 ## 🧰 Funzionalità principali
 
-- 📝 Aggiungi, modifica ed elimina articoli nella tua dispensa (usa Open Food Facts per recuperare le informazioni)
+- 📝 Aggiungi, modifica ed elimina articoli nella tua dispensa
 - 🔔 Ricevi notifiche per prodotti in scadenza
-- 📦 Location personalizzabili
+- 📦 Location personalizzabili e condivisibili via URL or QR code
+- :shopping_cart: Aggiungi i prodotti alla lista della spesa e condividila
 - 🇮🇹 ligue supportate italiano ed inglese (it - en - de)
 
 # 📷 Screenshots
