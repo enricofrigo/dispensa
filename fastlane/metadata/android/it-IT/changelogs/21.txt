@@ -1,0 +1,1 @@
+• Aggiunta la possibilità di condividere la propria dispensa via URL/QR, implementato su WebDAV
