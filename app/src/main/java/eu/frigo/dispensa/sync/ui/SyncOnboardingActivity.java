@@ -27,6 +27,7 @@ import eu.frigo.dispensa.sync.core.pairing.PairingPayloadCodecImpl;
 import eu.frigo.dispensa.sync.webdav.WebDavConfig;
 import eu.frigo.dispensa.sync.webdav.WebDavPairingHandler;
 import eu.frigo.dispensa.sync.webdav.client.WebDavClient;
+import eu.frigo.dispensa.sync.webdav.client.WebDavClientFactory;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.schedulers.Schedulers;
@@ -252,7 +253,7 @@ public class SyncOnboardingActivity extends AppCompatActivity {
             String pantryPath = normalizedBase + SyncManager.DEFAULT_PANTRY_PATH + pantryKey + "/";
             String devicePath = pantryPath + SyncManager.DEFAULT_DEVICES_FOLDER + deviceId + ".json";
 
-            WebDavClient client = new WebDavClient(url, user, pass);
+            WebDavClient client = WebDavClientFactory.getInstance().getClient(url, user, pass);
             try (Response response = client.propfind(devicePath)) {
                 return response.isSuccessful() || response.code() == 207;
             } catch (Exception e) {
@@ -289,7 +290,7 @@ public class SyncOnboardingActivity extends AppCompatActivity {
             device.lastSeen = System.currentTimeMillis();
 
             String deviceJson = new com.google.gson.Gson().toJson(device);
-            WebDavClient client = new WebDavClient(url, user, pass);
+            WebDavClient client = WebDavClientFactory.getInstance().getClient(url, user, pass);
             try (Response devResp = client.put(devicePath, deviceJson.getBytes(), null)) {
                 return devResp.isSuccessful();
             } catch (Exception e) {

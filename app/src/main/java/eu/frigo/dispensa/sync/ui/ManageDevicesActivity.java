@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.sync.core.engine.SyncManager;
 import eu.frigo.dispensa.sync.webdav.client.WebDavClient;
+import eu.frigo.dispensa.sync.webdav.client.WebDavClientFactory;
 import eu.frigo.dispensa.sync.webdav.model.WebDavDevice;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Single;
@@ -84,7 +85,7 @@ public class ManageDevicesActivity extends AppCompatActivity {
 
         progressBar.setVisibility(View.VISIBLE);
         
-        fetchDevices(url, user, pass, devicesPath)
+        fetchDevices(devicesPath)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(devices -> {
@@ -100,9 +101,9 @@ public class ManageDevicesActivity extends AppCompatActivity {
                 });
     }
 
-    private Single<List<WebDavDevice>> fetchDevices(String url, String user, String pass, String devicesPath) {
+    private Single<List<WebDavDevice>> fetchDevices(String devicesPath) {
         return Single.fromCallable(() -> {
-            WebDavClient client = new WebDavClient(url, user, pass);
+            WebDavClient client = WebDavClientFactory.getInstance().getClient(this);
             List<WebDavDevice> devices = new ArrayList<>();
             
             try (Response response = client.propfind(devicesPath)) {

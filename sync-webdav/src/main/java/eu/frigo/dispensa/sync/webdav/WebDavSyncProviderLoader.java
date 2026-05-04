@@ -11,6 +11,7 @@ import eu.frigo.dispensa.sync.core.engine.SyncManager;
 import eu.frigo.dispensa.sync.core.provider.SyncProvider;
 import eu.frigo.dispensa.sync.core.provider.SyncProviderLoader;
 import eu.frigo.dispensa.sync.webdav.client.WebDavClient;
+import eu.frigo.dispensa.sync.webdav.client.WebDavClientFactory;
 import eu.frigo.dispensa.sync.webdav.worker.WebDavSyncWorker;
 
 public class WebDavSyncProviderLoader implements SyncProviderLoader {
@@ -39,7 +40,7 @@ public class WebDavSyncProviderLoader implements SyncProviderLoader {
             if (normalizedBase.startsWith("/")) normalizedBase = normalizedBase.substring(1);
             String pantryPath = normalizedBase + SyncManager.DEFAULT_PANTRY_PATH + pantryKey + "/";
 
-            WebDavClient client = new WebDavClient(url, user, pass);
+            WebDavClient client = WebDavClientFactory.getInstance().getClient(context);
             WebDavRemoteStoreImpl remoteStore = new WebDavRemoteStoreImpl(client);
 
             return new WebDavSyncProvider("webdav", remoteStore, client, deviceId, pantryPath);
