@@ -40,7 +40,8 @@ public class LocationFormatter {
         if (location.isPredefined()) {
             return getDisplayLocationIcon(location.getInternalKey());
         } else {
-            return null;
+            //default icon
+            return R.drawable.pantry_24px;
         }
     }
 }

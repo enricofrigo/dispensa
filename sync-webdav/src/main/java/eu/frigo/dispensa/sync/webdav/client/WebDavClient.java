@@ -64,4 +64,13 @@ public class WebDavClient {
                 .build();
         return okHttpClient.newCall(request).execute();
     }
+
+    public Response delete(String path) throws IOException {
+        Request request = new Request.Builder()
+                .url(baseUrl + path)
+                .header("Authorization", authHeader)
+                .delete()
+                .build();
+        return okHttpClient.newCall(request).execute();
+    }
 }

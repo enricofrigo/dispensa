@@ -250,6 +250,7 @@
     <string name="sync_webdav_shared_mode">Gemeinsamer Ordner (nur Passwort)</string>
     <string name="sync_pairing_success">Vorratskammer erfolgreich beigetreten!</string>
     <string name="sync_pairing_error">Ungültiger Kopplungscode oder ungültige QR-Daten</string>
+    <string name="sync_removed_by_owner">Sie wurden vom Eigentümer aus der gemeinsamen Speisekammer entfernt.</string>
     <string name="overwrite">Überschreiben</string>
     <string name="sync_webdav_warn_existing">Vorhandene Konfiguration</string>
     <string name="sync_webdav_warn_existing_desc">In diesem Ordner wurde eine vorhandene Synchronisierungskonfiguration gefunden. Möchten Sie diese überschreiben oder abbrechen?</string>

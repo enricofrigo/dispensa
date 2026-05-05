@@ -23,6 +23,7 @@
 
     <ImageView
         android:id="@+id/iv_qr_code"
+        android:contentDescription="QR"
         android:layout_width="250dp"
         android:layout_height="250dp"
         android:layout_marginTop="24dp"
@@ -47,8 +48,8 @@
         app:icon="@drawable/ic_share_24"
         android:visibility="gone" />
 
-    <com.journeyapps.barcodescanner.DecoratedBarcodeView
-        android:id="@+id/zxing_barcode_scanner"
+    <androidx.camera.view.PreviewView
+        android:id="@+id/camera_preview"
         android:layout_width="match_parent"
         android:layout_height="300dp"
         android:layout_marginTop="24dp"

@@ -86,6 +86,15 @@ public class MainActivity extends AppCompatActivity
     private LocationViewModel locationViewModel;
     private ShoppingListViewModel shoppingListViewModel;
     private BadgeDrawable shoppingBadge;
+    private final android.content.BroadcastReceiver syncRemovedReceiver = new android.content.BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (eu.frigo.dispensa.sync.core.engine.SyncManager.ACTION_SYNC_REMOVED.equals(intent.getAction())) {
+                Toast.makeText(MainActivity.this, getString(R.string.sync_removed_by_owner), Toast.LENGTH_LONG).show();
+                invalidateOptionsMenu();
+            }
+        }
+    };
     private final ActivityResultLauncher<String> requestPermissionLauncher = registerForActivityResult(
             new ActivityResultContracts.RequestPermission(), isGranted -> {
                 if (isGranted) {
@@ -203,7 +212,7 @@ public class MainActivity extends AppCompatActivity
         super.attachBaseContext(LocaleHelper.onAttach(newBase));
     }
 
-    @SuppressLint("UnsafeOptInUsageError")
+    @SuppressLint({"UnsafeOptInUsageError", "UnspecifiedRegisterReceiverFlag"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -246,9 +255,7 @@ public class MainActivity extends AppCompatActivity
         shoppingListViewModel = new ViewModelProvider(this).get(ShoppingListViewModel.class);
 
         // Osserva il conteggio non comprati per il badge
-        shoppingListViewModel.getUncheckedCount().observe(this, count -> {
-            updateShoppingBadge(Objects.requireNonNullElse(count, 0));
-        });
+        shoppingListViewModel.getUncheckedCount().observe(this, count -> updateShoppingBadge(Objects.requireNonNullElse(count, 0)));
 
         locationViewModel = new ViewModelProvider(this).get(LocationViewModel.class);
         locationViewPagerAdapter = new LocationViewPagerAdapter(this);
@@ -321,6 +328,12 @@ public class MainActivity extends AppCompatActivity
             consumeScannerLauncher.launch(intent);
         });
 
+        android.content.IntentFilter filter = new android.content.IntentFilter(eu.frigo.dispensa.sync.core.engine.SyncManager.ACTION_SYNC_REMOVED);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(syncRemovedReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(syncRemovedReceiver, filter);
+        }
     }
 
     private void showHintsIfNeeded() {
@@ -421,6 +434,15 @@ public class MainActivity extends AppCompatActivity
     public boolean onPrepareOptionsMenu(Menu menu) {
         updateLayoutToggleIcon();
         restoreSearchViewQuery();
+
+        MenuItem syncItem = menu.findItem(R.id.action_sync_now);
+        if (syncItem != null) {
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+            boolean syncEnabled = prefs.getBoolean(eu.frigo.dispensa.sync.core.engine.SyncManager.KEY_SYNC_ENABLED, false);
+            syncItem.setVisible(syncEnabled);
+            syncItem.setEnabled(syncEnabled);
+        }
+
         return super.onPrepareOptionsMenu(menu);
     }
 
@@ -795,7 +817,6 @@ public class MainActivity extends AppCompatActivity
             return true;
         } else if (id == R.id.action_sync_now) {
             SyncCoordinatorImpl.getInstance(this).triggerManualSync();
-            Toast.makeText(this, R.string.pref_sync_now_title, Toast.LENGTH_SHORT).show();
             return true;
         } else if (id == R.id.action_settings) {
             Intent intent = new Intent(this, SettingsActivity.class);
@@ -823,6 +844,7 @@ public class MainActivity extends AppCompatActivity
         if (locationViewPagerAdapter != null) {
             locationViewPagerAdapter.notifyDataSetChanged();
         }
+        invalidateOptionsMenu();
     }
 
     @Override
@@ -831,6 +853,7 @@ public class MainActivity extends AppCompatActivity
         if (viewPager != null) {
             viewPager.unregisterOnPageChangeCallback(pageChangeCallback);
         }
+        unregisterReceiver(syncRemovedReceiver);
     }
 
     @Override

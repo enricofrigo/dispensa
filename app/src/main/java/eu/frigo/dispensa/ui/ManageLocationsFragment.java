@@ -34,7 +34,7 @@ import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.adapter.ReorderLocationsAdapter;
 import eu.frigo.dispensa.data.AppDatabase;
 import eu.frigo.dispensa.data.storage.StorageLocation;
-import eu.frigo.dispensa.sync.ui.SyncOnboardingActivity;
+import eu.frigo.dispensa.activity.sync.ui.SyncOnboardingActivity;
 import eu.frigo.dispensa.util.SimpleItemTouchHelperCallback;
 import eu.frigo.dispensa.viewmodel.LocationViewModel;
 
@@ -230,24 +230,22 @@ public class ManageLocationsFragment extends Fragment implements
                     }
 
                     if (existingLocation == null) { // Aggiungi Nuova
-                        locationViewModel.insert(new StorageLocation(), maxIndex -> {
-                            requireActivity().runOnUiThread(() -> {
-                                StorageLocation newLocation = new StorageLocation(
-                                        locationName,
-                                        "custom_" + UUID.randomUUID().toString().substring(0, 8), // internalKey univoco
-                                        maxIndex + 1, // orderIndex
-                                        false, // isDefault
-                                        false // isPredefined
-                                );
-                                AppDatabase.databaseWriteExecutor.execute(() -> {
-                                    AppDatabase.getDatabase(requireContext()).storageLocationDao().insert(newLocation);
-                                });
-
-                                Toast.makeText(getContext(),
-                                        String.format(getString(R.string.notify_add_location), locationName),
-                                        Toast.LENGTH_SHORT).show();
+                        locationViewModel.insert(new StorageLocation(), maxIndex -> requireActivity().runOnUiThread(() -> {
+                            StorageLocation newLocation = new StorageLocation(
+                                    locationName,
+                                    "custom_" + UUID.randomUUID().toString().substring(0, 8), // internalKey univoco
+                                    maxIndex + 1, // orderIndex
+                                    false, // isDefault
+                                    false // isPredefined
+                            );
+                            AppDatabase.databaseWriteExecutor.execute(() -> {
+                                AppDatabase.getDatabase(requireContext()).storageLocationDao().insert(newLocation);
                             });
-                        });
+
+                            Toast.makeText(getContext(),
+                                    String.format(getString(R.string.notify_add_location), locationName),
+                                    Toast.LENGTH_SHORT).show();
+                        }));
                     } else {
                         if (!existingLocation.isPredefined()) {
                             existingLocation.setName(locationName);
