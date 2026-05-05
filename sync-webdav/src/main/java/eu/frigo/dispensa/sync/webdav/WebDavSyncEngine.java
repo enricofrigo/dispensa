@@ -1,11 +1,13 @@
 package eu.frigo.dispensa.sync.webdav;
 
 import com.google.gson.Gson;
+import android.content.Context;
 import android.util.Log;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import eu.frigo.dispensa.sync.core.engine.SyncEngine;
+import eu.frigo.dispensa.sync.core.engine.SyncManager;
 import eu.frigo.dispensa.sync.core.policy.SyncPolicy;
 import eu.frigo.dispensa.sync.core.store.OutboxRepository;
 import eu.frigo.dispensa.sync.core.store.SyncCursorStore;
@@ -22,6 +24,7 @@ import eu.frigo.dispensa.data.storage.StorageLocation;
 import eu.frigo.dispensa.data.shoppinglist.ShoppingItem;
 
 public class WebDavSyncEngine implements SyncEngine {
+    private final Context context;
     private final WebDavClient client;
     private final Gson gson;
     private final SyncCursorStore cursorStore;
@@ -30,7 +33,8 @@ public class WebDavSyncEngine implements SyncEngine {
     private final String pantryPath;
     private final AppDatabase db;
 
-    public WebDavSyncEngine(WebDavClient client, SyncCursorStore cursorStore, OutboxRepository outbox, String deviceId, String pantryPath, AppDatabase db) {
+    public WebDavSyncEngine(Context context, WebDavClient client, SyncCursorStore cursorStore, OutboxRepository outbox, String deviceId, String pantryPath, AppDatabase db) {
+        this.context = context;
         this.client = client;
         this.cursorStore = cursorStore;
         this.outbox = outbox;
@@ -50,6 +54,15 @@ public class WebDavSyncEngine implements SyncEngine {
             // 1. Pull
             WebDavManifest manifest = fetchManifest();
             if (manifest != null) {
+                // Se non siamo l'owner, controlliamo se siamo ancora autorizzati (file device esistente)
+                if (!deviceId.equals(manifest.createdByDevice)) {
+                    if (!checkDeviceRegistration()) {
+                        Log.w("SyncFlow", "Dispositivo rimosso dall'owner. Disconnessione in corso...");
+                        SyncManager.getInstance().disconnect(context);
+                        context.sendBroadcast(new android.content.Intent(SyncManager.ACTION_SYNC_REMOVED));
+                        return;
+                    }
+                }
                 processRemoteChanges(manifest);
             }
 
@@ -81,6 +94,13 @@ public class WebDavSyncEngine implements SyncEngine {
                 return m;
             }
             return null;
+        }
+    }
+
+    private boolean checkDeviceRegistration() throws IOException {
+        String deviceFilePath = SyncManager.DEFAULT_DEVICES_FOLDER + deviceId + ".json";
+        try (Response response = client.get(pantryPath + deviceFilePath)) {
+            return response.isSuccessful();
         }
     }
 

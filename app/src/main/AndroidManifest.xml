@@ -70,7 +70,7 @@
             android:parentActivityName=".activity.SettingsActivity" />
 
         <activity
-            android:name=".sync.ui.SyncOnboardingActivity"
+            android:name=".activity.sync.ui.SyncOnboardingActivity"
             android:label="@string/sync_setup_title"
             android:exported="true">
             <intent-filter android:autoVerify="true">

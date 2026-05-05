@@ -43,6 +43,7 @@ public class WebDavSyncProvider implements SyncProvider {
         if (engine == null) {
             AppDatabase db = AppDatabase.getDatabase(context);
             engine = new WebDavSyncEngine(
+                    context,
                     client,
                     new SyncCursorStoreImpl(context),
                     new OutboxRepositoryImpl(db),

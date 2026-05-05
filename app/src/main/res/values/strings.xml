@@ -255,6 +255,7 @@
     <string name="sync_webdav_shared_mode">Shared Folder (Password only)</string>
     <string name="sync_pairing_success">Pantry joined successfully!</string>
     <string name="sync_pairing_error">Invalid pairing code or QR data</string>
+    <string name="sync_removed_by_owner">You have been removed from the shared pantry by the owner.</string>
     <string name="overwrite">Overwrite</string>
     <string name="sync_webdav_warn_existing">Existing configuration</string>
     <string name="sync_webdav_warn_existing_desc">An existing sync configuration was found in this folder. Do you want to overwrite or cancel it?</string>
