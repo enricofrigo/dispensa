@@ -139,7 +139,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
             });
         }
         Preference appId = findPreference(InstallationIdProvider.PREF_INSTALLATION_ID);
-        appId.setSummary(InstallationIdProvider.getOrCreateInstallationId(null));
+        appId.setSummary(InstallationIdProvider.getOrCreateInstallationId(getContext()));
     }
 
     private void clearOpenFoodFactCache() {
