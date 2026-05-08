@@ -1,0 +1,1 @@
+• You can share your pantry using URL/QR, based on WebDav implementation
