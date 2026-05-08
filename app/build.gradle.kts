@@ -61,6 +61,9 @@ android {
         viewBinding = true
     }
     packaging {
+        resources {
+            excludes += "/META-INF/DEPENDENCIES"
+        }
         jniLibs {
             useLegacyPackaging = false
         }
@@ -114,5 +117,8 @@ dependencies {
     "fdroidImplementation"(libs.zxing.android.embedded)
     "playImplementation"(libs.play.services.mlkit.barcode.scanning)
     "playImplementation"(libs.text.recognition)
+    "playImplementation"(libs.play.services.auth)
+    "playImplementation"(libs.google.api.services.drive)
+    "playImplementation"(project(":sync-gdrive"))
 
 }
