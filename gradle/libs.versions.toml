@@ -48,6 +48,10 @@ iconicsViewsVersion = "4.0.2"
 balloon = "1.7.5"
 guava = "33.3.1-android"
 preference = "1.2.1"
+playServicesAuth = "21.5.1"
+googleApiServicesDrive = "v3-rev20230822-2.0.0"
+googleApiClientAndroid = "2.9.0"
+googleHttpClientGson = "2.1.0"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -96,6 +100,10 @@ mikepenz-iconics-views = { group = "com.mikepenz", name = "iconics-views", versi
 balloon = { group = "com.github.skydoves", name = "balloon", version.ref = "balloon" }
 guava = { group = "com.google.guava", name = "guava", version.ref = "guava" }
 androidx-preference = { group = "androidx.preference", name = "preference", version.ref = "preference" }
+play-services-auth = { group = "com.google.android.gms", name = "play-services-auth", version.ref = "playServicesAuth" }
+google-api-services-drive = { group = "com.google.apis", name = "google-api-services-drive", version.ref = "googleApiServicesDrive" }
+google-api-client-android = { group = "com.google.api-client", name = "google-api-client-android", version.ref = "googleApiClientAndroid" }
+google-http-client-gson = { group = "com.google.http-client", name = "google-http-client-gson", version.ref = "googleHttpClientGson" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
