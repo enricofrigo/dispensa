@@ -1,10 +1,15 @@
 package eu.frigo.dispensa.sync.webdav;
 
 import com.google.gson.Gson;
+
+import android.content.Context;
 import android.util.Log;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import eu.frigo.dispensa.sync.core.SyncManager;
+import eu.frigo.dispensa.sync.core.SyncTransport;
+import eu.frigo.dispensa.sync.webdav.migration.WebDavSyncMigration;
 import eu.frigo.dispensa.sync.core.engine.SyncEngine;
 import eu.frigo.dispensa.sync.core.policy.SyncPolicy;
 import eu.frigo.dispensa.sync.core.store.OutboxRepository;
@@ -21,7 +26,9 @@ import eu.frigo.dispensa.data.product.Product;
 import eu.frigo.dispensa.data.storage.StorageLocation;
 import eu.frigo.dispensa.data.shoppinglist.ShoppingItem;
 
-public class WebDavSyncEngine implements SyncEngine {
+public class WebDavSyncEngine implements SyncEngine, SyncTransport {
+    private static final String TAG = "WebDavSyncEngine";
+
     private final WebDavClient client;
     private final Gson gson;
     private final SyncCursorStore cursorStore;
@@ -29,15 +36,19 @@ public class WebDavSyncEngine implements SyncEngine {
     private final String deviceId;
     private final String pantryPath;
     private final AppDatabase db;
+    private final SyncManager syncManager;
+    private final Context context;
 
-    public WebDavSyncEngine(WebDavClient client, SyncCursorStore cursorStore, OutboxRepository outbox, String deviceId, String pantryPath, AppDatabase db) {
+    public WebDavSyncEngine(WebDavClient client, SyncCursorStore cursorStore, OutboxRepository outbox, String deviceId, String pantryPath, AppDatabase db, Context context) {
         this.client = client;
         this.cursorStore = cursorStore;
         this.outbox = outbox;
         this.deviceId = deviceId;
         this.pantryPath = pantryPath.endsWith("/") ? pantryPath : pantryPath + "/";
         this.db = db;
+        this.context = context;
         this.gson = new Gson();
+        this.syncManager = new SyncManager(db, context);
     }
 
     @Override
@@ -45,32 +56,107 @@ public class WebDavSyncEngine implements SyncEngine {
         return Completable.fromAction(() -> {
             if (!policy.canSyncNow()) return;
             
-            Log.d("SyncFlow", "--- Inizio sessione di sincronizzazione ---");
+            Log.d("SyncFlow", "--- Inizio sessione di sincronizzazione (v1.1 CRDT) ---");
 
-            // 1. Pull
-            WebDavManifest manifest = fetchManifest();
-            if (manifest != null) {
-                processRemoteChanges(manifest);
+            // 0. Migration (one-time)
+            WebDavSyncMigration.migrateOutboxToSyncChanges(db, context);
+
+            // 1. Pull changes
+            pull(new SyncCallback() {
+                @Override
+                public void onSuccess(byte[] blobBytes) {
+                    if (blobBytes != null) {
+                        syncManager.importChanges(blobBytes);
+                    }
+                }
+
+                @Override
+                public void onError(Exception e) {
+                    Log.e(TAG, "Pull failed during performSync", e);
+                }
+            });
+
+            // 2. Export and Push local changes
+            long lastVer = syncManager.getLastSyncVersion();
+            byte[] localBlob = syncManager.exportChanges(lastVer);
+            
+            if (localBlob != null) {
+                push(localBlob, new SyncCallback() {
+                    @Override
+                    public void onSuccess(byte[] blobBytes) {
+                        // Update local cursor upon success
+                        syncManager.persistLastSyncVersion(syncManager.getMaxSyncClock());
+                        Log.d("SyncFlow", "Push successful, cursor updated.");
+                    }
+
+                    @Override
+                    public void onError(Exception e) {
+                        Log.e(TAG, "Push failed during performSync", e);
+                    }
+                });
             }
 
-            // 2. Push local events
-            pushLocalChanges();
-
-            // 3. Ricarichiamo il manifest per avere lo stato post-push
-            manifest = fetchManifest();
-            if (manifest == null) manifest = new WebDavManifest();
-
-            // 4. Gestione Snapshot / Compattazione
-            if (manifest.latestSnapshotId == null) {
-                Log.d("SyncFlow", "Nessuno snapshot sul server. Creazione backup iniziale...");
-                performCompaction();
-            } else if (manifest.activeEventFiles.size() >= 50) {
-                Log.d("SyncFlow", "Raggiunta soglia eventi (" + manifest.activeEventFiles.size() + "). Compattazione in corso...");
-                performCompaction();
+            // 3. Optional: Compaction / Snapshots (Legacy logic still applicable if needed)
+            WebDavManifest manifest = fetchManifest();
+            if (manifest != null && manifest.activeEventFiles.size() >= 50) {
+                 Log.d("SyncFlow", "Compacting legacy events...");
+                 performCompaction();
             }
             
-            Log.d("SyncFlow", "--- Sessione completata ---");
+            Log.d("SyncFlow", "--- Sessione CRDT completata ---");
         });
+    }
+
+    @Override
+    public void push(byte[] data, SyncCallback callback) {
+        try {
+            String blobId = "sync/blob_" + deviceId + "_" + System.currentTimeMillis() + ".json";
+            try (Response response = client.put(pantryPath + blobId, data, null)) {
+                if (!response.isSuccessful()) {
+                    callback.onError(new IOException("Failed to upload sync blob: " + response.code()));
+                    return;
+                }
+            }
+
+            updateManifest(m -> {
+                m.latestSyncBlobId = blobId;
+                m.lastGlobalTimestamp = System.currentTimeMillis();
+            });
+            callback.onSuccess(null);
+        } catch (Exception e) {
+            callback.onError(e);
+        }
+    }
+
+    @Override
+    public void pull(SyncCallback callback) {
+        try {
+            WebDavManifest manifest = fetchManifest();
+            if (manifest == null) {
+                callback.onSuccess(null);
+                return;
+            }
+
+            // Priority: New CRDT Blob
+            if (manifest.latestSyncBlobId != null) {
+                try (Response response = client.get(pantryPath + manifest.latestSyncBlobId)) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        callback.onSuccess(response.body().bytes());
+                        return;
+                    }
+                }
+            }
+
+            // Fallback: Legacy Events
+            if (!manifest.activeEventFiles.isEmpty()) {
+                Log.d(TAG, "Processing legacy events for pull...");
+                processRemoteChanges(manifest);
+            }
+            
+            callback.onSuccess(null);
+        } catch (Exception e) {
+            callback.onError(e);
+        }
     }
 
     private WebDavManifest fetchManifest() throws IOException {
