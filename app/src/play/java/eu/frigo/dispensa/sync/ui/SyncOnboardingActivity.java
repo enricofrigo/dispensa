@@ -1,10 +1,14 @@
 package eu.frigo.dispensa.sync.ui;
 
+import android.Manifest;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.media.Image;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.Size;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -12,13 +16,28 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.camera.core.CameraSelector;
+import androidx.camera.core.ImageAnalysis;
+import androidx.camera.core.Preview;
+import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.core.content.ContextCompat;
 import androidx.preference.PreferenceManager;
 
 import com.google.android.material.textfield.TextInputLayout;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions;
 import com.google.mlkit.vision.barcode.BarcodeScanning;
 import com.google.mlkit.vision.barcode.common.Barcode;
+import com.google.mlkit.vision.common.InputImage;
+
+import java.util.Objects;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.sync.core.engine.SyncManager;
@@ -29,7 +48,9 @@ import eu.frigo.dispensa.sync.webdav.WebDavConfig;
 import eu.frigo.dispensa.sync.webdav.WebDavPairingHandler;
 import eu.frigo.dispensa.sync.webdav.client.WebDavClient;
 import eu.frigo.dispensa.sync.webdav.client.WebDavClientFactory;
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 import okhttp3.Response;
 
 public class SyncOnboardingActivity extends AppCompatActivity {
@@ -41,6 +62,20 @@ public class SyncOnboardingActivity extends AppCompatActivity {
     private String scannedQrData;
     private androidx.camera.view.PreviewView barcodeView;
     private com.google.mlkit.vision.barcode.BarcodeScanner barcodeScanner;
+    private ExecutorService cameraExecutor;
+    private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
+    private boolean isCameraPermissionGranted;
+
+    private final ActivityResultLauncher<String> requestPermissionLauncher = registerForActivityResult(
+            new ActivityResultContracts.RequestPermission(), isGranted -> {
+                if (isGranted) {
+                    isCameraPermissionGranted = true;
+                    startCamera();
+                } else {
+                    isCameraPermissionGranted = false;
+                    Toast.makeText(this, "Permesso fotocamera negato", Toast.LENGTH_LONG).show();
+                }
+            });
 
 
     @Override
@@ -48,6 +83,7 @@ public class SyncOnboardingActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_sync_onboarding);
+        cameraExecutor = Executors.newSingleThreadExecutor();
 
         android.net.Uri data = getIntent().getData();
         if (data != null && ("dispensa".equals(data.getScheme()) || "https".equals(data.getScheme()))) {
@@ -172,32 +208,12 @@ public class SyncOnboardingActivity extends AppCompatActivity {
         com.google.android.material.textfield.TextInputEditText etPairingCode = findViewById(R.id.et_pairing_code);
         Button confirm = findViewById(R.id.btn_confirm_onboarding);
 
-        barcodeView.setVisibility(View.VISIBLE);
         BarcodeScannerOptions options = new BarcodeScannerOptions.Builder()
-                .setBarcodeFormats(
-                        Barcode.FORMAT_EAN_13,
-                        Barcode.FORMAT_EAN_8,
-                        Barcode.FORMAT_UPC_A,
-                        Barcode.FORMAT_UPC_E,
-                        Barcode.FORMAT_QR_CODE,
-                        Barcode.FORMAT_CODE_128,
-                        Barcode.FORMAT_CODE_39,
-                        Barcode.FORMAT_CODABAR)
+                .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
                 .build();
         barcodeScanner = BarcodeScanning.getClient(options);
-        //barcodeView.setStatusText(getString(R.string.add_product_camera_preview_hint));
 
-       /*barcodeView.decodeSingle(result -> {
-            String rawData = result.getText();
-            scannedQrData = extractDataFromLink(rawData);
-            Log.d("SyncOnboarding", "QR scansionato con successo");
-            runOnUiThread(() -> {
-                barcodeView.setVisibility(View.GONE);
-                til.setVisibility(View.VISIBLE);
-                confirm.setVisibility(View.VISIBLE);
-                Toast.makeText(this, "QR scansionato. Inserisci il codice di accoppiamento.", Toast.LENGTH_SHORT).show();
-            });
-        });
+        checkCameraPermissionAndStartScanner();
         
         confirm.setOnClickListener(v -> {
             String pairingCode = Objects.requireNonNull(etPairingCode.getText()).toString().trim();
@@ -242,7 +258,104 @@ public class SyncOnboardingActivity extends AppCompatActivity {
                     Toast.makeText(this, R.string.sync_pairing_error, Toast.LENGTH_LONG).show();
                 }
             });
-        });*/
+        });
+    }
+
+    private void checkCameraPermissionAndStartScanner() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            isCameraPermissionGranted = true;
+            startCamera();
+        } else {
+            requestPermissionLauncher.launch(Manifest.permission.CAMERA);
+        }
+    }
+
+    private void startCamera() {
+        if (!isCameraPermissionGranted) return;
+
+        barcodeView.setVisibility(View.VISIBLE);
+        cameraProviderFuture = ProcessCameraProvider.getInstance(this);
+        cameraProviderFuture.addListener(() -> {
+            try {
+                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+                bindPreviewAndAnalysis(cameraProvider);
+            } catch (ExecutionException | InterruptedException e) {
+                Toast.makeText(this, "Errore avvio fotocamera", Toast.LENGTH_SHORT).show();
+            }
+        }, ContextCompat.getMainExecutor(this));
+    }
+
+    @androidx.annotation.OptIn(markerClass = androidx.camera.core.ExperimentalGetImage.class)
+    private void bindPreviewAndAnalysis(@NonNull ProcessCameraProvider cameraProvider) {
+        Preview preview = new Preview.Builder().build();
+        CameraSelector cameraSelector = new CameraSelector.Builder()
+                .requireLensFacing(CameraSelector.LENS_FACING_BACK)
+                .build();
+
+        preview.setSurfaceProvider(barcodeView.getSurfaceProvider());
+
+        ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
+                .setTargetResolution(new Size(1280, 720))
+                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                .build();
+
+        imageAnalysis.setAnalyzer(cameraExecutor, imageProxy -> {
+            Image mediaImage = imageProxy.getImage();
+            if (mediaImage != null) {
+                InputImage image = InputImage.fromMediaImage(mediaImage,
+                        imageProxy.getImageInfo().getRotationDegrees());
+
+                barcodeScanner.process(image)
+                        .addOnSuccessListener(barcodes -> {
+                            if (!barcodes.isEmpty()) {
+                                for (Barcode barcode : barcodes) {
+                                    String rawData = barcode.getRawValue();
+                                    if (rawData != null) {
+                                        scannedQrData = extractDataFromLink(rawData);
+                                        Log.d("SyncOnboarding", "QR scansionato con successo");
+                                        runOnUiThread(() -> {
+                                            stopCamera(cameraProvider);
+                                            findViewById(R.id.til_pairing_code).setVisibility(View.VISIBLE);
+                                            findViewById(R.id.btn_confirm_onboarding).setVisibility(View.VISIBLE);
+                                            Toast.makeText(this, "QR scansionato. Inserisci il codice di accoppiamento.", Toast.LENGTH_SHORT).show();
+                                        });
+                                        break;
+                                    }
+                                }
+                            }
+                        })
+                        .addOnCompleteListener(task -> imageProxy.close());
+            } else {
+                imageProxy.close();
+            }
+        });
+
+        try {
+            cameraProvider.unbindAll();
+            cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalysis);
+        } catch (Exception exc) {
+            Log.e("SyncOnboarding", "Binding fallito", exc);
+        }
+    }
+
+    private void stopCamera(ProcessCameraProvider cameraProvider) {
+        if (cameraProvider != null) {
+            cameraProvider.unbindAll();
+        }
+        if (barcodeView != null) {
+            barcodeView.setVisibility(View.GONE);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (cameraExecutor != null) {
+            cameraExecutor.shutdown();
+        }
+        if (barcodeScanner != null) {
+            barcodeScanner.close();
+        }
     }
 
     private Single<Boolean> checkDeviceAlreadyRegistered(PairingPayload payload) {

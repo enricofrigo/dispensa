@@ -20,7 +20,7 @@ public class InstallationIdProvider {
 
         if (cachedId == null) {
             cachedId = UUID.randomUUID().toString();
-            prefs.edit().putString(PREF_INSTALLATION_ID, cachedId).apply();
+            prefs.edit().putString(PREF_INSTALLATION_ID, cachedId).commit();
         }
 
         return cachedId;

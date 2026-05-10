@@ -152,8 +152,11 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
                 return true;
             });
         }
+        String id = InstallationIdProvider.getOrCreateInstallationId(getContext());
         Preference appId = findPreference(InstallationIdProvider.PREF_INSTALLATION_ID);
-        appId.setSummary(InstallationIdProvider.getOrCreateInstallationId(getContext()));
+        if (appId != null) {
+            appId.setSummary(id);
+        }
     }
 
     private void clearOpenFoodFactCache() {
@@ -277,7 +280,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
 
         boolean found = false;
         for (int i = 0; i < entryValues.length; i++) {
-            if (entryValues[i].toString().equals(languageValue)) {
+            if (entryValues[i] != null && entryValues[i].toString().equals(languageValue)) {
                 languagePreference.setSummary(entries[i]);
                 found = true;
                 break;

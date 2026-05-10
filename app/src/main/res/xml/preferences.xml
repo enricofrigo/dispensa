@@ -105,25 +105,38 @@
         app:layout="@layout/custom_category">
 
         <ListPreference
-            android:key="sync_interval_minutes"
-            android:title="@string/pref_sync_interval_title"
-            android:summary="@string/pref_sync_interval_summary"
-            android:entries="@array/sync_interval_entries"
-            android:entryValues="@array/sync_interval_values"
-            android:defaultValue="30"
+            app:key="sync_interval_minutes"
+            app:title="@string/pref_sync_interval_title"
+            app:summary="@string/pref_sync_interval_summary"
+            app:entries="@array/sync_interval_entries"
+            app:entryValues="@array/sync_interval_values"
+            app:defaultValue="30"
             app:layout="@layout/preference_single_line" />
 
         <Preference
-            android:key="sync_trigger_manual"
-            android:title="@string/pref_sync_trigger_manual_title"
-            android:summary="@string/pref_sync_trigger_manual_summary"
+            app:key="sync_trigger_manual"
+            app:title="@string/pref_sync_trigger_manual_title"
+            app:summary="@string/pref_sync_trigger_manual_summary"
             app:layout="@layout/preference_single_line" />
 
         <Preference
-            android:key="sync_last_timestamp"
-            android:title="@string/pref_sync_last_timestamp_title"
+            app:key="sync_last_timestamp"
+            app:title="@string/pref_sync_last_timestamp_title"
             android:enabled="false"
             app:layout="@layout/preference_single_line" />
+
+        <Preference
+            app:key="separator_sync"
+            android:layout="@layout/pref_separator"
+            android:selectable="false"
+            android:enabled="false"
+            android:shouldDisableView="false" />
+
+        <Preference
+            app:key="app_installation_id"
+            app:layout="@layout/preference_single_line"
+            app:iconSpaceReserved="false"
+            app:selectable="false"/>
 
     </PreferenceCategory>
 
