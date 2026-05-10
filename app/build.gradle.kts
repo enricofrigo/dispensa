@@ -86,6 +86,7 @@ dependencies {
     implementation(project(":dbcore"))
     implementation(project(":sync-core"))
     implementation(project(":sync-webdav"))
+    implementation(project(":sync-local"))
     implementation(libs.cardview)
     implementation(libs.media3.common)
     implementation(libs.swiperefreshlayout)
