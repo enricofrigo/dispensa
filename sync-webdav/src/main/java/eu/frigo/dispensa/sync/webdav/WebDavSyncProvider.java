@@ -48,7 +48,8 @@ public class WebDavSyncProvider implements SyncProvider {
                     new OutboxRepositoryImpl(db),
                     deviceId,
                     pantryPath,
-                    db
+                    db,
+                    context
             );
         }
         return engine;

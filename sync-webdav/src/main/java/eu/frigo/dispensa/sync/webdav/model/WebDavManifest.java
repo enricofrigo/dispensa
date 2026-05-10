@@ -29,6 +29,9 @@ public class WebDavManifest {
     @SerializedName("active_event_files")
     public List<String> activeEventFiles = new ArrayList<>();
 
+    @SerializedName("latest_sync_blob_id")
+    public String latestSyncBlobId;
+
     @SerializedName("etag")
     public transient String etag;
 }
