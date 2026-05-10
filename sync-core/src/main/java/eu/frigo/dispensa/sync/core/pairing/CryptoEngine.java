@@ -1,8 +1,8 @@
 package eu.frigo.dispensa.sync.core.pairing;
 
-import android.util.Base64;
 import java.security.SecureRandom;
 import java.security.spec.KeySpec;
+import java.util.Base64;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
@@ -45,16 +45,16 @@ public class CryptoEngine {
         byte[] ciphertext = cipher.doFinal(plaintext.getBytes("UTF-8"));
 
         return new EncryptedResult(
-                Base64.encodeToString(salt, Base64.NO_WRAP),
-                Base64.encodeToString(iv, Base64.NO_WRAP),
-                Base64.encodeToString(ciphertext, Base64.NO_WRAP)
+                Base64.getEncoder().encodeToString(salt),
+                Base64.getEncoder().encodeToString(iv),
+                Base64.getEncoder().encodeToString(ciphertext)
         );
     }
 
     public static String decrypt(String passphrase, EncryptedResult encrypted) throws Exception {
-        byte[] salt = Base64.decode(encrypted.salt, Base64.NO_WRAP);
-        byte[] iv = Base64.decode(encrypted.iv, Base64.NO_WRAP);
-        byte[] ciphertext = Base64.decode(encrypted.ciphertext, Base64.NO_WRAP);
+        byte[] salt = Base64.getDecoder().decode(encrypted.salt);
+        byte[] iv = Base64.getDecoder().decode(encrypted.iv);
+        byte[] ciphertext = Base64.getDecoder().decode(encrypted.ciphertext);
 
         SecretKey key = deriveKey(passphrase, salt);
 

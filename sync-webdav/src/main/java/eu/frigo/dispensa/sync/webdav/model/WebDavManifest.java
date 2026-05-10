@@ -32,6 +32,12 @@ public class WebDavManifest {
     @SerializedName("latest_sync_blob_id")
     public String latestSyncBlobId;
 
+    @SerializedName("sync_format")
+    public String syncFormat = "crdt";
+
+    @SerializedName("device_clocks")
+    public java.util.Map<String, Long> deviceClocks = new java.util.HashMap<>();
+
     @SerializedName("etag")
     public transient String etag;
 }
