@@ -28,6 +28,7 @@ dependencies {
     implementation(libs.converter.gson)
     
     testImplementation(libs.junit)
+    testImplementation(libs.mockito.mockito.core)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
 }

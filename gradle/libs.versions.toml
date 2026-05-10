@@ -48,9 +48,12 @@ iconicsViewsVersion = "4.0.2"
 balloon = "1.7.5"
 guava = "33.3.1-android"
 preference = "1.2.1"
+mockito = "5.11.0"
+mockitoCore = "5.18.0"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
+mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "mockito" }
 ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
@@ -96,6 +99,7 @@ mikepenz-iconics-views = { group = "com.mikepenz", name = "iconics-views", versi
 balloon = { group = "com.github.skydoves", name = "balloon", version.ref = "balloon" }
 guava = { group = "com.google.guava", name = "guava", version.ref = "guava" }
 androidx-preference = { group = "androidx.preference", name = "preference", version.ref = "preference" }
+mockito-mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "mockitoCore" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
