@@ -103,6 +103,8 @@ public class SyncWorker extends Worker {
 
         // Final state update
         syncManager.persistLastSyncVersion(syncManager.getMaxSyncClock());
+        context.getSharedPreferences(context.getPackageName() + "_preferences", Context.MODE_PRIVATE)
+                .edit().putLong("sync_last_epoch_ms", System.currentTimeMillis()).apply();
 
         // Cleanup
         if (localTransport != null) {

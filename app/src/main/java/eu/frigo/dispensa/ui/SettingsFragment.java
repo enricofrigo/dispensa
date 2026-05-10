@@ -17,13 +17,16 @@ import androidx.preference.PreferenceManager;
 import com.google.android.material.timepicker.MaterialTimePicker;
 import com.google.android.material.timepicker.TimeFormat;
 
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Locale;
 import java.util.Objects;
 
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.sync.core.engine.InstallationIdProvider;
 import eu.frigo.dispensa.sync.core.engine.SyncManager;
+import eu.frigo.dispensa.sync.core.engine.SyncWorkerScheduler;
 import eu.frigo.dispensa.util.LocaleHelper;
 import eu.frigo.dispensa.work.ExpiryCheckWorkerScheduler;
 
@@ -39,7 +42,9 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
     public static final String KEY_OFF_CACHE_TTL_DAYS = "pref_off_cache_ttl_days";
     public static final String KEY_OFF_CACHE_CLEAR = "pref_off_cache_clear";
     public static final String KEY_DEFUALT_ICON = "pref_predefined_tab_icon";
-    public static final String KEY_SYNC_NOW = "pref_sync_now";
+    public static final String KEY_SYNC_NOW = "sync_trigger_manual";
+    public static final String KEY_SYNC_INTERVAL = "sync_interval_minutes";
+    public static final String KEY_SYNC_TIMESTAMP = "sync_last_timestamp";
     public static final String KEY_SYNC_CONFIG = "pref_sync_config";
     public static final String KEY_SYNC_STATUS = "pref_sync_status";
 
@@ -57,8 +62,17 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
         Preference syncNowPref = findPreference(KEY_SYNC_NOW);
         if (syncNowPref != null) {
             syncNowPref.setOnPreferenceClickListener(preference -> {
-                eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl.getInstance(requireContext()).triggerManualSync();
+                SyncWorkerScheduler.triggerManualSync(requireContext());
                 android.widget.Toast.makeText(getContext(), getString(R.string.pref_sync_now_title), android.widget.Toast.LENGTH_SHORT).show();
+                return true;
+            });
+        }
+
+        ListPreference intervalPref = findPreference(KEY_SYNC_INTERVAL);
+        if (intervalPref != null) {
+            intervalPref.setOnPreferenceChangeListener((preference, newValue) -> {
+                SyncWorkerScheduler.cancelPeriodicSync(requireContext());
+                SyncWorkerScheduler.schedulePeriodicSync(requireContext());
                 return true;
             });
         }
@@ -200,13 +214,25 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
     @Override
     public void onResume() {
         super.onResume();
-        Objects.requireNonNull(getPreferenceManager().getSharedPreferences()).registerOnSharedPreferenceChangeListener(this);
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+        prefs.registerOnSharedPreferenceChangeListener(this);
         updateNotificationTimeSummary();
         if (languagePreference != null) {
-            String currentLangValue = PreferenceManager.getDefaultSharedPreferences(requireContext())
-                    .getString(KEY_LANGUAGE_PREFERENCE, "en");
+            String currentLangValue = prefs.getString(KEY_LANGUAGE_PREFERENCE, "en");
             Log.d("locale SettingsFragment", "onResume - Valore lingua letto (con chiave hardcoded): " + currentLangValue);
             updateLanguagePreferenceSummary(currentLangValue);
+        }
+
+        Preference lastSyncPref = findPreference(KEY_SYNC_TIMESTAMP);
+        if (lastSyncPref != null) {
+            long lastSyncEpoch = prefs.getLong("sync_last_epoch_ms", 0);
+            if (lastSyncEpoch == 0) {
+                lastSyncPref.setSummary("Never");
+            } else {
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
+                String formatted = sdf.format(new Date(lastSyncEpoch));
+                lastSyncPref.setSummary(formatted);
+            }
         }
     }
     @Override

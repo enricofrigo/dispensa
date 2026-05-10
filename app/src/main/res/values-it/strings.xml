@@ -232,6 +232,7 @@ I prodotti in questa dispensa potrebbero dover essere riassegnati.</string>
     <string name="shopping_list_quantity">x%d</string>
     <string name="action_share">Condividi</string>
     <string name="share_shopping_list_title">Lista della spesa</string>
+    <string name="pref_sync_last_timestamp_title">Ultima sincronizzazione</string>
     <string name="pref_cat_sync_title">Condividi su Cloud</string>
     <string name="pref_sync_enabled_title">Abilita la sincronizzazione Cloud Sync</string>
     <string name="pref_sync_enabled_summary">Sincronizza la tua dispensa su tutti i dispositivi</string>
@@ -259,4 +260,9 @@ I prodotti in questa dispensa potrebbero dover essere riassegnati.</string>
     <string name="action_manage_devices">Gestione Dispositivi</string>
     <string name="title_manage_devices">Dispositivi Registrati</string>
     <string name="no_devices_found">Nessun dispositivo trovato</string>
+    <string name="pref_cat_sync">Sincronizzazione</string>
+    <string name="pref_sync_interval_title">Intervallo di sincronizzazione</string>
+    <string name="pref_sync_interval_summary">Con quale frequenza sincronizzare in background</string>
+    <string name="pref_sync_trigger_manual_title">Sincronizza ora</string>
+    <string name="pref_sync_trigger_manual_summary">Avvia sincronizzazione manualmente</string>
 </resources>
