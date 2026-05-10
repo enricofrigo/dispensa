@@ -1,8 +1,10 @@
 package eu.frigo.dispensa.data;
 
+import android.annotation.SuppressLint;
 import android.app.Application;
 import androidx.lifecycle.LiveData;
 import androidx.media3.common.util.Log;
+import androidx.media3.common.util.UnstableApi;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,9 +20,11 @@ import eu.frigo.dispensa.data.shoppinglist.ShoppingItem;
 import eu.frigo.dispensa.data.shoppinglist.ShoppingItemDao;
 import eu.frigo.dispensa.data.storage.StorageLocation;
 import eu.frigo.dispensa.data.storage.StorageLocationDao;
+import eu.frigo.dispensa.sync.core.engine.SyncWorkerScheduler;
 import eu.frigo.dispensa.sync.core.event.SyncBus;
 
 public class Repository {
+    private final Application application;
     private final ProductDao productDao;
     private final CategoryDefinitionDao categoryDefinitionDao;
     private final ProductCategoryLinkDao productCategoryLinkDao;
@@ -29,6 +33,7 @@ public class Repository {
     private final LiveData<List<ProductWithCategoryDefinitions>> allProducts;
 
     public Repository(Application application) {
+        this.application = application;
         AppDatabase db = AppDatabase.getDatabase(application);
         productDao = db.productDao();
         categoryDefinitionDao = db.categoryDefinitionDao();
@@ -42,6 +47,7 @@ public class Repository {
         return allProducts;
     }
 
+    @SuppressLint("UnsafeOptInUsageError")
     private void deleteLocalImageIfAny(String imageUrl) {
         if (imageUrl != null && imageUrl.startsWith("file://")) {
             try {
@@ -62,6 +68,7 @@ public class Repository {
         AppDatabase.databaseWriteExecutor.execute(() -> {
             product.lastModified = System.currentTimeMillis();
             productDao.insert(product);
+            SyncWorkerScheduler.triggerDebouncedSync(application);
             SyncBus.getInstance().post(new SyncBus.LocalChangeDetected());
         });
     }
@@ -71,6 +78,7 @@ public class Repository {
             deleteLocalImageIfAny(selectedProduct.getImageUrl());
             selectedProduct.lastModified = System.currentTimeMillis();
             productDao.delete(selectedProduct);
+            SyncWorkerScheduler.triggerDebouncedSync(application);
             SyncBus.getInstance().post(new SyncBus.LocalChangeDetected());
         });
     }
@@ -84,10 +92,12 @@ public class Repository {
                 deleteLocalImageIfAny(oldProduct.getImageUrl());
             }
             productDao.update(product);
+            SyncWorkerScheduler.triggerDebouncedSync(application);
             SyncBus.getInstance().post(new SyncBus.LocalChangeDetected());
         });
     }
 
+    @SuppressLint("UnsafeOptInUsageError")
     public void triggerDataRefresh() {
         Log.d("ProductRepository", "triggerDataRefresh() chiamato.");
     }
@@ -129,6 +139,7 @@ public class Repository {
                     productCategoryLinkDao.insertAll(linksToInsert);
                 }
             }
+            SyncWorkerScheduler.triggerDebouncedSync(application);
             SyncBus.getInstance().post(new SyncBus.LocalChangeDetected());
         });
     }
@@ -165,6 +176,7 @@ public class Repository {
                     productCategoryLinkDao.insertAll(linksToInsert);
                 }
             }
+            SyncWorkerScheduler.triggerDebouncedSync(application);
             SyncBus.getInstance().post(new SyncBus.LocalChangeDetected());
         });
     }
@@ -180,6 +192,7 @@ public class Repository {
         AppDatabase.databaseWriteExecutor.execute(() -> {
             location.lastModified = System.currentTimeMillis();
             storageLocationDao.insert(location);
+            SyncWorkerScheduler.triggerDebouncedSync(application);
             SyncBus.getInstance().post(new SyncBus.LocalChangeDetected());
         });
     }
@@ -188,6 +201,7 @@ public class Repository {
         AppDatabase.databaseWriteExecutor.execute(() -> {
             location.lastModified = System.currentTimeMillis();
             storageLocationDao.update(location);
+            SyncWorkerScheduler.triggerDebouncedSync(application);
             SyncBus.getInstance().post(new SyncBus.LocalChangeDetected());
         });
     }
@@ -198,6 +212,7 @@ public class Repository {
             String fallbackKey = defaultLoc != null ? defaultLoc.internalKey : eu.frigo.dispensa.data.storage.PredefinedData.LOCATION_ALL;
             productDao.updateProductLocation(location.internalKey, fallbackKey);
             storageLocationDao.delete(location);
+            SyncWorkerScheduler.triggerDebouncedSync(application);
             SyncBus.getInstance().post(new SyncBus.LocalChangeDetected());
         });
     }
@@ -284,11 +299,13 @@ public class Repository {
                 existing.lastModified = now;
                 existing.setQuantity(existing.getQuantity() + quantity);
                 shoppingItemDao.update(existing);
+                SyncWorkerScheduler.triggerDebouncedSync(application);
                 SyncBus.getInstance().post(new SyncBus.LocalChangeDetected());
             } else {
                 ShoppingItem newItem = new ShoppingItem(productName, quantity, false);
                 newItem.lastModified = now;
                 shoppingItemDao.insert(newItem);
+                SyncWorkerScheduler.triggerDebouncedSync(application);
                 SyncBus.getInstance().post(new SyncBus.LocalChangeDetected());
             }
         });
@@ -300,6 +317,7 @@ public class Repository {
             if (item != null) {
                 item.lastModified = System.currentTimeMillis();
                 shoppingItemDao.deleteByName(productName);
+                SyncWorkerScheduler.triggerDebouncedSync(application);
                 SyncBus.getInstance().post(new SyncBus.LocalChangeDetected());
             }
         });
@@ -309,6 +327,7 @@ public class Repository {
         AppDatabase.databaseWriteExecutor.execute(() -> {
             item.lastModified = System.currentTimeMillis();
             shoppingItemDao.update(item);
+            SyncWorkerScheduler.triggerDebouncedSync(application);
             SyncBus.getInstance().post(new SyncBus.LocalChangeDetected());
         });
     }
@@ -317,6 +336,7 @@ public class Repository {
         AppDatabase.databaseWriteExecutor.execute(() -> {
             item.lastModified = System.currentTimeMillis();
             shoppingItemDao.delete(item);
+            SyncWorkerScheduler.triggerDebouncedSync(application);
             SyncBus.getInstance().post(new SyncBus.LocalChangeDetected());
         });
     }
@@ -328,6 +348,7 @@ public class Repository {
                 long now = System.currentTimeMillis();
                 for (ShoppingItem item : checked) {
                     item.lastModified = now;
+                    SyncWorkerScheduler.triggerDebouncedSync(application);
                     SyncBus.getInstance().post(new SyncBus.LocalChangeDetected());
                 }
             }

@@ -233,6 +233,12 @@
     <string name="share_shopping_list_title">My Shopping List</string>
 
     <!-- Sync -->
+    <string name="pref_cat_sync">Sync</string>
+    <string name="pref_sync_interval_title">Sync Interval</string>
+    <string name="pref_sync_interval_summary">How often to sync in background</string>
+    <string name="pref_sync_trigger_manual_title">Sync Now</string>
+    <string name="pref_sync_trigger_manual_summary">Manually trigger sync</string>
+    <string name="pref_sync_last_timestamp_title">Last Sync</string>
     <string name="pref_cat_sync_title">Cloud Sync</string>
     <string name="pref_sync_enabled_title">Enable Cloud Sync</string>
     <string name="pref_sync_enabled_summary">Synchronize your pantry across devices</string>

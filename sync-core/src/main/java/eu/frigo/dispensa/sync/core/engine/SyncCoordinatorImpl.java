@@ -56,13 +56,13 @@ public class SyncCoordinatorImpl implements SyncCoordinator {
     }
 
     public void triggerSync(SyncPolicy policy) {
-        SyncScheduler.enqueueOneTimeSync(context);
+        SyncWorkerScheduler.triggerManualSync(context);
     }
 
     @Override
     public void triggerManualSync() {
         Log.d("SyncFlow", "Trigger sync manuale o richiesto da cambiamento locale.");
-        SyncScheduler.enqueueOneTimeSync(context);
+        SyncWorkerScheduler.triggerManualSync(context);
     }
 
     @Override
@@ -71,7 +71,7 @@ public class SyncCoordinatorImpl implements SyncCoordinator {
     }
     
     public void enqueueBackgroundSync() {
-        SyncScheduler.enqueueOneTimeSync(context);
+        SyncWorkerScheduler.triggerManualSync(context);
     }
 
     public void applyOnboarding(PairingPayload payload) {

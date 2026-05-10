@@ -100,62 +100,30 @@
     </PreferenceCategory>
 
     <PreferenceCategory
-        app:key="pref_cat_sync"
-        app:title="@string/pref_cat_sync_title"
-        app:layout="@layout/custom_category"
-        app:iconSpaceReserved="false">
-
-        <SwitchPreferenceCompat
-            app:key="pref_sync_enabled"
-            app:title="@string/pref_sync_enabled_title"
-            app:summary="@string/pref_sync_enabled_summary"
-            app:defaultValue="false"
-            app:iconSpaceReserved="false"/>
+        android:title="@string/pref_cat_sync"
+        android:key="pref_cat_sync"
+        app:layout="@layout/custom_category">
 
         <ListPreference
-            app:key="pref_sync_provider"
-            app:title="@string/pref_sync_provider_title"
-            app:entries="@array/sync_provider_entries"
-            app:entryValues="@array/sync_provider_values"
-            app:defaultValue="webdav"
-            app:dependency="pref_sync_enabled"
-            app:layout="@layout/preference_single_line"
-            app:iconSpaceReserved="false"/>
+            android:key="sync_interval_minutes"
+            android:title="@string/pref_sync_interval_title"
+            android:summary="@string/pref_sync_interval_summary"
+            android:entries="@array/sync_interval_entries"
+            android:entryValues="@array/sync_interval_values"
+            android:defaultValue="30"
+            app:layout="@layout/preference_single_line" />
 
         <Preference
-            app:key="pref_sync_config"
-            app:title="@string/pref_sync_config_title"
-            app:dependency="pref_sync_enabled"
-            app:layout="@layout/preference_single_line"
-            app:iconSpaceReserved="false"/>
+            android:key="sync_trigger_manual"
+            android:title="@string/pref_sync_trigger_manual_title"
+            android:summary="@string/pref_sync_trigger_manual_summary"
+            app:layout="@layout/preference_single_line" />
 
         <Preference
-            app:key="pref_sync_now"
-            app:title="@string/pref_sync_now_title"
-            app:dependency="pref_sync_enabled"
-            app:layout="@layout/preference_single_line"
-            app:iconSpaceReserved="false"/>
-
-        <Preference
-            app:key="pref_sync_status"
-            app:title="@string/pref_sync_status_title"
-            app:dependency="pref_sync_enabled"
-            app:layout="@layout/preference_single_line"
-            app:iconSpaceReserved="false"
-            app:selectable="false"/>
-
-        <Preference
-            android:key="separator_sync"
-            android:layout="@layout/pref_separator"
-            android:selectable="false"
+            android:key="sync_last_timestamp"
+            android:title="@string/pref_sync_last_timestamp_title"
             android:enabled="false"
-            android:shouldDisableView="false" />
-
-        <Preference
-            app:key="app_installation_id"
-            app:layout="@layout/preference_single_line"
-            app:iconSpaceReserved="false"
-            app:selectable="false"/>
+            app:layout="@layout/preference_single_line" />
 
     </PreferenceCategory>
 

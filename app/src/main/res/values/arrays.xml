@@ -42,4 +42,17 @@
     <string-array name="sync_provider_values">
         <item>webdav</item>
     </string-array>
+
+    <array name="sync_interval_entries">
+        <item>15 minutes</item>
+        <item>30 minutes</item>
+        <item>60 minutes</item>
+        <item>240 minutes</item>
+    </array>
+    <array name="sync_interval_values">
+        <item>15</item>
+        <item>30</item>
+        <item>60</item>
+        <item>240</item>
+    </array>
 </resources>
