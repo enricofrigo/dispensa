@@ -61,10 +61,16 @@ android {
         viewBinding = true
     }
     packaging {
+        resources{
+            excludes += "/META-INF/INDEX.LIST"
+            excludes += "/META-INF/DEPENDENCIES"
+            excludes += "/META-INF/LICENSE*"
+            excludes += "/META-INF/NOTICE*"
+        }
         jniLibs {
             useLegacyPackaging = false
         }
-    }
+     }
     lint {
         disable.add("UnsafeOptInUsageError")
     }
@@ -113,6 +119,7 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
 
     "fdroidImplementation"(libs.zxing.android.embedded)
+    "playImplementation"(project(":sync-drive"))
     "playImplementation"(libs.play.services.mlkit.barcode.scanning)
     "playImplementation"(libs.text.recognition)
 
