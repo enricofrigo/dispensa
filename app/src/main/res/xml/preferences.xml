@@ -102,8 +102,31 @@
     <PreferenceCategory
         android:title="@string/pref_cat_sync"
         android:key="pref_cat_sync"
-        app:layout="@layout/custom_category">
+        app:layout="@layout/custom_category"
+        app:iconSpaceReserved="false">
 
+        <!-- ═══════════════════════════════════════════════════ -->
+        <!-- MASTER SYNC ENABLE/DISABLE TOGGLE                   -->
+        <!-- ═══════════════════════════════════════════════════ -->
+        <SwitchPreferenceCompat
+            android:key="pref_sync_master_enabled"
+            android:title="@string/pref_sync_master_enabled_title"
+            android:summary="@string/pref_sync_master_enabled_summary"
+            android:defaultValue="false"
+            app:iconSpaceReserved="false" />
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <!-- SYNC CONFIG ENTRY POINT                             -->
+        <!-- ═══════════════════════════════════════════════════ -->
+        <Preference
+            android:key="pref_sync_channels_config"
+            android:title="@string/pref_sync_channels_config_title"
+            android:summary="@string/pref_sync_channels_config_summary"
+            app:iconSpaceReserved="false" />
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <!-- SYNC INTERVAL (shown only when enabled)             -->
+        <!-- ═══════════════════════════════════════════════════ -->
         <ListPreference
             app:key="sync_interval_minutes"
             app:title="@string/pref_sync_interval_title"
@@ -112,20 +135,32 @@
             app:entryValues="@array/sync_interval_values"
             app:useSimpleSummaryProvider="true"
             app:defaultValue="30"
-            app:layout="@layout/preference_single_line" />
+            app:layout="@layout/preference_single_line"
+            app:iconSpaceReserved="false" />
 
+        <!-- ═══════════════════════════════════════════════════ -->
+        <!-- MANUAL SYNC TRIGGER                                 -->
+        <!-- ═══════════════════════════════════════════════════ -->
         <Preference
             app:key="sync_trigger_manual"
             app:title="@string/pref_sync_trigger_manual_title"
             app:summary="@string/pref_sync_trigger_manual_summary"
-            app:layout="@layout/preference_single_line" />
+            app:layout="@layout/preference_single_line"
+            app:iconSpaceReserved="false" />
 
+        <!-- ═══════════════════════════════════════════════════ -->
+        <!-- LAST SYNC TIMESTAMP (read-only)                     -->
+        <!-- ═══════════════════════════════════════════════════ -->
         <Preference
             app:key="sync_last_timestamp"
             app:title="@string/pref_sync_last_timestamp_title"
             android:enabled="false"
-            app:layout="@layout/preference_single_line" />
+            app:layout="@layout/preference_single_line"
+            app:iconSpaceReserved="false" />
 
+        <!-- ═══════════════════════════════════════════════════ -->
+        <!-- SEPARATOR                                           -->
+        <!-- ═══════════════════════════════════════════════════ -->
         <Preference
             app:key="separator_sync"
             android:layout="@layout/pref_separator"
@@ -133,11 +168,15 @@
             android:enabled="false"
             android:shouldDisableView="false" />
 
+        <!-- ═══════════════════════════════════════════════════ -->
+        <!-- INSTALLATION ID (for sync identification)           -->
+        <!-- ═══════════════════════════════════════════════════ -->
         <Preference
             app:key="app_installation_id"
             app:layout="@layout/preference_single_line"
+            app:title="@string/pref_device_id_title"
             app:iconSpaceReserved="false"
-            app:selectable="false"/>
+            app:selectable="false" />
 
     </PreferenceCategory>
 
