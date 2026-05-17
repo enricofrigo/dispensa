@@ -3,10 +3,12 @@ package eu.frigo.dispensa.sync.core.engine;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
+
 import androidx.lifecycle.LifecycleOwner;
 import androidx.preference.PreferenceManager;
 import androidx.room.RoomDatabase;
-import eu.frigo.dispensa.sync.core.SyncManager;
+
+import eu.frigo.dispensa.sync.core.DatabaseRegistry;
 import eu.frigo.dispensa.sync.core.event.SyncBus;
 import eu.frigo.dispensa.sync.core.event.SyncEvent;
 import eu.frigo.dispensa.sync.core.pairing.PairingPayload;
@@ -17,22 +19,20 @@ import io.reactivex.rxjava3.disposables.CompositeDisposable;
 public class SyncCoordinatorImpl implements SyncCoordinator {
     private static SyncCoordinatorImpl instance;
     private final Context context;
-    private final SyncManager syncManager;
+    private final CrDtSyncManager syncManager;
     private final CompositeDisposable disposables = new CompositeDisposable();
 
     private SyncCoordinatorImpl(Context context) {
         this.context = context.getApplicationContext();
 
+        // Get database via Registry (No reflection)
         RoomDatabase database = null;
-        try {
-            Class<?> dbClass = Class.forName("eu.frigo.dispensa.data.AppDatabase");
-            database = (RoomDatabase) dbClass.getMethod("getDatabase", Context.class).invoke(null, this.context);
-        } catch (Exception e) {
-            Log.e("SyncFlow", "Failed to get AppDatabase for SyncCoordinator", e);
+        if (DatabaseRegistry.getProvider() != null) {
+            database = DatabaseRegistry.getProvider().getDatabase(this.context);
         }
 
         if (database != null) {
-            this.syncManager = new SyncManager(database, this.context);
+            this.syncManager = new CrDtSyncManager(database, this.context);
         } else {
             this.syncManager = null;
             Log.e("SyncFlow", "SyncManager NOT initialized: database is null");
@@ -82,18 +82,18 @@ public class SyncCoordinatorImpl implements SyncCoordinator {
         SharedPreferences.Editor editor = prefs.edit();
 
         if ("webdav".equals(providerId)) {
-            editor.putString(eu.frigo.dispensa.sync.core.engine.SyncManager.KEY_WEBDAV_URL, payload.data.get("url"));
-            editor.putString(eu.frigo.dispensa.sync.core.engine.SyncManager.KEY_WEBDAV_USER, payload.data.get("user"));
-            editor.putString(eu.frigo.dispensa.sync.core.engine.SyncManager.KEY_WEBDAV_PASS, payload.data.get("pass"));
-            editor.putString(eu.frigo.dispensa.sync.core.engine.SyncManager.KEY_WEBDAV_PATH, payload.data.get("path"));
-            editor.putString(eu.frigo.dispensa.sync.core.engine.SyncManager.SYNC_WEBDAV_PANTRY_KEY, payload.data.get("pantryKey"));
-            editor.putBoolean(eu.frigo.dispensa.sync.core.engine.SyncManager.KEY_WEBDAV_MODE_SHARED, Boolean.parseBoolean(payload.data.get("isShared")));
+            editor.putString(SyncManager.KEY_WEBDAV_URL, payload.data.get("url"));
+            editor.putString(SyncManager.KEY_WEBDAV_USER, payload.data.get("user"));
+            editor.putString(SyncManager.KEY_WEBDAV_PASS, payload.data.get("pass"));
+            editor.putString(SyncManager.KEY_WEBDAV_PATH, payload.data.get("path"));
+            editor.putString(SyncManager.SYNC_WEBDAV_PANTRY_KEY, payload.data.get("pantryKey"));
+            editor.putBoolean(SyncManager.KEY_WEBDAV_MODE_SHARED, Boolean.parseBoolean(payload.data.get("isShared")));
         } else {
             Log.e("SyncFlow", "Provider non supportato per onboarding: " + providerId);
             return;
         }
 
-        editor.putBoolean(eu.frigo.dispensa.sync.core.engine.SyncManager.KEY_SYNC_ENABLED, true);
+        editor.putBoolean(SyncManager.KEY_SYNC_ENABLED, true);
         editor.apply();
 
         // Resetta il cursore per forzare il download completo dal cloud
@@ -101,7 +101,7 @@ public class SyncCoordinatorImpl implements SyncCoordinator {
         Log.d("SyncFlow", "Cursore resettato per nuovo onboarding.");
 
         // 2. Initialize the correct SyncProvider
-        eu.frigo.dispensa.sync.core.engine.SyncManager.getInstance().getOrInitProvider(context);
+        SyncManager.getInstance().getOrInitProvider(context);
 
         // 3. Trigger initial sync
         triggerManualSync();

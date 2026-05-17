@@ -7,7 +7,7 @@ import android.util.Log;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import eu.frigo.dispensa.sync.core.SyncManager;
+import eu.frigo.dispensa.sync.core.engine.CrDtSyncManager;
 import eu.frigo.dispensa.sync.core.SyncTransport;
 import eu.frigo.dispensa.sync.webdav.migration.WebDavSyncMigration;
 import eu.frigo.dispensa.sync.core.engine.SyncEngine;
@@ -36,7 +36,7 @@ public class WebDavSyncEngine implements SyncEngine, SyncTransport {
     private final String deviceId;
     private final String pantryPath;
     private final AppDatabase db;
-    private final SyncManager syncManager;
+    private final CrDtSyncManager syncManager;
     private final Context context;
 
     public WebDavSyncEngine(WebDavClient client, SyncCursorStore cursorStore, OutboxRepository outbox, String deviceId, String pantryPath, AppDatabase db, Context context) {
@@ -48,7 +48,7 @@ public class WebDavSyncEngine implements SyncEngine, SyncTransport {
         this.db = db;
         this.context = context;
         this.gson = new Gson();
-        this.syncManager = new SyncManager(db, context);
+        this.syncManager = new CrDtSyncManager(db, context);
     }
 
     @Override
