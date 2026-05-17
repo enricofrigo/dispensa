@@ -262,7 +262,7 @@ I prodotti in questa dispensa potrebbero dover essere riassegnati.</string>
     <string name="no_devices_found">Nessun dispositivo trovato</string>
     <string name="pref_cat_sync">Sincronizzazione</string>
     <string name="pref_sync_interval_title">Intervallo di sincronizzazione</string>
-    <string name="pref_sync_interval_summary">Con quale frequenza sincronizzare in background</string>
+    <string name="pref_sync_interval_summary">Frequenza di sincronizzazione</string>
     <string name="pref_sync_trigger_manual_title">Sincronizza ora</string>
-    <string name="pref_sync_trigger_manual_summary">Avvia sincronizzazione manualmente</string>
+    <string name="pref_sync_trigger_manual_summary">Sincronizza manualmente</string>
 </resources>

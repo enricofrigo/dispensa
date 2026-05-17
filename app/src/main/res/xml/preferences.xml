@@ -110,6 +110,7 @@
             app:summary="@string/pref_sync_interval_summary"
             app:entries="@array/sync_interval_entries"
             app:entryValues="@array/sync_interval_values"
+            app:useSimpleSummaryProvider="true"
             app:defaultValue="30"
             app:layout="@layout/preference_single_line" />
 

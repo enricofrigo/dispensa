@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import eu.frigo.dispensa.sync.core.SyncManager;
+import eu.frigo.dispensa.sync.core.engine.CrDtSyncManager;
 import eu.frigo.dispensa.sync.core.SyncTransport;
 
 /**
@@ -32,7 +32,7 @@ public class LocalNetworkSyncTransport implements SyncTransport {
 
     private final NsdManager nsdManager;
     private final WifiManager wifiManager;
-    private final SyncManager syncManager;
+    private final CrDtSyncManager syncManager;
     private final ExecutorService executor;
     private final List<NsdServiceInfo> discoveredPeers = new ArrayList<>();
 
@@ -43,7 +43,7 @@ public class LocalNetworkSyncTransport implements SyncTransport {
     private NsdManager.RegistrationListener registrationListener;
     private NsdManager.DiscoveryListener discoveryListener;
 
-    public LocalNetworkSyncTransport(Context context, SyncManager syncManager) {
+    public LocalNetworkSyncTransport(Context context, CrDtSyncManager syncManager) {
         this.nsdManager = (NsdManager) context.getSystemService(Context.NSD_SERVICE);
         this.wifiManager = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         this.syncManager = syncManager;
@@ -53,7 +53,7 @@ public class LocalNetworkSyncTransport implements SyncTransport {
     /**
      * Package-private constructor for unit tests.
      */
-    LocalNetworkSyncTransport(NsdManager nsd, WifiManager wifi, SyncManager sm, ExecutorService exec) {
+    LocalNetworkSyncTransport(NsdManager nsd, WifiManager wifi, CrDtSyncManager sm, ExecutorService exec) {
         this.nsdManager = nsd;
         this.wifiManager = wifi;
         this.syncManager = sm;
@@ -286,7 +286,7 @@ public class LocalNetworkSyncTransport implements SyncTransport {
             syncManager.importChanges(incomingData);
 
             // 3. Export local changes for response
-            long senderLastVer = SyncManager.extractSenderLastSyncVersion(incomingData);
+            long senderLastVer = CrDtSyncManager.extractSenderLastSyncVersion(incomingData);
             byte[] response = syncManager.exportChanges(senderLastVer);
 
             // 4. Send response
@@ -294,7 +294,7 @@ public class LocalNetworkSyncTransport implements SyncTransport {
             out.write(response);
             out.flush();
 
-            Log.d(TAG, "Handled incoming connection from " + SyncManager.extractSenderDeviceId(incomingData));
+            Log.d(TAG, "Handled incoming connection from " + CrDtSyncManager.extractSenderDeviceId(incomingData));
 
         } catch (IOException e) {
             Log.e(TAG, "Error handling incoming connection", e);

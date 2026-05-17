@@ -13,8 +13,6 @@ import androidx.work.WorkManager;
 
 import java.util.concurrent.TimeUnit;
 
-import eu.frigo.dispensa.sync.core.SyncManager;
-
 /**
  * Manages the scheduling of SyncWorker for both manual and periodic synchronization.
  */

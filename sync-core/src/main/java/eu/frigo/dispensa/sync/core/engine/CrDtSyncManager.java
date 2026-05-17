@@ -1,4 +1,4 @@
-package eu.frigo.dispensa.sync.core;
+package eu.frigo.dispensa.sync.core.engine;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -27,8 +27,8 @@ import eu.frigo.dispensa.sync.core.model.SyncChange;
 /**
  * Manages synchronization using Lamport clocks and Last-Write-Wins (LWW) conflict resolution.
  */
-public class SyncManager {
-    private static final String TAG = "SyncManager";
+public class CrDtSyncManager {
+    private static final String TAG = "CrDtSyncManager";
 
     public static final String PREFS_KEY_LAST_SYNC_VERSION = "last_sync_version";
     public static final String PREFS_KEY_DEVICE_ID = "sync_device_id";
@@ -42,7 +42,7 @@ public class SyncManager {
      * Public constructor.
      * Takes RoomDatabase (e.g., AppDatabase) and Context.
      */
-    public SyncManager(RoomDatabase database, Context context) {
+    public CrDtSyncManager(RoomDatabase database, Context context) {
         this.db = database.getOpenHelper().getWritableDatabase();
         this.prefs = PreferenceManager.getDefaultSharedPreferences(context);
     }
@@ -50,7 +50,7 @@ public class SyncManager {
     /**
      * Package-private constructor for unit tests.
      */
-    SyncManager(SupportSQLiteDatabase db, SharedPreferences prefs) {
+    CrDtSyncManager(SupportSQLiteDatabase db, SharedPreferences prefs) {
         this.db = db;
         this.prefs = prefs;
     }
