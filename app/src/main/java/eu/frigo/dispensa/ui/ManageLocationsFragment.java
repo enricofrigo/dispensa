@@ -17,6 +17,7 @@ import android.text.InputFilter;
 import android.text.InputType;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
@@ -90,6 +91,8 @@ public class ManageLocationsFragment extends Fragment implements
 
         toolbar.setTitle(getString(R.string.title_manage_locations));
         toolbar.inflateMenu(R.menu.menu_manage_locations);
+        updateShareButtonsVisibility();
+
         toolbar.setOnMenuItemClickListener(item -> {
             int id = item.getItemId();
             if (id == R.id.action_share_pantry) {
@@ -187,6 +190,13 @@ public class ManageLocationsFragment extends Fragment implements
         Toast.makeText(getContext(), getString(R.string.notify_saved), Toast.LENGTH_SHORT).show();
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Update share buttons visibility when fragment resumes
+        updateShareButtonsVisibility();
+    }
+
     private void showAddLocationDialog() {
         showLocationDialog(null);
     }
@@ -259,5 +269,27 @@ public class ManageLocationsFragment extends Fragment implements
                 });
         builder.setNegativeButton(android.R.string.cancel, (dialog, which) -> dialog.cancel());
         builder.show();
+    }
+
+    /**
+     * Update visibility of share/join buttons based on sync master toggle.
+     */
+    private void updateShareButtonsVisibility() {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+        boolean syncEnabled = prefs.getBoolean("pref_sync_master_enabled", false);
+
+        // Get toolbar and find menu items
+        MaterialToolbar toolbar = getView() != null ? getView().findViewById(R.id.toolbar_manage_locations) : null;
+        if (toolbar != null && toolbar.getMenu() != null) {
+            MenuItem shareItem = toolbar.getMenu().findItem(R.id.action_share_pantry);
+            MenuItem joinItem = toolbar.getMenu().findItem(R.id.action_join_pantry);
+
+            if (shareItem != null) {
+                shareItem.setVisible(syncEnabled);
+            }
+            if (joinItem != null) {
+                joinItem.setVisible(syncEnabled);
+            }
+        }
     }
 }
