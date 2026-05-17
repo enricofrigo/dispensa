@@ -86,6 +86,7 @@ public class MainActivity extends AppCompatActivity
     private LocationViewModel locationViewModel;
     private ShoppingListViewModel shoppingListViewModel;
     private BadgeDrawable shoppingBadge;
+    private SharedPreferences.OnSharedPreferenceChangeListener syncStateListener;
     private final ActivityResultLauncher<String> requestPermissionLauncher = registerForActivityResult(
             new ActivityResultContracts.RequestPermission(), isGranted -> {
                 if (isGranted) {
@@ -321,6 +322,9 @@ public class MainActivity extends AppCompatActivity
             consumeScannerLauncher.launch(intent);
         });
 
+        // Listen for sync state changes
+        setupSyncStateListener();
+
     }
 
     private void showHintsIfNeeded() {
@@ -421,6 +425,7 @@ public class MainActivity extends AppCompatActivity
     public boolean onPrepareOptionsMenu(Menu menu) {
         updateLayoutToggleIcon();
         restoreSearchViewQuery();
+        updateSyncMenuItemsVisibility(menu);
         return super.onPrepareOptionsMenu(menu);
     }
 
@@ -793,6 +798,10 @@ public class MainActivity extends AppCompatActivity
                 ((ProductListFragment) currentFragment).toggleLayoutManager();
             }
             return true;
+        } else if (id == R.id.action_sync_config) {
+            Intent intent = new Intent(this, SyncConfigActivity.class);
+            startActivity(intent);
+            return true;
         } else if (id == R.id.action_sync_now) {
             SyncCoordinatorImpl.getInstance(this).triggerManualSync();
             Toast.makeText(this, R.string.pref_sync_now_title, Toast.LENGTH_SHORT).show();
@@ -839,6 +848,11 @@ public class MainActivity extends AppCompatActivity
         if (viewPager != null) {
             viewPager.unregisterOnPageChangeCallback(pageChangeCallback);
         }
+        // Unregister preference listener
+        if (syncStateListener != null) {
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+            prefs.unregisterOnSharedPreferenceChangeListener(syncStateListener);
+        }
     }
 
     private final ViewPager2.OnPageChangeCallback pageChangeCallback = new ViewPager2.OnPageChangeCallback() {
@@ -856,5 +870,49 @@ public class MainActivity extends AppCompatActivity
             searchView.setIconified(true);
             searchView.onActionViewCollapsed();
         }
+    }
+
+    /**
+     * Setup listener for sync master toggle changes.
+     */
+    private void setupSyncStateListener() {
+        syncStateListener = (sharedPreferences, key) -> {
+            if ("pref_sync_master_enabled".equals(key)) {
+                boolean syncEnabled = sharedPreferences.getBoolean(key, false);
+                updateSyncMenuVisibility(syncEnabled);
+                invalidateOptionsMenu();
+            }
+        };
+
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        prefs.registerOnSharedPreferenceChangeListener(syncStateListener);
+    }
+
+    /**
+     * Update visibility of sync-related menu items.
+     */
+    private void updateSyncMenuVisibility(boolean syncEnabled) {
+        // The visibility will be applied in onPrepareOptionsMenu
+        // by checking the preference value
+    }
+
+    /**
+     * Show/hide sync-related menu items based on sync master toggle.
+     */
+    private void updateSyncMenuItemsVisibility(Menu menu) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        boolean syncEnabled = prefs.getBoolean("pref_sync_master_enabled", false);
+
+        MenuItem syncNowItem = menu.findItem(R.id.action_sync_now);
+        MenuItem syncConfigItem = menu.findItem(R.id.action_sync_config);
+
+        if (syncNowItem != null) {
+            syncNowItem.setVisible(syncEnabled);
+        }
+        if (syncConfigItem != null) {
+            syncConfigItem.setVisible(syncEnabled);
+        }
+
+        Log.d("MainActivity", "Sync menu items visibility updated: " + syncEnabled);
     }
 }

@@ -120,6 +120,7 @@ dependencies {
 
     "fdroidImplementation"(libs.zxing.android.embedded)
     "playImplementation"(project(":sync-drive"))
+    "playImplementation"(libs.play.services.auth)
     "playImplementation"(libs.play.services.mlkit.barcode.scanning)
     "playImplementation"(libs.text.recognition)
 

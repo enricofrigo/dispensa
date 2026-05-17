@@ -29,6 +29,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+import eu.frigo.dispensa.sync.core.engine.CrDtSyncManager;
 import eu.frigo.dispensa.sync.core.model.SyncChange;
 
 public class SyncManagerTest {
@@ -36,7 +37,7 @@ public class SyncManagerTest {
     private SupportSQLiteDatabase db;
     private SharedPreferences prefs;
     private SharedPreferences.Editor editor;
-    private SyncManager syncManager;
+    private CrDtSyncManager syncManager;
     private final Gson gson = new Gson();
 
     @Before
@@ -48,7 +49,7 @@ public class SyncManagerTest {
         when(editor.putString(anyString(), anyString())).thenReturn(editor);
         when(editor.putLong(anyString(), any(Long.class))).thenReturn(editor);
 
-        syncManager = new SyncManager(db, prefs);
+        syncManager = new CrDtSyncManager(db, prefs);
     }
 
     @Test
@@ -204,7 +205,7 @@ public class SyncManagerTest {
         List<SyncChange> changes = new ArrayList<>();
         changes.add(incoming);
 
-        when(prefs.getString(SyncManager.PREFS_KEY_DEVICE_ID, null)).thenReturn("AAAA");
+        when(prefs.getString(CrDtSyncManager.PREFS_KEY_DEVICE_ID, null)).thenReturn("AAAA");
         
         Cursor clockCursor = mock(Cursor.class);
         when(db.query(anyString(), any())).thenReturn(clockCursor);
@@ -228,11 +229,11 @@ public class SyncManagerTest {
 
     @Test
     public void testGetLocalDeviceId_generatesUUID() {
-        when(prefs.getString(SyncManager.PREFS_KEY_DEVICE_ID, null)).thenReturn(null);
+        when(prefs.getString(CrDtSyncManager.PREFS_KEY_DEVICE_ID, null)).thenReturn(null);
         
         String id = syncManager.getLocalDeviceId();
         assertNotNull(id);
-        verify(editor).putString(eq(SyncManager.PREFS_KEY_DEVICE_ID), anyString());
+        verify(editor).putString(eq(CrDtSyncManager.PREFS_KEY_DEVICE_ID), anyString());
     }
 
     private byte[] createSyncBlob(String deviceId, List<SyncChange> changes) {

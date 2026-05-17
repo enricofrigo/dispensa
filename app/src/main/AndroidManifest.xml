@@ -72,9 +72,11 @@
         </activity>
 
         <activity
-            android:name=".sync.ui.SyncConfigActivity"
-            android:label="@string/sync_setup_title"
-            android:parentActivityName=".activity.SettingsActivity" />
+            android:name=".activity.SyncConfigActivity"
+            android:exported="false"
+            android:label="@string/sync_config_title"
+            android:theme="@style/Base.Theme.Dispensa"
+            android:parentActivityName=".activity.MainActivity" />
 
         <activity
             android:name=".sync.ui.SyncOnboardingActivity"

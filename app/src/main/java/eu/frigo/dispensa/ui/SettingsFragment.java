@@ -14,6 +14,7 @@ import androidx.preference.ListPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
+import androidx.preference.SwitchPreferenceCompat;
 import com.google.android.material.timepicker.MaterialTimePicker;
 import com.google.android.material.timepicker.TimeFormat;
 
@@ -47,6 +48,8 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
     public static final String KEY_SYNC_TIMESTAMP = "sync_last_timestamp";
     public static final String KEY_SYNC_CONFIG = "pref_sync_config";
     public static final String KEY_SYNC_STATUS = "pref_sync_status";
+    public static final String KEY_SYNC_MASTER_ENABLED = "pref_sync_master_enabled";
+    public static final String KEY_SYNC_CHANNELS_CONFIG = "pref_sync_channels_config";
 
     private Preference notificationTimePreference;
     private ListPreference languagePreference;
@@ -58,6 +61,40 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
         
         syncStatusPreference = findPreference(KEY_SYNC_STATUS);
         updateSyncStatus();
+
+        // ─────────────────────────────────────────────────────────────
+        // Master Sync Toggle
+        // ─────────────────────────────────────────────────────────────
+        SwitchPreferenceCompat syncMasterSwitch = findPreference(KEY_SYNC_MASTER_ENABLED);
+        if (syncMasterSwitch != null) {
+            syncMasterSwitch.setOnPreferenceChangeListener((preference, newValue) -> {
+                boolean syncEnabled = (Boolean) newValue;
+                updateSyncPreferencesVisibility(syncEnabled);
+                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+                prefs.edit().putBoolean(KEY_SYNC_MASTER_ENABLED, syncEnabled).apply();
+                // Notify MainActivity to update UI
+                notifySyncStateChanged(syncEnabled);
+                return true;
+            });
+
+            // Set initial visibility
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+            boolean syncEnabled = prefs.getBoolean(KEY_SYNC_MASTER_ENABLED, false);
+            updateSyncPreferencesVisibility(syncEnabled);
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // Sync Channels Config Entry Point
+        // ─────────────────────────────────────────────────────────────
+        Preference syncConfigChannelsPref = findPreference(KEY_SYNC_CHANNELS_CONFIG);
+        if (syncConfigChannelsPref != null) {
+            syncConfigChannelsPref.setOnPreferenceClickListener(preference -> {
+                Intent intent = new Intent(requireContext(),
+                        eu.frigo.dispensa.activity.SyncConfigActivity.class);
+                startActivity(intent);
+                return true;
+            });
+        }
 
         Preference syncNowPref = findPreference(KEY_SYNC_NOW);
         if (syncNowPref != null) {
@@ -80,7 +117,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
         Preference syncConfigPref = findPreference(KEY_SYNC_CONFIG);
         if (syncConfigPref != null) {
             syncConfigPref.setOnPreferenceClickListener(preference -> {
-                Intent intent = new Intent(requireContext(), eu.frigo.dispensa.sync.ui.SyncConfigActivity.class);
+                Intent intent = new Intent(requireContext(), eu.frigo.dispensa.activity.SyncConfigActivity.class);
                 startActivity(intent);
                 return true;
             });
@@ -252,9 +289,6 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
             LocaleListCompat appLocale = LocaleListCompat.forLanguageTags(langCode);
             AppCompatDelegate.setApplicationLocales(appLocale);
             updateLanguagePreferenceSummary(langCode);
-            SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(requireContext()).edit();
-            editor.putString(KEY_LANGUAGE_PREFERENCE, langCode);
-            editor.commit();
             LocaleHelper.setLocale(context,langCode);
             triggerRebirthWithAlarmManager(context);
         }
@@ -320,5 +354,42 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
             return false;
         }
         return false;
+    }
+
+    /**
+     * Update visibility of sync-related preferences based on master toggle.
+     */
+    private void updateSyncPreferencesVisibility(boolean syncEnabled) {
+        ListPreference intervalPref = findPreference(KEY_SYNC_INTERVAL);
+        Preference syncNowPref = findPreference(KEY_SYNC_NOW);
+        Preference syncConfigPref = findPreference(KEY_SYNC_CHANNELS_CONFIG);
+        Preference lastSyncPref = findPreference(KEY_SYNC_TIMESTAMP);
+
+        if (intervalPref != null) intervalPref.setVisible(syncEnabled);
+        if (syncNowPref != null) syncNowPref.setVisible(syncEnabled);
+        if (syncConfigPref != null) syncConfigPref.setVisible(syncEnabled);
+        if (lastSyncPref != null) lastSyncPref.setVisible(syncEnabled);
+    }
+
+    /**
+     * Notify MainActivity that sync state has changed.
+     * Used to show/hide sync UI elements (menu, buttons).
+     */
+    private void notifySyncStateChanged(boolean syncEnabled) {
+        // Post an event that MainActivity can listen to
+        // Option 1: Use SharedPreference listener (MainActivity observes pref changes)
+        // Option 2: Use EventBus
+        // Option 3: Use BroadcastReceiver
+
+        // For now, we'll use SharedPreference approach
+        // MainActivity will register listener for KEY_SYNC_MASTER_ENABLED
+        Log.d("SettingsFragment", "Sync master state changed to: " + syncEnabled);
+
+        // Optional: Show a toast
+        String message = syncEnabled ?
+            getString(R.string.sync_enabled_message) :
+            getString(R.string.sync_disabled_message);
+        android.widget.Toast.makeText(requireContext(), message,
+                android.widget.Toast.LENGTH_SHORT).show();
     }
 }

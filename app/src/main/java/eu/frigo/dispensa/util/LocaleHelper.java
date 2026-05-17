@@ -15,7 +15,7 @@ import eu.frigo.dispensa.ui.SettingsFragment;
 
 public class LocaleHelper {
 
-    public static final String DEFAULT_LANGUAGE_CODE = "english";
+    public static final String DEFAULT_LANGUAGE_CODE = "en";
 
     public static Context onAttach(Context context) {
         String lang = getPersistedData(context, Locale.getDefault().getLanguage());

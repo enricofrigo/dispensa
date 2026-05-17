@@ -99,6 +99,7 @@ mikepenz-iconics-views = { group = "com.mikepenz", name = "iconics-views", versi
 balloon = { group = "com.github.skydoves", name = "balloon", version.ref = "balloon" }
 guava = { group = "com.google.guava", name = "guava", version.ref = "guava" }
 androidx-preference = { group = "androidx.preference", name = "preference", version.ref = "preference" }
+play-services-auth = { group = "com.google.android.gms", name = "play-services-auth", version = "21.3.0" }
 mockito-mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "mockitoCore" }
 
 [plugins]

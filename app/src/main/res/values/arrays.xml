@@ -47,12 +47,21 @@
         <item>15 minutes</item>
         <item>30 minutes</item>
         <item>60 minutes</item>
-        <item>240 minutes</item>
+        <item>240 minutes (4 hours)</item>
     </string-array>
     <string-array name="sync_interval_values">
         <item>15</item>
         <item>30</item>
         <item>60</item>
         <item>240</item>
+    </string-array>
+
+    <string-array name="drive_mode_entries">
+        <item>Solo (Personal)</item>
+        <item>Household (Shared)</item>
+    </string-array>
+    <string-array name="drive_mode_values">
+        <item>solo</item>
+        <item>household</item>
     </string-array>
 </resources>
