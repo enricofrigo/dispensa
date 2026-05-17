@@ -234,6 +234,7 @@
 
     <!-- Sync -->
     <string name="pref_cat_sync">Sync</string>
+    <string name="pref_cat_sync_general">Synchronization</string>
     <string name="pref_sync_interval_title">Sync Interval</string>
     <string name="pref_sync_interval_summary">How often to sync in background</string>
     <string name="pref_sync_trigger_manual_title">Sync Now</string>
@@ -243,9 +244,55 @@
     <string name="pref_sync_enabled_title">Enable Cloud Sync</string>
     <string name="pref_sync_enabled_summary">Synchronize your pantry across devices</string>
     <string name="pref_sync_provider_title">Sync Provider</string>
-    <string name="pref_sync_config_title">Configure Connection</string>
+    <string name="pref_sync_config_title">Configure Sync Channels</string>
+    <string name="pref_sync_config_summary">Enable and configure WebDAV, Local Network, Google Drive</string>
     <string name="pref_sync_now_title">Sync Now</string>
+    <string name="pref_sync_now_summary">Force immediate synchronization</string>
     <string name="pref_sync_status_title">Sync Status</string>
+    <string name="pref_sync_status_summary">View last sync time and statistics</string>
+
+    <!-- WebDAV -->
+    <string name="pref_cat_webdav">WebDAV (NextCloud, Seafile, etc.)</string>
+    <string name="pref_webdav_enabled_title">Enable WebDAV Sync</string>
+    <string name="pref_webdav_enabled_summary">Sync via WebDAV server</string>
+    <string name="pref_webdav_url_title">Server URL</string>
+    <string name="pref_webdav_url_summary">https://example.com/remote.php/webdav</string>
+    <string name="pref_webdav_user_title">Username</string>
+    <string name="pref_webdav_user_summary">Your login username</string>
+    <string name="pref_webdav_pass_title">Password</string>
+    <string name="pref_webdav_pass_summary">Your login password</string>
+    <string name="pref_webdav_path_title">Sync Path</string>
+    <string name="pref_webdav_path_summary">Server path for sync data</string>
+    <string name="pref_webdav_test_connection_title">Test Connection</string>
+    <string name="pref_webdav_test_connection_summary">Verify WebDAV credentials</string>
+
+    <!-- Local Network -->
+    <string name="pref_cat_local_network">Local Network (mDNS + TCP)</string>
+    <string name="pref_local_network_enabled_title">Enable Local Network Sync</string>
+    <string name="pref_local_network_enabled_summary">Sync with devices on same WiFi</string>
+    <string name="pref_local_device_name_title">Device Name</string>
+    <string name="pref_local_device_name_summary">Visible name in network discovery</string>
+    <string name="pref_local_scan_peers_title">Scan for Peers</string>
+    <string name="pref_local_scan_peers_summary">Find nearby devices to sync with</string>
+    <string name="pref_local_paired_devices_title">Paired Devices</string>
+    <string name="pref_local_paired_devices_summary">Manage trusted devices</string>
+
+    <!-- Google Drive -->
+    <string name="pref_cat_google_drive">Google Drive (Play Store only)</string>
+    <string name="pref_drive_enabled_title">Enable Google Drive Sync</string>
+    <string name="pref_drive_enabled_summary">Sync via Google Drive</string>
+    <string name="pref_drive_sign_in_title">Sign In with Google</string>
+    <string name="pref_drive_sign_in_summary">Connect your Google account</string>
+    <string name="pref_drive_mode_title">Sync Mode</string>
+    <string name="pref_drive_mode_summary">Solo (personal) or Household (shared)</string>
+    <string name="pref_drive_household_folder_title">Household Folder</string>
+    <string name="pref_drive_household_folder_summary">Shared folder ID</string>
+    <string name="pref_drive_create_household_title">Create Household</string>
+    <string name="pref_drive_create_household_summary">Create shared sync folder</string>
+    <string name="pref_drive_join_household_title">Join Household</string>
+    <string name="pref_drive_join_household_summary">Join existing shared folder</string>
+
+
     <string name="sync_status_connected">Connected as %s</string>
     <string name="sync_status_disconnected">Disconnected</string>
     <string name="sync_last_time">Last synced: %s</string>
@@ -267,4 +314,24 @@
     <string name="action_manage_devices">Manage Devices</string>
     <string name="title_manage_devices">Registered Devices</string>
     <string name="no_devices_found">No devices found</string>
+
+    <string name="webdav_config_description">Enter your WebDAV server credentials to enable sync over cloud storage (NextCloud, Seafile, OwnCloud, etc.)</string>
+    <string name="btn_test_connection">Test Connection</string>
+    <string name="btn_save_configuration">Save Configuration</string>
+
+    <string name="tab_webdav">WebDAV</string>
+    <string name="tab_local_network">Local Network</string>
+    <string name="tab_google_drive">Google Drive</string>
+    <string name="tab_sync_status">Status</string>
+    <string name="sync_config_title">Synchronization Settings</string>
+    <string name="action_sync_config_title">Sync Configuration</string>
+
+    <string name="pref_sync_master_enabled_title">Enable Synchronization</string>
+    <string name="pref_sync_master_enabled_summary">Turn on/off sync across all channels</string>
+    <string name="pref_sync_channels_config_title">Configure Sync Channels</string>
+    <string name="pref_sync_channels_config_summary">WebDAV, Local Network, Google Drive settings</string>
+    <string name="pref_device_id_title">Device ID</string>
+
+    <string name="sync_enabled_message">Synchronization enabled</string>
+    <string name="sync_disabled_message">Synchronization disabled</string>
 </resources>

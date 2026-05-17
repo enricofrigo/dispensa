@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- WebDAV Configuration                                         -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <PreferenceCategory
+        android:title="@string/pref_cat_webdav"
+        android:key="pref_cat_webdav">
+
+        <SwitchPreferenceCompat
+            android:title="@string/pref_webdav_enabled_title"
+            android:summary="@string/pref_webdav_enabled_summary"
+            android:key="sync_webdav_enabled"
+            android:defaultValue="false"
+            android:icon="@drawable/ic_cloud" />
+
+        <EditTextPreference
+            android:title="@string/pref_webdav_url_title"
+            android:summary="@string/pref_webdav_url_summary"
+            android:key="pref_webdav_url"
+            android:inputType="textUri"
+            android:defaultValue="https://example.com/remote.php/webdav"/>
+
+        <EditTextPreference
+            android:title="@string/pref_webdav_user_title"
+            android:summary="@string/pref_webdav_user_summary"
+            android:key="pref_webdav_user"
+            android:hint="username"
+            android:inputType="text" />
+
+        <EditTextPreference
+            android:title="@string/pref_webdav_pass_title"
+            android:summary="@string/pref_webdav_pass_summary"
+            android:key="pref_webdav_pass"
+            android:hint="password"
+            android:inputType="textPassword" />
+
+        <EditTextPreference
+            android:title="@string/pref_webdav_path_title"
+            android:summary="@string/pref_webdav_path_summary"
+            android:key="pref_webdav_path"
+            android:hint="/dispensa/"
+            android:inputType="text"
+            android:defaultValue="/dispensa/" />
+
+        <Preference
+            android:title="@string/pref_webdav_test_connection_title"
+            android:summary="@string/pref_webdav_test_connection_summary"
+            android:key="pref_webdav_test_connection"
+            android:icon="@drawable/ic_info" />
+
+    </PreferenceCategory>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- Local Network Configuration                                  -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <PreferenceCategory
+        android:title="@string/pref_cat_local_network"
+        android:key="pref_cat_local_network">
+
+        <SwitchPreferenceCompat
+            android:title="@string/pref_local_network_enabled_title"
+            android:summary="@string/pref_local_network_enabled_summary"
+            android:key="sync_local_network_enabled"
+            android:defaultValue="false"
+            android:icon="@drawable/ic_wifi" />
+
+        <EditTextPreference
+            android:title="@string/pref_local_device_name_title"
+            android:summary="@string/pref_local_device_name_summary"
+            android:key="pref_local_device_name"
+            android:hint="My Phone"
+            android:inputType="text" />
+
+        <Preference
+            android:title="@string/pref_local_scan_peers_title"
+            android:summary="@string/pref_local_scan_peers_summary"
+            android:key="pref_local_scan_peers"
+            android:icon="@drawable/ic_search" />
+
+        <Preference
+            android:title="@string/pref_local_paired_devices_title"
+            android:summary="@string/pref_local_paired_devices_summary"
+            android:key="pref_local_paired_devices"
+            android:icon="@drawable/ic_devices_24" />
+
+    </PreferenceCategory>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- Google Drive Configuration (play flavor only)               -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <PreferenceCategory
+        android:title="@string/pref_cat_google_drive"
+        android:key="pref_cat_drive">
+
+        <SwitchPreferenceCompat
+            android:title="@string/pref_drive_enabled_title"
+            android:summary="@string/pref_drive_enabled_summary"
+            android:key="sync_drive_enabled"
+            android:defaultValue="false"
+            android:icon="@drawable/ic_google_drive" />
+
+        <Preference
+            android:title="@string/pref_drive_sign_in_title"
+            android:summary="@string/pref_drive_sign_in_summary"
+            android:key="pref_drive_sign_in"
+            android:icon="@drawable/ic_login" />
+
+        <ListPreference
+            android:title="@string/pref_drive_mode_title"
+            android:summary="@string/pref_drive_mode_summary"
+            android:key="pref_drive_mode"
+            app:entries="@array/drive_mode_entries"
+            app:entryValues="@array/drive_mode_values"
+            android:defaultValue="solo" />
+
+        <EditTextPreference
+            android:title="@string/pref_drive_household_folder_title"
+            android:summary="@string/pref_drive_household_folder_summary"
+            android:key="pref_drive_household_folder_id"
+            android:hint="Household Folder ID"
+            android:inputType="text"
+            android:enabled="false" />
+
+        <Preference
+            android:title="@string/pref_drive_create_household_title"
+            android:summary="@string/pref_drive_create_household_summary"
+            android:key="pref_drive_create_household"
+            android:icon="@drawable/ic_add_folder" />
+
+    <Preference
+                android:title="@string/pref_drive_join_household_title"
+                android:summary="@string/pref_drive_join_household_summary"
+                android:key="pref_drive_join_household"
+                android:icon="@drawable/ic_share_24" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

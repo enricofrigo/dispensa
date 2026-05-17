@@ -64,4 +64,16 @@ public class WebDavClient {
                 .build();
         return okHttpClient.newCall(request).execute();
     }
+
+    /**
+     * Verifies connection and credentials using a PROPFIND request on the base URL.
+     * @return true if the server responds with a 2xx or 405 (if PROPFIND is not allowed on root but credentials are ok)
+     */
+    public boolean testConnection() {
+        try (Response response = propfind("")) {
+            return response.isSuccessful() || response.code() == 405;
+        } catch (IOException e) {
+            return false;
+        }
+    }
 }

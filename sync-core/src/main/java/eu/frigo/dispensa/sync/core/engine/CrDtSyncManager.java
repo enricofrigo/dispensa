@@ -48,9 +48,9 @@ public class CrDtSyncManager {
     }
 
     /**
-     * Package-private constructor for unit tests.
+     * Public constructor for unit tests or custom initialization.
      */
-    CrDtSyncManager(SupportSQLiteDatabase db, SharedPreferences prefs) {
+    public CrDtSyncManager(SupportSQLiteDatabase db, SharedPreferences prefs) {
         this.db = db;
         this.prefs = prefs;
     }
@@ -133,7 +133,7 @@ public class CrDtSyncManager {
      * @return The highest clock value present in the local sync_changes table.
      */
     public long getMaxSyncClock() {
-        try (Cursor cursor = db.query("SELECT COALESCE(MAX(clock), 0) FROM sync_changes", null)) {
+        try (Cursor cursor = db.query("SELECT COALESCE(MAX(clock), 0) FROM sync_changes", new Object[0])) {
             if (cursor.moveToFirst()) {
                 return cursor.getLong(0);
             }
