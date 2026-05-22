@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        android:title="@string/pref_cat_webdav"
+        android:key="pref_cat_webdav">
+
+        <!-- ENABLE/DISABLE SWITCH (always visible) -->
+        <SwitchPreferenceCompat
+            android:title="@string/pref_webdav_enabled_title"
+            android:summary="@string/pref_webdav_enabled_summary"
+            android:key="sync_webdav_enabled"
+            android:defaultValue="false"
+            app:iconSpaceReserved="false" />
+
+        <!-- WebDAV Credentials (shown only when enabled) -->
+        <EditTextPreference
+            android:title="@string/pref_webdav_url_title"
+            android:summary="@string/pref_webdav_url_summary"
+            android:key="pref_webdav_url"
+            android:hint="https://example.com/remote.php/webdav"
+            android:inputType="textUri"
+            android:visible="false"
+            app:iconSpaceReserved="false" />
+
+        <EditTextPreference
+            android:title="@string/pref_webdav_user_title"
+            android:summary="@string/pref_webdav_user_summary"
+            android:key="pref_webdav_user"
+            android:hint="username"
+            android:inputType="text"
+            android:visible="false"
+            app:iconSpaceReserved="false" />
+
+        <EditTextPreference
+            android:title="@string/pref_webdav_pass_title"
+            android:summary="@string/pref_webdav_pass_summary"
+            android:key="pref_webdav_pass"
+            android:hint="password"
+            android:inputType="textPassword"
+            android:visible="false"
+            app:iconSpaceReserved="false" />
+
+        <EditTextPreference
+            android:title="@string/pref_webdav_path_title"
+            android:summary="@string/pref_webdav_path_summary"
+            android:key="pref_webdav_path"
+            android:hint="/dispensa/"
+            android:inputType="text"
+            android:defaultValue="/dispensa/"
+            android:visible="false"
+            app:iconSpaceReserved="false" />
+
+        <Preference
+            android:title="@string/pref_webdav_test_connection_title"
+            android:summary="@string/pref_webdav_test_connection_summary"
+            android:key="pref_webdav_test_connection"
+            android:visible="false"
+            app:iconSpaceReserved="false" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>
