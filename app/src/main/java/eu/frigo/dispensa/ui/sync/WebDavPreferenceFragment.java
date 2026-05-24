@@ -13,6 +13,9 @@ import androidx.preference.PreferenceManager;
 import androidx.preference.SwitchPreferenceCompat;
 
 import eu.frigo.dispensa.R;
+import eu.frigo.dispensa.data.AppDatabase;
+import eu.frigo.dispensa.sync.webdav.WebDavStructureInitializer;
+import eu.frigo.dispensa.sync.webdav.client.WebDavClient;
 
 /**
  * WebDAV sync configuration as PreferenceFragmentCompat.
@@ -58,6 +61,11 @@ public class WebDavPreferenceFragment extends PreferenceFragmentCompat
             switchWebDav.setOnPreferenceChangeListener((preference, newValue) -> {
                 boolean enabled = (Boolean) newValue;
                 updateWebDavFieldsVisibility(enabled);
+                
+                if (enabled) {
+                    initializeWebDavStructure();
+                }
+                
                 Log.d(TAG, "WebDAV sync " + (enabled ? "enabled" : "disabled"));
                 return true;
             });
@@ -67,6 +75,43 @@ public class WebDavPreferenceFragment extends PreferenceFragmentCompat
             boolean enabled = prefs.getBoolean("sync_webdav_enabled", false);
             updateWebDavFieldsVisibility(enabled);
         }
+    }
+
+    private void initializeWebDavStructure() {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+        String url = prefs.getString("pref_webdav_url", "");
+        String user = prefs.getString("pref_webdav_user", "");
+        String pass = prefs.getString("pref_webdav_pass", "");
+        String path = prefs.getString("pref_webdav_path", "/dispensa/");
+
+        if (url.isEmpty() || user.isEmpty() || pass.isEmpty()) {
+            return; // Don't init if credentials missing
+        }
+
+        Toast.makeText(requireContext(), "Initializing sync structure...", Toast.LENGTH_SHORT).show();
+
+        new Thread(() -> {
+            try {
+                WebDavClient client = new WebDavClient(url, user, pass);
+                WebDavStructureInitializer initializer = new WebDavStructureInitializer(client, path, AppDatabase.getDatabase(getContext()));
+                boolean success = initializer.initializeStructure();
+
+                if (isAdded()) {
+                    requireActivity().runOnUiThread(() -> {
+                        if (success) {
+                            showSuccess("✓ WebDAV structure ready!");
+                        } else {
+                            showError("✗ Failed to initialize folder structure");
+                        }
+                    });
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Structure initialization failed", e);
+                if (isAdded()) {
+                    requireActivity().runOnUiThread(() -> showError("Error: " + e.getMessage()));
+                }
+            }
+        }).start();
     }
     
     private void setupWebDavFields() {

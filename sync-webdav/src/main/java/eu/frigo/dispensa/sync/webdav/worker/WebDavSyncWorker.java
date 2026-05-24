@@ -7,11 +7,12 @@ import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
 import eu.frigo.dispensa.sync.core.engine.SyncManager;
+import eu.frigo.dispensa.sync.core.engine.SyncWorker;
 import eu.frigo.dispensa.sync.core.policy.SyncPolicy;
 import eu.frigo.dispensa.sync.core.provider.SyncProvider;
 import eu.frigo.dispensa.sync.webdav.WebDavSyncProvider;
 
-public class WebDavSyncWorker extends Worker {
+public class WebDavSyncWorker extends SyncWorker {
 
     public WebDavSyncWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
         super(context, workerParams);

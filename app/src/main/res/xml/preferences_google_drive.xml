@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        android:title="@string/pref_cat_google_drive"
+        android:key="pref_cat_drive">
+
+        <!-- ENABLE/DISABLE SWITCH -->
+        <SwitchPreferenceCompat
+            android:title="@string/pref_drive_enabled_title"
+            android:summary="@string/pref_drive_enabled_summary"
+            android:key="sync_drive_enabled"
+            android:defaultValue="false"
+            android:icon="@drawable/ic_google_drive"
+            app:iconSpaceReserved="false" />
+
+        <!-- Sign In -->
+        <Preference
+            android:title="@string/pref_drive_sign_in_title"
+            android:summary="@string/pref_drive_sign_in_summary"
+            android:key="pref_drive_sign_in"
+            android:icon="@drawable/ic_login"
+            android:visible="false"
+            app:iconSpaceReserved="false" />
+
+        <!-- Sync Mode -->
+        <ListPreference
+            android:title="@string/pref_drive_mode_title"
+            android:summary="@string/pref_drive_mode_summary"
+            android:key="pref_drive_mode"
+            app:entries="@array/drive_mode_entries"
+            app:entryValues="@array/drive_mode_values"
+            android:defaultValue="solo"
+            android:visible="false"
+            app:iconSpaceReserved="false" />
+
+        <!-- Household Folder ID -->
+        <EditTextPreference
+            android:title="@string/pref_drive_household_folder_title"
+            android:summary="@string/pref_drive_household_folder_summary"
+            android:key="pref_drive_household_folder_id"
+            android:hint="Household Folder ID"
+            android:inputType="text"
+            android:enabled="false"
+            android:visible="false"
+            app:iconSpaceReserved="false" />
+
+        <!-- Create Household -->
+        <Preference
+            android:title="@string/pref_drive_create_household_title"
+            android:summary="@string/pref_drive_create_household_summary"
+            android:key="pref_drive_create_household"
+            android:icon="@drawable/ic_add_folder"
+            android:visible="false"
+            app:iconSpaceReserved="false" />
+
+        <!-- Join Household -->
+        <Preference
+            android:title="@string/pref_drive_join_household_title"
+            android:summary="@string/pref_drive_join_household_summary"
+            android:key="pref_drive_join_household"
+            android:icon="@drawable/ic_share_24"
+            android:visible="false"
+            app:iconSpaceReserved="false" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>
