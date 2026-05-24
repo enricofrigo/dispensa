@@ -96,19 +96,24 @@ public class SyncWorker extends Worker {
             final byte[][] remoteBlob = new byte[1][]; // Mutable holder
             final Exception[] error = new Exception[1];
 
-            transport.push(localBlob, new SyncTransport.SyncCallback() {
-                @Override
-                public void onSuccess(byte[] blobBytes) {
-                    remoteBlob[0] = blobBytes;
-                    latch.countDown();
-                }
+            if(lastVersion>0){
+                transport.push(localBlob, new SyncTransport.SyncCallback() {
+                    @Override
+                    public void onSuccess(byte[] blobBytes) {
+                        remoteBlob[0] = blobBytes;
+                        latch.countDown();
+                    }
 
-                @Override
-                public void onError(Exception e) {
-                    error[0] = e;
-                    latch.countDown();
-                }
-            });
+                    @Override
+                    public void onError(Exception e) {
+                        error[0] = e;
+                        latch.countDown();
+                    }
+                });
+
+            }else{
+                latch.countDown();
+            }
 
             boolean completed = latch.await(TRANSPORT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
 
