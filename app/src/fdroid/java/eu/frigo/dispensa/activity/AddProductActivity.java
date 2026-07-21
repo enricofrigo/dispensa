@@ -666,12 +666,15 @@ public class AddProductActivity extends AppCompatActivity {
                                        int position,
                                        long id) {
                 if (position >= 0 && position < availableLocations.size()) {
-                    selectedStorageInternalKey =
-                            availableLocations.get(position).getInternalKey();
+                    StorageLocation selectedLoc = availableLocations.get(position);
+                    selectedStorageInternalKey = selectedLoc.getInternalKey();
                     androidx.media3.common.util.Log.d("AddProductActivity",
                             "Location selezionata: "
-                                    + availableLocations.get(position).getName()
+                                    + selectedLoc.getName()
                                     + " (Key: " + selectedStorageInternalKey + ")");
+                    
+                    String localizedName = eu.frigo.dispensa.util.LocationFormatter.getLocalizedName(AddProductActivity.this, selectedLoc);
+                    updateToolbarTitle(localizedName);
                 }
             }
 
@@ -680,6 +683,13 @@ public class AddProductActivity extends AppCompatActivity {
                 selectedStorageInternalKey = null;
             }
         });
+    }
+
+    private void updateToolbarTitle(String locationName) {
+        if (getSupportActionBar() != null) {
+            String baseTitle = isEditMode ? getString(R.string.edit_product) : getString(R.string.add_product);
+            getSupportActionBar().setTitle(baseTitle + " - " + locationName);
+        }
     }
 
     private void selectSpinnerLocationByInternalKey(String internalKey) {
