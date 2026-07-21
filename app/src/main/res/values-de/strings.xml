@@ -86,6 +86,7 @@
     <!-- Tags -->
     <string name="button_add_tag">Hinzufügen</string>
     <string name="hint_product_name">Produktname</string>
+    <string name="product_name_mandatory">Produktname ist erforderlich, wenn der Barcode leer ist</string>
     <string name="hint_product_image">Produktbild</string>
     <string name="hint_category_tags">Tags</string>
     <string name="hint_category_new">Neues Tag (z. B. Milchprodukte)</string>
@@ -130,6 +131,8 @@
     <string name="pref_key_exp_summary">Wählen Sie den Zeitpunkt aus, zu dem Sie die Benachrichtigung erhalten möchten.</string>
     <string name="pref_default_shelf_life_title">Standardhaltbarkeit nach dem Öffnen (Tage)</string>
     <string name="pref_default_shelf_life_summary">Standardanzahl an Tagen, die beim Hinzufügen eines neuen Produkts automatisch ausgefüllt werden</string>
+    <string name="pref_default_expiry_days_title">Standard-Ablaufstage</string>
+    <string name="pref_default_expiry_days_summary">Ablaufdatum mit heute plus diesen Tagen vorfocussieren</string>
     <string name="pref_exp_days_error">Geben Sie eine gültige Anzahl von Tagen zwischen 0 und 365 ein.</string>
     <string name="pref_exp_time_title">Benachrichtigungszeit auswählen</string>
 

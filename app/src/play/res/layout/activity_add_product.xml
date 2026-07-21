@@ -93,20 +93,6 @@
                 android:padding="16dp"
                 android:text="@string/add_product_camera_preview_hint"
                 />
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/textFieldProductNameLayout"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:hint="@string/hint_product_name">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/editTextProductName"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
-            </com.google.android.material.textfield.TextInputLayout>
-
             <!-- NUOVO: Immagine Prodotto -->
             <ImageView
                 android:id="@+id/imageViewProduct"
@@ -122,11 +108,35 @@
             <!-- Pulsanti modifica immagine prodotto -->
             <LinearLayout
                 android:id="@+id/layoutProductImageButtons"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginTop="4dp"
                 android:orientation="horizontal">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/textFieldProductNameLayout"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:hint="@string/hint_product_name">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/editTextProductName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <ImageButton
+                    android:id="@+id/buttonTakeProductPhoto"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@android:drawable/ic_menu_camera"
+                    android:contentDescription="@string/take_product_photo"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="8dp" />
 
                 <ImageButton
                     android:id="@+id/buttonPickProductImageGallery"
@@ -137,14 +147,6 @@
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:padding="8dp" />
 
-                <ImageButton
-                    android:id="@+id/buttonTakeProductPhoto"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:src="@android:drawable/ic_menu_camera"
-                    android:contentDescription="@string/take_product_photo"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:padding="8dp" />
             </LinearLayout>
 
             <LinearLayout

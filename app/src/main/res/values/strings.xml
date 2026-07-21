@@ -86,6 +86,7 @@
     <!-- Tags -->
     <string name="button_add_tag">Add</string>
     <string name="hint_product_name">Product name</string>
+    <string name="product_name_mandatory">Product name is mandatory if barcode is empty</string>
     <string name="hint_product_image">Product image</string>
     <string name="hint_category_tags">Tags</string>
     <string name="hint_category_new">new Tag (es. en:dairy)</string>
@@ -130,6 +131,8 @@
     <string name="pref_key_exp_summary">Select time for notification.</string>
     <string name="pref_default_shelf_life_title">Default shelf life after opening (days)</string>
     <string name="pref_default_shelf_life_summary">Default days to pre-fill when adding a new product</string>
+    <string name="pref_default_expiry_days_title">Default expiry days</string>
+    <string name="pref_default_expiry_days_summary">Pre-fill expiry date with today plus these days</string>
     <string name="pref_exp_days_error">Insert a valid number of days from 0 to 365.</string>
     <string name="pref_exp_time_title">Select notification time</string>
 

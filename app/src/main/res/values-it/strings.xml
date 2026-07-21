@@ -88,6 +88,7 @@
     <!-- Tags -->
     <string name="button_add_tag">Aggiungi</string>
     <string name="hint_product_name">Nome Prodotto</string>
+    <string name="product_name_mandatory">Il nome è obbligatorio se il barcode è vuoto</string>
     <string name="hint_product_image">Immagine prodotto</string>
     <string name="hint_category_tags">Categorie (Tags)</string>
     <string name="hint_category_new">Nuova Categoria (es. en:dairy)</string>
@@ -133,6 +134,8 @@ I prodotti in questa dispensa potrebbero dover essere riassegnati.</string>
     <string name="pref_key_exp_summary">Seleziona l\'ora della notifica.</string>
     <string name="pref_default_shelf_life_title">Scadenza di base dopo l\'apertura (giorni)</string>
     <string name="pref_default_shelf_life_summary">Numero predefinito di giorni di validità per i nuovi prodotti</string>
+    <string name="pref_default_expiry_days_title">Giorni di scadenza predefiniti</string>
+    <string name="pref_default_expiry_days_summary">Pre-imposta la data di scadenza con oggi più questi giorni</string>
     <string name="pref_exp_days_error">Inserisci un numero di giorni valido da 0 a 365.</string>
     <string name="pref_exp_time_title">Seleziona ora notifica</string>
 
