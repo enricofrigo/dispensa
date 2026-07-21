@@ -42,6 +42,16 @@
             android:layout_marginEnd="12dp"
             tools:text="x2" />
 
+        <ImageButton
+            android:id="@+id/buttonEditShoppingItem"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_edit_24"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/edit"
+            app:tint="?attr/colorControlNormal"
+            android:padding="12dp" />
+
         <CheckBox
             android:id="@+id/checkBoxShoppingItem"
             android:layout_width="wrap_content"

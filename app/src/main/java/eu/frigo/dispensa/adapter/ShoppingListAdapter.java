@@ -21,6 +21,7 @@ public class ShoppingListAdapter extends ListAdapter<ShoppingItem, ShoppingListA
 
     public interface OnShoppingItemInteractionListener {
         void onItemCheckedChanged(ShoppingItem item);
+        void onItemEditRequested(ShoppingItem item);
     }
 
     public ShoppingListAdapter(@NonNull DiffUtil.ItemCallback<ShoppingItem> diffCallback,
@@ -48,12 +49,14 @@ public class ShoppingListAdapter extends ListAdapter<ShoppingItem, ShoppingListA
         private final TextView textViewName;
         private final TextView textViewQuantity;
         private final CheckBox checkBox;
+        private final View buttonEdit;
 
         ShoppingViewHolder(View itemView) {
             super(itemView);
             textViewName = itemView.findViewById(R.id.textViewShoppingItemName);
             textViewQuantity = itemView.findViewById(R.id.textViewShoppingItemQuantity);
             checkBox = itemView.findViewById(R.id.checkBoxShoppingItem);
+            buttonEdit = itemView.findViewById(R.id.buttonEditShoppingItem);
         }
 
         void bind(ShoppingItem item, OnShoppingItemInteractionListener listener) {
@@ -79,6 +82,14 @@ public class ShoppingListAdapter extends ListAdapter<ShoppingItem, ShoppingListA
             itemView.setOnClickListener(v -> {
                 checkBox.setChecked(!checkBox.isChecked());
             });
+
+            if (buttonEdit != null) {
+                buttonEdit.setOnClickListener(v -> {
+                    if (listener != null) {
+                        listener.onItemEditRequested(item);
+                    }
+                });
+            }
         }
 
         private void updateVisualState(boolean isChecked) {
