@@ -365,8 +365,19 @@ public class AddProductActivity extends AppCompatActivity {
             fabButtonSaveProduct.setText(getString(R.string.save_product_button));
             editTextQuantity.setText(DEFAULT_QUANTITY);
             editTextQuantity.setSelection(Objects.requireNonNull(editTextQuantity.getText()).length());
-            checkCameraPermissionAndStartScanner();
 
+            String defaultExpiryDays = prefs.getString(eu.frigo.dispensa.ui.SettingsFragment.KEY_PREF_DEFAULT_EXPIRY_DAYS, "0");
+            try {
+                int days = Integer.parseInt(defaultExpiryDays);
+                if (days > 0) {
+                    calendar.add(Calendar.DAY_OF_YEAR, days);
+                    updateLabel();
+                }
+            } catch (NumberFormatException e) {
+                Log.e("AddProductActivity", "Errore conversione default expiry days: " + e.getMessage());
+            }
+
+            checkCameraPermissionAndStartScanner();
         }
 
         buttonAddCategory.setOnClickListener(v -> addNewCategoryTag());
@@ -1064,10 +1075,13 @@ public class AddProductActivity extends AppCompatActivity {
             Toast.makeText(this, getString(R.string.err_location_select), Toast.LENGTH_SHORT).show();
             return;
         }
-        if (barcode.isEmpty()) {
-            editTextBarcode.setError(getString(R.string.barcode_mandatory));
-            editTextBarcode.requestFocus();
-            return;
+        if (barcode.isEmpty() && !isEditMode) {
+            if (name.isEmpty()) {
+                editTextProductName.setError(getString(R.string.product_name_mandatory));
+                editTextProductName.requestFocus();
+                return;
+            }
+            barcode = "dsp-" + System.currentTimeMillis();
         }
         if (quantityStr.isEmpty()) {
             editTextQuantity.setError(getString(R.string.quantity_mandatory));

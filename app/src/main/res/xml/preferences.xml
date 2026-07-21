@@ -27,6 +27,15 @@
             app:iconSpaceReserved="false"/>
 
         <EditTextPreference
+            app:key="pref_key_default_expiry_days"
+            app:title="@string/pref_default_expiry_days_title"
+            app:summary="@string/pref_default_expiry_days_summary"
+            app:layout="@layout/preference_single_line"
+            app:useSimpleSummaryProvider="true"
+            android:inputType="number"
+            app:iconSpaceReserved="false"/>
+
+        <EditTextPreference
             app:key="pref_key_default_shelf_life"
             app:title="@string/pref_default_shelf_life_title"
             app:summary="@string/pref_default_shelf_life_summary"

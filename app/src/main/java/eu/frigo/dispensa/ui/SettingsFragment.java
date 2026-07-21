@@ -35,6 +35,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
     public static final String KEY_NOTIFICATION_TIME_MINUTE = "pref_notification_time_minute";
     public static final String KEY_PREF_ENABLE_OFF_API = "pref_key_enable_off_api";
     public static final String KEY_PREF_DEFAULT_SHELF_LIFE = "pref_key_default_shelf_life";
+    public static final String KEY_PREF_DEFAULT_EXPIRY_DAYS = "pref_key_default_expiry_days";
     public static final String KEY_OFF_CACHE_LIMIT = "pref_off_cache_limit";
     public static final String KEY_OFF_CACHE_TTL_DAYS = "pref_off_cache_ttl_days";
     public static final String KEY_OFF_CACHE_CLEAR = "pref_off_cache_clear";
@@ -86,7 +87,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
             daysBeforePref.setOnPreferenceChangeListener((preference, newValue) -> {
                 try {
                     int days = Integer.parseInt((String) newValue);
-                    if (days >= 0 && days <= 365) { // Esempio di range valido
+                    if (days >= 0 && days <= 3650) { // Esempio di range valido
                         return true;
                     }
                 } catch (NumberFormatException e) {
@@ -97,7 +98,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
             });
         }
         
-        EditTextPreference defaultShelfLifePref = findPreference("pref_key_default_shelf_life");
+        EditTextPreference defaultShelfLifePref = findPreference(KEY_PREF_DEFAULT_SHELF_LIFE);
         if (defaultShelfLifePref != null) {
             defaultShelfLifePref.setOnPreferenceChangeListener((preference, newValue) -> {
                 if (newValue == null || ((String) newValue).trim().isEmpty()) {
@@ -110,6 +111,25 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
                     }
                 } catch (NumberFormatException e) {
                     Log.e("SettingsFragment", "Errore conversione default shelf life: " + e.getMessage());
+                }
+                android.widget.Toast.makeText(getContext(), getString(R.string.pref_exp_days_error), android.widget.Toast.LENGTH_SHORT).show();
+                return false;
+            });
+        }
+
+        EditTextPreference defaultExpiryDaysPref = findPreference(KEY_PREF_DEFAULT_EXPIRY_DAYS);
+        if (defaultExpiryDaysPref != null) {
+            defaultExpiryDaysPref.setOnPreferenceChangeListener((preference, newValue) -> {
+                if (newValue == null || ((String) newValue).trim().isEmpty()) {
+                    return true;
+                }
+                try {
+                    int days = Integer.parseInt((String) newValue);
+                    if (days >= 0 && days <= 3650) {
+                        return true;
+                    }
+                } catch (NumberFormatException e) {
+                    Log.e("SettingsFragment", "Errore conversione default expiry days: " + e.getMessage());
                 }
                 android.widget.Toast.makeText(getContext(), getString(R.string.pref_exp_days_error), android.widget.Toast.LENGTH_SHORT).show();
                 return false;
