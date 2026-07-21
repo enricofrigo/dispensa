@@ -610,7 +610,7 @@ public class MainActivity extends AppCompatActivity
         if (currentlyInList) {
             shoppingListViewModel.removeItem(productName);
         } else {
-            shoppingListViewModel.addItem(productName);
+            shoppingListViewModel.addItem(productName, product.product.getQuantity());
         }
     }
 

@@ -149,4 +149,31 @@ public class ShoppingListActivity extends AppCompatActivity
     public void onItemCheckedChanged(eu.frigo.dispensa.data.shoppinglist.ShoppingItem item) {
         shoppingListViewModel.toggleChecked(item);
     }
+
+    @Override
+    public void onItemEditRequested(ShoppingItem item) {
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_edit_shopping_item, null);
+        EditText editTextName = dialogView.findViewById(R.id.editTextEditName);
+        EditText editTextQuantity = dialogView.findViewById(R.id.editTextEditQuantity);
+
+        editTextName.setText(item.getName());
+        editTextQuantity.setText(String.valueOf(item.getQuantity()));
+
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.edit)
+                .setView(dialogView)
+                .setPositiveButton(R.string.save, (dialog, which) -> {
+                    String newName = editTextName.getText().toString().trim();
+                    if (!newName.isEmpty()) {
+                        item.setName(newName);
+                        try {
+                            int newQuantity = Integer.parseInt(editTextQuantity.getText().toString());
+                            item.setQuantity(newQuantity);
+                        } catch (NumberFormatException ignored) {}
+                        shoppingListViewModel.updateItem(item);
+                    }
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
 }
