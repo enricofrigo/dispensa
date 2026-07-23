@@ -4,17 +4,18 @@ plugins {
 }
 android {
     namespace = "eu.frigo.dispensa"
-    compileSdk = 36
+    compileSdk = 37
     buildFeatures{
         buildConfig = true
+        viewBinding = true
     }
 
     defaultConfig {
         applicationId = "eu.frigo.dispensa"
         minSdk = 26
         targetSdk = 35
-        versionCode = 22
-        versionName = "0.1.12"
+        versionCode = 23
+        versionName = "0.1.13"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -57,9 +58,6 @@ android {
     kotlinOptions {
         jvmTarget = "21"
     }
-    buildFeatures {
-        viewBinding = true
-    }
     packaging {
         jniLibs {
             useLegacyPackaging = false
@@ -67,11 +65,6 @@ android {
     }
     lint {
         disable.add("UnsafeOptInUsageError")
-    }
-    bundle{
-        language{
-            enableSplit = false
-        }
     }
 }
 
@@ -101,11 +94,11 @@ dependencies {
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.preference.ktx)
     implementation(libs.balloon)
-    implementation("androidx.lifecycle:lifecycle-process:2.8.6")
-    implementation("androidx.lifecycle:lifecycle-common-java8:2.8.6")
-    implementation("io.reactivex.rxjava3:rxandroid:3.0.2")
-    implementation("io.reactivex.rxjava3:rxjava:3.1.8")
-    implementation("com.google.zxing:core:3.5.3")
+    implementation(libs.lifecycle.process)
+    implementation(libs.lifecycle.common.java8)
+    implementation(libs.rxandroid)
+    implementation(libs.rxjava)
+    implementation(libs.zxing.core)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
