@@ -4,7 +4,7 @@ plugins {
 }
 android {
     namespace = "eu.frigo.dispensa"
-    compileSdk = 37
+    compileSdk = 36
     buildFeatures{
         buildConfig = true
         viewBinding = true
