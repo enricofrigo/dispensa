@@ -1,0 +1,2 @@
+• possibilità di modificare la quantità nella lista della spesa
+• possibilità di aggiungere prodotti anche senza barcode
