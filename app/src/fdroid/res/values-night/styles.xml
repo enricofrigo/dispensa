@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="DatePickerSpinnerTheme" parent="android:Theme.Material.Dialog">
+        <item name="android:datePickerStyle">@style/SpinnerWidgetStyle</item>
+        <item name="android:colorAccent">@color/purple_200</item>
+        <item name="android:buttonBarPositiveButtonStyle">@style/DatePickerButtonStyleNight</item>
+        <item name="android:buttonBarNegativeButtonStyle">@style/DatePickerButtonStyleNight</item>
+    </style>
+
+    <style name="DatePickerButtonStyleNight" parent="android:Widget.Material.Button.Borderless">
+        <item name="android:textColor">@color/purple_200</item>
+    </style>
+</resources>

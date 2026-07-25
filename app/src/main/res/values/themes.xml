@@ -8,8 +8,8 @@
         <item name="colorSecondaryVariant">@color/teal_700</item>
         <item name="colorOnSecondary">@color/white</item>
         <!-- Colore della barra di stato e navigazione gestito da EdgeToEdge -->
-        <item name="android:windowLightStatusBar" >false</item>
-        <item name="android:windowLightNavigationBar" >false</item>
+        <item name="android:windowLightStatusBar">?attr/isLightTheme</item>
+        <item name="android:windowLightNavigationBar">?attr/isLightTheme</item>
     </style>
 
     <style name="CustomTabTextStyle" parent="TextAppearance.Design.Tab">

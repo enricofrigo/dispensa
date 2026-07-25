@@ -43,6 +43,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
     public static final String KEY_SYNC_NOW = "pref_sync_now";
     public static final String KEY_SYNC_CONFIG = "pref_sync_config";
     public static final String KEY_SYNC_STATUS = "pref_sync_status";
+    public static final String KEY_THEME_PREFERENCE = "theme_preference";
 
     private Preference notificationTimePreference;
     private ListPreference languagePreference;
@@ -160,6 +161,14 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
         }
         Preference appId = findPreference(InstallationIdProvider.PREF_INSTALLATION_ID);
         appId.setSummary(InstallationIdProvider.getOrCreateInstallationId(getContext()));
+
+        ListPreference themePref = findPreference(KEY_THEME_PREFERENCE);
+        if (themePref != null) {
+            String themeValue = PreferenceManager.getDefaultSharedPreferences(requireContext())
+                    .getString(KEY_THEME_PREFERENCE, "system");
+            themePref.setValue(themeValue);
+            updateThemePreferenceSummary(themePref, themeValue);
+        }
     }
 
     private void clearOpenFoodFactCache() {
@@ -248,6 +257,27 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
             editor.commit();
             LocaleHelper.setLocale(context,langCode);
             triggerRebirthWithAlarmManager(context);
+        } else if (KEY_THEME_PREFERENCE.equals(key)) {
+            String themeValue = sharedPreferences.getString(key, "system");
+            eu.frigo.dispensa.util.ThemeHelper.applyThemePreference(themeValue);
+            ListPreference themePref = findPreference(KEY_THEME_PREFERENCE);
+            if (themePref != null) {
+                updateThemePreferenceSummary(themePref, themeValue);
+            }
+        }
+    }
+
+    private void updateThemePreferenceSummary(ListPreference themePreference, String themeValue) {
+        if (themePreference == null || themeValue == null) return;
+        CharSequence[] entries = themePreference.getEntries();
+        CharSequence[] entryValues = themePreference.getEntryValues();
+        if (entries != null && entryValues != null) {
+            for (int i = 0; i < entryValues.length; i++) {
+                if (entryValues[i].toString().equals(themeValue)) {
+                    themePreference.setSummary(entries[i]);
+                    break;
+                }
+            }
         }
     }
     private void updateLanguagePreferenceSummary(String languageValue) {
