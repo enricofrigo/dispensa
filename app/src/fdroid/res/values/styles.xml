@@ -2,6 +2,13 @@
 <resources>
     <style name="DatePickerSpinnerTheme" parent="android:Theme.Material.Light.Dialog">
         <item name="android:datePickerStyle">@style/SpinnerWidgetStyle</item>
+        <item name="android:colorAccent">@color/purple_500</item>
+        <item name="android:buttonBarPositiveButtonStyle">@style/DatePickerButtonStyle</item>
+        <item name="android:buttonBarNegativeButtonStyle">@style/DatePickerButtonStyle</item>
+    </style>
+
+    <style name="DatePickerButtonStyle" parent="android:Widget.Material.Button.Borderless">
+        <item name="android:textColor">@color/purple_500</item>
     </style>
 
     <style name="SpinnerWidgetStyle" parent="android:Widget.Material.DatePicker">

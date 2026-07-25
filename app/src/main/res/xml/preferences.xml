@@ -62,10 +62,22 @@
             android:persistent="true"/>
 
     </PreferenceCategory>
-    <PreferenceCategory app:key="pref_key_data"
+    <PreferenceCategory
+        app:key="pref_key_data"
         app:layout="@layout/custom_category"
         app:title="@string/pref_cat_data_title"
         app:iconSpaceReserved="false">
+
+        <ListPreference
+            app:key="@string/pref_key_theme"
+            app:title="@string/pref_theme_title"
+            app:summary="%s"
+            app:entries="@array/theme_entries"
+            app:entryValues="@array/theme_values"
+            app:defaultValue="system"
+            app:layout="@layout/preference_single_line"
+            app:iconSpaceReserved="false"
+            android:persistent="true"/>
 
         <Preference
             app:key="pref_off_cache_clear"

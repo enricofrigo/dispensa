@@ -10,18 +10,14 @@ import eu.frigo.dispensa.R;
 
 public class ThemeHelper {
 
-    public static String LIGHT_MODE;
-    public static String DARK_MODE;
-    public static String SYSTEM_DEFAULT_MODE;
-    public static String PREF_KEY_THEME;
+    public static final String LIGHT_MODE = "light";
+    public static final String DARK_MODE = "dark";
+    public static final String SYSTEM_DEFAULT_MODE = "system";
 
     public static void applyTheme(Context context) {
-        LIGHT_MODE = String.valueOf(R.string.pref_theme_light);
-        DARK_MODE = String.valueOf(R.string.pref_theme_dark);
-        SYSTEM_DEFAULT_MODE = String.valueOf(R.string.pref_theme_system);
-        PREF_KEY_THEME = String.valueOf(R.string.pref_key_theme);
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
-        String themePreference = sharedPreferences.getString(PREF_KEY_THEME, SYSTEM_DEFAULT_MODE);
+        String themePreferenceKey = context.getString(R.string.pref_key_theme);
+        String themePreference = sharedPreferences.getString(themePreferenceKey, SYSTEM_DEFAULT_MODE);
         applyThemePreference(themePreference);
     }
 
