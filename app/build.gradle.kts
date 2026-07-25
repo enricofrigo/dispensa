@@ -12,7 +12,7 @@ android {
 
     defaultConfig {
         applicationId = "eu.frigo.dispensa"
-        minSdk = 26
+        minSdk = 27
         targetSdk = 35
         versionCode = 23
         versionName = "0.1.13"
