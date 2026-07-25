@@ -28,7 +28,7 @@ public class BackupManager {
     private final AppDatabase db;
     private final Gson gson;
 
-    private final int MIN_APP_VERSION = 14;
+    private final int MIN_APP_VERSION = 1;
 
     public BackupManager(Context context) {
         this.db = AppDatabase.getDatabase(context);
@@ -56,8 +56,34 @@ public class BackupManager {
     }
 
     private boolean isCompatible(int curVersion, int version){
-        if(curVersion==version) return true;
-        return curVersion == 10 && version == 9;
+        return version <= curVersion;
+    }
+
+    private void migrateDataIfNeeded(BackupData backupData, int currentVersion) {
+        if (backupData.dbVersion < currentVersion) {
+            long now = System.currentTimeMillis();
+            
+            // Migration for versions < 12 (added last_modified)
+            if (backupData.dbVersion < 12) {
+                if (backupData.products != null) {
+                    for (Product p : backupData.products) {
+                        if (p.lastModified == 0) p.lastModified = now;
+                    }
+                }
+                if (backupData.locations != null) {
+                    for (StorageLocation loc : backupData.locations) {
+                        if (loc.lastModified == 0) loc.lastModified = now;
+                    }
+                }
+                if (backupData.shoppingItems != null) {
+                    for (ShoppingItem item : backupData.shoppingItems) {
+                        if (item.lastModified == 0) item.lastModified = now;
+                    }
+                }
+            }
+            
+            // Add more specific migrations here if versions are very old
+        }
     }
 
     public void importData(InputStream inputStream) throws Exception {
@@ -76,9 +102,11 @@ public class BackupManager {
         int currentVersion = db.getOpenHelper().getReadableDatabase().getVersion();
 
         if (!isCompatible(currentVersion,backupData.dbVersion)) {
-            throw new Exception("Backup version (" + backupData.dbVersion + ") is different than database version ("
-                    + currentVersion + ")");
+            throw new Exception("Backup version (" + backupData.dbVersion + ") is higher than database version ("
+                    + currentVersion + "). Please update the app.");
         }
+
+        migrateDataIfNeeded(backupData, currentVersion);
 
         db.runInTransaction(() -> {
             db.productDao().deleteAllProducts();
