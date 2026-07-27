@@ -6,6 +6,10 @@ junitVersion = "1.2.1"
 espressoCore = "3.6.1"
 appcompat = "1.7.1"
 activity = "1.9.3"
+lifecycleProcess = "2.11.0"
+okhttp = "5.4.0"
+reactivexRxjava = "3.1.12"
+rxjavaVersion = "3.1.12"
 tesseract4android = "4.9.0"
 material = "1.12.0"
 constraintlayout = "2.2.1"
@@ -35,6 +39,7 @@ cameraViewVersion = "1.4.2"
 retrofit = "3.0.0"
 converterGson = "3.0.0"
 glide = "4.16.0"
+workRuntime = "2.11.2"
 workRuntimeKtx = "2.9.0"
 preferenceKtx = "1.2.1"
 zxingAndroidEmbedded = "4.3.0"
@@ -54,6 +59,10 @@ rxjava = "3.1.8"
 zxingCore = "3.5.3"
 
 [libraries]
+androidx-lifecycle-livedata-ktx = { module = "androidx.lifecycle:lifecycle-livedata-ktx", version.ref = "lifecycle" }
+androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "lifecycleProcess" }
+androidx-work-runtime = { module = "androidx.work:work-runtime", version.ref = "workRuntimeKtx" }
+androidx-work-runtime-v2112 = { module = "androidx.work:work-runtime", version.ref = "workRuntime" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -63,6 +72,7 @@ material = { group = "com.google.android.material", name = "material", version.r
 constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 navigation-fragment = { group = "androidx.navigation", name = "navigation-fragment", version.ref = "navigationFragment" }
 navigation-ui = { group = "androidx.navigation", name = "navigation-ui", version.ref = "navigationUi" }
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "roomRuntime" }
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "roomCompiler" }
 room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "roomKtx" }
@@ -70,10 +80,9 @@ room-paging = { group = "androidx.room", name = "room-paging", version.ref = "ro
 room-rxjava2 = { group = "androidx.room", name = "room-rxjava2", version.ref = "roomRxjava2" }
 room-rxjava3 = { group = "androidx.room", name = "room-rxjava3", version.ref = "roomRxjava3" }
 room-guava = { group = "androidx.room", name = "room-guava", version.ref = "roomGuava" }
-play-services-analytics-impl = { group = "com.google.android.gms", name = "play-services-analytics-impl", version.ref = "playServicesAnalyticsImpl" }
 cardview = { group = "androidx.cardview", name = "cardview", version.ref = "cardview" }
 media3-common = { group = "androidx.media3", name = "media3-common", version.ref = "media3Common" }
-x_implementation_com-material = { group = "com.google.android.material", name = "material", version.ref = "materialVersion" }
+rxjava-v3112 = { module = "io.reactivex.rxjava3:rxjava", version.ref = "reactivexRxjava" }
 swiperefreshlayout = { group = "androidx.swiperefreshlayout", name = "swiperefreshlayout", version.ref = "swiperefreshlayout" }
 camera-core = { group = "androidx.camera", name = "camera-core", version.ref = "cameraCore" }
 camera-camera2 = { group = "androidx.camera", name = "camera-camera2", version.ref = "cameraCamera2" }

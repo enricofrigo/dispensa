@@ -271,3 +271,4 @@ public class SyncConfigActivity extends AppCompatActivity {
         }
     }
 }
+
