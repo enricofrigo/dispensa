@@ -266,4 +266,8 @@ I prodotti in questa dispensa potrebbero dover essere riassegnati.</string>
     <string name="sync_setup_err_device_already_present">Questo dispositivo è già registrato in questa dispensa.</string>
     <string name="sync_setup_err">Connessione o configurazione fallita.</string>
     <string name="sync_setup_saved">Configurazione salvata con successo</string>
+    <string name="sync_device_delete_confirm">Sei sicuro di voler rimuovere il dispositivo \'%s\'? Non potrà più sincronizzarsi finché non verrà ri-aggiunto.</string>
+    <string name="sync_device_delete_success">Dispositivo rimosso con successo</string>
+    <string name="sync_delete_device_err">Errore durante la rimozione: %s</string>
+    <string name="sync_not_configured">Sincronizzazione non configurata</string>
 </resources>

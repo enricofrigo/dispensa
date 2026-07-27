@@ -60,6 +60,7 @@ import eu.frigo.dispensa.data.backup.BackupManager;
 import eu.frigo.dispensa.data.category.ProductWithCategoryDefinitions;
 import eu.frigo.dispensa.data.product.Product;
 import eu.frigo.dispensa.data.storage.StorageLocation;
+import eu.frigo.dispensa.sync.core.engine.SyncManager;
 import eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl;
 import eu.frigo.dispensa.ui.ProductListFragment;
 import eu.frigo.dispensa.ui.SettingsFragment;
@@ -421,6 +422,14 @@ public class MainActivity extends AppCompatActivity
     public boolean onPrepareOptionsMenu(Menu menu) {
         updateLayoutToggleIcon();
         restoreSearchViewQuery();
+
+        MenuItem syncNowItem = menu.findItem(R.id.action_sync_now);
+        if (syncNowItem != null) {
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+            boolean syncEnabled = prefs.getBoolean(SyncManager.KEY_SYNC_ENABLED, false);
+            syncNowItem.setVisible(syncEnabled);
+        }
+
         return super.onPrepareOptionsMenu(menu);
     }
 
