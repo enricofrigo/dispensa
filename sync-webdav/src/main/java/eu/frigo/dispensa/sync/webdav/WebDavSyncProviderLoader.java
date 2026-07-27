@@ -43,7 +43,7 @@ public class WebDavSyncProviderLoader implements SyncProviderLoader {
             WebDavClient client = WebDavClientFactory.getInstance().getClient(context);
             WebDavRemoteStoreImpl remoteStore = new WebDavRemoteStoreImpl(client);
 
-            return new WebDavSyncProvider("webdav", remoteStore, client, deviceId, pantryPath);
+            return new WebDavSyncProvider(remoteStore, client, deviceId, pantryPath);
         }
         return null;
     }

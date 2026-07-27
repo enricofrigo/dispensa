@@ -259,4 +259,8 @@
     <string name="action_manage_devices">Geräte verwalten</string>
     <string name="title_manage_devices">Registrierte Geräte</string>
     <string name="no_devices_found">Keine Geräte gefunden</string>
+    <string name="warn_mandatory_fields">Füllen Sie alle erforderlichen Felder aus</string>
+    <string name="sync_setup_err_device_already_present">Dieses Gerät ist bereits für diese Abgabe registriert.</string>
+    <string name="sync_setup_err">Verbindungs- oder Einrichtungsfehler.</string>
+    <string name="sync_setup_saved">Konfiguration erfolgreich gespeichert</string>
 </resources>

@@ -10,15 +10,14 @@ import eu.frigo.dispensa.sync.webdav.client.WebDavClient;
 import io.reactivex.rxjava3.core.Single;
 
 public class WebDavSyncProvider implements SyncProvider {
-    private final String id;
+    private final String id = "webdav";
     private final RemoteStore remoteStore;
     private final WebDavClient client;
     private final String deviceId;
     private final String pantryPath;
     private WebDavSyncEngine engine;
 
-    public WebDavSyncProvider(String id, RemoteStore remoteStore, WebDavClient client, String deviceId, String pantryPath) {
-        this.id = id;
+    public WebDavSyncProvider(RemoteStore remoteStore, WebDavClient client, String deviceId, String pantryPath) {
         this.remoteStore = remoteStore;
         this.client = client;
         this.deviceId = deviceId;
