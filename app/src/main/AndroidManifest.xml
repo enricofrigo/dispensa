@@ -65,7 +65,7 @@
         </activity>
 
         <activity
-            android:name=".sync.ui.SyncConfigActivity"
+            android:name=".sync.ui.SyncWebDavConfigActivity"
             android:label="@string/sync_setup_title"
             android:parentActivityName=".activity.SettingsActivity" />
 

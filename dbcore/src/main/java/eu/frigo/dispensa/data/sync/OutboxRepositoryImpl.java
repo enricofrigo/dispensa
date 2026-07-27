@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import eu.frigo.dispensa.data.AppDatabase;
-import eu.frigo.dispensa.sync.core.store.OutboxRepository;
-import eu.frigo.dispensa.sync.core.store.SyncPayload;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
 

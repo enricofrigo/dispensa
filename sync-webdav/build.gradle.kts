@@ -18,7 +18,6 @@ android {
 }
 
 dependencies {
-    implementation(project(":sync-core"))
     implementation(project(":dbcore"))
 
     implementation(libs.okhttp)

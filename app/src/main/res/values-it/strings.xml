@@ -262,4 +262,8 @@ I prodotti in questa dispensa potrebbero dover essere riassegnati.</string>
     <string name="action_manage_devices">Gestione Dispositivi</string>
     <string name="title_manage_devices">Dispositivi Registrati</string>
     <string name="no_devices_found">Nessun dispositivo trovato</string>
+    <string name="warn_mandatory_fields">Compila tutti i campi obbligatori</string>
+    <string name="sync_setup_err_device_already_present">Questo dispositivo è già registrato in questa dispensa.</string>
+    <string name="sync_setup_err">Connessione o configurazione fallita.</string>
+    <string name="sync_setup_saved">Configurazione salvata con successo</string>
 </resources>

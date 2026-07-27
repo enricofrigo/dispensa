@@ -264,4 +264,8 @@
     <string name="action_manage_devices">Manage Devices</string>
     <string name="title_manage_devices">Registered Devices</string>
     <string name="no_devices_found">No devices found</string>
+    <string name="warn_mandatory_fields">Fill in all the required fields</string>
+    <string name="sync_setup_err_device_already_present">This device is already registered for this pantry.</string>
+    <string name="sync_setup_err">Connection or setup failed.</string>
+    <string name="sync_setup_saved">Configuration saved successfully</string>
 </resources>

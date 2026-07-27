@@ -1,5 +1,6 @@
 package eu.frigo.dispensa.sync.ui;
 
+import android.annotation.SuppressLint;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.Editable;
@@ -20,6 +21,7 @@ import java.util.Objects;
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.sync.core.engine.InstallationIdProvider;
 import eu.frigo.dispensa.sync.core.engine.SyncManager;
+import eu.frigo.dispensa.sync.core.provider.SyncProvider;
 import eu.frigo.dispensa.sync.webdav.WebDavRemoteStoreImpl;
 import eu.frigo.dispensa.sync.webdav.WebDavSyncProvider;
 import eu.frigo.dispensa.sync.webdav.client.WebDavClient;
@@ -29,7 +31,7 @@ import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import okhttp3.Response;
 
-public class SyncConfigActivity extends AppCompatActivity {
+public class SyncWebDavConfigActivity extends AppCompatActivity {
 
     private TextInputEditText urlEdit, userEdit, passEdit, pathEdit;
     private com.google.android.material.textfield.TextInputLayout userLayout, passLayout;
@@ -109,6 +111,7 @@ public class SyncConfigActivity extends AppCompatActivity {
         progressBar.setVisibility(locked ? View.VISIBLE : View.GONE);
     }
 
+    @SuppressLint("CheckResult")
     private void startSetupFlow(boolean forceOverwrite) {
         String url = Objects.requireNonNull(urlEdit.getText()).toString().trim();
         boolean isShared = sharedModeSwitch.isChecked();
@@ -117,7 +120,7 @@ public class SyncConfigActivity extends AppCompatActivity {
         String path = pathEdit.getText() != null ? pathEdit.getText().toString().trim() : "";
 
         if (url.isEmpty() || (!isShared && user.isEmpty()) || pass.isEmpty()) {
-            Toast.makeText(this, "Compila tutti i campi obbligatori", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.warn_mandatory_fields, Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -129,16 +132,20 @@ public class SyncConfigActivity extends AppCompatActivity {
                     if (result.status == RESULT_SUCCESS) {
                         saveAndFinish(url, user, pass, path, result.pantryKey, isShared);
                     } else if (result.status == RESULT_MANIFEST_EXISTS) {
+                        save(url, user, pass, path, "", isShared);
                         setUILocked(false);
                         showOverwriteDialog();
-                    } else if (result.status == RESULT_DEVICE_EXISTS) {
-                        setUILocked(false);
-                        Toast.makeText(this, "Questo dispositivo è già registrato in questa dispensa.", Toast.LENGTH_LONG).show();
                     } else {
+                        save(url, user, pass, path, "", isShared);
                         setUILocked(false);
-                        Toast.makeText(this, "Connessione o configurazione fallita.", Toast.LENGTH_LONG).show();
+                        if (result.status == RESULT_DEVICE_EXISTS) {
+                            Toast.makeText(this, R.string.sync_setup_err_device_already_present, Toast.LENGTH_LONG).show();
+                        } else {
+                            Toast.makeText(this, R.string.sync_setup_err, Toast.LENGTH_LONG).show();
+                        }
                     }
                 }, throwable -> {
+                    save(url, user, pass, path, "", isShared);
                     setUILocked(false);
                     Toast.makeText(this, "Errore: " + throwable.getMessage(), Toast.LENGTH_LONG).show();
                 });
@@ -153,7 +160,7 @@ public class SyncConfigActivity extends AppCompatActivity {
                 .show();
     }
 
-    private void saveAndFinish(String url, String user, String pass, String path, String pantryKey, boolean isShared) {
+    private void save(String url, String user, String pass, String path, String pantryKey, boolean isShared){
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         prefs.edit()
                 .putString(SyncManager.KEY_WEBDAV_URL, url)
@@ -164,7 +171,10 @@ public class SyncConfigActivity extends AppCompatActivity {
                 .putBoolean(SyncManager.KEY_WEBDAV_MODE_SHARED, isShared)
                 .putBoolean(SyncManager.KEY_SYNC_ENABLED, true)
                 .apply();
+    }
 
+    private void saveAndFinish(String url, String user, String pass, String path, String pantryKey, boolean isShared) {
+        save(url, user, pass, path, pantryKey, isShared);
         String deviceId = eu.frigo.dispensa.sync.core.engine.InstallationIdProvider.getOrCreateInstallationId(this);
         String normalizedBase = path.endsWith("/") ? path : path + "/";
         if (normalizedBase.startsWith("/")) normalizedBase = normalizedBase.substring(1);
@@ -172,12 +182,12 @@ public class SyncConfigActivity extends AppCompatActivity {
 
         WebDavClient client = WebDavClientFactory.getInstance().getClient(url, user, pass);
         WebDavRemoteStoreImpl remoteStore = new WebDavRemoteStoreImpl(client);
-        WebDavSyncProvider provider = new WebDavSyncProvider("webdav", remoteStore, client, deviceId, pantryPath);
+        SyncProvider provider = new WebDavSyncProvider(remoteStore, client, deviceId, pantryPath);
 
         SyncManager.getInstance().setProvider(provider);
         eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl.getInstance(this).triggerManualSync();
 
-        Toast.makeText(this, "Configurazione salvata con successo", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "", Toast.LENGTH_SHORT).show();
         finish();
     }
 

@@ -24,6 +24,7 @@ import java.util.Objects;
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.sync.core.engine.InstallationIdProvider;
 import eu.frigo.dispensa.sync.core.engine.SyncManager;
+import eu.frigo.dispensa.sync.ui.SyncWebDavConfigActivity;
 import eu.frigo.dispensa.util.LocaleHelper;
 import eu.frigo.dispensa.work.ExpiryCheckWorkerScheduler;
 
@@ -68,7 +69,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
         Preference syncConfigPref = findPreference(KEY_SYNC_CONFIG);
         if (syncConfigPref != null) {
             syncConfigPref.setOnPreferenceClickListener(preference -> {
-                Intent intent = new Intent(requireContext(), eu.frigo.dispensa.sync.ui.SyncConfigActivity.class);
+                Intent intent = new Intent(requireContext(), SyncWebDavConfigActivity.class);
                 startActivity(intent);
                 return true;
             });

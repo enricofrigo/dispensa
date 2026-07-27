@@ -1,4 +1,4 @@
-package eu.frigo.dispensa.sync.core.store;
+package eu.frigo.dispensa.data.sync;
 
 public class SyncPayload {
     private final String syncId;
