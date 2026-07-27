@@ -6,12 +6,12 @@
         android:title="@string/action_search"
         app:showAsAction="ifRoom|collapseActionView"
         app:actionViewClass="androidx.appcompat.widget.SearchView"
-        app:iconTint="@android:color/white"/>
+        app:iconTint="?attr/colorControlNormal"/>
     <item
         android:id="@+id/action_toggle_layout"
         android:icon="@drawable/ic_view_grid"
         android:title="@string/action_toggle_layout"
-        app:iconTint="@android:color/white"
+        app:iconTint="?attr/colorControlNormal"
         app:showAsAction="ifRoom" />
     <item
         android:id="@+id/action_sync_now"

@@ -38,5 +38,5 @@ dependencies {
 
     implementation(libs.media3.common)
     implementation(libs.converter.gson)
-    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.6")
+    implementation(libs.androidx.lifecycle.livedata.ktx)
 }
