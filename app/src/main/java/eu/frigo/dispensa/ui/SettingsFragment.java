@@ -57,6 +57,10 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
         syncStatusPreference = findPreference(KEY_SYNC_STATUS);
         updateSyncStatus();
 
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+        boolean syncEnabled = prefs.getBoolean(SyncManager.KEY_SYNC_ENABLED, false);
+        updateSyncPreferencesVisibility(syncEnabled);
+
         Preference syncNowPref = findPreference(KEY_SYNC_NOW);
         if (syncNowPref != null) {
             syncNowPref.setOnPreferenceClickListener(preference -> {
@@ -265,7 +269,24 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
             if (themePref != null) {
                 updateThemePreferenceSummary(themePref, themeValue);
             }
+        } else if (SyncManager.KEY_SYNC_ENABLED.equals(key)) {
+            boolean enabled = sharedPreferences.getBoolean(key, false);
+            updateSyncPreferencesVisibility(enabled);
         }
+    }
+
+    private void updateSyncPreferencesVisibility(boolean enabled) {
+        Preference providerPref = findPreference("pref_sync_provider");
+        Preference configPref = findPreference(KEY_SYNC_CONFIG);
+        Preference nowPref = findPreference(KEY_SYNC_NOW);
+        Preference statusPref = findPreference(KEY_SYNC_STATUS);
+        Preference separator = findPreference("separator_sync");
+
+        if (providerPref != null) providerPref.setVisible(enabled);
+        if (configPref != null) configPref.setVisible(enabled);
+        if (nowPref != null) nowPref.setVisible(enabled);
+        if (statusPref != null) statusPref.setVisible(enabled);
+        if (separator != null) separator.setVisible(enabled);
     }
 
     private void updateThemePreferenceSummary(ListPreference themePreference, String themeValue) {

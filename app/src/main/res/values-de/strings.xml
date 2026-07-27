@@ -263,4 +263,8 @@
     <string name="sync_setup_err_device_already_present">Dieses Gerät ist bereits für diese Abgabe registriert.</string>
     <string name="sync_setup_err">Verbindungs- oder Einrichtungsfehler.</string>
     <string name="sync_setup_saved">Konfiguration erfolgreich gespeichert</string>
+    <string name="sync_device_delete_confirm">Sind Sie sicher, dass Sie das Gerät \'%s\' entfernen möchten? Es kann erst wieder synchronisiert werden, wenn Sie es erneut hinzufügen.</string>
+    <string name="sync_device_delete_success">Gerät erfolgreich entfernt</string>
+    <string name="sync_delete_device_err">Fehler beim Entfernen: %s</string>
+    <string name="sync_not_configured">Synchronisierung nicht konfiguriert</string>
 </resources>

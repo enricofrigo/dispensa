@@ -1,5 +1,6 @@
 package eu.frigo.dispensa.sync.ui;
 
+import android.annotation.SuppressLint;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
@@ -26,11 +27,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import eu.frigo.dispensa.R;
+import eu.frigo.dispensa.sync.core.engine.InstallationIdProvider;
 import eu.frigo.dispensa.sync.core.engine.SyncManager;
 import eu.frigo.dispensa.sync.webdav.client.WebDavClient;
 import eu.frigo.dispensa.sync.webdav.client.WebDavClientFactory;
 import eu.frigo.dispensa.sync.webdav.model.WebDavDevice;
+import eu.frigo.dispensa.sync.webdav.model.WebDavManifest;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import okhttp3.Response;
@@ -43,6 +47,8 @@ public class ManageDevicesActivity extends AppCompatActivity {
     private DeviceAdapter adapter;
     private final List<WebDavDevice> deviceList = new ArrayList<>();
     private final Gson gson = new Gson();
+    private boolean isMaster = false;
+    private String devicesPath;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,12 +64,13 @@ public class ManageDevicesActivity extends AppCompatActivity {
         tvEmpty = findViewById(R.id.tv_empty_devices);
 
         rvDevices.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new DeviceAdapter(deviceList);
+        adapter = new DeviceAdapter(deviceList, device -> showDeleteConfirmation(device));
         rvDevices.setAdapter(adapter);
 
         loadDevices();
     }
 
+    @SuppressLint("CheckResult")
     private void loadDevices() {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         String url = prefs.getString(SyncManager.KEY_WEBDAV_URL, "");
@@ -74,24 +81,30 @@ public class ManageDevicesActivity extends AppCompatActivity {
         boolean isShared = prefs.getBoolean(SyncManager.KEY_WEBDAV_MODE_SHARED, false);
 
         if (url.isEmpty() || (user.isEmpty() && !isShared) || pass.isEmpty() || pantryKey.isEmpty()) {
-            Toast.makeText(this, "Sync not configured", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.sync_not_configured, Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
 
         String normalizedBase = path.endsWith("/") ? path : path + "/";
         if (normalizedBase.startsWith("/")) normalizedBase = normalizedBase.substring(1);
-        String devicesPath = normalizedBase + SyncManager.DEFAULT_PANTRY_PATH + pantryKey + "/" + SyncManager.DEFAULT_DEVICES_FOLDER;
+        String pantryBasePath = normalizedBase + SyncManager.DEFAULT_PANTRY_PATH + pantryKey + "/";
+        devicesPath = pantryBasePath + SyncManager.DEFAULT_DEVICES_FOLDER;
 
         progressBar.setVisibility(View.VISIBLE);
         
-        fetchDevices(devicesPath)
+        checkMasterStatus(pantryBasePath + SyncManager.MANIFEST_JSON)
+                .flatMap(master -> {
+                    this.isMaster = master;
+                    return fetchDevices(devicesPath);
+                })
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(devices -> {
                     progressBar.setVisibility(View.GONE);
                     deviceList.clear();
                     deviceList.addAll(devices);
+                    adapter.setMaster(isMaster);
                     adapter.notifyDataSetChanged();
                     tvEmpty.setVisibility(deviceList.isEmpty() ? View.VISIBLE : View.GONE);
                 }, throwable -> {
@@ -99,6 +112,70 @@ public class ManageDevicesActivity extends AppCompatActivity {
                     Log.e("ManageDevices", "Error loading devices", throwable);
                     Toast.makeText(this, "Error: " + throwable.getMessage(), Toast.LENGTH_SHORT).show();
                 });
+    }
+
+    private Single<Boolean> checkMasterStatus(String manifestPath) {
+        return Single.fromCallable(() -> {
+            WebDavClient client = WebDavClientFactory.getInstance().getClient(this);
+            try (Response response = client.get(manifestPath)) {
+                if (response.isSuccessful() && response.body() != null) {
+                    WebDavManifest manifest = gson.fromJson(response.body().string(), WebDavManifest.class);
+                    if (manifest != null) {
+                        String currentId = InstallationIdProvider.getOrCreateInstallationId(this);
+                        return currentId.equals(manifest.createdByDevice);
+                    }
+                }
+            } catch (Exception e) {
+                Log.e("ManageDevices", "Error checking manifest", e);
+            }
+            return false;
+        });
+    }
+
+    private void showDeleteConfirmation(WebDavDevice device) {
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle(R.string.delete_product_title)
+                .setMessage(String.format(getString(R.string.sync_device_delete_confirm),device.deviceName))
+                .setPositiveButton(R.string.delete, (dialog, which) -> deleteDevice(device))
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
+    @SuppressLint("CheckResult")
+    private void deleteDevice(WebDavDevice device) {
+        progressBar.setVisibility(View.VISIBLE);
+        String deviceFilePath = devicesPath + device.deviceId + ".json";
+
+        Completable.fromAction(() -> {
+             WebDavClient client = WebDavClientFactory.getInstance().getClient(this);
+            try (Response response = client.delete(deviceFilePath)) {
+                if (!response.isSuccessful()) {
+                    throw new IOException("Failed to delete device: " + response.code());
+                }
+            }
+        })
+        .subscribeOn(Schedulers.io())
+        .observeOn(AndroidSchedulers.mainThread())
+        .subscribe(() -> {
+            progressBar.setVisibility(View.GONE);
+            Toast.makeText(this, R.string.sync_device_delete_success, Toast.LENGTH_SHORT).show();
+
+            String currentDeviceId = InstallationIdProvider.getOrCreateInstallationId(this);
+            if (currentDeviceId.equals(device.deviceId)) {
+                // We removed ourselves: disable sync and close management
+                PreferenceManager.getDefaultSharedPreferences(this).edit()
+                        .remove(SyncManager.SYNC_WEBDAV_PANTRY_KEY)
+                        .putBoolean(SyncManager.KEY_SYNC_ENABLED, false)
+                        .apply();
+                finish();
+            } else {
+                loadDevices(); // Refresh list
+            }
+        }, throwable -> {
+            progressBar.setVisibility(View.GONE);
+            Log.e("ManageDevices", "Error deleting device", throwable);
+            Toast.makeText(this, String.format(getString(R.string.sync_delete_device_err),throwable.getMessage()), Toast.LENGTH_SHORT).show();
+        });
     }
 
     private Single<List<WebDavDevice>> fetchDevices(String devicesPath) {
@@ -153,23 +230,48 @@ public class ManageDevicesActivity extends AppCompatActivity {
 
     private static class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder> {
         private final List<WebDavDevice> devices;
+        private boolean isMaster = false;
+        private final OnDeviceDeleteListener deleteListener;
 
-        DeviceAdapter(List<WebDavDevice> devices) {
+        interface OnDeviceDeleteListener {
+            void onDelete(WebDavDevice device);
+        }
+
+        DeviceAdapter(List<WebDavDevice> devices, OnDeviceDeleteListener deleteListener) {
             this.devices = devices;
+            this.deleteListener = deleteListener;
+        }
+
+        void setMaster(boolean master) {
+            this.isMaster = master;
         }
 
         @NonNull
         @Override
         public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View view = LayoutInflater.from(parent.getContext()).inflate(android.R.layout.simple_list_item_2, parent, false);
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_device, parent, false);
             return new ViewHolder(view);
         }
 
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
             WebDavDevice device = devices.get(position);
-            holder.text1.setText(device.deviceName != null ? device.deviceName : "Unknown Device");
-            holder.text2.setText("ID: " + device.deviceId);
+            holder.tvName.setText(device.deviceName != null ? device.deviceName : "Unknown Device");
+            holder.tvId.setText("ID: " + device.deviceId);
+
+            String currentDeviceId = InstallationIdProvider.getOrCreateInstallationId(holder.itemView.getContext());
+            boolean isSelf = currentDeviceId.equals(device.deviceId);
+
+            if (isMaster || isSelf) {
+                holder.btnDelete.setVisibility(View.VISIBLE);
+                holder.btnDelete.setOnClickListener(v -> deleteListener.onDelete(device));
+            } else {
+                holder.btnDelete.setVisibility(View.GONE);
+            }
+            
+            if (isSelf) {
+                holder.tvName.append(" (Questo dispositivo)");
+            }
         }
 
         @Override
@@ -178,11 +280,13 @@ public class ManageDevicesActivity extends AppCompatActivity {
         }
 
         static class ViewHolder extends RecyclerView.ViewHolder {
-            TextView text1, text2;
+            TextView tvName, tvId;
+            View btnDelete;
             ViewHolder(View itemView) {
                 super(itemView);
-                text1 = itemView.findViewById(android.R.id.text1);
-                text2 = itemView.findViewById(android.R.id.text2);
+                tvName = itemView.findViewById(R.id.tv_device_name);
+                tvId = itemView.findViewById(R.id.tv_device_id);
+                btnDelete = itemView.findViewById(R.id.btn_delete_device);
             }
         }
     }

@@ -114,14 +114,21 @@ public class ReorderLocationsAdapter extends RecyclerView.Adapter<ReorderLocatio
         }
 
         holder.defaultButton.setVisibility(View.VISIBLE);
+        android.util.TypedValue typedValue = new android.util.TypedValue();
+        holder.itemView.getContext().getTheme().resolveAttribute(androidx.appcompat.R.attr.colorControlNormal, typedValue, true);
+        int colorSelected = (typedValue.resourceId != 0)
+                ? androidx.core.content.ContextCompat.getColor(holder.itemView.getContext(), typedValue.resourceId)
+                : typedValue.data;
+
+        holder.defaultButton.setColorFilter(null); // Clear filter
         if (location.isDefault()) {
-            holder.defaultButton.setColorFilter(Color.WHITE);
+            holder.defaultButton.setImageTintList(android.content.res.ColorStateList.valueOf(colorSelected));
         } else {
-            holder.defaultButton.setColorFilter(Color.GRAY);
+            holder.defaultButton.setImageTintList(android.content.res.ColorStateList.valueOf(Color.GRAY));
         }
-        
+
         holder.defaultButton.setOnClickListener(v -> {
-            if (interactionListener != null && !location.isDefault()) {
+            if (interactionListener != null) {
                 interactionListener.onSetAsDefault(location);
             }
         });

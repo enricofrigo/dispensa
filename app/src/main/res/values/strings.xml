@@ -98,7 +98,7 @@
     <string name="delete_location">Delete Location</string>
     <string name="default_icon">Default icon</string>
     <string name="add_new_location">Add a new location</string>
-    <string name="title_manage_locations">Storage location management</string>
+    <string name="title_manage_locations">Manage location</string>
     <string name="location_management_description">Reorder your location or select the default on application opening</string>
     <string name="hint_new_location">Location name</string>
     <string name="error_empty_location">Name cannot be empty</string>
@@ -268,4 +268,8 @@
     <string name="sync_setup_err_device_already_present">This device is already registered for this pantry.</string>
     <string name="sync_setup_err">Connection or setup failed.</string>
     <string name="sync_setup_saved">Configuration saved successfully</string>
+    <string name="sync_device_delete_confirm">Are you sure you want to remove the device \'%s\'? It will no longer be able to sync until you add it back.</string>
+    <string name="sync_device_delete_success">Device successfully removed</string>
+    <string name="sync_delete_device_err">Error while removing: %s</string>
+    <string name="sync_not_configured">Sync not configured</string>
 </resources>
