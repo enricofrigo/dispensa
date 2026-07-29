@@ -27,7 +27,7 @@ public class LocationViewModel extends AndroidViewModel {
 
     public LocationViewModel(@NonNull Application application) {
         super(application);
-        repository = new Repository(application);
+        repository = Repository.getInstance(application);
         defaultLocation = repository.getDefaultLocation();
         locationsForTabs = new MediatorLiveData<>();
         dbRealLocationsSorted = repository.getAllLocationsSorted();
@@ -79,7 +79,9 @@ public class LocationViewModel extends AndroidViewModel {
         // Ottieni il max order index in background
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
-            int maxIndex = AppDatabase.getDatabase(getApplication()).storageLocationDao().getMaxOrderIndex();
+            Integer currentId = repository.getCurrentDispensaId().getValue();
+            Integer maxIndexResult = AppDatabase.getDatabase(getApplication()).storageLocationDao().getMaxOrderIndex(currentId != null ? currentId : 0);
+            int maxIndex = maxIndexResult != null ? maxIndexResult : -1;
             // Esegui sul thread principale per aggiornare l'UI o continuare la logica
             // (qui passiamo il risultato al listener che a sua volta lo passerà al repository)
             if (listener != null) {

@@ -32,6 +32,8 @@ public interface ProductDao {
     void deleteAllProducts();
     @Query("SELECT * FROM products ORDER BY expiry_date ASC")
     List<Product> getAllProductsListStatic();
+    @Query("SELECT * FROM products WHERE dispensa_id = :dispensaId ORDER BY expiry_date ASC")
+    List<Product> getAllProductsListStatic(int dispensaId);
     @Query("SELECT * FROM products ORDER BY expiry_date ASC")
     LiveData<List<Product>> getAllProducts();
 
@@ -47,21 +49,21 @@ public interface ProductDao {
     @Query("SELECT * FROM products WHERE barcode = :barcode ORDER BY expiry_date ASC")
     List<Product> getProductsByBarcode(String barcode);
 
-    @Query("SELECT * FROM products WHERE barcode = :barcode AND expiry_date = :expiryDate AND storage_location = :storageLocation LIMIT 1")
-    Product getProductByLotKeySync(String barcode, Long expiryDate, String storageLocation);
+    @Query("SELECT * FROM products WHERE barcode = :barcode AND expiry_date = :expiryDate AND storage_location = :storageLocation AND dispensa_id = :dispensaId LIMIT 1")
+    Product getProductByLotKeySync(String barcode, Long expiryDate, String storageLocation, int dispensaId);
 
     @Transaction
     @Query("SELECT * FROM products WHERE id = :productId")
     public LiveData<ProductWithCategoryDefinitions> getProductWithFullCategoriesById(int productId);
     @Transaction
-    @Query("SELECT * FROM products WHERE storage_location = :storageLocation ORDER BY expiry_date ASC")
-    public LiveData<List<ProductWithCategoryDefinitions>> getProductWithFullCategoriesByLocation(String storageLocation);
+    @Query("SELECT * FROM products WHERE storage_location = :storageLocation AND dispensa_id = :dispensaId ORDER BY expiry_date ASC")
+    public LiveData<List<ProductWithCategoryDefinitions>> getProductWithFullCategoriesByLocation(String storageLocation, int dispensaId);
     @Transaction
-    @Query("SELECT * FROM products ORDER BY expiry_date ASC")
-    public LiveData<List<ProductWithCategoryDefinitions>> getAllProductsWithFullCategories();
-    @Query("UPDATE products SET storage_location = :defaultLocationInternalKey WHERE storage_location = :deleteLocationInternalKey")
-    void updateProductLocation(String deleteLocationInternalKey, String defaultLocationInternalKey);
+    @Query("SELECT * FROM products WHERE dispensa_id = :dispensaId ORDER BY expiry_date ASC")
+    public LiveData<List<ProductWithCategoryDefinitions>> getAllProductsWithFullCategories(int dispensaId);
+    @Query("UPDATE products SET storage_location = :defaultLocationInternalKey WHERE storage_location = :deleteLocationInternalKey AND dispensa_id = :dispensaId")
+    void updateProductLocation(String deleteLocationInternalKey, String defaultLocationInternalKey, int dispensaId);
     @Transaction
-    @Query("SELECT * FROM products WHERE storage_location = :locationInternalKeyFilter ORDER BY expiry_date ASC")
-    LiveData<List<ProductWithCategoryDefinitions>> getProductWithFullCategoriesByLocationInternalKey(String locationInternalKeyFilter);
+    @Query("SELECT * FROM products WHERE storage_location = :locationInternalKeyFilter AND dispensa_id = :dispensaId ORDER BY expiry_date ASC")
+    LiveData<List<ProductWithCategoryDefinitions>> getProductWithFullCategoriesByLocationInternalKey(String locationInternalKeyFilter, int dispensaId);
 }

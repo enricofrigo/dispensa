@@ -14,13 +14,18 @@ import java.util.Date;
 import java.util.Locale;
 
 @Entity(tableName = "products", indices = { // 6. Definizione degli indici
-        @Index(value = { "storage_location" })
+        @Index(value = { "storage_location" }),
+        @Index(value = { "dispensa_id" })
 })
 public class Product {
 
     @SerializedName("id")
     @PrimaryKey(autoGenerate = true)
     public int id;
+
+    @SerializedName("dispensa_id")
+    @ColumnInfo(name = "dispensa_id", defaultValue = "1")
+    public int dispensaId;
     @SerializedName("barcode")
     @ColumnInfo(name = "barcode")
     public String barcode;

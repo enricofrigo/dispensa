@@ -16,6 +16,8 @@ import eu.frigo.dispensa.data.category.CategoryDefinition;
 import eu.frigo.dispensa.data.category.CategoryDefinitionDao;
 import eu.frigo.dispensa.data.category.ProductCategoryLink;
 import eu.frigo.dispensa.data.category.ProductCategoryLinkDao;
+import eu.frigo.dispensa.data.dispensa.Dispensa;
+import eu.frigo.dispensa.data.dispensa.DispensaDao;
 import eu.frigo.dispensa.data.product.Product;
 import eu.frigo.dispensa.data.product.ProductDao;
 import eu.frigo.dispensa.data.shoppinglist.ShoppingItem;
@@ -36,22 +38,24 @@ public class BackupManager {
                 create();
     }
 
-    public void exportData(OutputStream outputStream, int appVersion) throws Exception {
+    public void exportData(OutputStream outputStream, int appVersion, int dispensaId) throws Exception {
         ProductDao productDao = db.productDao();
         StorageLocationDao locationDao = db.storageLocationDao();
         CategoryDefinitionDao categoryDao = db.categoryDefinitionDao();
         ProductCategoryLinkDao linkDao = db.productCategoryLinkDao();
         ShoppingItemDao shoppingItemDao = db.shoppingItemDao();
+        DispensaDao dispensaDao = db.dispensaDao();
 
         int version = db.getOpenHelper().getReadableDatabase().getVersion();
-        List<Product> products = productDao.getAllProductsListStatic();
-        List<StorageLocation> locations = locationDao.getAllLocationsSortedSync();
+        Dispensa dispensa = dispensaDao.getDispensaByIdSync(dispensaId);
+        List<Product> products = productDao.getAllProductsListStatic(dispensaId);
+        List<StorageLocation> locations = locationDao.getAllLocationsSortedSync(dispensaId);
         List<CategoryDefinition> categories = categoryDao.getAllCategoryDefinitionsSync();
-        List<ProductCategoryLink> links = linkDao.getAllProductCategoryLinksSync();
-        List<ShoppingItem> shoppingItems = shoppingItemDao.getAllItemsSync();
+        List<ProductCategoryLink> links = linkDao.getAllProductCategoryLinksForDispensaSync(dispensaId);
+        List<ShoppingItem> shoppingItems = shoppingItemDao.getAllItemsSync(dispensaId);
 
         try (OutputStreamWriter writer = new OutputStreamWriter(outputStream)) {
-            gson.toJson(new BackupData(version, appVersion, products, locations, categories, links, shoppingItems), writer);
+            gson.toJson(new BackupData(version, appVersion, dispensa, products, locations, categories, links, shoppingItems), writer);
         }
     }
 

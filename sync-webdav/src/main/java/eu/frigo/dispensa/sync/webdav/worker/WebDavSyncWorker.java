@@ -29,11 +29,12 @@ public class WebDavSyncWorker extends Worker {
             WebDavSyncProvider webDavProvider = (WebDavSyncProvider) provider;
             try {
                 Log.d("SyncFlow", "Esecuzione SyncEngine tramite provider...");
-                webDavProvider.getEngine(getApplicationContext())
-                        .performSync(new SyncPolicy() {
-                            @Override public boolean canSyncNow() { return true; }
-                            @Override public long getRetryIntervalMillis() { return 0; }
-                        }).blockingAwait();
+                for (eu.frigo.dispensa.sync.webdav.WebDavSyncEngine engine : webDavProvider.getEngines(getApplicationContext())) {
+                    engine.performSync(new SyncPolicy() {
+                                @Override public boolean canSyncNow() { return true; }
+                                @Override public long getRetryIntervalMillis() { return 0; }
+                            }).blockingAwait();
+                }
 
                 Log.d("SyncFlow", "WebDavSyncWorker completato con successo.");
                 return Result.success();

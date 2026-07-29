@@ -6,6 +6,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import eu.frigo.dispensa.sync.core.engine.SyncEngine;
+import eu.frigo.dispensa.sync.core.engine.SyncManager;
+import eu.frigo.dispensa.sync.core.event.SyncBus;
+import eu.frigo.dispensa.sync.core.event.SyncEvent;
 import eu.frigo.dispensa.sync.core.policy.SyncPolicy;
 import eu.frigo.dispensa.data.sync.OutboxRepository;
 import eu.frigo.dispensa.sync.core.store.SyncCursorStore;
@@ -28,14 +31,16 @@ public class WebDavSyncEngine implements SyncEngine {
     private final OutboxRepository outbox;
     private final String deviceId;
     private final String pantryPath;
+    private final int dispensaId;
     private final AppDatabase db;
 
-    public WebDavSyncEngine(WebDavClient client, SyncCursorStore cursorStore, OutboxRepository outbox, String deviceId, String pantryPath, AppDatabase db) {
+    public WebDavSyncEngine(WebDavClient client, SyncCursorStore cursorStore, OutboxRepository outbox, String deviceId, String pantryPath, int dispensaId, AppDatabase db) {
         this.client = client;
         this.cursorStore = cursorStore;
         this.outbox = outbox;
         this.deviceId = deviceId;
         this.pantryPath = pantryPath.endsWith("/") ? pantryPath : pantryPath + "/";
+        this.dispensaId = dispensaId;
         this.db = db;
         this.gson = new Gson();
     }
@@ -46,6 +51,12 @@ public class WebDavSyncEngine implements SyncEngine {
             if (!policy.canSyncNow()) return;
             
             Log.d("SyncFlow", "--- Inizio sessione di sincronizzazione ---");
+
+            // 0. Migration check
+            if (!checkVersionAndMigrate()) {
+                Log.w("SyncFlow", "Sincronizzazione interrotta per incompatibilità di versione.");
+                return;
+            }
 
             // 1. Pull
             WebDavManifest manifest = fetchManifest();
@@ -71,6 +82,62 @@ public class WebDavSyncEngine implements SyncEngine {
             
             Log.d("SyncFlow", "--- Sessione completata ---");
         });
+    }
+
+    private boolean checkVersionAndMigrate() throws IOException {
+        // 1. Check Legacy Path
+        String basePath = pantryPath;
+        if (basePath.contains("-sync/")) {
+             basePath = basePath.substring(0, basePath.lastIndexOf("-sync/"));
+             if (basePath.contains("/")) {
+                 basePath = basePath.substring(0, basePath.lastIndexOf("/") + 1);
+             } else {
+                 basePath = "";
+             }
+        }
+        
+        String legacyManifestPath = basePath + SyncManager.LEGACY_SYNC_PATH + "pantries/main_pantry/manifest.json";
+        WebDavManifest legacyManifest = null;
+        try (Response response = client.get(legacyManifestPath)) {
+            if (response.isSuccessful() && response.body() != null) {
+                legacyManifest = gson.fromJson(response.body().string(), WebDavManifest.class);
+            }
+        }
+
+        if (legacyManifest != null) {
+            Log.i("SyncFlow", "Rilevata struttura legacy V1.");
+            if (deviceId.equals(legacyManifest.createdByDevice)) {
+                Log.i("SyncFlow", "Owner rilevato. Eliminazione struttura legacy...");
+                try (Response delResp = client.delete(basePath + SyncManager.LEGACY_SYNC_PATH)) {
+                    // Ignora esito, proseguiamo
+                }
+                // Continua e creerà la nuova struttura V2 sotto il nuovo percorso
+            } else {
+                Log.w("SyncFlow", "Guest rilevato su struttura legacy. Segnalazione VersionMismatch.");
+                SyncBus.getInstance().post(new SyncEvent.VersionMismatch(SyncManager.CURRENT_SYNC_VERSION, 1, true));
+                return false;
+            }
+        }
+
+        // 2. Check New Path Version
+        WebDavManifest currentManifest = fetchManifest();
+        if (currentManifest != null) {
+            if (currentManifest.version < SyncManager.CURRENT_SYNC_VERSION) {
+                if (deviceId.equals(currentManifest.createdByDevice)) {
+                    Log.i("SyncFlow", "Migrazione manifest da V" + currentManifest.version + " a V" + SyncManager.CURRENT_SYNC_VERSION);
+                    updateManifest(m -> m.version = SyncManager.CURRENT_SYNC_VERSION);
+                } else {
+                    SyncBus.getInstance().post(new SyncEvent.VersionMismatch(SyncManager.CURRENT_SYNC_VERSION, currentManifest.version, false));
+                    return false;
+                }
+            } else if (currentManifest.version > SyncManager.CURRENT_SYNC_VERSION) {
+                Log.e("SyncFlow", "Versione remota superiore alla locale (" + currentManifest.version + " > " + SyncManager.CURRENT_SYNC_VERSION + ")");
+                SyncBus.getInstance().post(new SyncEvent.VersionMismatch(SyncManager.CURRENT_SYNC_VERSION, currentManifest.version, false));
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private WebDavManifest fetchManifest() throws IOException {
@@ -129,7 +196,7 @@ public class WebDavSyncEngine implements SyncEngine {
     }
 
     private void pushLocalChanges() throws Exception {
-        List<SyncPayload> pending = outbox.getPendingChanges().blockingGet();
+        List<SyncPayload> pending = outbox.getPendingChanges(dispensaId).blockingGet();
         if (pending.isEmpty()) return;
 
         Log.d("SyncFlow", "Push di " + pending.size() + " eventi locali...");
@@ -176,9 +243,9 @@ public class WebDavSyncEngine implements SyncEngine {
         
         WebDavSnapshot snapshot = new WebDavSnapshot();
         snapshot.timestamp = System.currentTimeMillis();
-        snapshot.products = db.productDao().getAllProductsListStatic();
-        snapshot.locations = db.storageLocationDao().getAllLocationsSortedSync();
-        snapshot.shoppingItems = db.shoppingItemDao().getAllItemsSync();
+        snapshot.products = db.productDao().getAllProductsListStatic(dispensaId);
+        snapshot.locations = db.storageLocationDao().getAllLocationsSortedSync(dispensaId);
+        snapshot.shoppingItems = db.shoppingItemDao().getAllItemsSync(dispensaId);
 
         String snapshotName = "snap_" + snapshot.timestamp + ".json";
         
@@ -219,7 +286,8 @@ public class WebDavSyncEngine implements SyncEngine {
         db.runInTransaction(() -> {
             if (snapshot.locations != null) {
                 for (StorageLocation remote : snapshot.locations) {
-                    StorageLocation local = db.storageLocationDao().getLocationByInternalKeySync(remote.internalKey);
+                    remote.dispensaId = dispensaId;
+                    StorageLocation local = db.storageLocationDao().getLocationByInternalKeySync(remote.internalKey, dispensaId);
                     if (local == null || remote.lastModified > local.lastModified) {
                         if (local != null) remote.id = local.id;
                         db.storageLocationDao().insert(remote);
@@ -228,7 +296,8 @@ public class WebDavSyncEngine implements SyncEngine {
             }
             if (snapshot.products != null) {
                 for (Product p : snapshot.products) {
-                    Product local = db.productDao().getProductByLotKeySync(p.barcode, p.expiryDate, p.getStorageLocation());
+                    p.dispensaId = dispensaId;
+                    Product local = db.productDao().getProductByLotKeySync(p.barcode, p.expiryDate, p.getStorageLocation(), dispensaId);
                     if (local == null || p.lastModified > local.lastModified) {
                         if (local != null) p.id = local.id;
                         db.productDao().insert(p);
@@ -237,7 +306,8 @@ public class WebDavSyncEngine implements SyncEngine {
             }
             if (snapshot.shoppingItems != null) {
                 for (ShoppingItem s : snapshot.shoppingItems) {
-                    ShoppingItem local = db.shoppingItemDao().getItemByNameSync(s.name);
+                    s.dispensaId = dispensaId;
+                    ShoppingItem local = db.shoppingItemDao().getItemByNameSync(s.name, dispensaId);
                     if (local == null || s.lastModified > local.lastModified) {
                         if (local != null) s.id = local.id;
                         db.shoppingItemDao().insert(s);
@@ -254,7 +324,8 @@ public class WebDavSyncEngine implements SyncEngine {
             switch (event.action) {
                 case WebDavEvent.ACTION_UPSERT_PRODUCT:
                     Product remoteP = gson.fromJson(jsonPayload, Product.class);
-                    Product localP = db.productDao().getProductByLotKeySync(remoteP.barcode, remoteP.expiryDate, remoteP.getStorageLocation());
+                    remoteP.dispensaId = dispensaId;
+                    Product localP = db.productDao().getProductByLotKeySync(remoteP.barcode, remoteP.expiryDate, remoteP.getStorageLocation(), dispensaId);
                     if (localP == null || remoteP.lastModified > localP.lastModified) {
                         if (localP != null) remoteP.id = localP.id;
                         db.productDao().insert(remoteP);
@@ -262,14 +333,15 @@ public class WebDavSyncEngine implements SyncEngine {
                     break;
                 case WebDavEvent.ACTION_DELETE_PRODUCT:
                     Product toDelete = gson.fromJson(jsonPayload, Product.class);
-                    Product localDel = db.productDao().getProductByLotKeySync(toDelete.barcode, toDelete.expiryDate, toDelete.getStorageLocation());
+                    Product localDel = db.productDao().getProductByLotKeySync(toDelete.barcode, toDelete.expiryDate, toDelete.getStorageLocation(), dispensaId);
                     if (localDel != null && event.timestamp > localDel.lastModified) {
                         db.productDao().delete(localDel);
                     }
                     break;
                 case WebDavEvent.ACTION_UPSERT_LOCATION:
                     StorageLocation remoteL = gson.fromJson(jsonPayload, StorageLocation.class);
-                    StorageLocation localL = db.storageLocationDao().getLocationByInternalKeySync(remoteL.internalKey);
+                    remoteL.dispensaId = dispensaId;
+                    StorageLocation localL = db.storageLocationDao().getLocationByInternalKeySync(remoteL.internalKey, dispensaId);
                     if (localL == null || remoteL.lastModified > localL.lastModified) {
                         if (localL != null) remoteL.id = localL.id;
                         db.storageLocationDao().insert(remoteL);
@@ -277,7 +349,8 @@ public class WebDavSyncEngine implements SyncEngine {
                     break;
                 case WebDavEvent.ACTION_UPSERT_SHOPPING_ITEM:
                     ShoppingItem remoteS = gson.fromJson(jsonPayload, ShoppingItem.class);
-                    ShoppingItem localS = db.shoppingItemDao().getItemByNameSync(remoteS.name);
+                    remoteS.dispensaId = dispensaId;
+                    ShoppingItem localS = db.shoppingItemDao().getItemByNameSync(remoteS.name, dispensaId);
                     if (localS == null || remoteS.lastModified > localS.lastModified) {
                         if (localS != null) remoteS.id = localS.id;
                         db.shoppingItemDao().insert(remoteS);

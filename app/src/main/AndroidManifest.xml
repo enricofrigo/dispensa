@@ -21,6 +21,15 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Dispensa">
         <activity
+            android:name=".activity.DispensaManagerActivity"
+            android:label="@string/manage_dispense_title"
+            android:parentActivityName=".activity.MainActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".activity.MainActivity" />
+        </activity>
+
+        <activity
             android:name=".activity.SettingsActivity"
             android:label="Impostazioni"
             android:parentActivityName=".activity.MainActivity">

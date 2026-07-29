@@ -39,4 +39,7 @@ public interface ProductCategoryLinkDao {
 
     @Query("SELECT * FROM product_category_links")
     List<ProductCategoryLink> getAllProductCategoryLinksSync();
+
+    @Query("SELECT * FROM product_category_links WHERE product_id_fk IN (SELECT id FROM products WHERE dispensa_id = :dispensaId)")
+    List<ProductCategoryLink> getAllProductCategoryLinksForDispensaSync(int dispensaId);
 }

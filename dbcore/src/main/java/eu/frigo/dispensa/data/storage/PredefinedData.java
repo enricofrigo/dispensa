@@ -10,12 +10,20 @@ public class PredefinedData {
     public static final String LOCATION_PANTRY = "PANTRY";
     public static final String LOCATION_ALL = "all_products_key";
 
-    public static List<StorageLocation> getInitialStorageLocations() {
+    public static List<StorageLocation> getInitialStorageLocations(int dispensaId) {
         List<StorageLocation> locations = new ArrayList<>();
 
-        locations.add(new StorageLocation(LOCATION_FRIDGE, LOCATION_FRIDGE, 1, false, true));
-        locations.add(new StorageLocation(LOCATION_FREEZER, LOCATION_FREEZER, 2, false, true));
-        locations.add(new StorageLocation(LOCATION_PANTRY, LOCATION_PANTRY, 0, true, true)); // Dispensa come default, ordine 0
+        StorageLocation fridge = new StorageLocation(LOCATION_FRIDGE, LOCATION_FRIDGE, 1, false, true);
+        fridge.dispensaId = dispensaId;
+        locations.add(fridge);
+
+        StorageLocation freezer = new StorageLocation(LOCATION_FREEZER, LOCATION_FREEZER, 2, false, true);
+        freezer.dispensaId = dispensaId;
+        locations.add(freezer);
+
+        StorageLocation pantry = new StorageLocation(LOCATION_PANTRY, LOCATION_PANTRY, 0, true, true);
+        pantry.dispensaId = dispensaId;
+        locations.add(pantry); // Dispensa come default, ordine 0
 
         return locations;
     }

@@ -20,7 +20,7 @@ public class ShoppingListViewModel extends AndroidViewModel {
 
     public ShoppingListViewModel(@NonNull Application application) {
         super(application);
-        repository = new Repository(application);
+        repository = Repository.getInstance(application);
         allItems = repository.getAllShoppingItems();
         uncheckedCount = repository.getUncheckedShoppingCount();
         allItemNames = repository.getAllShoppingItemNames();

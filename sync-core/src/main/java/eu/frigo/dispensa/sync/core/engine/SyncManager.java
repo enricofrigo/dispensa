@@ -17,10 +17,19 @@ public class SyncManager {
     public static final String KEY_WEBDAV_MODE_SHARED = "sync_webdav_mode_shared";
     public static final String KEY_SYNC_ENABLED = "pref_sync_enabled";
     public static final String SYNC_WEBDAV_PANTRY_KEY = "sync_webdav_pantry_key";
-    public static final String DEFAULT_PATH = "/dispensa/";
-    public static final String DEFAULT_MAIN_PANTRY = "main_pantry";
-    public static final String DEFAULT_SYNC_PATH = "dispensa-sync/";
-    public static final String DEFAULT_PANTRY_PATH = DEFAULT_SYNC_PATH+"pantries/";
+    public static final String SYNC_WEBDAV_PANTRY_NAME = "sync_webdav_pantry_name";
+    public static final String SYNC_WEBDAV_DISPENSA_ID = "sync_webdav_dispensa_id";
+    public static final String SYNC_WEBDAV_SYNCED_IDS = "sync_webdav_synced_ids";
+    public static final String DEFAULT_PATH = "/";
+    
+    public static final int CURRENT_SYNC_VERSION = 2;
+    public static final String LEGACY_SYNC_PATH = "dispensa-sync/";
+    
+    public static String getSyncPath(String pantryName) {
+        String name = (pantryName == null || pantryName.isEmpty()) ? "Dispensa" : pantryName;
+        return name + "-sync/";
+    }
+
     public static final String DEFAULT_EVENTS_FOLDER = "events/";
     public static final String DEFAULT_DEVICES_FOLDER = "devices/";
     public static final String DEFAULT_SNAPSHOTS_FOLDER = "snapshots/";

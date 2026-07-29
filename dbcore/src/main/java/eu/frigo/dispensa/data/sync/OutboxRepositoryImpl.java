@@ -15,9 +15,9 @@ public class OutboxRepositoryImpl implements OutboxRepository {
     }
 
     @Override
-    public Single<List<SyncPayload>> getPendingChanges() {
+    public Single<List<SyncPayload>> getPendingChanges(int dispensaId) {
         return Single.fromCallable(() -> {
-            List<eu.frigo.dispensa.data.sync.SyncOutbox> entries = dao.getPendingChangesSync();
+            List<eu.frigo.dispensa.data.sync.SyncOutbox> entries = dao.getPendingChangesSync(dispensaId);
             List<SyncPayload> payloads = new ArrayList<>();
             for (SyncOutbox entry : entries) {
                 payloads.add(new SyncPayload(entry.syncId, entry.dataType, entry.payload, entry.timestamp));

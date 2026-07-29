@@ -78,6 +78,7 @@ public class ManageDevicesActivity extends AppCompatActivity {
         String pass = prefs.getString(SyncManager.KEY_WEBDAV_PASS, "");
         String path = prefs.getString(SyncManager.KEY_WEBDAV_PATH, SyncManager.DEFAULT_PATH);
         String pantryKey = prefs.getString(SyncManager.SYNC_WEBDAV_PANTRY_KEY, "");
+        String pantryName = prefs.getString(SyncManager.SYNC_WEBDAV_PANTRY_NAME, "Dispensa");
         boolean isShared = prefs.getBoolean(SyncManager.KEY_WEBDAV_MODE_SHARED, false);
 
         if (url.isEmpty() || (user.isEmpty() && !isShared) || pass.isEmpty() || pantryKey.isEmpty()) {
@@ -88,7 +89,7 @@ public class ManageDevicesActivity extends AppCompatActivity {
 
         String normalizedBase = path.endsWith("/") ? path : path + "/";
         if (normalizedBase.startsWith("/")) normalizedBase = normalizedBase.substring(1);
-        String pantryBasePath = normalizedBase + SyncManager.DEFAULT_PANTRY_PATH + pantryKey + "/";
+        String pantryBasePath = normalizedBase + SyncManager.getSyncPath(pantryName);
         devicesPath = pantryBasePath + SyncManager.DEFAULT_DEVICES_FOLDER;
 
         progressBar.setVisibility(View.VISIBLE);

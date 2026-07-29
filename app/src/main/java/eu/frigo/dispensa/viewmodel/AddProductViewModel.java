@@ -17,7 +17,7 @@ public class AddProductViewModel extends AndroidViewModel {
 
     public AddProductViewModel (Application application) {
         super(application);
-        repository = new Repository(application);
+        repository = Repository.getInstance(application);
         allSelectableLocations = repository.getAllSelectableLocations();
     }
 
