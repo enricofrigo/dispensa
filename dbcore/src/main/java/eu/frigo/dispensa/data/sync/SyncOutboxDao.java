@@ -11,8 +11,8 @@ public interface SyncOutboxDao {
     @Insert
     void insert(eu.frigo.dispensa.data.sync.SyncOutbox entry);
 
-    @Query("SELECT * FROM sync_outbox WHERE isSynced = 0 ORDER BY timestamp ASC")
-    List<eu.frigo.dispensa.data.sync.SyncOutbox> getPendingChangesSync();
+    @Query("SELECT * FROM sync_outbox WHERE isSynced = 0 AND dispensa_id = :dispensaId ORDER BY timestamp ASC")
+    List<eu.frigo.dispensa.data.sync.SyncOutbox> getPendingChangesSync(int dispensaId);
 
     @Query("UPDATE sync_outbox SET isSynced = 1 WHERE syncId IN (:syncIds)")
     void markAsSynced(List<String> syncIds);

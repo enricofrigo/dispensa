@@ -26,45 +26,49 @@ public interface StorageLocationDao {
     @Delete
     void delete(StorageLocation location);
 
-    @Query("DELETE FROM storage_locations WHERE internal_key = :internalKey AND is_predefined = 0") // Non permette di cancellare quelle predefinite tramite questo metodo
-    int deleteByInternalKeyIfNotPredefined(String internalKey);
+    @Query("DELETE FROM storage_locations WHERE internal_key = :internalKey AND is_predefined = 0 AND dispensa_id = :dispensaId") // Non permette di cancellare quelle predefinite tramite questo metodo
+    int deleteByInternalKeyIfNotPredefined(String internalKey, int dispensaId);
 
     @Query("SELECT * FROM storage_locations WHERE id = :id")
     LiveData<StorageLocation> getLocationById(int id);
 
-    @Query("SELECT * FROM storage_locations WHERE internal_key = :internalKey")
-    LiveData<StorageLocation> getLocationByInternalKey(String internalKey);
+    @Query("SELECT * FROM storage_locations WHERE internal_key = :internalKey AND dispensa_id = :dispensaId")
+    LiveData<StorageLocation> getLocationByInternalKey(String internalKey, int dispensaId);
 
-    @Query("SELECT * FROM storage_locations WHERE internal_key = :internalKey")
-    StorageLocation getLocationByInternalKeySync(String internalKey); // Versione sincrona
+    @Query("SELECT * FROM storage_locations WHERE internal_key = :internalKey AND dispensa_id = :dispensaId")
+    StorageLocation getLocationByInternalKeySync(String internalKey, int dispensaId); // Versione sincrona
 
-    @Query("SELECT * FROM storage_locations ORDER BY order_index ASC")
-    LiveData<List<StorageLocation>> getAllLocationsSorted();
+    @Query("SELECT * FROM storage_locations WHERE dispensa_id = :dispensaId ORDER BY order_index ASC")
+    LiveData<List<StorageLocation>> getAllLocationsSorted(int dispensaId);
 
-    @Query("SELECT * FROM storage_locations ORDER BY order_index ASC")
-    List<StorageLocation> getAllLocationsSortedSync(); // Versione sincrona
+    @Query("SELECT * FROM storage_locations WHERE dispensa_id = :dispensaId ORDER BY order_index ASC")
+    List<StorageLocation> getAllLocationsSortedSync(int dispensaId); // Versione sincrona
 
-    @Query("SELECT * FROM storage_locations WHERE is_default = 1 LIMIT 1")
-    LiveData<StorageLocation> getDefaultLocation();
+    @Query("SELECT * FROM storage_locations WHERE is_default = 1 AND dispensa_id = :dispensaId LIMIT 1")
+    LiveData<StorageLocation> getDefaultLocation(int dispensaId);
 
-    @Query("SELECT * FROM storage_locations WHERE is_default = 1 LIMIT 1")
-    StorageLocation getDefaultLocationSync(); // Versione sincrona
+    @Query("SELECT * FROM storage_locations WHERE is_default = 1 AND dispensa_id = :dispensaId LIMIT 1")
+    StorageLocation getDefaultLocationSync(int dispensaId); // Versione sincrona
 
-    @Query("UPDATE storage_locations SET is_default = 0 WHERE internal_key != :newDefaultInternalKey")
-    void clearOtherDefaults(String newDefaultInternalKey);
+    @Query("UPDATE storage_locations SET is_default = 0 WHERE internal_key != :newDefaultInternalKey AND dispensa_id = :dispensaId")
+    void clearOtherDefaults(String newDefaultInternalKey, int dispensaId);
 
     @Transaction // Esegui queste due operazioni come una singola transazione
-    default void setAsDefault(String internalKey) {
-        clearOtherDefaults(internalKey);
-        StorageLocation loc = getLocationByInternalKeySync(internalKey);
+    default void setAsDefault(String internalKey, int dispensaId) {
+        clearOtherDefaults(internalKey, dispensaId);
+        StorageLocation loc = getLocationByInternalKeySync(internalKey, dispensaId);
         if (loc != null) {
             loc.isDefault = true;
             update(loc);
         }
     }
 
+    @Query("SELECT COUNT(*) FROM storage_locations WHERE dispensa_id = :dispensaId")
+    int countLocations(int dispensaId);
+
     @Query("SELECT COUNT(*) FROM storage_locations")
-    int countLocations();
-    @Query("SELECT MAX(order_index) FROM storage_locations")
-    int getMaxOrderIndex();
+    int countAllLocations();
+
+    @Query("SELECT MAX(order_index) FROM storage_locations WHERE dispensa_id = :dispensaId")
+    Integer getMaxOrderIndex(int dispensaId);
 }

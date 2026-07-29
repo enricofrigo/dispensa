@@ -11,6 +11,9 @@ public class WebDavManifest {
     @SerializedName("pantryKey")
     public String pantryKey;
 
+    @SerializedName("pantryName")
+    public String pantryName;
+
     @SerializedName("createdAt")
     public long createdAt;
 

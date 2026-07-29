@@ -62,10 +62,13 @@ import eu.frigo.dispensa.data.product.Product;
 import eu.frigo.dispensa.data.storage.StorageLocation;
 import eu.frigo.dispensa.sync.core.engine.SyncManager;
 import eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl;
+import eu.frigo.dispensa.sync.core.event.SyncBus;
+import eu.frigo.dispensa.sync.core.event.SyncEvent;
 import eu.frigo.dispensa.ui.ProductListFragment;
 import eu.frigo.dispensa.ui.SettingsFragment;
 import eu.frigo.dispensa.util.LocaleHelper;
 import eu.frigo.dispensa.util.LocationFormatter;
+import eu.frigo.dispensa.viewmodel.DispensaViewModel;
 import eu.frigo.dispensa.viewmodel.LocationViewModel;
 import eu.frigo.dispensa.viewmodel.ProductViewModel;
 import eu.frigo.dispensa.viewmodel.ShoppingListViewModel;
@@ -85,7 +88,9 @@ public class MainActivity extends AppCompatActivity
     private ViewPager2 viewPager;
     private LocationViewPagerAdapter locationViewPagerAdapter;
     private LocationViewModel locationViewModel;
+    private DispensaViewModel dispensaViewModel;
     private ShoppingListViewModel shoppingListViewModel;
+    private io.reactivex.rxjava3.disposables.Disposable syncDisposable;
     private BadgeDrawable shoppingBadge;
     private final ActivityResultLauncher<String> requestPermissionLauncher = registerForActivityResult(
             new ActivityResultContracts.RequestPermission(), isGranted -> {
@@ -132,10 +137,16 @@ public class MainActivity extends AppCompatActivity
     private final ActivityResultLauncher<String> exportLauncher = registerForActivityResult(
             new ActivityResultContracts.CreateDocument("application/octet-stream"), uri -> {
                 if (uri != null) {
+                    Integer currentDispensaId = dispensaViewModel.getCurrentDispensaId().getValue();
+                    if (currentDispensaId == null) {
+                        Toast.makeText(this, "Errore: nessuna dispensa selezionata", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    final int dispId = currentDispensaId;
                     AppDatabase.databaseWriteExecutor.execute(() -> {
                         try (OutputStream os = getContentResolver().openOutputStream(uri)) {
                             BackupManager backupManager = new BackupManager(this);
-                            backupManager.exportData(os, BuildConfig.VERSION_CODE);
+                            backupManager.exportData(os, BuildConfig.VERSION_CODE, dispId);
                             runOnUiThread(
                                     () -> Toast.makeText(this, R.string.export_success, Toast.LENGTH_SHORT).show());
                         } catch (Exception e) {
@@ -218,10 +229,21 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = findViewById(R.id.toolbar);
         toolbar.setTitle(R.string.app_name);
         setSupportActionBar(toolbar);
+        toolbar.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, DispensaManagerActivity.class);
+            startActivity(intent);
+        });
 
         productViewModel = new ViewModelProvider(this).get(ProductViewModel.class);
         locationViewModel = new ViewModelProvider(this).get(LocationViewModel.class);
+        dispensaViewModel = new ViewModelProvider(this).get(DispensaViewModel.class);
         productViewModel.getAllProducts().observe(this, products -> showHintsIfNeeded());
+
+        // Osserva la dispensa corrente per aggiornare il titolo
+        dispensaViewModel.getAllDispense().observe(this, dispense -> updateToolbarTitle());
+        dispensaViewModel.getCurrentDispensaId().observe(this, id -> updateToolbarTitle());
+
+        observeSyncEvents();
 
         viewPager = findViewById(R.id.viewPager);
         TabLayout tabLayout = findViewById(R.id.tabLayout);
@@ -322,6 +344,48 @@ public class MainActivity extends AppCompatActivity
             consumeScannerLauncher.launch(intent);
         });
 
+    }
+
+    private void observeSyncEvents() {
+        syncDisposable = SyncBus.getInstance().observe()
+                .filter(event -> event instanceof SyncEvent.VersionMismatch)
+                .observeOn(io.reactivex.rxjava3.android.schedulers.AndroidSchedulers.mainThread())
+                .subscribe(event -> {
+                    SyncEvent.VersionMismatch mismatch = (SyncEvent.VersionMismatch) event;
+                    showVersionMismatchDialog(mismatch);
+                });
+    }
+
+    private void showVersionMismatchDialog(SyncEvent.VersionMismatch mismatch) {
+        new AlertDialog.Builder(this)
+                .setTitle("Incompatibilità Versione")
+                .setMessage("La struttura di condivisione cloud è cambiata o non è compatibile con questa versione dell'app.\n\n" +
+                        "Se sei l'owner della dispensa, assicurati che la migrazione automatica avvenga riavviando il sync.\n" +
+                        "Se sei un ospite, contatta l'owner per migrare alla nuova versione o aggiorna l'app.")
+                .setPositiveButton(R.string.ok, null)
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .show();
+    }
+
+    private void updateToolbarTitle() {
+        if (dispensaViewModel == null) return;
+        
+        List<eu.frigo.dispensa.data.dispensa.Dispensa> dispense = dispensaViewModel.getAllDispense().getValue();
+        Integer currentId = dispensaViewModel.getCurrentDispensaId().getValue();
+        
+        if (dispense != null && currentId != null) {
+            for (eu.frigo.dispensa.data.dispensa.Dispensa d : dispense) {
+                if (d.id == currentId) {
+                    if (getSupportActionBar() != null) {
+                        getSupportActionBar().setTitle(d.getName());
+                    }
+                    return;
+                }
+            }
+        }
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setTitle(R.string.app_name);
+        }
     }
 
     private void showHintsIfNeeded() {
@@ -847,6 +911,9 @@ public class MainActivity extends AppCompatActivity
         super.onDestroy();
         if (viewPager != null) {
             viewPager.unregisterOnPageChangeCallback(pageChangeCallback);
+        }
+        if (syncDisposable != null && !syncDisposable.isDisposed()) {
+            syncDisposable.dispose();
         }
     }
 

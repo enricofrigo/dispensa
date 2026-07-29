@@ -15,10 +15,13 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import eu.frigo.dispensa.data.backup.PreMigrationBackupHelper;
 import eu.frigo.dispensa.data.category.CategoryDefinition;
 import eu.frigo.dispensa.data.category.CategoryDefinitionDao;
 import eu.frigo.dispensa.data.category.ProductCategoryLink;
 import eu.frigo.dispensa.data.category.ProductCategoryLinkDao;
+import eu.frigo.dispensa.data.dispensa.Dispensa;
+import eu.frigo.dispensa.data.dispensa.DispensaDao;
 import eu.frigo.dispensa.data.product.Product;
 import eu.frigo.dispensa.data.product.ProductDao;
 import eu.frigo.dispensa.data.shoppinglist.ShoppingItem;
@@ -35,8 +38,8 @@ import eu.frigo.dispensa.data.openfoodfacts.OpenFoodFactCacheEntity;
 
 @Database(entities = {Product.class, CategoryDefinition.class,
         ProductCategoryLink.class, StorageLocation.class, OpenFoodFactCacheEntity.class,
-        ShoppingItem.class, SyncOutbox.class },
-        version = 12)
+        ShoppingItem.class, SyncOutbox.class, Dispensa.class },
+        version = 15)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract ProductDao productDao();
@@ -46,6 +49,7 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract OpenFoodFactCacheDao openFoodFactCacheDao();
     public abstract ShoppingItemDao shoppingItemDao();
     public abstract SyncOutboxDao syncOutboxDao();
+    public abstract DispensaDao dispensaDao();
 
     private static volatile AppDatabase INSTANCE;
     private static final int NUMBER_OF_THREADS = 4;
@@ -68,6 +72,49 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    static final Migration MIGRATION_12_13 = new Migration(12, 13) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            long now = System.currentTimeMillis();
+            // 1. Crea tabella dispense
+            database.execSQL("CREATE TABLE IF NOT EXISTS `dispense` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT, `is_default` INTEGER NOT NULL DEFAULT 0, `last_modified` INTEGER NOT NULL DEFAULT 0, `remote_id` TEXT)");
+            
+            // 2. Inserisci la dispensa di default iniziale
+            database.execSQL("INSERT INTO dispense (id, name, is_default, last_modified) VALUES (1, 'Dispensa', 1, " + now + ")");
+            
+            // 3. Aggiungi dispensa_id alle tabelle esistenti con default 1
+            database.execSQL("ALTER TABLE products ADD COLUMN dispensa_id INTEGER DEFAULT 1 NOT NULL");
+            database.execSQL("ALTER TABLE storage_locations ADD COLUMN dispensa_id INTEGER DEFAULT 1 NOT NULL");
+            database.execSQL("ALTER TABLE shopping_items ADD COLUMN dispensa_id INTEGER DEFAULT 1 NOT NULL");
+
+            // 4. Crea indici
+            database.execSQL("CREATE INDEX IF NOT EXISTS index_products_dispensa_id ON products(dispensa_id)");
+            database.execSQL("CREATE INDEX IF NOT EXISTS index_storage_locations_dispensa_id ON storage_locations(dispensa_id)");
+            database.execSQL("CREATE INDEX IF NOT EXISTS index_shopping_items_dispensa_id ON shopping_items(dispensa_id)");
+
+            // 5. Aggiorna indice univoco di storage_locations
+            database.execSQL("DROP INDEX IF EXISTS index_storage_locations_internal_key");
+            database.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_storage_locations_internal_key_dispensa_id ON storage_locations(internal_key, dispensa_id)");
+        }
+    };
+
+    static final Migration MIGRATION_13_14 = new Migration(13, 14) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("ALTER TABLE sync_outbox ADD COLUMN dispensa_id INTEGER DEFAULT 0 NOT NULL");
+        }
+    };
+
+    static final Migration MIGRATION_14_15 = new Migration(14, 15) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            // Fix index name mismatch: Room expects index_products_storage_location
+            // but MIGRATION_7_8 created index_products_location_internal_key
+            database.execSQL("DROP INDEX IF EXISTS index_products_location_internal_key");
+            database.execSQL("CREATE INDEX IF NOT EXISTS index_products_storage_location ON products(storage_location)");
+        }
+    };
+
     static final Migration MIGRATION_6_7 = new Migration(6,7) {
         @Override
         public void migrate(SupportSQLiteDatabase database) {
@@ -79,7 +126,7 @@ public abstract class AppDatabase extends RoomDatabase {
     static final Migration MIGRATION_7_8 = new Migration(7, 8) {
         @Override
         public void migrate(SupportSQLiteDatabase database) {
-            database.execSQL("CREATE INDEX IF NOT EXISTS index_products_location_internal_key ON products(storage_location)");
+            database.execSQL("CREATE INDEX IF NOT EXISTS index_products_storage_location ON products(storage_location)");
         }
     };
 
@@ -100,41 +147,56 @@ public abstract class AppDatabase extends RoomDatabase {
     public static AppDatabase getDatabase(final Context context) {
         if (INSTANCE == null) {
             synchronized (AppDatabase.class) {
-                RoomDatabase.Callback sRoomDatabaseCallback = new RoomDatabase.Callback() {
-                    @UnstableApi
-                    @Override
-                    public void onCreate(@NonNull SupportSQLiteDatabase db) {
-                        super.onCreate(db);
-                        Executors.newSingleThreadExecutor().execute(() -> {
-                            Log.d("AppDatabase", "Database onCreate - Prepopolamento StorageLocations");
-                            StorageLocationDao dao = INSTANCE.storageLocationDao();
-                            if (dao.countLocations() == 0) { // Controlla se è veramente vuoto
-                                dao.insertAll(PredefinedData.getInitialStorageLocations());
-                                Log.d("AppDatabase", "Prepopolamento StorageLocations completato.");
-                            }
-                        });
-                    }
-
-                    @UnstableApi
-                    @Override
-                    public void onOpen(@NonNull SupportSQLiteDatabase db) {
-                        super.onOpen(db);
-                        Executors.newSingleThreadExecutor().execute(() -> {
-                            Log.d("AppDatabase", "Database onOpen - Verifica/Aggiornamento StorageLocations predefinite");
-                            StorageLocationDao dao = INSTANCE.storageLocationDao();
-                            List<StorageLocation> predefined = PredefinedData.getInitialStorageLocations();
-                            for (StorageLocation loc : predefined) {
-                                StorageLocation existing = dao.getLocationByInternalKeySync(loc.internalKey);
-                                if (existing == null) {
-                                    dao.insert(loc);
-                                    Log.d("AppDatabase", "Inserita location predefinita mancante: " + loc.name);
-                                }
-                            }
-                        });
-                    }
-                };
-
                 if (INSTANCE == null) {
+                    // Esegui backup preventivo se è prevista una migrazione
+                    PreMigrationBackupHelper.checkAndBackup(context.getApplicationContext(), "dispensa_database", 15);
+
+                    RoomDatabase.Callback sRoomDatabaseCallback = new RoomDatabase.Callback() {
+                        @UnstableApi
+                        @Override
+                        public void onCreate(@NonNull SupportSQLiteDatabase db) {
+                            super.onCreate(db);
+                            Executors.newSingleThreadExecutor().execute(() -> {
+                                Log.d("AppDatabase", "Database onCreate - Prepopolamento Dispensa e StorageLocations");
+                                AppDatabase database = INSTANCE;
+                                if (database == null) return;
+
+                                DispensaDao dispensaDao = database.dispensaDao();
+                                StorageLocationDao storageDao = database.storageLocationDao();
+
+                                if (dispensaDao.countDispense() == 0) {
+                                    Dispensa defaultDispensa = new Dispensa("Dispensa", true);
+                                    long dispensaId = dispensaDao.insert(defaultDispensa);
+
+                                    if (storageDao.countAllLocations() == 0) {
+                                        storageDao.insertAll(PredefinedData.getInitialStorageLocations((int) dispensaId));
+                                        Log.d("AppDatabase", "Prepopolamento Dispensa e StorageLocations completato.");
+                                    }
+                                }
+                            });
+                        }
+
+                        @UnstableApi
+                        @Override
+                        public void onOpen(@NonNull SupportSQLiteDatabase db) {
+                            super.onOpen(db);
+                            Executors.newSingleThreadExecutor().execute(() -> {
+                                Log.d("AppDatabase", "Database onOpen - Verifica Dispensa e StorageLocations");
+                                AppDatabase database = INSTANCE;
+                                if (database == null) return;
+
+                                DispensaDao dispensaDao = database.dispensaDao();
+                                StorageLocationDao storageDao = database.storageLocationDao();
+
+                                if (dispensaDao.countDispense() == 0) {
+                                    Dispensa defaultDispensa = new Dispensa("Dispensa", true);
+                                    long dispensaId = dispensaDao.insert(defaultDispensa);
+                                    storageDao.insertAll(PredefinedData.getInitialStorageLocations((int) dispensaId));
+                                }
+                            });
+                        }
+                    };
+
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                                     AppDatabase.class, "dispensa_database")
                             .addMigrations(MIGRATION_6_7)
@@ -143,6 +205,9 @@ public abstract class AppDatabase extends RoomDatabase {
                             .addMigrations(MIGRATION_9_10)
                             .addMigrations(MIGRATION_10_11)
                             .addMigrations(MIGRATION_11_12)
+                            .addMigrations(MIGRATION_12_13)
+                            .addMigrations(MIGRATION_13_14)
+                            .addMigrations(MIGRATION_14_15)
                             .addCallback(sRoomDatabaseCallback)
                             //.fallbackToDestructiveMigration()
                             .build();

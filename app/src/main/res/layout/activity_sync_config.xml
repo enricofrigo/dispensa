@@ -68,6 +68,20 @@
             android:defaultValue="/dispensa/" />
     </com.google.android.material.textfield.TextInputLayout>
 
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Dispense da sincronizzare"
+        android:textStyle="bold" />
+
+    <LinearLayout
+        android:id="@+id/container_sync_dispense"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="8dp" />
+
     <Button
         android:id="@+id/btn_save_sync_config"
         android:layout_width="match_parent"

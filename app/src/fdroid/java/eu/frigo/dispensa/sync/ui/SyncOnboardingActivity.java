@@ -28,6 +28,7 @@ import eu.frigo.dispensa.sync.webdav.WebDavConfig;
 import eu.frigo.dispensa.sync.webdav.WebDavPairingHandler;
 import eu.frigo.dispensa.sync.webdav.client.WebDavClient;
 import eu.frigo.dispensa.sync.webdav.client.WebDavClientFactory;
+import eu.frigo.dispensa.sync.webdav.model.WebDavManifest;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.schedulers.Schedulers;
@@ -107,6 +108,7 @@ public class SyncOnboardingActivity extends AppCompatActivity {
         String pass = prefs.getString(SyncManager.KEY_WEBDAV_PASS, "");
         String path = prefs.getString(SyncManager.KEY_WEBDAV_PATH, SyncManager.DEFAULT_PATH);
         String pantryKey = prefs.getString(SyncManager.SYNC_WEBDAV_PANTRY_KEY, "");
+        String pantryName = eu.frigo.dispensa.data.Repository.getInstance(getApplication()).getCurrentDispensaNameSync();
         boolean isShared = prefs.getBoolean(SyncManager.KEY_WEBDAV_MODE_SHARED, false);
 
         if (url.isEmpty() || (user.isEmpty() && !isShared)) {
@@ -120,7 +122,7 @@ public class SyncOnboardingActivity extends AppCompatActivity {
 
         try {
             // 1. Prepare WebDAV config
-            WebDavConfig config = new WebDavConfig(url, user, pass, path, pantryKey, isShared);
+            WebDavConfig config = new WebDavConfig(url, user, pass, path, pantryKey, pantryName, isShared);
             
             // 2. Create encrypted payload
             String deviceName = android.os.Build.MODEL;
@@ -202,7 +204,13 @@ public class SyncOnboardingActivity extends AppCompatActivity {
             pd.flatMap(payload -> {
                 String providerId = payload.providerId != null ? payload.providerId : payload.data.get("providerId");
                 if ("webdav".equals(providerId)) {
-                    return checkDeviceAlreadyRegistered(payload)
+                    return checkVersionCompatibility(payload)
+                            .flatMap(compatible -> {
+                                if (!compatible) {
+                                    return Single.error(new IllegalStateException("VERSION_MISMATCH"));
+                                }
+                                return checkDeviceAlreadyRegistered(payload);
+                            })
                             .flatMap(exists -> {
                                 if (exists) {
                                     return Single.error(new IllegalStateException("DEVICE_ALREADY_REGISTERED"));
@@ -224,10 +232,43 @@ public class SyncOnboardingActivity extends AppCompatActivity {
                 Log.e("SyncOnboarding", "Errore decriptazione pairing", throwable);
                 if ("DEVICE_ALREADY_REGISTERED".equals(throwable.getMessage())) {
                     Toast.makeText(this, "Questo dispositivo è già registrato in questa dispensa.", Toast.LENGTH_LONG).show();
+                } else if ("VERSION_MISMATCH".equals(throwable.getMessage())) {
+                    Toast.makeText(this, "Incompatibilità Versione: La dispensa remota non è compatibile con questa app.", Toast.LENGTH_LONG).show();
                 } else {
                     Toast.makeText(this, R.string.sync_pairing_error, Toast.LENGTH_LONG).show();
                 }
             });
+        });
+    }
+
+    private Single<Boolean> checkVersionCompatibility(PairingPayload payload) {
+        return Single.fromCallable(() -> {
+            String url = payload.data.get("url");
+            String user = payload.data.get("user");
+            String pass = payload.data.get("pass");
+            String path = payload.data.get("path");
+            String pantryName = payload.data.get("pantryName");
+
+            if (url == null || pass == null) return false;
+
+            String effectivePath = path != null ? path : SyncManager.DEFAULT_PATH;
+            String normalizedBase = effectivePath.endsWith("/") ? effectivePath : effectivePath + "/";
+            if (normalizedBase.startsWith("/")) normalizedBase = normalizedBase.substring(1);
+            String pantryPath = normalizedBase + SyncManager.getSyncPath(pantryName);
+            String manifestPath = pantryPath + SyncManager.MANIFEST_JSON;
+
+            WebDavClient client = WebDavClientFactory.getInstance().getClient(url, user, pass);
+            try (Response response = client.get(manifestPath)) {
+                if (response.isSuccessful() && response.body() != null) {
+                    WebDavManifest manifest = new com.google.gson.Gson().fromJson(response.body().string(), WebDavManifest.class);
+                    if (manifest != null) {
+                        return manifest.version == SyncManager.CURRENT_SYNC_VERSION;
+                    }
+                }
+            } catch (Exception e) {
+                Log.e("SyncOnboardingActivity", "Error checking version", e);
+            }
+            return false;
         });
     }
 
@@ -238,6 +279,7 @@ public class SyncOnboardingActivity extends AppCompatActivity {
             String pass = payload.data.get("pass");
             String path = payload.data.get("path");
             String pantryKey = payload.data.get("pantryKey");
+            String pantryName = payload.data.get("pantryName");
             boolean isShared = Boolean.parseBoolean(payload.data.get("isShared"));
 
             if (url == null || (!isShared && user == null) || pass == null || pantryKey == null) {
@@ -250,7 +292,7 @@ public class SyncOnboardingActivity extends AppCompatActivity {
             
             String normalizedBase = effectivePath.endsWith("/") ? effectivePath : effectivePath + "/";
             if (normalizedBase.startsWith("/")) normalizedBase = normalizedBase.substring(1);
-            String pantryPath = normalizedBase + SyncManager.DEFAULT_PANTRY_PATH + pantryKey + "/";
+            String pantryPath = normalizedBase + SyncManager.getSyncPath(pantryName);
             String devicePath = pantryPath + SyncManager.DEFAULT_DEVICES_FOLDER + deviceId + ".json";
 
             WebDavClient client = WebDavClientFactory.getInstance().getClient(url, user, pass);
@@ -270,6 +312,7 @@ public class SyncOnboardingActivity extends AppCompatActivity {
             String pass = payload.data.get("pass");
             String path = payload.data.get("path");
             String pantryKey = payload.data.get("pantryKey");
+            String pantryName = payload.data.get("pantryName");
             boolean isShared = Boolean.parseBoolean(payload.data.get("isShared"));
 
             if (url == null || (!isShared && user == null) || pass == null || pantryKey == null) {
@@ -281,7 +324,7 @@ public class SyncOnboardingActivity extends AppCompatActivity {
             
             String normalizedBase = effectivePath.endsWith("/") ? effectivePath : effectivePath + "/";
             if (normalizedBase.startsWith("/")) normalizedBase = normalizedBase.substring(1);
-            String pantryPath = normalizedBase + SyncManager.DEFAULT_PANTRY_PATH + pantryKey + "/";
+            String pantryPath = normalizedBase + SyncManager.getSyncPath(pantryName);
             String devicePath = pantryPath + SyncManager.DEFAULT_DEVICES_FOLDER + deviceId + ".json";
 
             eu.frigo.dispensa.sync.webdav.model.WebDavDevice device = new eu.frigo.dispensa.sync.webdav.model.WebDavDevice();

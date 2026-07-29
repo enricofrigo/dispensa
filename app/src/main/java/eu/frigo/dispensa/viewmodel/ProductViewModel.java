@@ -21,7 +21,7 @@ public class ProductViewModel extends AndroidViewModel {
 
     public ProductViewModel(@NonNull Application application) {
         super(application);
-        repository = new Repository(application); // Usa il tuo Repository
+        repository = Repository.getInstance(application); // Usa il tuo Repository
         allProducts = repository.getAllProducts();
     }
 

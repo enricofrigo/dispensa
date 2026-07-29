@@ -28,27 +28,27 @@ public interface ShoppingItemDao {
     @Query("DELETE FROM shopping_items")
     void deleteAll();
 
-    @Query("DELETE FROM shopping_items WHERE checked = 1")
-    void deleteChecked();
+    @Query("DELETE FROM shopping_items WHERE checked = 1 AND dispensa_id = :dispensaId")
+    void deleteChecked(int dispensaId);
 
-    @Query("SELECT * FROM shopping_items ORDER BY checked ASC, name ASC")
-    LiveData<List<ShoppingItem>> getAllItems();
+    @Query("SELECT * FROM shopping_items WHERE dispensa_id = :dispensaId ORDER BY checked ASC, name ASC")
+    LiveData<List<ShoppingItem>> getAllItems(int dispensaId);
 
-    @Query("SELECT * FROM shopping_items ORDER BY checked ASC, name ASC")
-    List<ShoppingItem> getAllItemsSync();
+    @Query("SELECT * FROM shopping_items WHERE dispensa_id = :dispensaId ORDER BY checked ASC, name ASC")
+    List<ShoppingItem> getAllItemsSync(int dispensaId);
 
-    @Query("SELECT * FROM shopping_items WHERE name = :name LIMIT 1")
-    ShoppingItem getItemByNameSync(String name);
+    @Query("SELECT * FROM shopping_items WHERE name = :name AND dispensa_id = :dispensaId LIMIT 1")
+    ShoppingItem getItemByNameSync(String name, int dispensaId);
 
-    @Query("SELECT * FROM shopping_items WHERE checked = 1")
-    List<ShoppingItem> getCheckedItemsSync();
+    @Query("SELECT * FROM shopping_items WHERE checked = 1 AND dispensa_id = :dispensaId")
+    List<ShoppingItem> getCheckedItemsSync(int dispensaId);
 
-    @Query("SELECT COUNT(*) FROM shopping_items WHERE checked = 0")
-    LiveData<Integer> getUncheckedCount();
+    @Query("SELECT COUNT(*) FROM shopping_items WHERE checked = 0 AND dispensa_id = :dispensaId")
+    LiveData<Integer> getUncheckedCount(int dispensaId);
 
-    @Query("SELECT name FROM shopping_items")
-    LiveData<List<String>> getAllItemNames();
+    @Query("SELECT name FROM shopping_items WHERE dispensa_id = :dispensaId")
+    LiveData<List<String>> getAllItemNames(int dispensaId);
 
-    @Query("DELETE FROM shopping_items WHERE name = :name")
-    void deleteByName(String name);
+    @Query("DELETE FROM shopping_items WHERE name = :name AND dispensa_id = :dispensaId")
+    void deleteByName(String name, int dispensaId);
 }

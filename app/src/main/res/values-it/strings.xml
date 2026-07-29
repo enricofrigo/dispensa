@@ -270,4 +270,14 @@ I prodotti in questa dispensa potrebbero dover essere riassegnati.</string>
     <string name="sync_device_delete_success">Dispositivo rimosso con successo</string>
     <string name="sync_delete_device_err">Errore durante la rimozione: %s</string>
     <string name="sync_not_configured">Sincronizzazione non configurata</string>
+
+    <!-- Dispensa Management -->
+    <string name="manage_dispense_title">Gestione Dispense</string>
+    <string name="add_dispensa">Aggiungi dispensa</string>
+    <string name="edit_dispensa">Modifica dispensa</string>
+    <string name="delete_dispensa_title">Elimina dispensa</string>
+    <string name="delete_dispensa_message">Sei sicuro di voler eliminare questa dispensa? Tutti i prodotti e le posizioni associati andranno persi.</string>
+    <string name="name_required">Il nome è obbligatorio</string>
+    <string name="cannot_delete_default_dispensa">Impossibile eliminare la dispensa predefinita</string>
+    <string name="dispensa_name">Nome dispensa</string>
 </resources>
