@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/action_create_pantry"
+        android:title="@string/add_dispensa" />
+    <item
+        android:id="@+id/action_import_pantry"
+        android:title="@string/import_pantry" />
+    <item
+        android:id="@+id/action_join_pantry"
+        android:title="@string/join_pantry" />
+</menu>

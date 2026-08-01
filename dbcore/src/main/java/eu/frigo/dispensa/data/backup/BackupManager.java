@@ -90,7 +90,13 @@ public class BackupManager {
         }
     }
 
-    public void importData(InputStream inputStream) throws Exception {
+    public BackupData peekBackupData(InputStream inputStream) throws Exception {
+        try (InputStreamReader reader = new InputStreamReader(inputStream)) {
+            return gson.fromJson(reader, BackupData.class);
+        }
+    }
+
+    public void importData(InputStream inputStream, int targetDispensaId) throws Exception {
         BackupData backupData;
         try (InputStreamReader reader = new InputStreamReader(inputStream)) {
             backupData = gson.fromJson(reader, BackupData.class);
@@ -113,26 +119,55 @@ public class BackupManager {
         migrateDataIfNeeded(backupData, currentVersion);
 
         db.runInTransaction(() -> {
-            db.productDao().deleteAllProducts();
-            db.productCategoryLinkDao().deleteAllProductCategoryLink();
-            db.categoryDefinitionDao().deleteAllCategoryDefinitions();
-            SupportSQLiteDatabase sdb = db.getOpenHelper().getWritableDatabase();
-            sdb.execSQL("DELETE FROM storage_locations");
+            // Delete existing data for the target pantry
+            db.productCategoryLinkDao().deleteByDispensaId(targetDispensaId);
+            db.productDao().deleteAllProducts(targetDispensaId);
+            db.storageLocationDao().deleteAllLocations(targetDispensaId);
+            db.shoppingItemDao().deleteAllItems(targetDispensaId);
 
-            if (backupData.locations != null)
-                db.storageLocationDao().insertAll(backupData.locations);
+            // Import categories (global, so we just add missing ones)
             if (backupData.categories != null)
                 db.categoryDefinitionDao().insertAll(backupData.categories);
+
+            // Import locations
+            if (backupData.locations != null) {
+                for (StorageLocation loc : backupData.locations) {
+                    loc.id = 0; // Force auto-generation
+                    loc.dispensaId = targetDispensaId;
+                }
+                db.storageLocationDao().insertAll(backupData.locations);
+            }
+
+            // Import products and category links
             if (backupData.products != null) {
                 for (Product p : backupData.products) {
+                    int oldProductId = p.id;
+                    p.id = 0; // Force auto-generation
+                    p.dispensaId = targetDispensaId;
                     p.validateImageUrlExistence();
+                    
+                    long newProductId = db.productDao().insert(p);
+                    
+                    // Re-link categories for this product
+                    if (backupData.categoryLinks != null) {
+                        for (ProductCategoryLink link : backupData.categoryLinks) {
+                            if (link.productIdFk == oldProductId) {
+                                link.productIdFk = (int) newProductId;
+                                db.productCategoryLinkDao().insert(link);
+                            }
+                        }
+                    }
                 }
-                db.productDao().insertAll(backupData.products);
             }
-            if (backupData.categoryLinks != null)
-                db.productCategoryLinkDao().insertAll(backupData.categoryLinks);
-            if (backupData.shoppingItems != null)
+
+            // Import shopping items
+            if (backupData.shoppingItems != null) {
+                for (ShoppingItem item : backupData.shoppingItems) {
+                    item.id = 0; // Force auto-generation
+                    item.dispensaId = targetDispensaId;
+                }
                 db.shoppingItemDao().insertAll(backupData.shoppingItems);
+            }
         });
     }
 }

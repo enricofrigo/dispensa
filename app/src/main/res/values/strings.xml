@@ -282,6 +282,7 @@
     <!-- Dispensa Management -->
     <string name="manage_dispense_title">Manage Pantries</string>
     <string name="add_dispensa">Add Pantry</string>
+    <string name="import_pantry">Import from file</string>
     <string name="edit_dispensa">Edit Pantry</string>
     <string name="delete_dispensa_title">Delete Pantry</string>
     <string name="delete_dispensa_message">Are you sure you want to delete this pantry? All associated products and locations will be lost.</string>

@@ -278,6 +278,7 @@ I prodotti in questa dispensa potrebbero dover essere riassegnati.</string>
     <!-- Dispensa Management -->
     <string name="manage_dispense_title">Gestione Dispense</string>
     <string name="add_dispensa">Aggiungi dispensa</string>
+    <string name="import_pantry">Importa da file</string>
     <string name="edit_dispensa">Modifica dispensa</string>
     <string name="delete_dispensa_title">Elimina dispensa</string>
     <string name="delete_dispensa_message">Sei sicuro di voler eliminare questa dispensa? Tutti i prodotti e le posizioni associati andranno persi.</string>

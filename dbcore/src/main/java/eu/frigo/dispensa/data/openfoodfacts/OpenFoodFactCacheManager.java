@@ -16,6 +16,14 @@ public class OpenFoodFactCacheManager {
 
     private static final String CACHE_DIR_NAME = "off_cache";
 
+    public static boolean isFileExisting(String path) {
+        if (path == null || path.isEmpty()) {
+            return false;
+        }
+        File f = new File(path);
+        return f.exists();
+    }
+
     public static File getCacheDirectory(Context context) {
         File dir = new File(context.getFilesDir(), CACHE_DIR_NAME);
         if (!dir.exists()) {

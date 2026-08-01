@@ -109,7 +109,8 @@ public class DispensaAdapter extends ListAdapter<Dispensa, DispensaAdapter.Dispe
         @Override
         public boolean areContentsTheSame(@NonNull Dispensa oldItem, @NonNull Dispensa newItem) {
             return oldItem.getName().equals(newItem.getName()) && 
-                    oldItem.isDefault() == newItem.isDefault();
+                    oldItem.isDefault() == newItem.isDefault() &&
+                    oldItem.lastModified == newItem.lastModified;
         }
     };
 }

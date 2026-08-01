@@ -172,10 +172,17 @@ public class MainActivity extends AppCompatActivity
             });
 
     private void performImport(android.net.Uri uri) {
+        Integer currentDispensaId = dispensaViewModel.getCurrentDispensaId().getValue();
+        if (currentDispensaId == null) {
+            Toast.makeText(this, "Errore: nessuna dispensa selezionata per l'import", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        final int dispId = currentDispensaId;
+
         AppDatabase.databaseWriteExecutor.execute(() -> {
             try (InputStream is = getContentResolver().openInputStream(uri)) {
                 BackupManager backupManager = new BackupManager(this);
-                backupManager.importData(is);
+                backupManager.importData(is, dispId);
                 runOnUiThread(() -> {
                     Toast.makeText(this, R.string.import_success, Toast.LENGTH_LONG).show();
                     // Restart app to refresh all data and viewmodels
@@ -240,8 +247,11 @@ public class MainActivity extends AppCompatActivity
         productViewModel.getAllProducts().observe(this, products -> showHintsIfNeeded());
 
         // Osserva la dispensa corrente per aggiornare il titolo
-        dispensaViewModel.getAllDispense().observe(this, dispense -> updateToolbarTitle());
-        dispensaViewModel.getCurrentDispensaId().observe(this, id -> updateToolbarTitle());
+        dispensaViewModel.getCurrentDispensaName().observe(this, name -> {
+            if (getSupportActionBar() != null) {
+                getSupportActionBar().setTitle(name != null ? name : getString(R.string.app_name));
+            }
+        });
 
         observeSyncEvents();
 
@@ -365,27 +375,6 @@ public class MainActivity extends AppCompatActivity
                 .setPositiveButton(R.string.ok, null)
                 .setIcon(android.R.drawable.ic_dialog_alert)
                 .show();
-    }
-
-    private void updateToolbarTitle() {
-        if (dispensaViewModel == null) return;
-        
-        List<eu.frigo.dispensa.data.dispensa.Dispensa> dispense = dispensaViewModel.getAllDispense().getValue();
-        Integer currentId = dispensaViewModel.getCurrentDispensaId().getValue();
-        
-        if (dispense != null && currentId != null) {
-            for (eu.frigo.dispensa.data.dispensa.Dispensa d : dispense) {
-                if (d.id == currentId) {
-                    if (getSupportActionBar() != null) {
-                        getSupportActionBar().setTitle(d.getName());
-                    }
-                    return;
-                }
-            }
-        }
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setTitle(R.string.app_name);
-        }
     }
 
     private void showHintsIfNeeded() {
@@ -875,8 +864,31 @@ public class MainActivity extends AppCompatActivity
             startActivity(intent);
             return true;
         } else if (id == R.id.action_export) {
-            String fileName = "dispensa_backup_"
-                    + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date()) + ".dsp";
+            Integer currentId = dispensaViewModel.getCurrentDispensaId().getValue();
+            String pantryName = dispensaViewModel.getCurrentDispensaName().getValue();
+            
+            if (currentId != null && pantryName == null) {
+                // Tenta fallback dalla lista completa se il LiveData del nome non è ancora pronto
+                List<eu.frigo.dispensa.data.dispensa.Dispensa> list = dispensaViewModel.getAllDispense().getValue();
+                if (list != null) {
+                    for (eu.frigo.dispensa.data.dispensa.Dispensa d : list) {
+                        if (d.id == currentId) {
+                            pantryName = d.getName();
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (currentId == null || pantryName == null) {
+                Toast.makeText(this, "Errore: dati dispensa non pronti", Toast.LENGTH_SHORT).show();
+                return true;
+            }
+
+            String safePantryName = pantryName.replaceAll("[\\\\/:*?\"<>|\\s]", "_");
+            String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+            String fileName = safePantryName + "_backup_" + timestamp + ".dsp";
+            
             exportLauncher.launch(fileName);
             return true;
         } else if (id == R.id.action_import) {
