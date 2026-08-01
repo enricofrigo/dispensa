@@ -1,4 +1,4 @@
-package eu.frigo.dispensa.sync.ui;
+package eu.frigo.dispensa.sync;
 
 import android.graphics.Bitmap;
 import android.graphics.Color;

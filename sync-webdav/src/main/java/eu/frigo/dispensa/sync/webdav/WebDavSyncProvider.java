@@ -63,7 +63,8 @@ public class WebDavSyncProvider implements SyncProvider {
                         deviceId,
                         scope.pantryPath,
                         scope.dispensaId,
-                        db
+                        db,
+                        context
                 ));
             }
         }

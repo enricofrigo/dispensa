@@ -1,11 +1,15 @@
 package eu.frigo.dispensa.activity;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.MenuItem;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -24,6 +28,16 @@ public class DispensaManagerActivity extends AppCompatActivity implements Dispen
 
     private DispensaViewModel dispensaViewModel;
     private DispensaAdapter adapter;
+
+    private final ActivityResultLauncher<Intent> joinLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == Activity.RESULT_OK) {
+                    // Se il join ha avuto successo, chiudiamo questa attività per mostrare la nuova dispensa
+                    finish();
+                }
+            }
+    );
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,8 +65,21 @@ public class DispensaManagerActivity extends AppCompatActivity implements Dispen
             adapter.setCurrentDispensaId(id != null ? id : -1);
         });
 
+        dispensaViewModel.getPantryCreatedEvent().observe(this, created -> {
+            if (created != null && created) {
+                finish();
+            }
+        });
+
         FloatingActionButton fab = findViewById(R.id.fabAddDispensa);
         fab.setOnClickListener(v -> showAddEditDialog(null));
+
+        FloatingActionButton fjb = findViewById(R.id.fabJoinDispensa);
+        fjb.setOnClickListener(v ->{
+            Intent intent = new Intent(this, SyncOnboardingActivity.class);
+            intent.putExtra(SyncOnboardingActivity.EXTRA_MODE, SyncOnboardingActivity.MODE_JOIN);
+            joinLauncher.launch(intent);
+        });
     }
 
     private void showAddEditDialog(Dispensa dispensa) {
@@ -93,6 +120,20 @@ public class DispensaManagerActivity extends AppCompatActivity implements Dispen
     @Override
     public void onEditClick(Dispensa dispensa) {
         showAddEditDialog(dispensa);
+    }
+
+    @Override
+    public void onShareClick(Dispensa dispensa) {
+        Intent intent = new Intent(this, SyncOnboardingActivity.class);
+        intent.putExtra(SyncOnboardingActivity.EXTRA_MODE, SyncOnboardingActivity.MODE_SHARE);
+        startActivity(intent);
+    }
+
+    @Override
+    public void onDevicesClick(Dispensa dispensa) {
+        Intent intent = new Intent(this, ManageDevicesActivity.class);
+        intent.putExtra(ManageDevicesActivity.PANTRY_ID, dispensa);
+        startActivity(intent);
     }
 
     @Override

@@ -4,6 +4,7 @@ import android.app.Application;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
 
 import java.util.List;
 
@@ -15,12 +16,15 @@ public class DispensaViewModel extends AndroidViewModel {
     private final Repository repository;
     private final LiveData<List<Dispensa>> allDispense;
     private final LiveData<Integer> currentDispensaId;
+    private final LiveData<String> currentDispensaName;
+    private final MutableLiveData<Boolean> pantryCreatedEvent = new MutableLiveData<>(false);
 
     public DispensaViewModel(@NonNull Application application) {
         super(application);
         repository = Repository.getInstance(application);
         allDispense = repository.getAllDispense();
         currentDispensaId = repository.getCurrentDispensaId();
+        currentDispensaName = repository.getCurrentDispensaName();
     }
 
     public LiveData<List<Dispensa>> getAllDispense() {
@@ -30,13 +34,20 @@ public class DispensaViewModel extends AndroidViewModel {
     public LiveData<Integer> getCurrentDispensaId() {
         return currentDispensaId;
     }
+    public LiveData<String> getCurrentDispensaName() {
+        return currentDispensaName;
+    }
+
+    public LiveData<Boolean> getPantryCreatedEvent() {
+        return pantryCreatedEvent;
+    }
 
     public void setCurrentDispensaId(int id) {
         repository.setCurrentDispensaId(id);
     }
-
     public void insert(Dispensa dispensa, boolean setAsCurrent) {
         repository.insertDispensa(dispensa, setAsCurrent);
+        pantryCreatedEvent.postValue(true);
     }
 
     public void update(Dispensa dispensa) {

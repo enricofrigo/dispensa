@@ -24,7 +24,7 @@ import java.util.Objects;
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.sync.core.engine.InstallationIdProvider;
 import eu.frigo.dispensa.sync.core.engine.SyncManager;
-import eu.frigo.dispensa.sync.ui.SyncWebDavConfigActivity;
+import eu.frigo.dispensa.activity.SyncWebDavConfigActivity;
 import eu.frigo.dispensa.util.LocaleHelper;
 import eu.frigo.dispensa.work.ExpiryCheckWorkerScheduler;
 
@@ -45,6 +45,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
     public static final String KEY_SYNC_CONFIG = "pref_sync_config";
     public static final String KEY_SYNC_STATUS = "pref_sync_status";
     public static final String KEY_THEME_PREFERENCE = "theme_preference";
+    public static final String KEY_DEVICE_NAME = "pref_key_device_name";
 
     private Preference notificationTimePreference;
     private ListPreference languagePreference;
@@ -53,6 +54,13 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         setPreferencesFromResource(R.xml.preferences, rootKey);
+
+        EditTextPreference deviceNamePref = findPreference(KEY_DEVICE_NAME);
+        if (deviceNamePref != null) {
+            if (deviceNamePref.getText() == null || deviceNamePref.getText().isEmpty()) {
+                deviceNamePref.setText(android.os.Build.MODEL);
+            }
+        }
         
         syncStatusPreference = findPreference(KEY_SYNC_STATUS);
         updateSyncStatus();

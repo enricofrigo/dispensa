@@ -47,8 +47,9 @@ public class Repository {
     private final DispensaDao dispensaDao;
     private final Gson gson;
     private final SharedPreferences sharedPreferences;
-    
+
     private final MutableLiveData<Integer> currentDispensaId = new MutableLiveData<>();
+    private final LiveData<String> currentDispensaName;
     private final LiveData<List<ProductWithCategoryDefinitions>> allProducts;
 
     public static Repository getInstance(Application application) {
@@ -85,10 +86,13 @@ public class Repository {
 
         allProducts = Transformations.switchMap(currentDispensaId, id -> 
                 productDao.getAllProductsWithFullCategories(id));
+        
+        currentDispensaName = Transformations.switchMap(currentDispensaId, id -> 
+                Transformations.map(dispensaDao.getDispensaById(id), d -> d != null ? d.getName() : "Dispensa"));
     }
 
     public void setCurrentDispensaId(int id) {
-        currentDispensaId.setValue(id);
+        currentDispensaId.postValue(id);
         sharedPreferences.edit().putInt(KEY_CURRENT_DISPENSA_ID, id).apply();
     }
 
@@ -96,11 +100,21 @@ public class Repository {
         return currentDispensaId;
     }
 
-    public String getCurrentDispensaNameSync() {
-        Integer id = currentDispensaId.getValue();
-        if (id == null) return "Dispensa";
-        Dispensa d = dispensaDao.getDispensaByIdSync(id);
-        return d != null ? d.getName() : "Dispensa";
+    public LiveData<String> getCurrentDispensaName() {
+        return currentDispensaName;
+    }
+
+    public io.reactivex.rxjava3.core.Single<String> getCurrentDispensaNameSingle() {
+        return io.reactivex.rxjava3.core.Single.fromCallable(() -> {
+            Integer id = currentDispensaId.getValue();
+            if (id != null) {
+                Dispensa d = dispensaDao.getDispensaByIdSync(id);
+                if (d != null) {
+                    return d.getName();
+                }
+            }
+            return "Dispensa";
+        });
     }
 
     public LiveData<List<Dispensa>> getAllDispense() {
@@ -109,15 +123,20 @@ public class Repository {
 
     public void insertDispensa(Dispensa dispensa, boolean setAsCurrent) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
-            dispensa.lastModified = System.currentTimeMillis();
-            long id = dispensaDao.insert(dispensa);
-            // Quando crei una dispensa, crea le locazioni predefinite
-            storageLocationDao.insertAll(PredefinedData.getInitialStorageLocations((int) id));
-            recordSyncEvent("UPSERT_DISPENSA", dispensa);
-            if (setAsCurrent) {
-                setCurrentDispensaId((int) id);
-            }
+            insertDispensaSync(dispensa, setAsCurrent);
         });
+    }
+
+    public long insertDispensaSync(Dispensa dispensa, boolean setAsCurrent) {
+        dispensa.lastModified = System.currentTimeMillis();
+        long id = dispensaDao.insert(dispensa);
+        // Quando crei una dispensa, crea le locazioni predefinite
+        storageLocationDao.insertAll(PredefinedData.getInitialStorageLocations((int) id));
+        recordSyncEvent("UPSERT_DISPENSA", dispensa);
+        if (setAsCurrent) {
+            setCurrentDispensaId((int) id);
+        }
+        return id;
     }
 
     public void updateDispensa(Dispensa dispensa) {

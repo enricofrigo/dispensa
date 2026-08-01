@@ -222,4 +222,22 @@ public class Product {
         copy.shelfLifeAfterOpeningDays = this.shelfLifeAfterOpeningDays;
         return copy;
     }
+
+    @Ignore
+    public void validateImageUrlExistence() {
+        if (imageUrl != null && imageUrl.startsWith("file://")) {
+            try {
+                String path = android.net.Uri.parse(imageUrl).getPath();
+                if (path != null) {
+                    java.io.File file = new java.io.File(path);
+                    if (!file.exists()) {
+                        imageUrl = null;
+                    }
+                }
+            } catch (Exception e) {
+                // In case of malformed URI or other errors, play safe
+                imageUrl = null;
+            }
+        }
+    }
 }

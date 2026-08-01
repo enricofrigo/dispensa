@@ -31,11 +31,13 @@ import java.util.List;
 import java.util.UUID;
 
 import eu.frigo.dispensa.R;
+import eu.frigo.dispensa.activity.ManageDevicesActivity;
 import eu.frigo.dispensa.adapter.ReorderLocationsAdapter;
 import eu.frigo.dispensa.data.AppDatabase;
 import eu.frigo.dispensa.data.storage.StorageLocation;
-import eu.frigo.dispensa.sync.ui.SyncOnboardingActivity;
+import eu.frigo.dispensa.activity.SyncOnboardingActivity;
 import eu.frigo.dispensa.util.SimpleItemTouchHelperCallback;
+import eu.frigo.dispensa.viewmodel.DispensaViewModel;
 import eu.frigo.dispensa.viewmodel.LocationViewModel;
 
 public class ManageLocationsFragment extends Fragment implements
@@ -47,6 +49,7 @@ public class ManageLocationsFragment extends Fragment implements
     private RecyclerView recyclerViewLocations;
     private ReorderLocationsAdapter adapter;
     private LocationViewModel locationViewModel;
+    private DispensaViewModel dispensaViewModel;
     private ItemTouchHelper itemTouchHelper;
     private FloatingActionButton fabAddLocation;
     private MaterialToolbar toolbar;
@@ -60,6 +63,7 @@ public class ManageLocationsFragment extends Fragment implements
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         locationViewModel = new ViewModelProvider(this).get(LocationViewModel.class);
+        dispensaViewModel = new ViewModelProvider(this).get(DispensaViewModel.class);
     }
 
     @Nullable
@@ -77,6 +81,7 @@ public class ManageLocationsFragment extends Fragment implements
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         locationViewModel = new ViewModelProvider(requireActivity()).get(LocationViewModel.class);
+        dispensaViewModel = new ViewModelProvider(requireActivity()).get(DispensaViewModel.class);
 
         switchTabStyle = view.findViewById(R.id.switch_tab_style);
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
@@ -88,27 +93,13 @@ public class ManageLocationsFragment extends Fragment implements
 
         fabAddLocation.setOnClickListener(v -> showAddLocationDialog());
 
-        toolbar.setTitle(getString(R.string.title_manage_locations));
-        toolbar.inflateMenu(R.menu.menu_manage_locations);
-        toolbar.setOnMenuItemClickListener(item -> {
-            int id = item.getItemId();
-            if (id == R.id.action_share_pantry) {
-                Intent intent = new Intent(requireContext(), SyncOnboardingActivity.class);
-                intent.putExtra(SyncOnboardingActivity.EXTRA_MODE, SyncOnboardingActivity.MODE_SHARE);
-                startActivity(intent);
-                return true;
-            } else if (id == R.id.action_join_pantry) {
-                Intent intent = new Intent(requireContext(), SyncOnboardingActivity.class);
-                intent.putExtra(SyncOnboardingActivity.EXTRA_MODE, SyncOnboardingActivity.MODE_JOIN);
-                startActivity(intent);
-                return true;
-            } else if (id == R.id.action_manage_devices) {
-                Intent intent = new Intent(requireContext(), eu.frigo.dispensa.sync.ui.ManageDevicesActivity.class);
-                startActivity(intent);
-                return true;
+        dispensaViewModel.getCurrentDispensaName().observe(getViewLifecycleOwner(), name -> {
+            if (name != null) {
+                toolbar.setSubtitle(name);
             }
-            return false;
         });
+
+        toolbar.setTitle(getString(R.string.title_manage_locations));
     }
 
     private void setupRecyclerView() {

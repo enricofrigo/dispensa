@@ -39,6 +39,21 @@
             android:contentDescription="@string/set_as_default" />
 
         <ImageButton
+            android:id="@+id/buttonShare"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_share_24"
+            android:contentDescription="@string/action_share" />
+
+        <ImageButton
+            android:id="@+id/buttonDevices"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_devices_24" />
+
+        <ImageButton
             android:id="@+id/buttonEdit"
             android:layout_width="48dp"
             android:layout_height="48dp"

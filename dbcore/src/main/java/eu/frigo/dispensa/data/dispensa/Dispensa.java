@@ -4,9 +4,10 @@ import com.google.gson.annotations.SerializedName;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
+import java.io.Serializable;
 
 @Entity(tableName = "dispense")
-public class Dispensa {
+public class Dispensa implements Serializable {
 
     @SerializedName("id")
     @PrimaryKey(autoGenerate = true)
@@ -27,6 +28,10 @@ public class Dispensa {
     @SerializedName("remote_id")
     @ColumnInfo(name = "remote_id")
     public String remoteId; // Per futura condivisione separata
+
+    @SerializedName("device_owner_id")
+    @ColumnInfo(name = "device_owner_id")
+    public String deviceOwnerId;
 
     public Dispensa() {
     }

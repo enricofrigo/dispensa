@@ -124,6 +124,10 @@
 
     <!-- Preferences -->
     <string name="pref_cat_expiry_title">Notifications</string>
+    <string name="pref_key_device_name" translatable="false">pref_device_name</string>
+    <string name="pref_cat_device_title">Device</string>
+    <string name="pref_device_name_title">Device Name</string>
+    <string name="pref_device_name_summary">Name of this device for sharing</string>
     <string name="pref_exp_days_title">Days before expiry</string>
     <string name="pref_exp_days_summary">Number of days before expiry to receive the notification.</string>
     <string name="pref_key_exp_days">pref_expiry_days_before</string>
@@ -273,6 +277,7 @@
     <string name="sync_device_delete_success">Device successfully removed</string>
     <string name="sync_delete_device_err">Error while removing: %s</string>
     <string name="sync_not_configured">Sync not configured</string>
+    <string name="sync_not_active_for_pantry">Sync is not active for this pantry</string>
 
     <!-- Dispensa Management -->
     <string name="manage_dispense_title">Manage Pantries</string>
