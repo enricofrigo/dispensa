@@ -126,6 +126,9 @@ I prodotti in questa dispensa potrebbero dover essere riassegnati.</string>
 
     <!-- Preferences -->
     <string name="pref_cat_expiry_title">Notifiche</string>
+    <string name="pref_cat_device_title">Dispositivo</string>
+    <string name="pref_device_name_title">Nome Dispositivo</string>
+    <string name="pref_device_name_summary">Nome di questo dispositivo per la condivisione</string>
     <string name="pref_exp_days_title">Giorni di preavviso</string>
     <string name="pref_exp_days_summary">Numero di giorni prima della scadenza per ricevere la notifica.</string>
     <string name="pref_key_exp_days">pref_expiry_days_before</string>
@@ -270,6 +273,7 @@ I prodotti in questa dispensa potrebbero dover essere riassegnati.</string>
     <string name="sync_device_delete_success">Dispositivo rimosso con successo</string>
     <string name="sync_delete_device_err">Errore durante la rimozione: %s</string>
     <string name="sync_not_configured">Sincronizzazione non configurata</string>
+    <string name="sync_not_active_for_pantry">La sincronizzazione non è attiva per questa dispensa</string>
 
     <!-- Dispensa Management -->
     <string name="manage_dispense_title">Gestione Dispense</string>

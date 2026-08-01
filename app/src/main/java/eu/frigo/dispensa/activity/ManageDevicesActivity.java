@@ -1,4 +1,4 @@
-package eu.frigo.dispensa.sync.ui;
+package eu.frigo.dispensa.activity;
 
 import android.annotation.SuppressLint;
 import android.content.SharedPreferences;
@@ -13,6 +13,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -27,12 +28,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import eu.frigo.dispensa.R;
+import eu.frigo.dispensa.data.dispensa.Dispensa;
 import eu.frigo.dispensa.sync.core.engine.InstallationIdProvider;
 import eu.frigo.dispensa.sync.core.engine.SyncManager;
 import eu.frigo.dispensa.sync.webdav.client.WebDavClient;
 import eu.frigo.dispensa.sync.webdav.client.WebDavClientFactory;
 import eu.frigo.dispensa.sync.webdav.model.WebDavDevice;
 import eu.frigo.dispensa.sync.webdav.model.WebDavManifest;
+import eu.frigo.dispensa.viewmodel.DispensaViewModel;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
@@ -41,10 +44,12 @@ import okhttp3.Response;
 
 public class ManageDevicesActivity extends AppCompatActivity {
 
+    public static final String PANTRY_ID = "pantryId";
     private RecyclerView rvDevices;
     private ProgressBar progressBar;
     private TextView tvEmpty;
     private DeviceAdapter adapter;
+    private DispensaViewModel dispensaViewModel;
     private final List<WebDavDevice> deviceList = new ArrayList<>();
     private final Gson gson = new Gson();
     private boolean isMaster = false;
@@ -67,21 +72,60 @@ public class ManageDevicesActivity extends AppCompatActivity {
         adapter = new DeviceAdapter(deviceList, device -> showDeleteConfirmation(device));
         rvDevices.setAdapter(adapter);
 
-        loadDevices();
+        Dispensa d = (Dispensa) getIntent().getSerializableExtra(PANTRY_ID);
+        if (d != null) {
+            if (getSupportActionBar() != null) {
+                getSupportActionBar().setSubtitle(d.getName());
+            }
+            loadDevices(d.id);
+        } else {
+            // Fallback to current pantry if nothing passed (e.g. opened via settings)
+            dispensaViewModel = new ViewModelProvider(this).get(DispensaViewModel.class);
+            dispensaViewModel.getCurrentDispensaName().observe(this, name -> {
+                if (name != null && getSupportActionBar() != null) {
+                    getSupportActionBar().setSubtitle(name);
+                }
+            });
+
+            dispensaViewModel.getCurrentDispensaId().observe(this, id -> {
+                if (id != null) {
+                    loadDevices(id);
+                }
+            });
+        }
     }
 
     @SuppressLint("CheckResult")
-    private void loadDevices() {
+    private void loadDevices(int pantryId) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         String url = prefs.getString(SyncManager.KEY_WEBDAV_URL, "");
         String user = prefs.getString(SyncManager.KEY_WEBDAV_USER, "");
         String pass = prefs.getString(SyncManager.KEY_WEBDAV_PASS, "");
         String path = prefs.getString(SyncManager.KEY_WEBDAV_PATH, SyncManager.DEFAULT_PATH);
-        String pantryKey = prefs.getString(SyncManager.SYNC_WEBDAV_PANTRY_KEY, "");
-        String pantryName = prefs.getString(SyncManager.SYNC_WEBDAV_PANTRY_NAME, "Dispensa");
+        
+        String syncedIdsStr = prefs.getString(SyncManager.SYNC_WEBDAV_SYNCED_IDS, "");
+        boolean isSynced = false;
+        if (!syncedIdsStr.isEmpty()) {
+            for (String sId : syncedIdsStr.split(",")) {
+                if (sId.equals(String.valueOf(pantryId))) {
+                    isSynced = true;
+                    break;
+                }
+            }
+        }
+
+        if (!isSynced) {
+            tvEmpty.setText(R.string.sync_not_active_for_pantry);
+            tvEmpty.setVisibility(View.VISIBLE);
+            deviceList.clear();
+            adapter.notifyDataSetChanged();
+            return;
+        }
+
+        String pantryName = prefs.getString(SyncManager.SYNC_WEBDAV_PANTRY_NAME + "_" + pantryId, "Dispensa");
         boolean isShared = prefs.getBoolean(SyncManager.KEY_WEBDAV_MODE_SHARED, false);
 
-        if (url.isEmpty() || (user.isEmpty() && !isShared) || pass.isEmpty() || pantryKey.isEmpty()) {
+        if (url.isEmpty() || (user.isEmpty() && !isShared) || pass.isEmpty()) {
             Toast.makeText(this, R.string.sync_not_configured, Toast.LENGTH_SHORT).show();
             finish();
             return;
@@ -170,7 +214,10 @@ public class ManageDevicesActivity extends AppCompatActivity {
                         .apply();
                 finish();
             } else {
-                loadDevices(); // Refresh list
+                Integer currentId = dispensaViewModel.getCurrentDispensaId().getValue();
+                if (currentId != null) {
+                    loadDevices(currentId);
+                }
             }
         }, throwable -> {
             progressBar.setVisibility(View.GONE);

@@ -23,6 +23,8 @@ public class DispensaAdapter extends ListAdapter<Dispensa, DispensaAdapter.Dispe
     public interface OnDispensaClickListener {
         void onDispensaClick(Dispensa dispensa);
         void onEditClick(Dispensa dispensa);
+        void onDevicesClick(Dispensa dispensa);
+        void onShareClick(Dispensa dispensa);
         void onDeleteClick(Dispensa dispensa);
         void onSetDefaultClick(Dispensa dispensa);
     }
@@ -53,6 +55,8 @@ public class DispensaAdapter extends ListAdapter<Dispensa, DispensaAdapter.Dispe
     static class DispensaViewHolder extends RecyclerView.ViewHolder {
         private final TextView textViewName;
         private final ImageButton buttonDefault;
+        private final ImageButton buttonShare;
+        private final ImageButton buttonDevices;
         private final ImageButton buttonEdit;
         private final ImageButton buttonDelete;
 
@@ -60,8 +64,10 @@ public class DispensaAdapter extends ListAdapter<Dispensa, DispensaAdapter.Dispe
             super(itemView);
             textViewName = itemView.findViewById(R.id.textViewDispensaName);
             buttonDefault = itemView.findViewById(R.id.buttonDefault);
+            buttonShare = itemView.findViewById(R.id.buttonShare);
             buttonEdit = itemView.findViewById(R.id.buttonEdit);
             buttonDelete = itemView.findViewById(R.id.buttonDelete);
+            buttonDevices = itemView.findViewById(R.id.buttonDevices);
         }
 
         public void bind(Dispensa dispensa, OnDispensaClickListener listener, int currentDispensaId) {
@@ -87,8 +93,10 @@ public class DispensaAdapter extends ListAdapter<Dispensa, DispensaAdapter.Dispe
 
             itemView.setOnClickListener(v -> listener.onDispensaClick(dispensa));
             buttonDefault.setOnClickListener(v -> listener.onSetDefaultClick(dispensa));
+            buttonShare.setOnClickListener(v -> listener.onShareClick(dispensa));
             buttonEdit.setOnClickListener(v -> listener.onEditClick(dispensa));
             buttonDelete.setOnClickListener(v -> listener.onDeleteClick(dispensa));
+            buttonDevices.setOnClickListener(v -> listener.onDevicesClick(dispensa));
         }
     }
 

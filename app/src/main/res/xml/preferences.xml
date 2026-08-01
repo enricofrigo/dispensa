@@ -4,6 +4,21 @@
     app:theme="@style/Base.Theme.Dispensa">
 
     <PreferenceCategory
+        app:title="@string/pref_cat_device_title"
+        app:layout="@layout/custom_category"
+        app:iconSpaceReserved="false">
+
+        <EditTextPreference
+            app:key="pref_key_device_name"
+            app:title="@string/pref_device_name_title"
+            app:summary="@string/pref_device_name_summary"
+            app:useSimpleSummaryProvider="true"
+            app:layout="@layout/preference_single_line"
+            app:iconSpaceReserved="false"/>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
         app:title="@string/pref_cat_expiry_title"
         app:layout="@layout/custom_category"
         app:iconSpaceReserved="false">

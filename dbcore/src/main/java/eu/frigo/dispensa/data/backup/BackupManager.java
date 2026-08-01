@@ -123,8 +123,12 @@ public class BackupManager {
                 db.storageLocationDao().insertAll(backupData.locations);
             if (backupData.categories != null)
                 db.categoryDefinitionDao().insertAll(backupData.categories);
-            if (backupData.products != null)
+            if (backupData.products != null) {
+                for (Product p : backupData.products) {
+                    p.validateImageUrlExistence();
+                }
                 db.productDao().insertAll(backupData.products);
+            }
             if (backupData.categoryLinks != null)
                 db.productCategoryLinkDao().insertAll(backupData.categoryLinks);
             if (backupData.shoppingItems != null)

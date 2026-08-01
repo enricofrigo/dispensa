@@ -1,4 +1,4 @@
-package eu.frigo.dispensa.sync.ui;
+package eu.frigo.dispensa.activity;
 
 import android.annotation.SuppressLint;
 import android.content.SharedPreferences;
@@ -332,7 +332,7 @@ public class SyncWebDavConfigActivity extends AppCompatActivity {
             // 4. Register current device
             eu.frigo.dispensa.sync.webdav.model.WebDavDevice device = new eu.frigo.dispensa.sync.webdav.model.WebDavDevice();
             device.deviceId = deviceId;
-            device.deviceName = android.os.Build.MODEL;
+            device.deviceName = PreferenceManager.getDefaultSharedPreferences(this).getString(SyncManager.KEY_DEVICE_NAME, android.os.Build.MODEL);
             device.lastSeen = System.currentTimeMillis();
             
             String deviceJson = new com.google.gson.Gson().toJson(device);

@@ -20,6 +20,7 @@ public class SyncManager {
     public static final String SYNC_WEBDAV_PANTRY_NAME = "sync_webdav_pantry_name";
     public static final String SYNC_WEBDAV_DISPENSA_ID = "sync_webdav_dispensa_id";
     public static final String SYNC_WEBDAV_SYNCED_IDS = "sync_webdav_synced_ids";
+    public static final String KEY_DEVICE_NAME = "pref_key_device_name";
     public static final String DEFAULT_PATH = "/";
     
     public static final int CURRENT_SYNC_VERSION = 2;

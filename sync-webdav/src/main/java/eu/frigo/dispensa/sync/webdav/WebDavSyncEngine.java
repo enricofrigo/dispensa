@@ -23,6 +23,10 @@ import eu.frigo.dispensa.data.AppDatabase;
 import eu.frigo.dispensa.data.product.Product;
 import eu.frigo.dispensa.data.storage.StorageLocation;
 import eu.frigo.dispensa.data.shoppinglist.ShoppingItem;
+import eu.frigo.dispensa.sync.webdav.model.WebDavDevice;
+import android.content.SharedPreferences;
+import androidx.preference.PreferenceManager;
+import android.content.Context;
 
 public class WebDavSyncEngine implements SyncEngine {
     private final WebDavClient client;
@@ -33,8 +37,9 @@ public class WebDavSyncEngine implements SyncEngine {
     private final String pantryPath;
     private final int dispensaId;
     private final AppDatabase db;
+    private final Context context;
 
-    public WebDavSyncEngine(WebDavClient client, SyncCursorStore cursorStore, OutboxRepository outbox, String deviceId, String pantryPath, int dispensaId, AppDatabase db) {
+    public WebDavSyncEngine(WebDavClient client, SyncCursorStore cursorStore, OutboxRepository outbox, String deviceId, String pantryPath, int dispensaId, AppDatabase db, Context context) {
         this.client = client;
         this.cursorStore = cursorStore;
         this.outbox = outbox;
@@ -42,6 +47,7 @@ public class WebDavSyncEngine implements SyncEngine {
         this.pantryPath = pantryPath.endsWith("/") ? pantryPath : pantryPath + "/";
         this.dispensaId = dispensaId;
         this.db = db;
+        this.context = context;
         this.gson = new Gson();
     }
 
@@ -66,6 +72,9 @@ public class WebDavSyncEngine implements SyncEngine {
 
             // 2. Push local events
             pushLocalChanges();
+
+            // 2b. Update device info
+            updateDeviceRegistration();
 
             // 3. Ricarichiamo il manifest per avere lo stato post-push
             manifest = fetchManifest();
@@ -195,6 +204,29 @@ public class WebDavSyncEngine implements SyncEngine {
         cursorStore.updateLastSyncTimestamp(manifest.lastGlobalTimestamp);
     }
 
+    private void updateDeviceRegistration() {
+        try {
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+            String currentName = prefs.getString(SyncManager.KEY_DEVICE_NAME, android.os.Build.MODEL);
+            
+            WebDavDevice device = new WebDavDevice();
+            device.deviceId = deviceId;
+            device.deviceName = currentName;
+            device.lastSeen = System.currentTimeMillis();
+
+            String devicePath = "devices/" + deviceId + ".json";
+            String json = gson.toJson(device);
+            
+            try (Response response = client.put(pantryPath + devicePath, json.getBytes(), null)) {
+                if (response.isSuccessful()) {
+                    Log.d("SyncFlow", "Device registration updated: " + currentName);
+                }
+            }
+        } catch (Exception e) {
+            Log.e("SyncFlow", "Failed to update device registration", e);
+        }
+    }
+
     private void pushLocalChanges() throws Exception {
         List<SyncPayload> pending = outbox.getPendingChanges(dispensaId).blockingGet();
         if (pending.isEmpty()) return;
@@ -297,6 +329,7 @@ public class WebDavSyncEngine implements SyncEngine {
             if (snapshot.products != null) {
                 for (Product p : snapshot.products) {
                     p.dispensaId = dispensaId;
+                    p.validateImageUrlExistence();
                     Product local = db.productDao().getProductByLotKeySync(p.barcode, p.expiryDate, p.getStorageLocation(), dispensaId);
                     if (local == null || p.lastModified > local.lastModified) {
                         if (local != null) p.id = local.id;
@@ -325,6 +358,7 @@ public class WebDavSyncEngine implements SyncEngine {
                 case WebDavEvent.ACTION_UPSERT_PRODUCT:
                     Product remoteP = gson.fromJson(jsonPayload, Product.class);
                     remoteP.dispensaId = dispensaId;
+                    remoteP.validateImageUrlExistence();
                     Product localP = db.productDao().getProductByLotKeySync(remoteP.barcode, remoteP.expiryDate, remoteP.getStorageLocation(), dispensaId);
                     if (localP == null || remoteP.lastModified > localP.lastModified) {
                         if (localP != null) remoteP.id = localP.id;

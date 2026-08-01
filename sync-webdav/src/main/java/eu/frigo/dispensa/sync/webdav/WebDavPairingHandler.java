@@ -14,6 +14,7 @@ public class WebDavPairingHandler {
         data.put("path", config.path);
         data.put("pantryKey", config.pantryKey);
         data.put("pantryName", config.pantryName);
+        data.put("ownerDeviceId", config.ownerDeviceId);
         data.put("providerId", "webdav");
         data.put("isShared", String.valueOf(config.isShared));
         
@@ -32,6 +33,7 @@ public class WebDavPairingHandler {
             payload.data.get("path"),
             payload.data.get("pantryKey"),
             payload.data.get("pantryName"),
+            payload.data.get("ownerDeviceId"),
             Boolean.parseBoolean(payload.data.get("isShared"))
         );
     }

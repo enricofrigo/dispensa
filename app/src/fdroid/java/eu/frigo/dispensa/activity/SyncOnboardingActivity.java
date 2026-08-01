@@ -1,4 +1,4 @@
-package eu.frigo.dispensa.sync.ui;
+package eu.frigo.dispensa.activity;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -20,6 +20,7 @@ import com.journeyapps.barcodescanner.DecoratedBarcodeView;
 import java.util.Objects;
 
 import eu.frigo.dispensa.R;
+import eu.frigo.dispensa.data.dispensa.Dispensa;
 import eu.frigo.dispensa.sync.core.engine.SyncManager;
 import eu.frigo.dispensa.sync.core.pairing.OnboardingCoordinator;
 import eu.frigo.dispensa.sync.core.pairing.PairingPayload;
@@ -38,6 +39,8 @@ public class SyncOnboardingActivity extends AppCompatActivity {
     public static final String EXTRA_MODE = "mode";
     public static final String MODE_SHARE = "share";
     public static final String MODE_JOIN = "join";
+    public static final java.lang.String DEVICE_ALREADY_REGISTERED = "DEVICE_ALREADY_REGISTERED";
+    public static final java.lang.String VERSION_MISMATCH = "VERSION_MISMATCH";
 
     private String currentPairingCode;
     private String scannedQrData;
@@ -108,7 +111,6 @@ public class SyncOnboardingActivity extends AppCompatActivity {
         String pass = prefs.getString(SyncManager.KEY_WEBDAV_PASS, "");
         String path = prefs.getString(SyncManager.KEY_WEBDAV_PATH, SyncManager.DEFAULT_PATH);
         String pantryKey = prefs.getString(SyncManager.SYNC_WEBDAV_PANTRY_KEY, "");
-        String pantryName = eu.frigo.dispensa.data.Repository.getInstance(getApplication()).getCurrentDispensaNameSync();
         boolean isShared = prefs.getBoolean(SyncManager.KEY_WEBDAV_MODE_SHARED, false);
 
         if (url.isEmpty() || (user.isEmpty() && !isShared)) {
@@ -120,46 +122,62 @@ public class SyncOnboardingActivity extends AppCompatActivity {
         currentPairingCode = OnboardingCoordinator.generatePairingCode();
         codeView.setText(currentPairingCode);
 
-        try {
-            // 1. Prepare WebDAV config
-            WebDavConfig config = new WebDavConfig(url, user, pass, path, pantryKey, pantryName, isShared);
-            
-            // 2. Create encrypted payload
-            String deviceName = android.os.Build.MODEL;
-            PairingPayload payload = WebDavPairingHandler.createPayload(deviceName, config);
-            
-            // 3. Encode with pairing code
-            PairingPayloadCodecImpl codec = new PairingPayloadCodecImpl(currentPairingCode);
-            String wireData = codec.encode(payload);
-            
-            // 4. Wrap in Deep Link for easier sharing/scanning
-            String deepLink = "https://enricofrigo.github.io/dispensa/syncjoin?data=" + android.net.Uri.encode(wireData);
-            
-            // 5. Generate QR
-            Bitmap qrBitmap = QrCodeGenerator.generate(deepLink, 512);
-            qrView.setImageBitmap(qrBitmap);
-            
-            if (shareBtn != null) {
-                shareBtn.setOnClickListener(v -> {
-                    Intent sendIntent = new Intent();
-                    sendIntent.setAction(Intent.ACTION_SEND);
-                    sendIntent.putExtra(Intent.EXTRA_TEXT, "Unisciti alla mia dispensa condivisa!\n\nLink: " + deepLink + "\n\nCodice di accoppiamento: " + currentPairingCode);
-                    sendIntent.setType("text/plain");
+        eu.frigo.dispensa.data.Repository.getInstance(getApplication()).getCurrentDispensaNameSingle()
+                .subscribeOn(Schedulers.io())
+                .flatMap(pantryName -> Single.fromCallable(() -> {
+                    String deviceId = eu.frigo.dispensa.sync.core.engine.InstallationIdProvider.getOrCreateInstallationId(this);
+                    // Prepare WebDAV config
+                    WebDavConfig config = new WebDavConfig(url, user, pass, path, pantryKey, pantryName, deviceId, isShared);
 
-                    Intent shareIntent = Intent.createChooser(sendIntent, null);
-                    startActivity(shareIntent);
+                    // Create encrypted payload
+                    String deviceName = android.os.Build.MODEL;
+                    PairingPayload payload = WebDavPairingHandler.createPayload(deviceName, config);
+
+                    // Encode with pairing code
+                    PairingPayloadCodecImpl codec = new PairingPayloadCodecImpl(currentPairingCode);
+                    String wireData = codec.encode(payload);
+
+                    // Wrap in Deep Link for easier sharing/scanning
+                    String deepLink = "https://enricofrigo.github.io/dispensa/syncjoin?data=" + android.net.Uri.encode(wireData);
+
+                    // Generate QR
+                    Bitmap qrBitmap = QrCodeGenerator.generate(deepLink, 512);
+                    return new ShareInfo(deepLink, qrBitmap);
+                }))
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(shareInfo -> {
+                    qrView.setImageBitmap(shareInfo.qrBitmap);
+
+                    if (shareBtn != null) {
+                        shareBtn.setOnClickListener(v -> {
+                            Intent sendIntent = new Intent();
+                            sendIntent.setAction(Intent.ACTION_SEND);
+                            sendIntent.putExtra(Intent.EXTRA_TEXT, "Unisciti alla mia dispensa condivisa!\n\nLink: " + shareInfo.deepLink + "\n\nCodice di accoppiamento: " + currentPairingCode);
+                            sendIntent.setType("text/plain");
+
+                            Intent shareIntent = Intent.createChooser(sendIntent, null);
+                            startActivity(shareIntent);
+                        });
+                    }
+
+                    Log.d("SyncOnboarding", "QR generato con Deep Link: " + shareInfo.deepLink);
+
+                    // FORCE SYNC: L'host carica i suoi dati attuali per renderli disponibili al guest
+                    eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl.getInstance(this).triggerManualSync();
+                    Log.d("SyncOnboarding", "Triggered manual sync for Host before sharing.");
+                }, throwable -> {
+                    Log.e("SyncOnboarding", "Errore nella generazione del QR", throwable);
+                    Toast.makeText(this, "Errore generazione QR: " + throwable.getMessage(), Toast.LENGTH_SHORT).show();
                 });
-            }
+    }
 
-            Log.d("SyncOnboarding", "QR generato con Deep Link: " + deepLink);
+    private static class ShareInfo {
+        final String deepLink;
+        final Bitmap qrBitmap;
 
-            // FORCE SYNC: L'host carica i suoi dati attuali per renderli disponibili al guest
-            eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl.getInstance(this).triggerManualSync();
-            Log.d("SyncOnboarding", "Triggered manual sync for Host before sharing.");
-
-        } catch (Exception e) {
-            Log.e("SyncOnboarding", "Errore nella generazione del QR", e);
-            Toast.makeText(this, "Errore generazione QR: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        ShareInfo(String deepLink, Bitmap qrBitmap) {
+            this.deepLink = deepLink;
+            this.qrBitmap = qrBitmap;
         }
     }
 
@@ -207,13 +225,13 @@ public class SyncOnboardingActivity extends AppCompatActivity {
                     return checkVersionCompatibility(payload)
                             .flatMap(compatible -> {
                                 if (!compatible) {
-                                    return Single.error(new IllegalStateException("VERSION_MISMATCH"));
+                                    return Single.error(new IllegalStateException(VERSION_MISMATCH));
                                 }
                                 return checkDeviceAlreadyRegistered(payload);
                             })
                             .flatMap(exists -> {
                                 if (exists) {
-                                    return Single.error(new IllegalStateException("DEVICE_ALREADY_REGISTERED"));
+                                    return Single.error(new IllegalStateException(DEVICE_ALREADY_REGISTERED));
                                 }
                                 // If not registered, register it now
                                 return registerDevice(payload).map(success -> payload);
@@ -223,16 +241,41 @@ public class SyncOnboardingActivity extends AppCompatActivity {
             })
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
+            .flatMap(payload -> Single.fromCallable(() -> {
+                String ownerId = payload.data.get("ownerDeviceId");
+                String pantryName = payload.data.get("pantryName");
+                
+                Dispensa newDispensa = new Dispensa(pantryName, false);
+                newDispensa.deviceOwnerId = ownerId;
+                
+                long id = eu.frigo.dispensa.data.Repository.getInstance(getApplication()).insertDispensaSync(newDispensa, true);
+                
+                // Aggiorna le preferenze per includere la nuova dispensa nel sync
+                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+                String syncedIds = prefs.getString(SyncManager.SYNC_WEBDAV_SYNCED_IDS, "");
+                if (syncedIds.isEmpty()) {
+                    syncedIds = String.valueOf(id);
+                } else {
+                    syncedIds += "," + id;
+                }
+                prefs.edit()
+                        .putString(SyncManager.SYNC_WEBDAV_SYNCED_IDS, syncedIds)
+                        .putString(SyncManager.SYNC_WEBDAV_PANTRY_NAME + "_" + id, pantryName)
+                        .apply();
+                
+                return payload;
+            }).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()))
             .subscribe(payload -> {
                 eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl.getInstance(this).applyOnboarding(payload);
                 Toast.makeText(this, R.string.sync_pairing_success, Toast.LENGTH_LONG).show();
+                setResult(RESULT_OK);
                 finish();
             }, throwable -> {
                 confirm.setEnabled(true);
                 Log.e("SyncOnboarding", "Errore decriptazione pairing", throwable);
-                if ("DEVICE_ALREADY_REGISTERED".equals(throwable.getMessage())) {
+                if (DEVICE_ALREADY_REGISTERED.equals(throwable.getMessage())) {
                     Toast.makeText(this, "Questo dispositivo è già registrato in questa dispensa.", Toast.LENGTH_LONG).show();
-                } else if ("VERSION_MISMATCH".equals(throwable.getMessage())) {
+                } else if (VERSION_MISMATCH.equals(throwable.getMessage())) {
                     Toast.makeText(this, "Incompatibilità Versione: La dispensa remota non è compatibile con questa app.", Toast.LENGTH_LONG).show();
                 } else {
                     Toast.makeText(this, R.string.sync_pairing_error, Toast.LENGTH_LONG).show();
@@ -329,7 +372,7 @@ public class SyncOnboardingActivity extends AppCompatActivity {
 
             eu.frigo.dispensa.sync.webdav.model.WebDavDevice device = new eu.frigo.dispensa.sync.webdav.model.WebDavDevice();
             device.deviceId = deviceId;
-            device.deviceName = android.os.Build.MODEL;
+            device.deviceName = PreferenceManager.getDefaultSharedPreferences(this).getString(SyncManager.KEY_DEVICE_NAME, android.os.Build.MODEL);
             device.lastSeen = System.currentTimeMillis();
 
             String deviceJson = new com.google.gson.Gson().toJson(device);

@@ -123,6 +123,9 @@
 
     <!-- Preferences -->
     <string name="pref_cat_expiry_title">Benachrichtigungen</string>
+    <string name="pref_cat_device_title">Gerät</string>
+    <string name="pref_device_name_title">Gerätename</string>
+    <string name="pref_device_name_summary">Name dieses Geräts für die Freigabe</string>
     <string name="pref_exp_days_title">Tage vor Ablauf</string>
     <string name="pref_exp_days_summary">Anzahl der Tage vor Ablauf, nach denen die Benachrichtigung erfolgt.</string>
     <string name="pref_key_exp_days">pref_expiry_days_before</string>
@@ -267,6 +270,7 @@
     <string name="sync_device_delete_success">Gerät erfolgreich entfernt</string>
     <string name="sync_delete_device_err">Fehler beim Entfernen: %s</string>
     <string name="sync_not_configured">Synchronisierung nicht konfiguriert</string>
+    <string name="sync_not_active_for_pantry">Die Synchronisierung ist für diese Vorratskammer nicht aktiv</string>
     <string name="manage_dispense_title">Vorratskammern verwalten</string>
     <string name="add_dispensa">Vorratskammer hinzufügen</string>
     <string name="edit_dispensa">Vorratskammer bearbeiten</string>
