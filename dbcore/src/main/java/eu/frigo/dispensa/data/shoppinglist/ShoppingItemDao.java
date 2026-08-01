@@ -28,6 +28,9 @@ public interface ShoppingItemDao {
     @Query("DELETE FROM shopping_items")
     void deleteAll();
 
+    @Query("DELETE FROM shopping_items WHERE dispensa_id = :dispensaId")
+    void deleteAllItems(int dispensaId);
+
     @Query("DELETE FROM shopping_items WHERE checked = 1 AND dispensa_id = :dispensaId")
     void deleteChecked(int dispensaId);
 

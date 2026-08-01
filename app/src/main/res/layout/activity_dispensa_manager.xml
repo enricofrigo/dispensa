@@ -29,33 +29,13 @@
         android:padding="8dp"
         tools:listitem="@layout/item_dispensa" />
 
-    <LinearLayout
-        android:id="@+id/fab_container"
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabMain"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
-        android:layout_marginEnd="@dimen/fab_margin"
-        android:layout_marginBottom="@dimen/fab_margin"
-        android:orientation="vertical"
-        android:gravity="center_horizontal">
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fabAddDispensa"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom|end"
-            android:layout_margin="16dp"
-            android:contentDescription="@string/add_dispensa"
-            app:srcCompat="@android:drawable/ic_input_add" />
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fabJoinDispensa"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom|end"
-            android:layout_margin="16dp"
-            android:contentDescription="@string/add_dispensa"
-            app:srcCompat="@android:drawable/ic_input_delete" />
-    </LinearLayout>
+        android:layout_margin="16dp"
+        android:contentDescription="@string/add_dispensa"
+        app:srcCompat="@android:drawable/ic_input_add" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

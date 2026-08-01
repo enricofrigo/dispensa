@@ -396,34 +396,46 @@ public class Repository {
     public static void cleanOrphanImages(android.content.Context context, java.util.function.Consumer<Integer> onComplete) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
             java.io.File imagesDir = new java.io.File(context.getExternalFilesDir(null), "product_images");
-            if (!imagesDir.exists()) {
-                if (onComplete != null) onComplete.accept(0);
-                return;
-            }
-
+            
+            AppDatabase db = AppDatabase.getDatabase(context);
             java.util.List<eu.frigo.dispensa.data.product.Product> products = 
-                    AppDatabase.getDatabase(context).productDao().getAllProductsListStatic();
+                    db.productDao().getAllProductsListStatic();
             
             java.util.Set<String> validPaths = new java.util.HashSet<>();
+            int countDbCleaned = 0;
+
             for (eu.frigo.dispensa.data.product.Product p : products) {
                 if (p.getImageUrl() != null && p.getImageUrl().startsWith("file://")) {
                     String path = android.net.Uri.parse(p.getImageUrl()).getPath();
-                    if (path != null) validPaths.add(path);
+                    if (path != null) {
+                        java.io.File file = new java.io.File(path);
+                        if (file.exists()) {
+                            validPaths.add(file.getAbsolutePath());
+                        } else {
+                            // Riferimento nel DB presente ma file rimosso dal disco
+                            p.setImageUrl(null);
+                            p.lastModified = System.currentTimeMillis();
+                            db.productDao().update(p);
+                            countDbCleaned++;
+                        }
+                    }
                 }
             }
 
-            int countDeleted = 0;
-            java.io.File[] files = imagesDir.listFiles();
-            if (files != null) {
-                for (java.io.File file : files) {
-                    if (!validPaths.contains(file.getAbsolutePath())) {
-                        if (file.delete()) countDeleted++;
+            int countFilesDeleted = 0;
+            if (imagesDir.exists()) {
+                java.io.File[] files = imagesDir.listFiles();
+                if (files != null) {
+                    for (java.io.File file : files) {
+                        if (!validPaths.contains(file.getAbsolutePath())) {
+                            if (file.delete()) countFilesDeleted++;
+                        }
                     }
                 }
             }
             
             if (onComplete != null) {
-                onComplete.accept(countDeleted);
+                onComplete.accept(countFilesDeleted + countDbCleaned);
             }
         });
     }

@@ -28,6 +28,9 @@ public interface ProductCategoryLinkDao {
     @Query("DELETE FROM product_category_links")
     void deleteAllProductCategoryLink();
 
+    @Query("DELETE FROM product_category_links WHERE product_id_fk IN (SELECT id FROM products WHERE dispensa_id = :dispensaId)")
+    void deleteByDispensaId(int dispensaId);
+
     @Query("SELECT * FROM product_category_links ")
     LiveData<List<ProductCategoryLink>> getAllProductCategoryLink();
 

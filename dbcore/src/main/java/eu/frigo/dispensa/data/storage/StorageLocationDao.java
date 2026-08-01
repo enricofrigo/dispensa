@@ -69,6 +69,9 @@ public interface StorageLocationDao {
     @Query("SELECT COUNT(*) FROM storage_locations")
     int countAllLocations();
 
+    @Query("DELETE FROM storage_locations WHERE dispensa_id = :dispensaId")
+    void deleteAllLocations(int dispensaId);
+
     @Query("SELECT MAX(order_index) FROM storage_locations WHERE dispensa_id = :dispensaId")
     Integer getMaxOrderIndex(int dispensaId);
 }

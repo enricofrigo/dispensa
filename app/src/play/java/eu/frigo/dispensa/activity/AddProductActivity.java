@@ -920,7 +920,8 @@ public class AddProductActivity extends AppCompatActivity {
                         editTextProductName.setText(getString(R.string.not_find));
                     }
                     currentImageUrlFromApi = cached.imageLocalPath;
-                    if (cached.imageLocalPath != null && !cached.imageLocalPath.trim().isEmpty()) {
+                    if (cached.imageLocalPath != null && !cached.imageLocalPath.trim().isEmpty()
+                            && eu.frigo.dispensa.data.openfoodfacts.OpenFoodFactCacheManager.isFileExisting(cached.imageLocalPath)) {
                         Glide.with(AddProductActivity.this).load(cached.imageLocalPath).into(imageViewProduct);
                         imageViewProduct.setVisibility(View.VISIBLE);
                     } else {

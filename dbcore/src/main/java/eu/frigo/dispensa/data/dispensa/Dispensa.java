@@ -42,6 +42,15 @@ public class Dispensa implements Serializable {
         this.lastModified = System.currentTimeMillis();
     }
 
+    public Dispensa(Dispensa other) {
+        this.id = other.id;
+        this.name = other.name;
+        this.isDefault = other.isDefault;
+        this.lastModified = other.lastModified;
+        this.remoteId = other.remoteId;
+        this.deviceOwnerId = other.deviceOwnerId;
+    }
+
     public int getId() {
         return id;
     }

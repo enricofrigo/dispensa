@@ -5,7 +5,9 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.EditText;
+import android.widget.PopupMenu;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -19,8 +21,14 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import java.io.InputStream;
+
+import androidx.media3.common.util.Log;
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.adapter.DispensaAdapter;
+import eu.frigo.dispensa.data.AppDatabase;
+import eu.frigo.dispensa.data.backup.BackupData;
+import eu.frigo.dispensa.data.backup.BackupManager;
 import eu.frigo.dispensa.data.dispensa.Dispensa;
 import eu.frigo.dispensa.viewmodel.DispensaViewModel;
 
@@ -35,6 +43,15 @@ public class DispensaManagerActivity extends AppCompatActivity implements Dispen
                 if (result.getResultCode() == Activity.RESULT_OK) {
                     // Se il join ha avuto successo, chiudiamo questa attività per mostrare la nuova dispensa
                     finish();
+                }
+            }
+    );
+
+    private final ActivityResultLauncher<String[]> importFileLauncher = registerForActivityResult(
+            new ActivityResultContracts.OpenDocument(),
+            uri -> {
+                if (uri != null) {
+                    performImportFromFile(uri);
                 }
             }
     );
@@ -71,14 +88,62 @@ public class DispensaManagerActivity extends AppCompatActivity implements Dispen
             }
         });
 
-        FloatingActionButton fab = findViewById(R.id.fabAddDispensa);
-        fab.setOnClickListener(v -> showAddEditDialog(null));
+        FloatingActionButton fabMain = findViewById(R.id.fabMain);
+        fabMain.setOnClickListener(this::showFabMenu);
+    }
 
-        FloatingActionButton fjb = findViewById(R.id.fabJoinDispensa);
-        fjb.setOnClickListener(v ->{
-            Intent intent = new Intent(this, SyncOnboardingActivity.class);
-            intent.putExtra(SyncOnboardingActivity.EXTRA_MODE, SyncOnboardingActivity.MODE_JOIN);
-            joinLauncher.launch(intent);
+    private void showFabMenu(View view) {
+        PopupMenu popup = new PopupMenu(this, view);
+        popup.getMenuInflater().inflate(R.menu.menu_pantry_fab, popup.getMenu());
+        popup.setOnMenuItemClickListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.action_create_pantry) {
+                showAddEditDialog(null);
+                return true;
+            } else if (id == R.id.action_import_pantry) {
+                importFileLauncher.launch(new String[]{"*/*"});
+                return true;
+            } else if (id == R.id.action_join_pantry) {
+                Intent intent = new Intent(this, SyncOnboardingActivity.class);
+                intent.putExtra(SyncOnboardingActivity.EXTRA_MODE, SyncOnboardingActivity.MODE_JOIN);
+                joinLauncher.launch(intent);
+                return true;
+            }
+            return false;
+        });
+        popup.show();
+    }
+
+    private void performImportFromFile(android.net.Uri uri) {
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            try {
+                BackupManager backupManager = new BackupManager(this);
+                // 1. Leggi il file per capire il nome della dispensa
+                try (InputStream is = getContentResolver().openInputStream(uri)) {
+                    BackupData data = backupManager.peekBackupData(is);
+                    if (data != null && data.dispensa != null) {
+                        String pantryName = data.dispensa.getName();
+                        
+                        // 2. Crea la nuova dispensa
+                        Dispensa newDispensa = new Dispensa(pantryName, false);
+                        // Usiamo un metodo sincrono nel repository per avere l'ID
+                        long newId = eu.frigo.dispensa.data.Repository.getInstance(getApplication()).insertDispensaSync(newDispensa, true);
+                        
+                        // 3. Esegui l'import dei dati in questa nuova dispensa
+                        try (InputStream is2 = getContentResolver().openInputStream(uri)) {
+                            backupManager.importData(is2, (int) newId);
+                        }
+                        
+                        runOnUiThread(() -> {
+                            Toast.makeText(this, "Dispensa '" + pantryName + "' importata con successo", Toast.LENGTH_LONG).show();
+                            finish();
+                        });
+                    }
+                }
+            } catch (Exception e) {
+                Log.e("DispensaManager", "Import failed", e);
+                runOnUiThread(() -> Toast.makeText(this, "Errore durante l'importazione: " + e.getMessage(), Toast.LENGTH_LONG).show());
+            }
         });
     }
 
@@ -100,8 +165,9 @@ public class DispensaManagerActivity extends AppCompatActivity implements Dispen
                     Dispensa newDispensa = new Dispensa(name, false);
                     dispensaViewModel.insert(newDispensa, true);
                 } else {
-                    dispensa.setName(name);
-                    dispensaViewModel.update(dispensa);
+                    Dispensa updatedDispensa = new Dispensa(dispensa);
+                    updatedDispensa.setName(name);
+                    dispensaViewModel.update(updatedDispensa);
                 }
             } else {
                 Toast.makeText(this, R.string.name_required, Toast.LENGTH_SHORT).show();
