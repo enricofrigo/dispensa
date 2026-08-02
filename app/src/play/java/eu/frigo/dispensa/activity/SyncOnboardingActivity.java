@@ -245,7 +245,7 @@ public class SyncOnboardingActivity extends AppCompatActivity {
         String pantryKey = prefs.getString(SyncManager.SYNC_WEBDAV_PANTRY_KEY, "");
         boolean isShared = prefs.getBoolean(SyncManager.KEY_WEBDAV_MODE_SHARED, false);
 
-        if (url.isEmpty() || (user.isEmpty() && !isShared)) {
+        if (url.isEmpty() || (user.isEmpty() && !isShared) || pass.isEmpty()) {
             Toast.makeText(this, "Configura prima il sync nelle impostazioni", Toast.LENGTH_LONG).show();
             finish();
             return;
@@ -254,8 +254,17 @@ public class SyncOnboardingActivity extends AppCompatActivity {
         currentPairingCode = OnboardingCoordinator.generatePairingCode();
         codeView.setText(currentPairingCode);
 
-        eu.frigo.dispensa.data.Repository.getInstance(getApplication()).getCurrentDispensaNameSingle()
-                .subscribeOn(Schedulers.io())
+        // Recupera la dispensa passata come extra
+        Dispensa targetDispensa = (Dispensa) getIntent().getSerializableExtra(ManageDevicesActivity.PANTRY_ID);
+        
+        Single<String> nameSingle;
+        if (targetDispensa != null) {
+            nameSingle = Single.just(targetDispensa.getName());
+        } else {
+            nameSingle = eu.frigo.dispensa.data.Repository.getInstance(getApplication()).getCurrentDispensaNameSingle();
+        }
+
+        nameSingle.subscribeOn(Schedulers.io())
                 .flatMap(pantryName -> Single.fromCallable(() -> {
                     String deviceId = eu.frigo.dispensa.sync.core.engine.InstallationIdProvider.getOrCreateInstallationId(this);
                     WebDavConfig config = new WebDavConfig(url, user, pass, path, pantryKey, pantryName, deviceId, isShared);
@@ -357,9 +366,11 @@ public class SyncOnboardingActivity extends AppCompatActivity {
             .flatMap(payload -> Single.fromCallable(() -> {
                 String ownerId = payload.data.get("ownerDeviceId");
                 String pantryName = payload.data.get("pantryName");
+                String ownerName = payload.deviceName;
                 
                 Dispensa newDispensa = new Dispensa(pantryName, false);
                 newDispensa.deviceOwnerId = ownerId;
+                newDispensa.deviceOwnerName = ownerName;
                 
                 long id = eu.frigo.dispensa.data.Repository.getInstance(getApplication()).insertDispensaSync(newDispensa, true);
                 

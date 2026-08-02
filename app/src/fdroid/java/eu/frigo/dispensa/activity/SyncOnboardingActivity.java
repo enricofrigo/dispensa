@@ -122,51 +122,46 @@ public class SyncOnboardingActivity extends AppCompatActivity {
         currentPairingCode = OnboardingCoordinator.generatePairingCode();
         codeView.setText(currentPairingCode);
 
-        eu.frigo.dispensa.data.Repository.getInstance(getApplication()).getCurrentDispensaNameSingle()
-                .subscribeOn(Schedulers.io())
+        // Recupera la dispensa passata come extra
+        Dispensa targetDispensa = (Dispensa) getIntent().getSerializableExtra(ManageDevicesActivity.PANTRY_ID);
+        
+        Single<String> nameSingle;
+        if (targetDispensa != null) {
+            nameSingle = Single.just(targetDispensa.getName());
+        } else {
+            nameSingle = eu.frigo.dispensa.data.Repository.getInstance(getApplication()).getCurrentDispensaNameSingle();
+        }
+
+        nameSingle.subscribeOn(Schedulers.io())
                 .flatMap(pantryName -> Single.fromCallable(() -> {
                     String deviceId = eu.frigo.dispensa.sync.core.engine.InstallationIdProvider.getOrCreateInstallationId(this);
-                    // Prepare WebDAV config
                     WebDavConfig config = new WebDavConfig(url, user, pass, path, pantryKey, pantryName, deviceId, isShared);
-
-                    // Create encrypted payload
                     String deviceName = android.os.Build.MODEL;
                     PairingPayload payload = WebDavPairingHandler.createPayload(deviceName, config);
-
-                    // Encode with pairing code
                     PairingPayloadCodecImpl codec = new PairingPayloadCodecImpl(currentPairingCode);
                     String wireData = codec.encode(payload);
-
-                    // Wrap in Deep Link for easier sharing/scanning
                     String deepLink = "https://enricofrigo.github.io/dispensa/syncjoin?data=" + android.net.Uri.encode(wireData);
-
-                    // Generate QR
                     Bitmap qrBitmap = QrCodeGenerator.generate(deepLink, 512);
                     return new ShareInfo(deepLink, qrBitmap);
                 }))
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(shareInfo -> {
-                    qrView.setImageBitmap(shareInfo.qrBitmap);
+                .subscribe(info -> {
+                    qrView.setImageBitmap(info.qrBitmap);
 
                     if (shareBtn != null) {
                         shareBtn.setOnClickListener(v -> {
                             Intent sendIntent = new Intent();
                             sendIntent.setAction(Intent.ACTION_SEND);
-                            sendIntent.putExtra(Intent.EXTRA_TEXT, "Unisciti alla mia dispensa condivisa!\n\nLink: " + shareInfo.deepLink + "\n\nCodice di accoppiamento: " + currentPairingCode);
+                            sendIntent.putExtra(Intent.EXTRA_TEXT, "Unisciti alla mia dispensa condivisa!\n\nLink: " + info.deepLink + "\n\nCodice di accoppiamento: " + currentPairingCode);
                             sendIntent.setType("text/plain");
 
                             Intent shareIntent = Intent.createChooser(sendIntent, null);
                             startActivity(shareIntent);
                         });
                     }
-
-                    Log.d("SyncOnboarding", "QR generato con Deep Link: " + shareInfo.deepLink);
-
-                    // FORCE SYNC: L'host carica i suoi dati attuali per renderli disponibili al guest
                     eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl.getInstance(this).triggerManualSync();
-                    Log.d("SyncOnboarding", "Triggered manual sync for Host before sharing.");
                 }, throwable -> {
-                    Log.e("SyncOnboarding", "Errore nella generazione del QR", throwable);
+                    Log.e("SyncOnboarding", "Errore generazione QR", throwable);
                     Toast.makeText(this, "Errore generazione QR: " + throwable.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
@@ -244,9 +239,11 @@ public class SyncOnboardingActivity extends AppCompatActivity {
             .flatMap(payload -> Single.fromCallable(() -> {
                 String ownerId = payload.data.get("ownerDeviceId");
                 String pantryName = payload.data.get("pantryName");
+                String ownerName = payload.deviceName;
                 
                 Dispensa newDispensa = new Dispensa(pantryName, false);
                 newDispensa.deviceOwnerId = ownerId;
+                newDispensa.deviceOwnerName = ownerName;
                 
                 long id = eu.frigo.dispensa.data.Repository.getInstance(getApplication()).insertDispensaSync(newDispensa, true);
                 

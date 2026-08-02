@@ -252,6 +252,10 @@
     <string name="sync_status_disconnected">Disconnected</string>
     <string name="sync_last_time">Last synced: %s</string>
     <string name="share_pantry">Share Pantry</string>
+    <string name="share_pantry_dialog_title">Share Pantry</string>
+    <string name="share_pantry_dialog_message">Choose the service to share the pantry \'%s\'. A dedicated folder will be created in the cloud.</string>
+    <string name="share_button">Share</string>
+    <string name="provider_webdav">WebDAV</string>
     <string name="join_pantry">Join Pantry</string>
     <string name="pairing_code_title">Pairing Code</string>
     <string name="pairing_code_hint">Enter code (e.g. AB-CDEF)</string>
@@ -278,6 +282,7 @@
     <string name="sync_delete_device_err">Error while removing: %s</string>
     <string name="sync_not_configured">Sync not configured</string>
     <string name="sync_not_active_for_pantry">Sync is not active for this pantry</string>
+    <string name="sync_preparing_server">Preparing server…</string>
 
     <!-- Dispensa Management -->
     <string name="manage_dispense_title">Manage Pantries</string>
@@ -289,4 +294,5 @@
     <string name="name_required">Name is required</string>
     <string name="cannot_delete_default_dispensa">Cannot delete default pantry</string>
     <string name="dispensa_name">Pantry name</string>
+    <string name="pantry_owner_format">Owner: %s</string>
 </resources>

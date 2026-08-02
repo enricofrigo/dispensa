@@ -56,7 +56,7 @@ public class WebDavSyncEngine implements SyncEngine {
         return Completable.fromAction(() -> {
             if (!policy.canSyncNow()) return;
             
-            Log.d("SyncFlow", "--- Inizio sessione di sincronizzazione ---");
+            Log.d("SyncFlow", "--- Inizio sessione di sincronizzazione ---"+pantryPath);
 
             // 0. Migration check
             if (!checkVersionAndMigrate()) {
@@ -214,7 +214,8 @@ public class WebDavSyncEngine implements SyncEngine {
             device.deviceName = currentName;
             device.lastSeen = System.currentTimeMillis();
 
-            String devicePath = "devices/" + deviceId + ".json";
+            ensureFolderExists(SyncManager.DEFAULT_DEVICES_FOLDER);
+            String devicePath = SyncManager.DEFAULT_DEVICES_FOLDER + deviceId + ".json";
             String json = gson.toJson(device);
             
             try (Response response = client.put(pantryPath + devicePath, json.getBytes(), null)) {
@@ -245,7 +246,8 @@ public class WebDavSyncEngine implements SyncEngine {
             event.action = payload.getDataType();
             event.payload = gson.fromJson(payload.getContent(), java.util.Map.class);
 
-            String fileName = "events/ev_" + deviceId + "_" + event.timestamp + ".json";
+            ensureFolderExists(SyncManager.DEFAULT_EVENTS_FOLDER);
+            String fileName = SyncManager.DEFAULT_EVENTS_FOLDER + "ev_" + deviceId + "_" + event.timestamp + ".json";
             try (Response response = client.put(pantryPath + fileName, gson.toJson(event).getBytes(), null)) {
                 if (response.isSuccessful()) {
                     uploadedFiles.add(fileName);
@@ -279,9 +281,10 @@ public class WebDavSyncEngine implements SyncEngine {
         snapshot.locations = db.storageLocationDao().getAllLocationsSortedSync(dispensaId);
         snapshot.shoppingItems = db.shoppingItemDao().getAllItemsSync(dispensaId);
 
+        ensureFolderExists(SyncManager.DEFAULT_SNAPSHOTS_FOLDER);
         String snapshotName = "snap_" + snapshot.timestamp + ".json";
         
-        try (Response response = client.put(pantryPath + "snapshots/" + snapshotName, gson.toJson(snapshot).getBytes(), null)) {
+        try (Response response = client.put(pantryPath + SyncManager.DEFAULT_SNAPSHOTS_FOLDER + snapshotName, gson.toJson(snapshot).getBytes(), null)) {
             if (response.isSuccessful()) {
                 updateManifest(m -> {
                     m.latestSnapshotId = snapshotName;
@@ -401,6 +404,21 @@ public class WebDavSyncEngine implements SyncEngine {
             return Long.parseLong(tsPart);
         } catch (Exception e) {
             return 0;
+        }
+    }
+
+    private void ensureFolderExists(String folderPath) throws IOException {
+        String cleanPath = folderPath.endsWith("/") ? folderPath.substring(0, folderPath.length() - 1) : folderPath;
+        try (Response response = client.propfind(pantryPath + cleanPath + "/")) {
+            if (response.isSuccessful() || response.code() == 207) return;
+            if (response.code() != 404) {
+                throw new IOException("Errore verifica cartella " + cleanPath + ": " + response.code());
+            }
+        }
+        try (Response response = client.mkcol(pantryPath + cleanPath)) {
+            if (!response.isSuccessful() && response.code() != 201 && response.code() != 405) {
+                throw new IOException("Errore creazione cartella " + cleanPath + ": " + response.code());
+            }
         }
     }
 }
