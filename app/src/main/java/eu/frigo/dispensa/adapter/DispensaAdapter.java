@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.data.dispensa.Dispensa;
+import eu.frigo.dispensa.sync.core.engine.InstallationIdProvider;
 
 public class DispensaAdapter extends ListAdapter<Dispensa, DispensaAdapter.DispensaViewHolder> {
 
@@ -54,6 +55,7 @@ public class DispensaAdapter extends ListAdapter<Dispensa, DispensaAdapter.Dispe
 
     static class DispensaViewHolder extends RecyclerView.ViewHolder {
         private final TextView textViewName;
+        private final TextView textViewOwnerName;
         private final ImageButton buttonDefault;
         private final ImageButton buttonShare;
         private final ImageButton buttonDevices;
@@ -63,6 +65,7 @@ public class DispensaAdapter extends ListAdapter<Dispensa, DispensaAdapter.Dispe
         public DispensaViewHolder(@NonNull View itemView) {
             super(itemView);
             textViewName = itemView.findViewById(R.id.textViewDispensaName);
+            textViewOwnerName = itemView.findViewById(R.id.textViewOwnerName);
             buttonDefault = itemView.findViewById(R.id.buttonDefault);
             buttonShare = itemView.findViewById(R.id.buttonShare);
             buttonEdit = itemView.findViewById(R.id.buttonEdit);
@@ -73,6 +76,25 @@ public class DispensaAdapter extends ListAdapter<Dispensa, DispensaAdapter.Dispe
         public void bind(Dispensa dispensa, OnDispensaClickListener listener, int currentDispensaId) {
             textViewName.setText(dispensa.getName());
             
+            String currentDeviceId = InstallationIdProvider.getOrCreateInstallationId(itemView.getContext());
+            boolean isOwner = dispensa.deviceOwnerId == null || dispensa.deviceOwnerId.equals(currentDeviceId);
+
+            if (!isOwner && dispensa.deviceOwnerName != null) {
+                textViewOwnerName.setVisibility(View.VISIBLE);
+                textViewOwnerName.setText(itemView.getContext().getString(R.string.pantry_owner_format, dispensa.deviceOwnerName));
+                
+                // Hide owner-only actions
+                buttonShare.setVisibility(View.GONE);
+                buttonDevices.setVisibility(View.GONE);
+                buttonEdit.setVisibility(View.GONE);
+            } else {
+                textViewOwnerName.setVisibility(View.GONE);
+                
+                buttonShare.setVisibility(View.VISIBLE);
+                buttonDevices.setVisibility(View.VISIBLE);
+                buttonEdit.setVisibility(View.VISIBLE);
+            }
+
             if (dispensa.id == currentDispensaId) {
                 itemView.setBackgroundColor(ContextCompat.getColor(itemView.getContext(), R.color.purple_200));
             } else {

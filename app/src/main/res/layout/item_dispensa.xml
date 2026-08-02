@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="4dp"
@@ -27,6 +28,16 @@
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:text="@string/dispensa_name" />
+
+            <TextView
+                android:id="@+id/textViewOwnerName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:textColor="@android:color/darker_gray"
+                android:visibility="gone"
+                tools:text="Proprietario: Pixel 8"
+                tools:visibility="visible" />
 
         </LinearLayout>
 

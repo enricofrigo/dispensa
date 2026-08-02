@@ -39,7 +39,7 @@ import eu.frigo.dispensa.data.openfoodfacts.OpenFoodFactCacheEntity;
 @Database(entities = {Product.class, CategoryDefinition.class,
         ProductCategoryLink.class, StorageLocation.class, OpenFoodFactCacheEntity.class,
         ShoppingItem.class, SyncOutbox.class, Dispensa.class },
-        version = 16)
+        version = 17)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract ProductDao productDao();
@@ -122,6 +122,13 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    static final Migration MIGRATION_16_17 = new Migration(16, 17) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("ALTER TABLE dispense ADD COLUMN device_owner_name TEXT");
+        }
+    };
+
     static final Migration MIGRATION_6_7 = new Migration(6,7) {
         @Override
         public void migrate(SupportSQLiteDatabase database) {
@@ -156,7 +163,7 @@ public abstract class AppDatabase extends RoomDatabase {
             synchronized (AppDatabase.class) {
                 if (INSTANCE == null) {
                     // Esegui backup preventivo se è prevista una migrazione
-                    PreMigrationBackupHelper.checkAndBackup(context.getApplicationContext(), "dispensa_database", 16);
+                    PreMigrationBackupHelper.checkAndBackup(context.getApplicationContext(), "dispensa_database", 17);
 
                     RoomDatabase.Callback sRoomDatabaseCallback = new RoomDatabase.Callback() {
                         @UnstableApi
@@ -216,6 +223,7 @@ public abstract class AppDatabase extends RoomDatabase {
                             .addMigrations(MIGRATION_13_14)
                             .addMigrations(MIGRATION_14_15)
                             .addMigrations(MIGRATION_15_16)
+                            .addMigrations(MIGRATION_16_17)
                             .addCallback(sRoomDatabaseCallback)
                             //.fallbackToDestructiveMigration()
                             .build();

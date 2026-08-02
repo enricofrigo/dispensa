@@ -249,6 +249,10 @@ I prodotti in questa dispensa potrebbero dover essere riassegnati.</string>
     <string name="sync_status_disconnected">Disconnesso</string>
     <string name="sync_last_time">Ultima sincronizzazione: %s</string>
     <string name="share_pantry">Condividi la dispensa</string>
+    <string name="share_pantry_dialog_title">Condividi Dispensa</string>
+    <string name="share_pantry_dialog_message">Scegli il servizio per condividere la dispensa \'%s\'. Verrà creata una cartella dedicata nel cloud.</string>
+    <string name="share_button">Condividi</string>
+    <string name="provider_webdav">WebDAV</string>
     <string name="join_pantry">Unisciti alla dispensa</string>
     <string name="pairing_code_title">Codice di abbinamento</string>
     <string name="pairing_code_hint">Inserisci il codice (es. AB-CDEF)</string>
@@ -274,6 +278,7 @@ I prodotti in questa dispensa potrebbero dover essere riassegnati.</string>
     <string name="sync_delete_device_err">Errore durante la rimozione: %s</string>
     <string name="sync_not_configured">Sincronizzazione non configurata</string>
     <string name="sync_not_active_for_pantry">La sincronizzazione non è attiva per questa dispensa</string>
+    <string name="sync_preparing_server">Preparazione server…</string>
 
     <!-- Dispensa Management -->
     <string name="manage_dispense_title">Gestione Dispense</string>
@@ -285,4 +290,5 @@ I prodotti in questa dispensa potrebbero dover essere riassegnati.</string>
     <string name="name_required">Il nome è obbligatorio</string>
     <string name="cannot_delete_default_dispensa">Impossibile eliminare la dispensa predefinita</string>
     <string name="dispensa_name">Nome dispensa</string>
+    <string name="pantry_owner_format">Proprietario: %s</string>
 </resources>

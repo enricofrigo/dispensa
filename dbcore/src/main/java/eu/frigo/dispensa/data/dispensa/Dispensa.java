@@ -33,6 +33,10 @@ public class Dispensa implements Serializable {
     @ColumnInfo(name = "device_owner_id")
     public String deviceOwnerId;
 
+    @SerializedName("device_owner_name")
+    @ColumnInfo(name = "device_owner_name")
+    public String deviceOwnerName;
+
     public Dispensa() {
     }
 
@@ -49,6 +53,7 @@ public class Dispensa implements Serializable {
         this.lastModified = other.lastModified;
         this.remoteId = other.remoteId;
         this.deviceOwnerId = other.deviceOwnerId;
+        this.deviceOwnerName = other.deviceOwnerName;
     }
 
     public int getId() {
