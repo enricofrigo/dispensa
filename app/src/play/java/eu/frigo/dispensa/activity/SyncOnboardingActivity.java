@@ -38,6 +38,7 @@ import java.util.Objects;
 
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.data.dispensa.Dispensa;
+import eu.frigo.dispensa.data.sync.JoinedPantryConfig;
 import eu.frigo.dispensa.sync.core.engine.SyncManager;
 import eu.frigo.dispensa.sync.core.pairing.OnboardingCoordinator;
 import eu.frigo.dispensa.sync.core.pairing.PairingPayload;
@@ -374,6 +375,18 @@ public class SyncOnboardingActivity extends AppCompatActivity {
                 
                 long id = eu.frigo.dispensa.data.Repository.getInstance(getApplication()).insertDispensaSync(newDispensa, true);
                 
+                // Save secure config to DB
+                JoinedPantryConfig config = new JoinedPantryConfig(
+                        (int) id,
+                        payload.data.get("url"),
+                        payload.data.get("user"),
+                        payload.data.get("pass"),
+                        payload.data.get("path"),
+                        Boolean.parseBoolean(payload.data.get("isShared")),
+                        payload.data.get("pantryKey")
+                );
+                eu.frigo.dispensa.data.Repository.getInstance(getApplication()).insertJoinedPantryConfig(config);
+
                 // Aggiorna le preferenze per includere la nuova dispensa nel sync
                 SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
                 String syncedIds = prefs.getString(SyncManager.SYNC_WEBDAV_SYNCED_IDS, "");

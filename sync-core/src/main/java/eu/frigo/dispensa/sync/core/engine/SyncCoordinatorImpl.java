@@ -63,15 +63,7 @@ public class SyncCoordinatorImpl implements SyncCoordinator {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         SharedPreferences.Editor editor = prefs.edit();
 
-        if ("webdav".equals(providerId)) {
-            editor.putString(SyncManager.KEY_WEBDAV_URL, payload.data.get("url"));
-            editor.putString(SyncManager.KEY_WEBDAV_USER, payload.data.get("user"));
-            editor.putString(SyncManager.KEY_WEBDAV_PASS, payload.data.get("pass"));
-            editor.putString(SyncManager.KEY_WEBDAV_PATH, payload.data.get("path"));
-            editor.putString(SyncManager.SYNC_WEBDAV_PANTRY_KEY, payload.data.get("pantryKey"));
-            editor.putString(SyncManager.SYNC_WEBDAV_PANTRY_NAME, payload.data.get("pantryName"));
-            editor.putBoolean(SyncManager.KEY_WEBDAV_MODE_SHARED, Boolean.parseBoolean(payload.data.get("isShared")));
-        } else {
+        if (!"webdav".equals(providerId)) {
             Log.e("SyncFlow", "Provider non supportato per onboarding: " + providerId);
             return;
         }
