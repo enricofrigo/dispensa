@@ -94,24 +94,24 @@
     <string name="hint_category_new">Nuova Categoria (es. en:dairy)</string>
 
     <!-- Location -->
-    <string name="hint_store_location">Posizione dispensa</string>
-    <string name="new_location">Nuova dispensa</string>
-    <string name="edit_location">Modifica dispensa</string>
-    <string name="delete_location">Elimina dispensa</string>
+    <string name="hint_store_location">Posizione deposito</string>
+    <string name="new_location">Nuovo deposito</string>
+    <string name="edit_location">Modifica deposito</string>
+    <string name="delete_location">Elimina deposito</string>
     <string name="default_icon">Icona Default</string>
-    <string name="add_new_location">Aggiungi nuova dispensa</string>
-    <string name="title_manage_locations">Gestione dispensa</string>
-    <string name="location_management_description">Riordina le tue dispense o seleziona la dispensa predefinita all\'avvio dell\'applicazione</string>
+    <string name="add_new_location">Aggiungi nuova deposito</string>
+    <string name="title_manage_locations">Gestione depositi</string>
+    <string name="location_management_description">Riordina i tuoi depositi o seleziona la dispensa predefinita all\'avvio dell\'applicazione</string>
     <string name="hint_new_location">Nome della dispensa</string>
     <string name="error_empty_location">Il nome non può essere vuoto</string>
-    <string name="notify_add_location">dispensa \'%s\' aggiunta</string>
-    <string name="notify_update_location">dispensa aggiornata</string>
-    <string name="error_delete_default_location">Le dispense predefinite non possono essere eliminate.</string>
+    <string name="notify_add_location">deposito \'%s\' aggiunta</string>
+    <string name="notify_update_location">deposito aggiornata</string>
+    <string name="error_delete_default_location">I depositi predefinite non possono essere eliminate.</string>
     <string name="delete_location_confirmation_title">Conferma Eliminazione</string>
-    <string name="error_delete_location_confirmation">Sei sicuro di voler eliminare la dispensa \'%s\'?
-I prodotti in questa dispensa potrebbero dover essere riassegnati.</string>
-    <string name="notify_delete_location">Dispensa \'%s\' eliminata</string>
-    <string name="err_location_select">Seleziona una posizione di archiviazione</string>
+    <string name="error_delete_location_confirmation">Sei sicuro di voler eliminare il deposito \'%s\'?
+I prodotti in questo deposito potrebbero dover essere riassegnati.</string>
+    <string name="notify_delete_location">Deposito \'%s\' eliminato</string>
+    <string name="err_location_select">Seleziona un deposito</string>
     <string name="add_product_camera_preview_hint">Inquadra il codice a barre o la data di scadenza</string>
 
     <!-- Version -->
@@ -279,6 +279,8 @@ I prodotti in questa dispensa potrebbero dover essere riassegnati.</string>
     <string name="sync_not_configured">Sincronizzazione non configurata</string>
     <string name="sync_not_active_for_pantry">La sincronizzazione non è attiva per questa dispensa</string>
     <string name="sync_preparing_server">Preparazione server…</string>
+    <string name="sync_owner_delete_warning">Stai eliminando l\'owner di questa condivisione. Questo CANCELLERÀ PERMANENTEMENTE l\'intera cartella remota e scollegherà tutti gli altri dispositivi. Vuoi continuare?</string>
+    <string name="sync_pantry_deleted_success">Cartella di condivisione remota eliminata con successo</string>
 
     <!-- Dispensa Management -->
     <string name="manage_dispense_title">Gestione Dispense</string>

@@ -181,6 +181,7 @@ public class SyncWebDavConfigActivity extends AppCompatActivity {
             }
         })
         .flatMap(valid -> {
+            save(url, user, pass, path, selectedDispense, isShared);
             if (!valid) return Single.error(new Exception("Credenziali non valide o server non raggiungibile"));
             
             if (selectedDispense.isEmpty()) return Single.just(new ArrayList<Boolean>());
@@ -193,7 +194,7 @@ public class SyncWebDavConfigActivity extends AppCompatActivity {
         .subscribeOn(Schedulers.io())
         .observeOn(AndroidSchedulers.mainThread())
         .subscribe(results -> {
-            saveAndFinish(url, user, pass, path, selectedDispense, isShared);
+            finish(url, user, pass, path, selectedDispense, isShared);
         }, throwable -> {
             setUILocked(false);
             Log.e("SyncConfig", "Setup failed", throwable);
@@ -201,9 +202,8 @@ public class SyncWebDavConfigActivity extends AppCompatActivity {
         });
     }
 
-    private void saveAndFinish(String url, String user, String pass, String path, List<Dispensa> selectedDispense, boolean isShared) {
-        save(url, user, pass, path, selectedDispense, isShared);
-        
+    private void finish(String url, String user, String pass, String path, List<Dispensa> selectedDispense, boolean isShared) {
+
         SyncManager.getInstance().getOrInitProvider(this);
         eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl.getInstance(this).triggerManualSync();
 
