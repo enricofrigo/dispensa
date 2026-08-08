@@ -84,9 +84,12 @@ public class SyncCoordinatorImpl implements SyncCoordinator {
         Log.d("SyncFlow", "Cursore resettato per nuovo onboarding.");
 
         // 2. Initialize the correct SyncProvider
-        SyncManager.getInstance().getOrInitProvider(context);
-
-        // 3. Trigger initial sync
-        triggerManualSync();
+        SyncManager.getInstance().getOrInitProvider(context)
+                .subscribe(provider -> {
+                    // 3. Trigger initial sync
+                    triggerManualSync();
+                }, throwable -> {
+                    Log.e("SyncFlow", "Failed to init provider after onboarding", throwable);
+                });
     }
 }

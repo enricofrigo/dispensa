@@ -21,10 +21,16 @@ public class WebDavSyncProvider implements SyncProvider {
     public static class SyncScope {
         public final int dispensaId;
         public final String pantryPath;
+        public final WebDavClient client;
 
         public SyncScope(int dispensaId, String pantryPath) {
+            this(dispensaId, pantryPath, null);
+        }
+
+        public SyncScope(int dispensaId, String pantryPath, WebDavClient client) {
             this.dispensaId = dispensaId;
             this.pantryPath = pantryPath;
+            this.client = client;
         }
     }
 
@@ -56,8 +62,9 @@ public class WebDavSyncProvider implements SyncProvider {
         if (engines.isEmpty()) {
             AppDatabase db = AppDatabase.getDatabase(context);
             for (SyncScope scope : scopes) {
+                WebDavClient engineClient = scope.client != null ? scope.client : client;
                 engines.add(new WebDavSyncEngine(
-                        client,
+                        engineClient,
                         new SyncCursorStoreImpl(context),
                         new OutboxRepositoryImpl(db),
                         deviceId,

@@ -13,9 +13,13 @@ import eu.frigo.dispensa.sync.core.engine.InstallationIdProvider;
 import eu.frigo.dispensa.sync.core.engine.SyncManager;
 import eu.frigo.dispensa.sync.core.provider.SyncProvider;
 import eu.frigo.dispensa.sync.core.provider.SyncProviderLoader;
+import eu.frigo.dispensa.data.AppDatabase;
+import eu.frigo.dispensa.data.sync.JoinedPantryConfig;
 import eu.frigo.dispensa.sync.webdav.client.WebDavClient;
 import eu.frigo.dispensa.sync.webdav.client.WebDavClientFactory;
 import eu.frigo.dispensa.sync.webdav.worker.WebDavSyncWorker;
+import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class WebDavSyncProviderLoader implements SyncProviderLoader {
 
@@ -25,53 +29,68 @@ public class WebDavSyncProviderLoader implements SyncProviderLoader {
     }
 
     @Override
-    public SyncProvider load(Context context) {
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        String url = prefs.getString(SyncManager.KEY_WEBDAV_URL, "");
-        String user = prefs.getString(SyncManager.KEY_WEBDAV_USER, "");
-        String pass = prefs.getString(SyncManager.KEY_WEBDAV_PASS, "");
-        boolean isShared = prefs.getBoolean(SyncManager.KEY_WEBDAV_MODE_SHARED, false);
-        boolean enabled = prefs.getBoolean(SyncManager.KEY_SYNC_ENABLED, false);
+    public Single<SyncProvider> load(Context context) {
+        return Single.<SyncProvider>fromCallable(() -> {
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+            boolean enabled = prefs.getBoolean(SyncManager.KEY_SYNC_ENABLED, false);
 
-        if (enabled && !url.isEmpty() && (!user.isEmpty() || isShared)) {
-            String deviceId = InstallationIdProvider.getOrCreateInstallationId(context);
-            String path = prefs.getString(SyncManager.KEY_WEBDAV_PATH, SyncManager.DEFAULT_PATH);
-            
-            String syncedIdsStr = prefs.getString(SyncManager.SYNC_WEBDAV_SYNCED_IDS, "");
-            List<WebDavSyncProvider.SyncScope> scopes = new ArrayList<>();
-            
-            if (!syncedIdsStr.isEmpty()) {
-                String[] ids = syncedIdsStr.split(",");
-                for (String idStr : ids) {
-                    try {
-                        int id = Integer.parseInt(idStr);
-                        String pantryName = prefs.getString(SyncManager.SYNC_WEBDAV_PANTRY_NAME + "_" + id, "Dispensa");
-                        
-                        String normalizedBase = path.endsWith("/") ? path : path + "/";
-                        if (normalizedBase.startsWith("/")) normalizedBase = normalizedBase.substring(1);
-                        String pantryPath = normalizedBase + SyncManager.getSyncPath(pantryName);
-                        
-                        scopes.add(new WebDavSyncProvider.SyncScope(id, pantryPath));
-                    } catch (NumberFormatException ignored) {}
+            if (enabled) {
+                String deviceId = InstallationIdProvider.getOrCreateInstallationId(context);
+                String syncedIdsStr = prefs.getString(SyncManager.SYNC_WEBDAV_SYNCED_IDS, "");
+                List<WebDavSyncProvider.SyncScope> scopes = new ArrayList<>();
+                AppDatabase db = AppDatabase.getDatabase(context);
+
+                if (!syncedIdsStr.isEmpty()) {
+                    String[] ids = syncedIdsStr.split(",");
+                    for (String idStr : ids) {
+                        try {
+                            int id = Integer.parseInt(idStr);
+                            JoinedPantryConfig config = db.joinedPantryConfigDao().getConfigByDispensaId(id);
+                            
+                            String url, user, pass, path;
+                            boolean isShared;
+                            String pantryName;
+
+                            if (config != null) {
+                                url = config.url;
+                                user = config.username;
+                                pass = config.password;
+                                path = config.path;
+                                isShared = config.isShared;
+                                pantryName = prefs.getString(SyncManager.SYNC_WEBDAV_PANTRY_NAME + "_" + id, "Dispensa");
+                            } else {
+                                // Fallback to global prefs if no specific config exists
+                                url = prefs.getString(SyncManager.KEY_WEBDAV_URL, "");
+                                user = prefs.getString(SyncManager.KEY_WEBDAV_USER, "");
+                                pass = prefs.getString(SyncManager.KEY_WEBDAV_PASS, "");
+                                path = prefs.getString(SyncManager.KEY_WEBDAV_PATH, SyncManager.DEFAULT_PATH);
+                                isShared = prefs.getBoolean(SyncManager.KEY_WEBDAV_MODE_SHARED, false);
+                                pantryName = prefs.getString(SyncManager.SYNC_WEBDAV_PANTRY_NAME + "_" + id, "Dispensa");
+                            }
+
+                            if (!url.isEmpty() && (!user.isEmpty() || isShared)) {
+                                String base = (path == null) ? "" : (path.endsWith("/") ? path : path + "/");
+                                if (base.startsWith("/")) base = base.substring(1);
+                                String pantryPath = base + SyncManager.getSyncPath(pantryName);
+                                
+                                // Create a temporary client for this scope's credentials
+                                WebDavClient scopeClient = new WebDavClient(url, user, pass);
+                                scopes.add(new WebDavSyncProvider.SyncScope(id, pantryPath, scopeClient));
+                            }
+                        } catch (NumberFormatException ignored) {}
+                    }
                 }
-            } else {
-                // Fallback retrocompatibilità
-                String pantryName = prefs.getString(SyncManager.SYNC_WEBDAV_PANTRY_NAME, "Dispensa");
-                int dispensaId = prefs.getInt(SyncManager.SYNC_WEBDAV_DISPENSA_ID, 1);
                 
-                String normalizedBase = path.endsWith("/") ? path : path + "/";
-                if (normalizedBase.startsWith("/")) normalizedBase = normalizedBase.substring(1);
-                String pantryPath = normalizedBase + SyncManager.getSyncPath(pantryName);
-                
-                scopes.add(new WebDavSyncProvider.SyncScope(dispensaId, pantryPath));
+                if (scopes.isEmpty()) return null;
+
+                // The main client is still used for general purposes, but engines use scope-specific clients
+                WebDavClient mainClient = WebDavClientFactory.getInstance().getClient(context);
+                WebDavRemoteStoreImpl remoteStore = new WebDavRemoteStoreImpl(mainClient);
+
+                return new WebDavSyncProvider(remoteStore, mainClient, deviceId, scopes);
             }
-
-            WebDavClient client = WebDavClientFactory.getInstance().getClient(context);
-            WebDavRemoteStoreImpl remoteStore = new WebDavRemoteStoreImpl(client);
-
-            return new WebDavSyncProvider(remoteStore, client, deviceId, scopes);
-        }
-        return null;
+            return null;
+        }).subscribeOn(Schedulers.io());
     }
 
     @Override

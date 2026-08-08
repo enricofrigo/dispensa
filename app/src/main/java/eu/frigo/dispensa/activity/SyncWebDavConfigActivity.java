@@ -28,6 +28,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import eu.frigo.dispensa.R;
+import eu.frigo.dispensa.data.AppDatabase;
 import eu.frigo.dispensa.data.dispensa.Dispensa;
 import eu.frigo.dispensa.sync.core.engine.InstallationIdProvider;
 import eu.frigo.dispensa.sync.core.engine.SyncManager;
@@ -94,18 +95,30 @@ public class SyncWebDavConfigActivity extends AppCompatActivity {
         dispensaViewModel.getAllDispense().observe(this, dispense -> {
             dispenseContainer.removeAllViews();
             checkBoxes.clear();
-            for (Dispensa d : dispense) {
-                CheckBox cb = new CheckBox(this);
-                cb.setText(d.getName());
-                cb.setTag(d);
-                if (syncedIds.contains(d.id)) {
-                    cb.setChecked(true);
-                } else if (syncedIds.isEmpty() && d.isDefault()) {
-                    cb.setChecked(true);
+            AppDatabase.databaseWriteExecutor.execute(() -> {
+                for (Dispensa d : dispense) {
+                    boolean isJoined = AppDatabase.getDatabase(this).joinedPantryConfigDao().getConfigByDispensaId(d.id) != null;
+                    
+                    runOnUiThread(() -> {
+                        CheckBox cb = new CheckBox(this);
+                        cb.setText(d.getName());
+                        cb.setTag(d);
+                        
+                        if (isJoined) {
+                            cb.setChecked(true);
+                            cb.setEnabled(false);
+                            cb.setText(d.getName() + " (Sync dedicato)");
+                        } else if (syncedIds.contains(d.id)) {
+                            cb.setChecked(true);
+                        } else if (syncedIds.isEmpty() && d.isDefault()) {
+                            cb.setChecked(true);
+                        }
+                        
+                        dispenseContainer.addView(cb);
+                        checkBoxes.add(cb);
+                    });
                 }
-                dispenseContainer.addView(cb);
-                checkBoxes.add(cb);
-            }
+            });
         });
 
         boolean isShared = prefs.getBoolean(SyncManager.KEY_WEBDAV_MODE_SHARED, false);
@@ -204,11 +217,16 @@ public class SyncWebDavConfigActivity extends AppCompatActivity {
 
     private void finish(String url, String user, String pass, String path, List<Dispensa> selectedDispense, boolean isShared) {
 
-        SyncManager.getInstance().getOrInitProvider(this);
-        eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl.getInstance(this).triggerManualSync();
-
-        Toast.makeText(this, "Sincronizzazione configurata correttamente", Toast.LENGTH_SHORT).show();
-        finish();
+        SyncManager.getInstance().getOrInitProvider(this)
+                .subscribe(provider -> {
+                    eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl.getInstance(this).triggerManualSync();
+                    Toast.makeText(this, "Sincronizzazione configurata correttamente", Toast.LENGTH_SHORT).show();
+                    finish();
+                }, throwable -> {
+                    Log.e("SyncConfig", "Failed to init provider", throwable);
+                    Toast.makeText(this, "Sincronizzazione salvata, ma inizializzazione fallita: " + throwable.getMessage(), Toast.LENGTH_LONG).show();
+                    finish();
+                });
     }
 
     private void save(String url, String user, String pass, String path, List<Dispensa> selectedDispense, boolean isShared){
@@ -221,6 +239,12 @@ public class SyncWebDavConfigActivity extends AppCompatActivity {
             ids.append(d.id);
             if (i < selectedDispense.size() - 1) ids.append(",");
             editor.putString(SyncManager.SYNC_WEBDAV_PANTRY_NAME + "_" + d.id, d.getName());
+            
+            // Save secure config for each pantry
+            eu.frigo.dispensa.data.sync.JoinedPantryConfig config = new eu.frigo.dispensa.data.sync.JoinedPantryConfig(
+                    d.id, url, user, pass, path, isShared, ""
+            );
+            dispensaViewModel.insertJoinedPantryConfig(config);
         }
 
         editor.putString(SyncManager.KEY_WEBDAV_URL, url)

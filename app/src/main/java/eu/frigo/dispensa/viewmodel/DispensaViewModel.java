@@ -10,6 +10,7 @@ import java.util.List;
 
 import eu.frigo.dispensa.data.Repository;
 import eu.frigo.dispensa.data.dispensa.Dispensa;
+import eu.frigo.dispensa.data.sync.JoinedPantryConfig;
 
 public class DispensaViewModel extends AndroidViewModel {
 
@@ -60,5 +61,14 @@ public class DispensaViewModel extends AndroidViewModel {
 
     public void setAsDefault(int id) {
         repository.setDispensaAsDefault(id);
+    }
+
+    public void insertJoinedPantryConfig(JoinedPantryConfig config) {
+        repository.insertJoinedPantryConfig(config);
+    }
+
+    public io.reactivex.rxjava3.core.Single<Boolean> isPantryJoined(int dispensaId) {
+        return io.reactivex.rxjava3.core.Single.fromCallable(() -> 
+                repository.getJoinedPantryConfigSync(dispensaId) != null);
     }
 }

@@ -19,4 +19,10 @@ public interface SyncOutboxDao {
 
     @Query("DELETE FROM sync_outbox WHERE isSynced = 1")
     void deleteSynced();
+
+    @Query("DELETE FROM sync_outbox WHERE dispensa_id = :dispensaId")
+    void deleteAllByDispensaId(int dispensaId);
+
+    @Query("DELETE FROM sync_outbox WHERE dispensa_id != 0 AND dispensa_id NOT IN (SELECT id FROM dispense)")
+    void deleteOrphans();
 }
