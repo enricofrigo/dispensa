@@ -276,6 +276,7 @@
     <string name="sync_not_configured">Synchronisierung nicht konfiguriert</string>
     <string name="sync_not_active_for_pantry">Die Synchronisierung ist für diese Vorratskammer non attivo per questa dispensa</string>
     <string name="sync_preparing_server">Server wird vorbereitet…</string>
+    <string name="sync_pantry_deleted_success">Remote-Freigabeordner erfolgreich gelöscht</string>
     <string name="manage_dispense_title">Vorratskammern verwalten</string>
     <string name="add_dispensa">Vorratskammer hinzufügen</string>
     <string name="import_pantry">Aus Datei importieren</string>
@@ -286,4 +287,5 @@
     <string name="cannot_delete_default_dispensa">Standardvorratskammer kann nicht gelöscht werden</string>
     <string name="dispensa_name">Name der Speisekammer</string>
     <string name="pantry_owner_format">Besitzer: %s</string>
+    <string name="sync_owner_delete_warning">Sie löschen den Besitzer dieser Freigabe. Dadurch wird der gesamte Remote-Synchronisierungsordner ENDGÜLTIG gelöscht und die Verbindung zu allen anderen Geräten getrennt. Möchten Sie fortfahren?</string>
 </resources>

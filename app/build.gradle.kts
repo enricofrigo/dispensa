@@ -41,6 +41,7 @@ android {
             isMinifyEnabled = false
             isShrinkResources = false
             signingConfig = signingConfigs.getByName("debug")
+            resValue("string", "app_name", "Debug Dispensa")
         }
         release {
             isMinifyEnabled = true
