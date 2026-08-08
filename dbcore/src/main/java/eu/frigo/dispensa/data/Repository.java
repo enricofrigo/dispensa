@@ -111,6 +111,10 @@ public class Repository {
         return currentDispensaName;
     }
 
+    public LiveData<Dispensa> getCurrentDispensa() {
+        return Transformations.switchMap(currentDispensaId, dispensaDao::getDispensaById);
+    }
+
     public io.reactivex.rxjava3.core.Single<String> getCurrentDispensaNameSingle() {
         return io.reactivex.rxjava3.core.Single.fromCallable(() -> {
             Integer id = currentDispensaId.getValue();

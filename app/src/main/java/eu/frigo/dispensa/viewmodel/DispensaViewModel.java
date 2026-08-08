@@ -39,6 +39,10 @@ public class DispensaViewModel extends AndroidViewModel {
         return currentDispensaName;
     }
 
+    public LiveData<Dispensa> getCurrentDispensa() {
+        return repository.getCurrentDispensa();
+    }
+
     public LiveData<Boolean> getPantryCreatedEvent() {
         return pantryCreatedEvent;
     }

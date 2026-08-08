@@ -60,6 +60,7 @@ import eu.frigo.dispensa.data.backup.BackupManager;
 import eu.frigo.dispensa.data.category.ProductWithCategoryDefinitions;
 import eu.frigo.dispensa.data.product.Product;
 import eu.frigo.dispensa.data.storage.StorageLocation;
+import eu.frigo.dispensa.sync.core.engine.InstallationIdProvider;
 import eu.frigo.dispensa.sync.core.engine.SyncManager;
 import eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl;
 import eu.frigo.dispensa.sync.core.event.SyncBus;
@@ -92,6 +93,7 @@ public class MainActivity extends AppCompatActivity
     private ShoppingListViewModel shoppingListViewModel;
     private io.reactivex.rxjava3.disposables.Disposable syncDisposable;
     private BadgeDrawable shoppingBadge;
+    private boolean isOwner = true;
     private final ActivityResultLauncher<String> requestPermissionLauncher = registerForActivityResult(
             new ActivityResultContracts.RequestPermission(), isGranted -> {
                 if (isGranted) {
@@ -246,10 +248,20 @@ public class MainActivity extends AppCompatActivity
         dispensaViewModel = new ViewModelProvider(this).get(DispensaViewModel.class);
         productViewModel.getAllProducts().observe(this, products -> showHintsIfNeeded());
 
-        // Osserva la dispensa corrente per aggiornare il titolo
-        dispensaViewModel.getCurrentDispensaName().observe(this, name -> {
-            if (getSupportActionBar() != null) {
-                getSupportActionBar().setTitle(name != null ? name : getString(R.string.app_name));
+        // Osserva la dispensa corrente per aggiornare il titolo e la proprietà
+        dispensaViewModel.getCurrentDispensa().observe(this, dispensa -> {
+            if (dispensa != null) {
+                if (getSupportActionBar() != null) {
+                    getSupportActionBar().setTitle(dispensa.getName());
+                }
+                String currentDeviceId = InstallationIdProvider.getOrCreateInstallationId(this);
+                boolean wasOwner = isOwner;
+                isOwner = currentDeviceId.equals(dispensa.deviceOwnerId);
+                if (wasOwner != isOwner) {
+                    invalidateOptionsMenu();
+                }
+            } else if (getSupportActionBar() != null) {
+                getSupportActionBar().setTitle(R.string.app_name);
             }
         });
 
@@ -481,6 +493,11 @@ public class MainActivity extends AppCompatActivity
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
             boolean syncEnabled = prefs.getBoolean(SyncManager.KEY_SYNC_ENABLED, false);
             syncNowItem.setVisible(syncEnabled);
+        }
+
+        MenuItem importItem = menu.findItem(R.id.action_import);
+        if (importItem != null) {
+            importItem.setVisible(isOwner);
         }
 
         return super.onPrepareOptionsMenu(menu);
@@ -791,6 +808,7 @@ public class MainActivity extends AppCompatActivity
                     () -> productViewModel.insert(product));
         }
     }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
