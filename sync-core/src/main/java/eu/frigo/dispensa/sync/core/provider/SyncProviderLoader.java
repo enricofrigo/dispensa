@@ -1,10 +1,10 @@
 package eu.frigo.dispensa.sync.core.provider;
 
 import android.content.Context;
-import androidx.work.ListenableWorker;
+import io.reactivex.rxjava3.core.Single;
 
 public interface SyncProviderLoader {
     String getProviderType();
-    SyncProvider load(Context context);
-    Class<? extends ListenableWorker> getWorkerClass();
+    Single<SyncProvider> load(Context context);
+    Class<? extends androidx.work.ListenableWorker> getWorkerClass();
 }

@@ -72,6 +72,9 @@ public interface StorageLocationDao {
     @Query("DELETE FROM storage_locations WHERE dispensa_id = :dispensaId")
     void deleteAllLocations(int dispensaId);
 
+    @Query("DELETE FROM storage_locations WHERE dispensa_id NOT IN (SELECT id FROM dispense)")
+    void deleteOrphans();
+
     @Query("SELECT MAX(order_index) FROM storage_locations WHERE dispensa_id = :dispensaId")
     Integer getMaxOrderIndex(int dispensaId);
 }

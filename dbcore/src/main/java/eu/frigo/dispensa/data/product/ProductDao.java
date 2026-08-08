@@ -32,6 +32,10 @@ public interface ProductDao {
     void deleteAllProducts();
     @Query("DELETE FROM products WHERE dispensa_id = :dispensaId")
     void deleteAllProducts(int dispensaId);
+
+    @Query("DELETE FROM products WHERE dispensa_id NOT IN (SELECT id FROM dispense)")
+    void deleteOrphans();
+
     @Query("SELECT * FROM products ORDER BY expiry_date ASC")
     List<Product> getAllProductsListStatic();
     @Query("SELECT * FROM products WHERE dispensa_id = :dispensaId ORDER BY expiry_date ASC")

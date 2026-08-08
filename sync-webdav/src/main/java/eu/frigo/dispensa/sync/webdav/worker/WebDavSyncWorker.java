@@ -23,7 +23,12 @@ public class WebDavSyncWorker extends Worker {
         Log.d("SyncFlow", "WebDavSyncWorker iniziato.");
 
         // Recupera il provider dal manager (che lo inizializza se necessario dalle preferenze)
-        SyncProvider provider = SyncManager.getInstance().getOrInitProvider(getApplicationContext());
+        SyncProvider provider = null;
+        try {
+            provider = SyncManager.getInstance().getOrInitProvider(getApplicationContext()).blockingGet();
+        } catch (Exception e) {
+            Log.e("SyncFlow", "Failed to init provider in worker", e);
+        }
 
         if (provider instanceof WebDavSyncProvider) {
             WebDavSyncProvider webDavProvider = (WebDavSyncProvider) provider;

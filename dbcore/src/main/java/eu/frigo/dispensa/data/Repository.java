@@ -26,6 +26,8 @@ import eu.frigo.dispensa.data.shoppinglist.ShoppingItemDao;
 import eu.frigo.dispensa.data.storage.PredefinedData;
 import eu.frigo.dispensa.data.storage.StorageLocation;
 import eu.frigo.dispensa.data.storage.StorageLocationDao;
+import eu.frigo.dispensa.data.sync.JoinedPantryConfig;
+import eu.frigo.dispensa.data.sync.JoinedPantryConfigDao;
 import eu.frigo.dispensa.data.sync.SyncOutbox;
 import eu.frigo.dispensa.data.sync.SyncOutboxDao;
 import eu.frigo.dispensa.sync.core.engine.InstallationIdProvider;
@@ -46,6 +48,7 @@ public class Repository {
     private final ShoppingItemDao shoppingItemDao;
     private final SyncOutboxDao syncOutboxDao;
     private final DispensaDao dispensaDao;
+    private final JoinedPantryConfigDao joinedPantryConfigDao;
     private final Gson gson;
     private final SharedPreferences sharedPreferences;
     private final Application application;
@@ -74,6 +77,7 @@ public class Repository {
         shoppingItemDao = db.shoppingItemDao();
         syncOutboxDao = db.syncOutboxDao();
         dispensaDao = db.dispensaDao();
+        joinedPantryConfigDao = db.joinedPantryConfigDao();
         gson = new Gson();
         this.application = application;
         sharedPreferences = application.getSharedPreferences("dispensa_prefs", Context.MODE_PRIVATE);
@@ -155,10 +159,13 @@ public class Repository {
 
     public void deleteDispensa(Dispensa dispensa) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
-            // Qui dovresti decidere se cancellare tutto il contenuto della dispensa
-            // o impedire la cancellazione se non è vuota.
-            // Per ora cancelliamo la dispensa e i suoi dati associati (andrebbe fatto a cascata nel DB idealmente)
+            // Cancelliamo la dispensa e tutti i dati associati
+            productDao.deleteAllProducts(dispensa.id);
+            storageLocationDao.deleteAllLocations(dispensa.id);
+            syncOutboxDao.deleteAllByDispensaId(dispensa.id);
+            joinedPantryConfigDao.deleteByDispensaId(dispensa.id);
             dispensaDao.delete(dispensa);
+            
             // Se cancelliamo la corrente, torniamo a quella di default
             if (currentDispensaId.getValue() != null && currentDispensaId.getValue() == dispensa.id) {
                 Dispensa def = dispensaDao.getDefaultDispensaSync();
@@ -172,6 +179,25 @@ public class Repository {
 
     public void setDispensaAsDefault(int id) {
         AppDatabase.databaseWriteExecutor.execute(() -> dispensaDao.setAsDefault(id));
+    }
+
+    public void insertJoinedPantryConfig(JoinedPantryConfig config) {
+        AppDatabase.databaseWriteExecutor.execute(() -> joinedPantryConfigDao.insert(config));
+    }
+
+    public JoinedPantryConfig getJoinedPantryConfigSync(int dispensaId) {
+        return joinedPantryConfigDao.getConfigByDispensaId(dispensaId);
+    }
+
+    public void cleanOrphanData() {
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            Log.d("Repository", "Avvio pulizia dati orfani...");
+            productDao.deleteOrphans();
+            storageLocationDao.deleteOrphans();
+            syncOutboxDao.deleteOrphans();
+            joinedPantryConfigDao.deleteOrphans();
+            Log.d("Repository", "Pulizia dati orfani completata.");
+        });
     }
 
     private void recordSyncEvent(String action, Object payload) {

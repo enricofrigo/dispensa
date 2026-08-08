@@ -38,6 +38,7 @@ import eu.frigo.dispensa.data.AppDatabase;
 import eu.frigo.dispensa.data.backup.BackupData;
 import eu.frigo.dispensa.data.backup.BackupManager;
 import eu.frigo.dispensa.data.dispensa.Dispensa;
+import eu.frigo.dispensa.data.sync.JoinedPantryConfig;
 import eu.frigo.dispensa.sync.core.engine.InstallationIdProvider;
 import eu.frigo.dispensa.sync.core.engine.SyncManager;
 import eu.frigo.dispensa.sync.webdav.client.WebDavClient;
@@ -295,6 +296,20 @@ public class DispensaManagerActivity extends AppCompatActivity implements Dispen
                                 .putString(SyncManager.SYNC_WEBDAV_SYNCED_IDS, newSyncedIds)
                                 .putString(SyncManager.SYNC_WEBDAV_PANTRY_NAME + "_" + dispensa.id, dispensa.getName())
                                 .apply();
+
+                        // Save secure config for this specific pantry
+                        String path = prefs.getString(SyncManager.KEY_WEBDAV_PATH, SyncManager.DEFAULT_PATH);
+                        boolean isShared = prefs.getBoolean(SyncManager.KEY_WEBDAV_MODE_SHARED, false);
+                        JoinedPantryConfig config = new JoinedPantryConfig(
+                                dispensa.id,
+                                url,
+                                user,
+                                pass,
+                                path,
+                                isShared,
+                                prefs.getString(SyncManager.SYNC_WEBDAV_PANTRY_KEY, "")
+                        );
+                        dispensaViewModel.insertJoinedPantryConfig(config);
                         
                         launchShareOnboarding(dispensa);
                     } else {

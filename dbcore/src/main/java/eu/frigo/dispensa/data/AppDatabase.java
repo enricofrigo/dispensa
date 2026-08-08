@@ -30,6 +30,8 @@ import eu.frigo.dispensa.data.storage.PredefinedData;
 import eu.frigo.dispensa.data.storage.StorageLocation;
 import eu.frigo.dispensa.data.storage.StorageLocationDao;
 
+import eu.frigo.dispensa.data.sync.JoinedPantryConfig;
+import eu.frigo.dispensa.data.sync.JoinedPantryConfigDao;
 import eu.frigo.dispensa.data.sync.SyncOutbox;
 import eu.frigo.dispensa.data.sync.SyncOutboxDao;
 
@@ -39,8 +41,8 @@ import eu.frigo.dispensa.sync.core.engine.InstallationIdProvider;
 
 @Database(entities = {Product.class, CategoryDefinition.class,
         ProductCategoryLink.class, StorageLocation.class, OpenFoodFactCacheEntity.class,
-        ShoppingItem.class, SyncOutbox.class, Dispensa.class },
-        version = 17)
+        ShoppingItem.class, SyncOutbox.class, Dispensa.class, JoinedPantryConfig.class },
+        version = 18)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract ProductDao productDao();
@@ -51,6 +53,7 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract ShoppingItemDao shoppingItemDao();
     public abstract SyncOutboxDao syncOutboxDao();
     public abstract DispensaDao dispensaDao();
+    public abstract JoinedPantryConfigDao joinedPantryConfigDao();
 
     private static volatile AppDatabase INSTANCE;
     private static final int NUMBER_OF_THREADS = 4;
@@ -127,6 +130,13 @@ public abstract class AppDatabase extends RoomDatabase {
         @Override
         public void migrate(SupportSQLiteDatabase database) {
             database.execSQL("ALTER TABLE dispense ADD COLUMN device_owner_name TEXT");
+        }
+    };
+
+    static final Migration MIGRATION_17_18 = new Migration(17, 18) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("CREATE TABLE IF NOT EXISTS `joined_pantry_configs` (`dispensa_id` INTEGER NOT NULL, `provider_id` TEXT NOT NULL, `url` TEXT, `username` TEXT, `password` TEXT, `path` TEXT, `is_shared` INTEGER NOT NULL, `pantry_key` TEXT, PRIMARY KEY(`dispensa_id`))");
         }
     };
 
@@ -213,6 +223,7 @@ public abstract class AppDatabase extends RoomDatabase {
                             .addMigrations(MIGRATION_14_15)
                             .addMigrations(MIGRATION_15_16)
                             .addMigrations(MIGRATION_16_17)
+                            .addMigrations(MIGRATION_17_18)
                             .addCallback(sRoomDatabaseCallback)
                             //.fallbackToDestructiveMigration()
                             .build();

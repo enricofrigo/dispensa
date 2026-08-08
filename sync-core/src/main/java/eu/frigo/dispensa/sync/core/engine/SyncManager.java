@@ -7,6 +7,8 @@ import java.util.Map;
 
 import eu.frigo.dispensa.sync.core.provider.SyncProvider;
 import eu.frigo.dispensa.sync.core.provider.SyncProviderLoader;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
 
 public class SyncManager {
@@ -70,18 +72,17 @@ public class SyncManager {
         return prefs.contains(SYNC_WEBDAV_PANTRY_KEY);
     }
 
-    public SyncProvider getOrInitProvider(Context context) {
+    public Single<SyncProvider> getOrInitProvider(Context context) {
         SyncProvider active = currentProvider.getValue();
-        if (active != null) return active;
+        if (active != null) return Single.just(active);
 
-        for (SyncProviderLoader loader : loaders.values()) {
-            SyncProvider provider = loader.load(context);
-            if (provider != null) {
-                setProvider(provider);
-                return provider;
-            }
-        }
+        if (loaders.isEmpty()) return Single.error(new IllegalStateException("No loaders registered"));
 
-        return null;
+        return Observable.fromIterable(loaders.values())
+                .concatMapSingle(loader -> loader.load(context))
+                .filter(java.util.Objects::nonNull)
+                .firstElement()
+                .doOnSuccess(this::setProvider)
+                .toSingle();
     }
 }

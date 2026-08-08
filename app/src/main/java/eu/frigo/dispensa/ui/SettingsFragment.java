@@ -157,14 +157,6 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
             updateLanguagePreferenceSummary(currentLangValue);
         }
 
-        Preference cleanImagesPref = findPreference("pref_clean_images");
-        if (cleanImagesPref != null) {
-            cleanImagesPref.setOnPreferenceClickListener(preference -> {
-                cleanOrphanImages();
-                return true;
-            });
-        }
-
         Preference clearCachePref = findPreference(KEY_OFF_CACHE_CLEAR);
         if (clearCachePref != null) {
             clearCachePref.setOnPreferenceClickListener(preference -> {
@@ -187,11 +179,20 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
     private void clearOpenFoodFactCache() {
         Context context = requireContext();
         java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> {
-            eu.frigo.dispensa.data.openfoodfacts.OpenFoodFactCacheManager.clearAllCache(
-                context, eu.frigo.dispensa.data.AppDatabase.getDatabase(context));
-            new android.os.Handler(android.os.Looper.getMainLooper()).post(() ->
-                android.widget.Toast.makeText(context, getString(R.string.notify_cache_cleared), android.widget.Toast.LENGTH_SHORT).show()
-            );
+            eu.frigo.dispensa.data.AppDatabase db = eu.frigo.dispensa.data.AppDatabase.getDatabase(context);
+            eu.frigo.dispensa.data.openfoodfacts.OpenFoodFactCacheManager.clearAllCache(context, db);
+            
+            // Pulizia dati orfani (entity senza dispensa)
+            eu.frigo.dispensa.data.Repository.getInstance(requireActivity().getApplication()).cleanOrphanData();
+
+            // Pulizia immagini orfane (file su disco senza riferimento nel DB o viceversa)
+            eu.frigo.dispensa.data.Repository.cleanOrphanImages(context, count -> {
+                new android.os.Handler(android.os.Looper.getMainLooper()).post(() ->
+                    android.widget.Toast.makeText(context, 
+                            getString(R.string.notify_cache_cleared) + " e " + getString(R.string.notify_clean_images_done, count), 
+                            android.widget.Toast.LENGTH_LONG).show()
+                );
+            });
         });
     }
 
