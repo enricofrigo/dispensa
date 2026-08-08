@@ -34,7 +34,6 @@ import eu.frigo.dispensa.sync.core.engine.SyncManager;
 import eu.frigo.dispensa.sync.webdav.client.WebDavClient;
 import eu.frigo.dispensa.sync.webdav.client.WebDavClientFactory;
 import eu.frigo.dispensa.sync.webdav.model.WebDavDevice;
-import eu.frigo.dispensa.sync.webdav.model.WebDavManifest;
 import eu.frigo.dispensa.viewmodel.DispensaViewModel;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Completable;
@@ -54,6 +53,8 @@ public class ManageDevicesActivity extends AppCompatActivity {
     private final Gson gson = new Gson();
     private boolean isMaster = false;
     private String devicesPath;
+    private String pantryBasePath;
+    private Dispensa currentDispensa;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,12 +73,12 @@ public class ManageDevicesActivity extends AppCompatActivity {
         adapter = new DeviceAdapter(deviceList, device -> showDeleteConfirmation(device));
         rvDevices.setAdapter(adapter);
 
-        Dispensa d = (Dispensa) getIntent().getSerializableExtra(PANTRY_ID);
-        if (d != null) {
+        currentDispensa = (Dispensa) getIntent().getSerializableExtra(PANTRY_ID);
+        if (currentDispensa != null) {
             if (getSupportActionBar() != null) {
-                getSupportActionBar().setSubtitle(d.getName());
+                getSupportActionBar().setSubtitle(currentDispensa.getName());
             }
-            loadDevices(d.id);
+            loadDevices(currentDispensa.id);
         } else {
             // Fallback to current pantry if nothing passed (e.g. opened via settings)
             dispensaViewModel = new ViewModelProvider(this).get(DispensaViewModel.class);
@@ -90,6 +91,20 @@ public class ManageDevicesActivity extends AppCompatActivity {
             dispensaViewModel.getCurrentDispensaId().observe(this, id -> {
                 if (id != null) {
                     loadDevices(id);
+                }
+            });
+            // We'll need the full object for ownership check if not passed
+            dispensaViewModel.getAllDispense().observe(this, dispense -> {
+                if (dispense != null) {
+                    Integer currentId = dispensaViewModel.getCurrentDispensaId().getValue();
+                    if (currentId != null) {
+                        for (Dispensa d : dispense) {
+                            if (d.id == currentId) {
+                                currentDispensa = d;
+                                break;
+                            }
+                        }
+                    }
                 }
             });
         }
@@ -122,7 +137,7 @@ public class ManageDevicesActivity extends AppCompatActivity {
             return;
         }
 
-        String pantryName = prefs.getString(SyncManager.SYNC_WEBDAV_PANTRY_NAME + "_" + pantryId, "Dispensa");
+        String pantryName = currentDispensa != null ? currentDispensa.getName() : prefs.getString(SyncManager.SYNC_WEBDAV_PANTRY_NAME + "_" + pantryId, "Dispensa");
         boolean isShared = prefs.getBoolean(SyncManager.KEY_WEBDAV_MODE_SHARED, false);
 
         if (url.isEmpty() || (user.isEmpty() && !isShared) || pass.isEmpty()) {
@@ -133,12 +148,18 @@ public class ManageDevicesActivity extends AppCompatActivity {
 
         String normalizedBase = path.endsWith("/") ? path : path + "/";
         if (normalizedBase.startsWith("/")) normalizedBase = normalizedBase.substring(1);
-        String pantryBasePath = normalizedBase + SyncManager.getSyncPath(pantryName);
+        pantryBasePath = normalizedBase + SyncManager.getSyncPath(pantryName);
         devicesPath = pantryBasePath + SyncManager.DEFAULT_DEVICES_FOLDER;
 
         progressBar.setVisibility(View.VISIBLE);
         
-        checkMasterStatus(pantryBasePath + SyncManager.MANIFEST_JSON)
+        Single.fromCallable(() -> {
+                    if (currentDispensa != null && currentDispensa.deviceOwnerId != null) {
+                        String currentId = InstallationIdProvider.getOrCreateInstallationId(this);
+                        return currentId.equals(currentDispensa.deviceOwnerId);
+                    }
+                    return false;
+                })
                 .flatMap(master -> {
                     this.isMaster = master;
                     return fetchDevices(devicesPath);
@@ -159,29 +180,19 @@ public class ManageDevicesActivity extends AppCompatActivity {
                 });
     }
 
-    private Single<Boolean> checkMasterStatus(String manifestPath) {
-        return Single.fromCallable(() -> {
-            WebDavClient client = WebDavClientFactory.getInstance().getClient(this);
-            try (Response response = client.get(manifestPath)) {
-                if (response.isSuccessful() && response.body() != null) {
-                    WebDavManifest manifest = gson.fromJson(response.body().string(), WebDavManifest.class);
-                    if (manifest != null) {
-                        String currentId = InstallationIdProvider.getOrCreateInstallationId(this);
-                        return currentId.equals(manifest.createdByDevice);
-                    }
-                }
-            } catch (Exception e) {
-                Log.e("ManageDevices", "Error checking manifest", e);
-            }
-            return false;
-        });
-    }
-
     private void showDeleteConfirmation(WebDavDevice device) {
-        new androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle(R.string.delete_product_title)
-                .setMessage(String.format(getString(R.string.sync_device_delete_confirm),device.deviceName))
-                .setPositiveButton(R.string.delete, (dialog, which) -> deleteDevice(device))
+        boolean isDeletingOwner = currentDispensa != null && device.deviceId.equals(currentDispensa.deviceOwnerId);
+        
+        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this);
+        builder.setTitle(R.string.delete_product_title);
+        
+        if (isDeletingOwner) {
+            builder.setMessage(R.string.sync_owner_delete_warning);
+        } else {
+            builder.setMessage(String.format(getString(R.string.sync_device_delete_confirm), device.deviceName));
+        }
+        
+        builder.setPositiveButton(R.string.delete, (dialog, which) -> deleteDevice(device))
                 .setNegativeButton(R.string.cancel, null)
                 .show();
     }
@@ -189,13 +200,14 @@ public class ManageDevicesActivity extends AppCompatActivity {
     @SuppressLint("CheckResult")
     private void deleteDevice(WebDavDevice device) {
         progressBar.setVisibility(View.VISIBLE);
-        String deviceFilePath = devicesPath + device.deviceId + ".json";
+        boolean isDeletingOwner = currentDispensa != null && device.deviceId.equals(currentDispensa.deviceOwnerId);
+        String deletePath = isDeletingOwner ? pantryBasePath : devicesPath + device.deviceId + ".json";
 
         Completable.fromAction(() -> {
              WebDavClient client = WebDavClientFactory.getInstance().getClient(this);
-            try (Response response = client.delete(deviceFilePath)) {
-                if (!response.isSuccessful()) {
-                    throw new IOException("Failed to delete device: " + response.code());
+            try (Response response = client.delete(deletePath)) {
+                if (!response.isSuccessful() && response.code() != 404) {
+                    throw new IOException("Failed to delete remote content: " + response.code());
                 }
             }
         })
@@ -203,18 +215,23 @@ public class ManageDevicesActivity extends AppCompatActivity {
         .observeOn(AndroidSchedulers.mainThread())
         .subscribe(() -> {
             progressBar.setVisibility(View.GONE);
-            Toast.makeText(this, R.string.sync_device_delete_success, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, isDeletingOwner ? R.string.sync_pantry_deleted_success : R.string.sync_device_delete_success, Toast.LENGTH_SHORT).show();
 
             String currentDeviceId = InstallationIdProvider.getOrCreateInstallationId(this);
-            if (currentDeviceId.equals(device.deviceId)) {
-                // We removed ourselves: disable sync and close management
-                PreferenceManager.getDefaultSharedPreferences(this).edit()
-                        .remove(SyncManager.SYNC_WEBDAV_PANTRY_KEY)
-                        .putBoolean(SyncManager.KEY_SYNC_ENABLED, false)
+            if (currentDeviceId.equals(device.deviceId) || isDeletingOwner) {
+                // We removed ourselves or destroyed the whole share: disable sync locally for this pantry
+                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+                String syncedIdsStr = prefs.getString(SyncManager.SYNC_WEBDAV_SYNCED_IDS, "");
+                List<String> syncedIds = new ArrayList<>(java.util.Arrays.asList(syncedIdsStr.split(",")));
+                syncedIds.remove(String.valueOf(currentDispensa != null ? currentDispensa.id : -1));
+                
+                prefs.edit()
+                        .putString(SyncManager.SYNC_WEBDAV_SYNCED_IDS, android.text.TextUtils.join(",", syncedIds))
                         .apply();
+                
                 finish();
             } else {
-                Integer currentId = dispensaViewModel.getCurrentDispensaId().getValue();
+                Integer currentId = currentDispensa != null ? currentDispensa.id : (dispensaViewModel != null ? dispensaViewModel.getCurrentDispensaId().getValue() : null);
                 if (currentId != null) {
                     loadDevices(currentId);
                 }

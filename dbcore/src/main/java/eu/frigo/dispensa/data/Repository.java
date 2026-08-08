@@ -28,6 +28,7 @@ import eu.frigo.dispensa.data.storage.StorageLocation;
 import eu.frigo.dispensa.data.storage.StorageLocationDao;
 import eu.frigo.dispensa.data.sync.SyncOutbox;
 import eu.frigo.dispensa.data.sync.SyncOutboxDao;
+import eu.frigo.dispensa.sync.core.engine.InstallationIdProvider;
 import eu.frigo.dispensa.sync.core.event.SyncBus;
 
 import com.google.gson.Gson;
@@ -47,6 +48,7 @@ public class Repository {
     private final DispensaDao dispensaDao;
     private final Gson gson;
     private final SharedPreferences sharedPreferences;
+    private final Application application;
 
     private final MutableLiveData<Integer> currentDispensaId = new MutableLiveData<>();
     private final LiveData<String> currentDispensaName;
@@ -73,6 +75,7 @@ public class Repository {
         syncOutboxDao = db.syncOutboxDao();
         dispensaDao = db.dispensaDao();
         gson = new Gson();
+        this.application = application;
         sharedPreferences = application.getSharedPreferences("dispensa_prefs", Context.MODE_PRIVATE);
 
         // Inizializza sempre currentDispensaId con quella di default dal DB all'avvio
@@ -129,6 +132,9 @@ public class Repository {
 
     public long insertDispensaSync(Dispensa dispensa, boolean setAsCurrent) {
         dispensa.lastModified = System.currentTimeMillis();
+        if (dispensa.deviceOwnerId == null) {
+            dispensa.deviceOwnerId = InstallationIdProvider.getOrCreateInstallationId(application);
+        }
         long id = dispensaDao.insert(dispensa);
         // Quando crei una dispensa, crea le locazioni predefinite
         storageLocationDao.insertAll(PredefinedData.getInitialStorageLocations((int) id));
@@ -336,8 +342,16 @@ public class Repository {
     public void insertLocation(StorageLocation location) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
             Integer dispId = currentDispensaId.getValue();
-            location.dispensaId = dispId != null ? dispId : 0;
+            int currentId = dispId != null ? dispId : 0;
+            location.dispensaId = currentId;
             location.lastModified = System.currentTimeMillis();
+            
+            // Se l'orderIndex non è impostato, prendi il massimo attuale
+            if (location.orderIndex <= 0) {
+                Integer maxIndex = AppDatabase.getDatabase(application).storageLocationDao().getMaxOrderIndex(currentId);
+                location.orderIndex = (maxIndex != null ? maxIndex : -1) + 1;
+            }
+            
             storageLocationDao.insert(location);
             recordSyncEvent("UPSERT_LOCATION", location);
         });

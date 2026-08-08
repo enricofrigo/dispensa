@@ -35,6 +35,7 @@ import eu.frigo.dispensa.data.sync.SyncOutboxDao;
 
 import eu.frigo.dispensa.data.openfoodfacts.OpenFoodFactCacheDao;
 import eu.frigo.dispensa.data.openfoodfacts.OpenFoodFactCacheEntity;
+import eu.frigo.dispensa.sync.core.engine.InstallationIdProvider;
 
 @Database(entities = {Product.class, CategoryDefinition.class,
         ProductCategoryLink.class, StorageLocation.class, OpenFoodFactCacheEntity.class,
@@ -180,6 +181,7 @@ public abstract class AppDatabase extends RoomDatabase {
 
                                 if (dispensaDao.countDispense() == 0) {
                                     Dispensa defaultDispensa = new Dispensa("Dispensa", true);
+                                    defaultDispensa.deviceOwnerId = InstallationIdProvider.getOrCreateInstallationId(context);
                                     long dispensaId = dispensaDao.insert(defaultDispensa);
 
                                     if (storageDao.countAllLocations() == 0) {
@@ -194,20 +196,7 @@ public abstract class AppDatabase extends RoomDatabase {
                         @Override
                         public void onOpen(@NonNull SupportSQLiteDatabase db) {
                             super.onOpen(db);
-                            Executors.newSingleThreadExecutor().execute(() -> {
-                                Log.d("AppDatabase", "Database onOpen - Verifica Dispensa e StorageLocations");
-                                AppDatabase database = INSTANCE;
-                                if (database == null) return;
-
-                                DispensaDao dispensaDao = database.dispensaDao();
-                                StorageLocationDao storageDao = database.storageLocationDao();
-
-                                if (dispensaDao.countDispense() == 0) {
-                                    Dispensa defaultDispensa = new Dispensa("Dispensa", true);
-                                    long dispensaId = dispensaDao.insert(defaultDispensa);
-                                    storageDao.insertAll(PredefinedData.getInitialStorageLocations((int) dispensaId));
-                                }
-                            });
+                            // Rimosso prepopolamento ridondante che causava doppia inizializzazione
                         }
                     };
 

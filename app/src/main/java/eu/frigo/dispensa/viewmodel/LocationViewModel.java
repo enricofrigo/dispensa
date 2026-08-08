@@ -75,23 +75,6 @@ public class LocationViewModel extends AndroidViewModel {
             repository.setLocationAsDefault(location.internalKey);
         }
     }
-    public void insert(StorageLocation storageLocation, final OnMaxOrderIndexRetrievedListener listener) {
-        // Ottieni il max order index in background
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.execute(() -> {
-            Integer currentId = repository.getCurrentDispensaId().getValue();
-            Integer maxIndexResult = AppDatabase.getDatabase(getApplication()).storageLocationDao().getMaxOrderIndex(currentId != null ? currentId : 0);
-            int maxIndex = maxIndexResult != null ? maxIndexResult : -1;
-            // Esegui sul thread principale per aggiornare l'UI o continuare la logica
-            // (qui passiamo il risultato al listener che a sua volta lo passerà al repository)
-            if (listener != null) {
-                listener.onMaxOrderIndexRetrieved(maxIndex);
-            }
-        });
-    }
-    public interface OnMaxOrderIndexRetrievedListener {
-        void onMaxOrderIndexRetrieved(int maxIndex);
-    }
     public void updateOrder(List<StorageLocation> orderedLocations) {
         List<StorageLocation> realLocationsToOrder = new ArrayList<>();
         if (orderedLocations != null) {

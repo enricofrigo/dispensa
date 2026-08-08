@@ -283,6 +283,8 @@
     <string name="sync_not_configured">Sync not configured</string>
     <string name="sync_not_active_for_pantry">Sync is not active for this pantry</string>
     <string name="sync_preparing_server">Preparing server…</string>
+    <string name="sync_owner_delete_warning">You are deleting the owner of this share. This will PERMANENTLY DELETE the entire remote sync folder and disconnect all other devices. Do you want to continue?</string>
+    <string name="sync_pantry_deleted_success">Remote sharing folder deleted successfully</string>
 
     <!-- Dispensa Management -->
     <string name="manage_dispense_title">Manage Pantries</string>
