@@ -38,3 +38,5 @@ google-services.json
 # Gemini artifact
 task.artifact.md
 walkthrough.artifact.md
+/.jdk21/
+*.dm

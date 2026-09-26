@@ -2,9 +2,12 @@ package eu.frigo.dispensa.sync.core.pairing;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
 import java.util.HashMap;
 import java.util.Map;
 
+@RunWith(RobolectricTestRunner.class)
 public class OnboardingTest {
 
     @Test

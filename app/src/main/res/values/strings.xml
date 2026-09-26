@@ -256,6 +256,11 @@
     <string name="share_pantry_dialog_message">Choose the service to share the pantry \'%s\'. A dedicated folder will be created in the cloud.</string>
     <string name="share_button">Share</string>
     <string name="provider_webdav">WebDAV</string>
+    <string name="provider_local_saf">Local Shared Folder (SAF)</string>
+    <string name="sync_configure_first">Configure sync in settings first</string>
+    <string name="preparing_sync_server">Preparing remote sync…</string>
+    <string name="sync_setup_error">Sharing setup failed: %s</string>
+    <string name="sync_remote_delete_error">Remote delete error: %s. Local deletion will proceed.</string>
     <string name="join_pantry">Join Pantry</string>
     <string name="pairing_code_title">Pairing Code</string>
     <string name="pairing_code_hint">Enter code (e.g. AB-CDEF)</string>
@@ -283,6 +288,7 @@
     <string name="sync_not_configured">Sync not configured</string>
     <string name="sync_not_active_for_pantry">Sync is not active for this pantry</string>
     <string name="sync_preparing_server">Preparing server…</string>
+    <string name="sync_pairing_expired">The QR code has expired (10-minute validity). Please generate a new one.</string>
     <string name="sync_owner_delete_warning">You are deleting the owner of this share. This will PERMANENTLY DELETE the entire remote sync folder and disconnect all other devices. Do you want to continue?</string>
     <string name="sync_pantry_deleted_success">Remote sharing folder deleted successfully</string>
 

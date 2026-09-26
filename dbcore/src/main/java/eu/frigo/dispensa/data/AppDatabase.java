@@ -42,7 +42,7 @@ import eu.frigo.dispensa.sync.core.engine.InstallationIdProvider;
 @Database(entities = {Product.class, CategoryDefinition.class,
         ProductCategoryLink.class, StorageLocation.class, OpenFoodFactCacheEntity.class,
         ShoppingItem.class, SyncOutbox.class, Dispensa.class, JoinedPantryConfig.class },
-        version = 18)
+        version = 19)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract ProductDao productDao();
@@ -140,6 +140,7 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+
     static final Migration MIGRATION_6_7 = new Migration(6,7) {
         @Override
         public void migrate(SupportSQLiteDatabase database) {
@@ -166,6 +167,14 @@ public abstract class AppDatabase extends RoomDatabase {
         @Override
         public void migrate(SupportSQLiteDatabase database) {
             database.execSQL("CREATE TABLE IF NOT EXISTS `shopping_items` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT, `quantity` INTEGER NOT NULL, `checked` INTEGER NOT NULL)");
+        }
+    };
+
+    static final Migration MIGRATION_18_19 = new Migration(18, 19) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("ALTER TABLE joined_pantry_configs ADD COLUMN config_payload TEXT");
+            database.execSQL("ALTER TABLE joined_pantry_configs ADD COLUMN remote_pantry_id TEXT");
         }
     };
 
@@ -224,6 +233,7 @@ public abstract class AppDatabase extends RoomDatabase {
                             .addMigrations(MIGRATION_15_16)
                             .addMigrations(MIGRATION_16_17)
                             .addMigrations(MIGRATION_17_18)
+                            .addMigrations(MIGRATION_18_19)
                             .addCallback(sRoomDatabaseCallback)
                             //.fallbackToDestructiveMigration()
                             .build();
@@ -231,5 +241,9 @@ public abstract class AppDatabase extends RoomDatabase {
             }
         }
         return INSTANCE;
+    }
+
+    public static synchronized void setTestInstance(AppDatabase db) {
+        INSTANCE = db;
     }
 }

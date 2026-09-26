@@ -28,9 +28,9 @@ public class SyncManager {
     public static final int CURRENT_SYNC_VERSION = 2;
     public static final String LEGACY_SYNC_PATH = "dispensa-sync/";
     
-    public static String getSyncPath(String pantryName) {
-        String name = (pantryName == null || pantryName.isEmpty()) ? "Dispensa" : pantryName;
-        return name + "-sync/";
+    public static String getSyncPath(String remoteId) {
+        String id = (remoteId == null || remoteId.trim().isEmpty()) ? "default" : remoteId.trim();
+        return "pantry-" + id + "-sync/";
     }
 
     public static final String DEFAULT_EVENTS_FOLDER = "events/";

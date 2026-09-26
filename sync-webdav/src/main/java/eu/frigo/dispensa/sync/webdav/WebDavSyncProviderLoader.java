@@ -49,7 +49,7 @@ public class WebDavSyncProviderLoader implements SyncProviderLoader {
                             
                             String url, user, pass, path;
                             boolean isShared;
-                            String pantryName;
+                            String syncPath;
 
                             if (config != null) {
                                 url = config.url;
@@ -57,21 +57,27 @@ public class WebDavSyncProviderLoader implements SyncProviderLoader {
                                 pass = config.password;
                                 path = config.path;
                                 isShared = config.isShared;
-                                pantryName = prefs.getString(SyncManager.SYNC_WEBDAV_PANTRY_NAME + "_" + id, "Dispensa");
+                                
+                                eu.frigo.dispensa.data.dispensa.Dispensa disp = db.dispensaDao().getDispensaByIdSync(id);
+                                String remoteId = (disp != null && disp.remoteId != null && !disp.remoteId.trim().isEmpty()) ? disp.remoteId.trim() : String.valueOf(id);
+                                syncPath = SyncManager.getSyncPath(remoteId);
                             } else {
-                                // Fallback to global prefs if no specific config exists
+                                // Fallback to global prefs (Owner scenario)
                                 url = prefs.getString(SyncManager.KEY_WEBDAV_URL, "");
                                 user = prefs.getString(SyncManager.KEY_WEBDAV_USER, "");
                                 pass = prefs.getString(SyncManager.KEY_WEBDAV_PASS, "");
                                 path = prefs.getString(SyncManager.KEY_WEBDAV_PATH, SyncManager.DEFAULT_PATH);
                                 isShared = prefs.getBoolean(SyncManager.KEY_WEBDAV_MODE_SHARED, false);
-                                pantryName = prefs.getString(SyncManager.SYNC_WEBDAV_PANTRY_NAME + "_" + id, "Dispensa");
+                                
+                                eu.frigo.dispensa.data.dispensa.Dispensa disp = db.dispensaDao().getDispensaByIdSync(id);
+                                String remoteId = (disp != null && disp.remoteId != null && !disp.remoteId.trim().isEmpty()) ? disp.remoteId.trim() : String.valueOf(id);
+                                syncPath = SyncManager.getSyncPath(remoteId);
                             }
 
                             if (!url.isEmpty() && (!user.isEmpty() || isShared)) {
                                 String base = (path == null) ? "" : (path.endsWith("/") ? path : path + "/");
                                 if (base.startsWith("/")) base = base.substring(1);
-                                String pantryPath = base + SyncManager.getSyncPath(pantryName);
+                                String pantryPath = base + syncPath;
                                 
                                 // Create a temporary client for this scope's credentials
                                 WebDavClient scopeClient = new WebDavClient(url, user, pass);

@@ -57,8 +57,13 @@ lifecycle = "2.8.6"
 rxandroid = "3.0.2"
 rxjava = "3.1.8"
 zxingCore = "3.5.3"
+documentfile = "1.0.1"
+robolectric = "4.14.1"
 
 [libraries]
+androidx-documentfile = { group = "androidx.documentfile", name = "documentfile", version.ref = "documentfile" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+mockwebserver = { module = "com.squareup.okhttp3:mockwebserver", version.ref = "okhttp" }
 androidx-lifecycle-livedata-ktx = { module = "androidx.lifecycle:lifecycle-livedata-ktx", version.ref = "lifecycle" }
 androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "lifecycleProcess" }
 androidx-work-runtime = { module = "androidx.work:work-runtime", version.ref = "workRuntimeKtx" }

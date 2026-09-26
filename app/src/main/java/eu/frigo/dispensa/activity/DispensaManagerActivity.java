@@ -30,6 +30,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 import androidx.media3.common.util.Log;
 import eu.frigo.dispensa.R;
@@ -41,9 +42,8 @@ import eu.frigo.dispensa.data.dispensa.Dispensa;
 import eu.frigo.dispensa.data.sync.JoinedPantryConfig;
 import eu.frigo.dispensa.sync.core.engine.InstallationIdProvider;
 import eu.frigo.dispensa.sync.core.engine.SyncManager;
-import eu.frigo.dispensa.sync.webdav.client.WebDavClient;
-import eu.frigo.dispensa.sync.webdav.client.WebDavClientFactory;
-import eu.frigo.dispensa.util.WebDavSetupHelper;
+import eu.frigo.dispensa.sync.sharing.PantrySharingService;
+import eu.frigo.dispensa.sync.sharing.SharingProvider;
 import eu.frigo.dispensa.viewmodel.DispensaViewModel;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.schedulers.Schedulers;
@@ -206,6 +206,8 @@ public class DispensaManagerActivity extends AppCompatActivity implements Dispen
 
     @Override
     public void onShareClick(Dispensa dispensa) {
+        Log.d("DispensaManager", "onShareClick called for dispensa: " + dispensa);
+
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         
         // Controlla se è già sincronizzata
@@ -216,37 +218,20 @@ public class DispensaManagerActivity extends AppCompatActivity implements Dispen
             return;
         }
 
-        // Recupera provider configurati
-        List<String> availableProviders = getConfiguredProviders(prefs);
-        
+        List<SharingProvider> availableProviders = PantrySharingService.getInstance().getAvailableProviders(this);
         if (availableProviders.isEmpty()) {
-            Toast.makeText(this, "Configura prima il sync nelle impostazioni", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, R.string.sync_configure_first, Toast.LENGTH_LONG).show();
             return;
         }
 
-        showProviderSelectionDialog(dispensa, availableProviders, syncedIdsStr);
+        showProviderSelectionDialog(dispensa, availableProviders);
     }
 
-    private List<String> getConfiguredProviders(SharedPreferences prefs) {
-        List<String> providers = new ArrayList<>();
-        
-        // Verifica WebDAV
-        String url = prefs.getString(SyncManager.KEY_WEBDAV_URL, "");
-        String user = prefs.getString(SyncManager.KEY_WEBDAV_USER, "");
-        String pass = prefs.getString(SyncManager.KEY_WEBDAV_PASS, "");
-        boolean isShared = prefs.getBoolean(SyncManager.KEY_WEBDAV_MODE_SHARED, false);
-        
-        if (!url.isEmpty() && (!user.isEmpty() || isShared) && !pass.isEmpty()) {
-            providers.add(getString(R.string.provider_webdav));
+    private void showProviderSelectionDialog(Dispensa dispensa, List<SharingProvider> providers) {
+        String[] items = new String[providers.size()];
+        for (int i = 0; i < providers.size(); i++) {
+            items[i] = providers.get(i).getDisplayName(this);
         }
-        
-        // In futuro qui si possono aggiungere altri provider (es. Google Drive, Dropbox)
-        
-        return providers;
-    }
-
-    private void showProviderSelectionDialog(Dispensa dispensa, List<String> providers, String currentSyncedIds) {
-        final String[] items = providers.toArray(new String[0]);
         final int[] selectedIndex = {0}; // Pre-seleziona il primo
 
         new AlertDialog.Builder(this)
@@ -254,71 +239,31 @@ public class DispensaManagerActivity extends AppCompatActivity implements Dispen
                 .setMessage(String.format(getString(R.string.share_pantry_dialog_message), dispensa.getName()))
                 .setSingleChoiceItems(items, 0, (dialog, which) -> selectedIndex[0] = which)
                 .setPositiveButton(R.string.share_button, (dialog, which) -> {
-                    String selectedProvider = items[selectedIndex[0]];
-                    if (selectedProvider.equals(getString(R.string.provider_webdav))) {
-                        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-                        String url = prefs.getString(SyncManager.KEY_WEBDAV_URL, "");
-                        String user = prefs.getString(SyncManager.KEY_WEBDAV_USER, "");
-                        String pass = prefs.getString(SyncManager.KEY_WEBDAV_PASS, "");
-                        prepareAndShare(dispensa, url, user, pass, currentSyncedIds);
-                    }
+                    SharingProvider selectedProvider = providers.get(selectedIndex[0]);
+                    executeSharePantry(dispensa, selectedProvider.getProviderId());
                 })
                 .setNegativeButton(R.string.cancel, null)
                 .show();
     }
 
     @SuppressLint("CheckResult")
-    private void prepareAndShare(Dispensa dispensa, String url, String user, String pass, String currentSyncedIds) {
-        // Mostra un caricamento
+    private void executeSharePantry(Dispensa dispensa, String providerId) {
         AlertDialog progressDialog = new AlertDialog.Builder(this)
-                .setTitle("Preparazione server...")
+                .setTitle(R.string.preparing_sync_server)
                 .setView(new ProgressBar(this))
                 .setCancelable(false)
                 .show();
 
-        WebDavClient client = WebDavClientFactory.getInstance().getClient(url, user, pass);
-        WebDavSetupHelper.preparePantryOnServer(this, client, dispensa.getName())
+        PantrySharingService.getInstance().sharePantry(this, dispensa, providerId)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(success -> {
+                .subscribe(() -> {
                     progressDialog.dismiss();
-                    if (success) {
-                        // Aggiorna preferenze locali
-                        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-                        String newSyncedIds = currentSyncedIds.isEmpty() ? String.valueOf(dispensa.id) : currentSyncedIds + "," + dispensa.id;
-                        
-                        // Imposta l'ID del dispositivo corrente come proprietario locale per coerenza
-                        String currentDeviceId = InstallationIdProvider.getOrCreateInstallationId(this);
-                        dispensa.deviceOwnerId = currentDeviceId;
-                        dispensaViewModel.update(dispensa);
-
-                        prefs.edit()
-                                .putString(SyncManager.SYNC_WEBDAV_SYNCED_IDS, newSyncedIds)
-                                .putString(SyncManager.SYNC_WEBDAV_PANTRY_NAME + "_" + dispensa.id, dispensa.getName())
-                                .apply();
-
-                        // Save secure config for this specific pantry
-                        String path = prefs.getString(SyncManager.KEY_WEBDAV_PATH, SyncManager.DEFAULT_PATH);
-                        boolean isShared = prefs.getBoolean(SyncManager.KEY_WEBDAV_MODE_SHARED, false);
-                        JoinedPantryConfig config = new JoinedPantryConfig(
-                                dispensa.id,
-                                url,
-                                user,
-                                pass,
-                                path,
-                                isShared,
-                                prefs.getString(SyncManager.SYNC_WEBDAV_PANTRY_KEY, "")
-                        );
-                        dispensaViewModel.insertJoinedPantryConfig(config);
-                        
-                        launchShareOnboarding(dispensa);
-                    } else {
-                        Toast.makeText(this, "Errore durante la preparazione del server", Toast.LENGTH_LONG).show();
-                    }
+                    launchShareOnboarding(dispensa);
                 }, throwable -> {
                     progressDialog.dismiss();
-                    Log.e("DispensaManager", "Setup failed", throwable);
-                    Toast.makeText(this, "Errore: " + throwable.getMessage(), Toast.LENGTH_LONG).show();
+                    Log.e("DispensaManager", "Sharing setup failed", throwable);
+                    Toast.makeText(this, getString(R.string.sync_setup_error, throwable.getMessage()), Toast.LENGTH_LONG).show();
                 });
     }
 
@@ -343,14 +288,64 @@ public class DispensaManagerActivity extends AppCompatActivity implements Dispen
             return;
         }
 
-        new AlertDialog.Builder(this)
-                .setTitle(R.string.delete_dispensa_title)
-                .setMessage(R.string.delete_dispensa_message)
-                .setPositiveButton(R.string.delete, (dialog, which) -> {
-                    dispensaViewModel.delete(dispensa);
-                })
-                .setNegativeButton(R.string.cancel, null)
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        String deviceId = InstallationIdProvider.getOrCreateInstallationId(this);
+        boolean isOwner = deviceId.equals(dispensa.deviceOwnerId);
+
+        String syncedIdsStr = prefs.getString(SyncManager.SYNC_WEBDAV_SYNCED_IDS, "");
+        List<String> syncedIds = new ArrayList<>(Arrays.asList(syncedIdsStr.split(",")));
+        boolean isSynced = syncedIds.contains(String.valueOf(dispensa.id));
+
+        if (isOwner && isSynced) {
+            new AlertDialog.Builder(this)
+                    .setTitle(R.string.delete_dispensa_title)
+                    .setMessage(R.string.sync_owner_delete_warning)
+                    .setPositiveButton(R.string.delete, (dialog, which) -> deletePantryRemoteAndLocal(dispensa))
+                    .setNegativeButton(R.string.cancel, null)
+                    .show();
+        } else {
+            new AlertDialog.Builder(this)
+                    .setTitle(R.string.delete_dispensa_title)
+                    .setMessage(R.string.delete_dispensa_message)
+                    .setPositiveButton(R.string.delete, (dialog, which) -> {
+                        if (isSynced) {
+                            removePantryFromSync(dispensa.id, prefs, syncedIds);
+                        }
+                        dispensaViewModel.delete(dispensa);
+                    })
+                    .setNegativeButton(R.string.cancel, null)
+                    .show();
+        }
+    }
+
+    @SuppressLint("CheckResult")
+    private void deletePantryRemoteAndLocal(Dispensa dispensa) {
+        AlertDialog progressDialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.delete)
+                .setView(new ProgressBar(this))
+                .setCancelable(false)
                 .show();
+
+        PantrySharingService.getInstance().deleteRemotePantry(this, dispensa)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(() -> {
+                    progressDialog.dismiss();
+                    dispensaViewModel.delete(dispensa);
+                    Toast.makeText(this, R.string.sync_pantry_deleted_success, Toast.LENGTH_SHORT).show();
+                }, throwable -> {
+                    progressDialog.dismiss();
+                    Log.e("DispensaManager", "Remote delete failed", throwable);
+                    Toast.makeText(this, getString(R.string.sync_remote_delete_error, throwable.getMessage()), Toast.LENGTH_LONG).show();
+                    dispensaViewModel.delete(dispensa);
+                });
+    }
+
+    private void removePantryFromSync(int pantryId, SharedPreferences prefs, List<String> syncedIds) {
+        syncedIds.remove(String.valueOf(pantryId));
+        prefs.edit()
+                .putString(SyncManager.SYNC_WEBDAV_SYNCED_IDS, TextUtils.join(",", syncedIds))
+                .apply();
     }
 
     @Override
