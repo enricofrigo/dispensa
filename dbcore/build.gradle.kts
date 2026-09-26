@@ -39,4 +39,10 @@ dependencies {
     implementation(libs.media3.common)
     implementation(libs.converter.gson)
     implementation(libs.androidx.lifecycle.livedata.ktx)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.ext.junit)
+    testImplementation(libs.robolectric)
+    androidTestImplementation(libs.ext.junit)
+    androidTestImplementation(libs.espresso.core)
 }

@@ -1,13 +1,12 @@
 package eu.frigo.dispensa.util;
 
 import android.content.Context;
-import android.util.Log;
+import android.os.Build;
 
 import androidx.preference.PreferenceManager;
 
 import com.google.gson.Gson;
 
-import eu.frigo.dispensa.data.dispensa.Dispensa;
 import eu.frigo.dispensa.sync.core.engine.InstallationIdProvider;
 import eu.frigo.dispensa.sync.core.engine.SyncManager;
 import eu.frigo.dispensa.sync.webdav.client.WebDavClient;
@@ -19,21 +18,25 @@ import okhttp3.Response;
 public class WebDavSetupHelper {
     private static final String TAG = "WebDavSetupHelper";
 
-    public static Single<Boolean> preparePantryOnServer(Context context, WebDavClient client, String pantryName) {
+    public static Single<Boolean> preparePantryOnServer(Context context, WebDavClient client, String pantryName, String remoteId, String basePath) {
         return Single.fromCallable(() -> {
             String deviceId = InstallationIdProvider.getOrCreateInstallationId(context);
-            String syncPath = SyncManager.getSyncPath(pantryName);
+            String syncPath = SyncManager.getSyncPath(remoteId);
+            
+            String base = (basePath == null) ? "" : (basePath.endsWith("/") ? basePath : basePath + "/");
+            if (base.startsWith("/")) base = base.substring(1);
+            String fullPath = base + syncPath;
 
             // 1. Create main sync folder
-            if (!ensureFolderExists(client, syncPath)) return false;
+            if (!ensureFolderExists(client, fullPath)) return false;
 
             // 2. Create subfolders
-            if (!ensureFolderExists(client, syncPath + SyncManager.DEFAULT_EVENTS_FOLDER)) return false;
-            if (!ensureFolderExists(client, syncPath + SyncManager.DEFAULT_DEVICES_FOLDER)) return false;
-            if (!ensureFolderExists(client, syncPath + SyncManager.DEFAULT_SNAPSHOTS_FOLDER)) return false;
+            if (!ensureFolderExists(client, fullPath + SyncManager.DEFAULT_EVENTS_FOLDER)) return false;
+            if (!ensureFolderExists(client, fullPath + SyncManager.DEFAULT_DEVICES_FOLDER)) return false;
+            if (!ensureFolderExists(client, fullPath + SyncManager.DEFAULT_SNAPSHOTS_FOLDER)) return false;
 
             // 3. Create manifest.json
-            String manifestPath = syncPath + SyncManager.MANIFEST_JSON;
+            String manifestPath = fullPath + SyncManager.MANIFEST_JSON;
             WebDavManifest manifest = new WebDavManifest();
             manifest.version = SyncManager.CURRENT_SYNC_VERSION;
             manifest.pantryName = pantryName;
@@ -48,13 +51,13 @@ public class WebDavSetupHelper {
 
             // 4. Register current device
             String deviceName = PreferenceManager.getDefaultSharedPreferences(context)
-                    .getString(SyncManager.KEY_DEVICE_NAME, android.os.Build.MODEL);
+                    .getString(SyncManager.KEY_DEVICE_NAME, Build.MODEL);
             WebDavDevice device = new WebDavDevice();
             device.deviceId = deviceId;
             device.deviceName = deviceName;
             device.lastSeen = System.currentTimeMillis();
 
-            String devicePath = syncPath + SyncManager.DEFAULT_DEVICES_FOLDER + deviceId + ".json";
+            String devicePath = fullPath + SyncManager.DEFAULT_DEVICES_FOLDER + deviceId + ".json";
             String deviceJson = new Gson().toJson(device);
             try (Response response = client.put(devicePath, deviceJson.getBytes(), null)) {
                 return response.isSuccessful();
@@ -63,13 +66,34 @@ public class WebDavSetupHelper {
     }
 
     private static boolean ensureFolderExists(WebDavClient client, String folderPath) throws Exception {
-        String cleanPath = folderPath.endsWith("/") ? folderPath.substring(0, folderPath.length() - 1) : folderPath;
-        try (Response response = client.propfind(cleanPath + "/")) {
-            if (response.isSuccessful() || response.code() == 207) return true;
-            if (response.code() != 404) return false;
+        String clean = folderPath.startsWith("/") ? folderPath.substring(1) : folderPath;
+        if (clean.endsWith("/")) {
+            clean = clean.substring(0, clean.length() - 1);
         }
-        try (Response response = client.mkcol(cleanPath)) {
-            return response.isSuccessful() || response.code() == 201;
+        if (clean.isEmpty()) return true;
+
+        String[] parts = clean.split("/");
+        StringBuilder currentPath = new StringBuilder();
+        for (String part : parts) {
+            if (part.isEmpty()) continue;
+            if (currentPath.length() > 0) {
+                currentPath.append("/");
+            }
+            currentPath.append(part);
+            String pathStr = currentPath.toString();
+
+            try (Response response = client.propfind(pathStr + "/")) {
+                if (response.isSuccessful() || response.code() == 207) {
+                    continue;
+                }
+            }
+
+            try (Response response = client.mkcol(pathStr)) {
+                if (!response.isSuccessful() && response.code() != 201 && response.code() != 405) {
+                    return false;
+                }
+            }
         }
+        return true;
     }
 }

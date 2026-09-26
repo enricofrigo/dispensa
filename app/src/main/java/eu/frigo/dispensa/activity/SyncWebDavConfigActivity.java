@@ -13,7 +13,6 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.preference.PreferenceManager;
@@ -30,11 +29,7 @@ import java.util.Set;
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.data.AppDatabase;
 import eu.frigo.dispensa.data.dispensa.Dispensa;
-import eu.frigo.dispensa.sync.core.engine.InstallationIdProvider;
 import eu.frigo.dispensa.sync.core.engine.SyncManager;
-import eu.frigo.dispensa.sync.core.provider.SyncProvider;
-import eu.frigo.dispensa.sync.webdav.WebDavRemoteStoreImpl;
-import eu.frigo.dispensa.sync.webdav.WebDavSyncProvider;
 import eu.frigo.dispensa.sync.webdav.client.WebDavClient;
 import eu.frigo.dispensa.sync.webdav.client.WebDavClientFactory;
 import eu.frigo.dispensa.util.WebDavSetupHelper;
@@ -201,13 +196,28 @@ public class SyncWebDavConfigActivity extends AppCompatActivity {
 
             // 2. Preparazione server per ogni dispensa selezionata
             return Observable.fromIterable(selectedDispense)
-                    .concatMapSingle(d -> WebDavSetupHelper.preparePantryOnServer(this, client, d.getName()))
+                    .concatMapSingle(d -> {
+                        String remoteId = (d.remoteId != null && !d.remoteId.trim().isEmpty()) ? d.remoteId.trim() : String.valueOf(d.id);
+                        return WebDavSetupHelper.preparePantryOnServer(this, client, d.getName(), remoteId, path);
+                    })
                     .toList();
         })
         .subscribeOn(Schedulers.io())
         .observeOn(AndroidSchedulers.mainThread())
         .subscribe(results -> {
-            finish(url, user, pass, path, selectedDispense, isShared);
+            boolean allSuccess = true;
+            for (Boolean res : results) {
+                if (!res) {
+                    allSuccess = false;
+                    break;
+                }
+            }
+            if (allSuccess) {
+                finish(url, user, pass, path, selectedDispense, isShared);
+            } else {
+                setUILocked(false);
+                Toast.makeText(this, "Errore: impossibile creare le cartelle sul server. Controlla il percorso base.", Toast.LENGTH_LONG).show();
+            }
         }, throwable -> {
             setUILocked(false);
             Log.e("SyncConfig", "Setup failed", throwable);
@@ -241,9 +251,7 @@ public class SyncWebDavConfigActivity extends AppCompatActivity {
             editor.putString(SyncManager.SYNC_WEBDAV_PANTRY_NAME + "_" + d.id, d.getName());
             
             // Save secure config for each pantry
-            eu.frigo.dispensa.data.sync.JoinedPantryConfig config = new eu.frigo.dispensa.data.sync.JoinedPantryConfig(
-                    d.id, url, user, pass, path, isShared, ""
-            );
+            eu.frigo.dispensa.data.sync.JoinedPantryConfig config = new eu.frigo.dispensa.data.sync.JoinedPantryConfig(d.id, url, user, pass, path, isShared, "");
             dispensaViewModel.insertJoinedPantryConfig(config);
         }
 

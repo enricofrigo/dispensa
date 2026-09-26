@@ -128,6 +128,16 @@ public class Repository {
         });
     }
 
+    public io.reactivex.rxjava3.core.Single<Dispensa> getCurrentDispensaSingle() {
+        return io.reactivex.rxjava3.core.Single.fromCallable(() -> {
+            Integer id = currentDispensaId.getValue();
+            if (id != null) {
+                return dispensaDao.getDispensaByIdSync(id);
+            }
+            return dispensaDao.getDefaultDispensaSync();
+        });
+    }
+
     public LiveData<List<Dispensa>> getAllDispense() {
         return dispensaDao.getAllDispense();
     }
@@ -140,13 +150,15 @@ public class Repository {
 
     public long insertDispensaSync(Dispensa dispensa, boolean setAsCurrent) {
         dispensa.lastModified = System.currentTimeMillis();
+        if (dispensa.remoteId == null || dispensa.remoteId.trim().isEmpty()) {
+            dispensa.remoteId = UUID.randomUUID().toString();
+        }
         if (dispensa.deviceOwnerId == null) {
             dispensa.deviceOwnerId = InstallationIdProvider.getOrCreateInstallationId(application);
         }
         long id = dispensaDao.insert(dispensa);
         // Quando crei una dispensa, crea le locazioni predefinite
         storageLocationDao.insertAll(PredefinedData.getInitialStorageLocations((int) id));
-        recordSyncEvent("UPSERT_DISPENSA", dispensa);
         if (setAsCurrent) {
             setCurrentDispensaId((int) id);
         }
@@ -157,7 +169,6 @@ public class Repository {
         AppDatabase.databaseWriteExecutor.execute(() -> {
             dispensa.lastModified = System.currentTimeMillis();
             dispensaDao.update(dispensa);
-            recordSyncEvent("UPSERT_DISPENSA", dispensa);
         });
     }
 
@@ -177,7 +188,6 @@ public class Repository {
                     setCurrentDispensaId(def.id);
                 }
             }
-            recordSyncEvent("DELETE_DISPENSA", dispensa);
         });
     }
 

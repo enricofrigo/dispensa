@@ -1,5 +1,8 @@
 package eu.frigo.dispensa.ui;
 
+import static eu.frigo.dispensa.sync.core.store.SyncCursorStoreImpl.KEY_LAST_SYNC;
+import static eu.frigo.dispensa.sync.core.store.SyncCursorStoreImpl.PREF_NAME;
+
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -41,7 +44,6 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
     public static final String KEY_OFF_CACHE_TTL_DAYS = "pref_off_cache_ttl_days";
     public static final String KEY_OFF_CACHE_CLEAR = "pref_off_cache_clear";
     public static final String KEY_DEFUALT_ICON = "pref_predefined_tab_icon";
-    public static final String KEY_SYNC_NOW = "pref_sync_now";
     public static final String KEY_SYNC_CONFIG = "pref_sync_config";
     public static final String KEY_SYNC_STATUS = "pref_sync_status";
     public static final String KEY_THEME_PREFERENCE = "theme_preference";
@@ -68,15 +70,6 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
         boolean syncEnabled = prefs.getBoolean(SyncManager.KEY_SYNC_ENABLED, false);
         updateSyncPreferencesVisibility(syncEnabled);
-
-        Preference syncNowPref = findPreference(KEY_SYNC_NOW);
-        if (syncNowPref != null) {
-            syncNowPref.setOnPreferenceClickListener(preference -> {
-                eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl.getInstance(requireContext()).triggerManualSync();
-                android.widget.Toast.makeText(getContext(), getString(R.string.pref_sync_now_title), android.widget.Toast.LENGTH_SHORT).show();
-                return true;
-            });
-        }
 
         Preference syncConfigPref = findPreference(KEY_SYNC_CONFIG);
         if (syncConfigPref != null) {
@@ -287,13 +280,11 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
     private void updateSyncPreferencesVisibility(boolean enabled) {
         Preference providerPref = findPreference("pref_sync_provider");
         Preference configPref = findPreference(KEY_SYNC_CONFIG);
-        Preference nowPref = findPreference(KEY_SYNC_NOW);
         Preference statusPref = findPreference(KEY_SYNC_STATUS);
         Preference separator = findPreference("separator_sync");
 
         if (providerPref != null) providerPref.setVisible(enabled);
         if (configPref != null) configPref.setVisible(enabled);
-        if (nowPref != null) nowPref.setVisible(enabled);
         if (statusPref != null) statusPref.setVisible(enabled);
         if (separator != null) separator.setVisible(enabled);
     }
@@ -346,12 +337,13 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
 
     private void updateSyncStatus() {
         if (syncStatusPreference != null) {
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
-            boolean enabled = prefs.getBoolean(SyncManager.KEY_SYNC_ENABLED, false);
+            SharedPreferences prefs = getContext().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+            if (prefs == null) prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+            boolean enabled = PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(SyncManager.KEY_SYNC_ENABLED, false);
             if (!enabled) {
                 syncStatusPreference.setSummary(R.string.sync_status_disconnected);
             } else {
-                long lastSync = prefs.getLong("last_sync_timestamp", 0);
+                long lastSync = prefs.getLong(KEY_LAST_SYNC, 0);
                 String time = lastSync == 0 ? "Never" : DateFormat.getTimeFormat(requireContext()).format(new java.util.Date(lastSync));
                 syncStatusPreference.setSummary(getString(R.string.sync_last_time, time));
             }

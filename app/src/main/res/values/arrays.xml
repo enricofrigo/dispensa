@@ -37,9 +37,11 @@
 
     <string-array name="sync_provider_entries">
         <item>WebDAV (Nextcloud, etc.)</item>
+        <item>@string/provider_local_saf</item>
     </string-array>
 
     <string-array name="sync_provider_values">
         <item>webdav</item>
+        <item>local_saf</item>
     </string-array>
 </resources>

@@ -1,7 +1,5 @@
 package eu.frigo.dispensa.sync.core.pairing;
 
-import android.util.Log;
-
 import io.reactivex.rxjava3.core.Single;
 
 public class OnboardingCoordinator {
@@ -18,7 +16,7 @@ public class OnboardingCoordinator {
     
     public Single<PairingPayload> joinPantry(String pairingCode, String qrData) {
         return Single.fromCallable(() -> {
-            PairingPayloadCodec codec = new PairingPayloadCodecImpl(pairingCode.trim());
+            PairingPayloadCodec codec = new PairingPayloadCodecImpl(pairingCode);
             return codec.decode(qrData);
         });
     }

@@ -46,12 +46,25 @@ public class WebDavClient {
         return okHttpClient.newCall(builder.build()).execute();
     }
 
+    public Response head(String path) throws IOException {
+        Request request = new Request.Builder()
+                .url(baseUrl + path)
+                .header("Authorization", authHeader)
+                .head()
+                .build();
+        return okHttpClient.newCall(request).execute();
+    }
+
     public Response propfind(String path) throws IOException {
+        return propfind(path, "0");
+    }
+
+    public Response propfind(String path, String depth) throws IOException {
         Request request = new Request.Builder()
                 .url(baseUrl + path)
                 .header("Authorization", authHeader)
                 .method("PROPFIND", null)
-                .header("Depth", "1")
+                .header("Depth", depth != null ? depth : "0")
                 .build();
         return okHttpClient.newCall(request).execute();
     }

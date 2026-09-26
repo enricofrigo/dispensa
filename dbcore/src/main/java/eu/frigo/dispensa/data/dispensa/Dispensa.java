@@ -44,6 +44,7 @@ public class Dispensa implements Serializable {
         this.name = name;
         this.isDefault = isDefault;
         this.lastModified = System.currentTimeMillis();
+        this.remoteId = java.util.UUID.randomUUID().toString();
     }
 
     public Dispensa(Dispensa other) {
@@ -94,5 +95,18 @@ public class Dispensa implements Serializable {
 
     public void setRemoteId(String remoteId) {
         this.remoteId = remoteId;
+    }
+
+    @Override
+    public String toString() {
+        return "Dispensa{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", isDefault=" + isDefault +
+                ", lastModified=" + lastModified +
+                ", remoteId='" + remoteId + '\'' +
+                ", deviceOwnerId='" + deviceOwnerId + '\'' +
+                ", deviceOwnerName='" + deviceOwnerName + '\'' +
+                '}';
     }
 }

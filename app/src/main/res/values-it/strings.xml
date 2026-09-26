@@ -253,6 +253,11 @@ I prodotti in questo deposito potrebbero dover essere riassegnati.</string>
     <string name="share_pantry_dialog_message">Scegli il servizio per condividere la dispensa \'%s\'. Verrà creata una cartella dedicata nel cloud.</string>
     <string name="share_button">Condividi</string>
     <string name="provider_webdav">WebDAV</string>
+    <string name="provider_local_saf">Cartella Condivisa Locale (SAF)</string>
+    <string name="sync_configure_first">Configura prima la sincronizzazione nelle impostazioni</string>
+    <string name="preparing_sync_server">Preparazione sincronizzazione remota…</string>
+    <string name="sync_setup_error">Errore configurazione condivisione: %s</string>
+    <string name="sync_remote_delete_error">Errore cancellazione remota: %s. Procedo con la cancellazione locale.</string>
     <string name="join_pantry">Unisciti alla dispensa</string>
     <string name="pairing_code_title">Codice di abbinamento</string>
     <string name="pairing_code_hint">Inserisci il codice (es. AB-CDEF)</string>
@@ -279,6 +284,7 @@ I prodotti in questo deposito potrebbero dover essere riassegnati.</string>
     <string name="sync_not_configured">Sincronizzazione non configurata</string>
     <string name="sync_not_active_for_pantry">La sincronizzazione non è attiva per questa dispensa</string>
     <string name="sync_preparing_server">Preparazione server…</string>
+    <string name="sync_pairing_expired">Il codice QR è scaduto (validità 10 minuti). Per favore, generane uno nuovo.</string>
     <string name="sync_owner_delete_warning">Stai eliminando l\'owner di questa condivisione. Questo CANCELLERÀ PERMANENTEMENTE l\'intera cartella remota e scollegherà tutti gli altri dispositivi. Vuoi continuare?</string>
     <string name="sync_pantry_deleted_success">Cartella di condivisione remota eliminata con successo</string>
 

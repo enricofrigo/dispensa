@@ -60,8 +60,8 @@ public class SyncOnboardingActivity extends AppCompatActivity {
     public static final String MODE_JOIN = "join";
     public static final String VERSION_MISMATCH = "VERSION_MISMATCH";
     public static final String DEVICE_ALREADY_REGISTERED = "DEVICE_ALREADY_REGISTERED";
+    public static final String PAIRING_EXPIRED = "PAIRING_EXPIRED";
 
-    private String currentPairingCode;
     private String scannedQrData;
     private PreviewView previewViewScanner;
     private BarcodeScanner qrScanner;
@@ -91,7 +91,8 @@ public class SyncOnboardingActivity extends AppCompatActivity {
             scannedQrData = data.getQueryParameter("data");
             if (scannedQrData != null) {
                 setupJoinMode();
-                showPairingCodeInput();
+                // Immediately process if data is already present from deep link
+                processScannedData();
                 return;
             }
         }
@@ -102,13 +103,6 @@ public class SyncOnboardingActivity extends AppCompatActivity {
         } else {
             setupJoinMode();
         }
-    }
-
-    private void showPairingCodeInput() {
-        if (previewViewScanner != null) previewViewScanner.setVisibility(View.GONE);
-        findViewById(R.id.til_pairing_code).setVisibility(View.VISIBLE);
-        findViewById(R.id.btn_confirm_onboarding).setVisibility(View.VISIBLE);
-        Toast.makeText(this, "Link rilevato. Inserisci il codice di accoppiamento.", Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -191,10 +185,7 @@ public class SyncOnboardingActivity extends AppCompatActivity {
                                         Log.d("SyncOnboarding", "QR scansionato con successo via ML Kit");
                                         runOnUiThread(() -> {
                                             stopCamera();
-                                            previewViewScanner.setVisibility(View.GONE);
-                                            findViewById(R.id.til_pairing_code).setVisibility(View.VISIBLE);
-                                            findViewById(R.id.btn_confirm_onboarding).setVisibility(View.VISIBLE);
-                                            Toast.makeText(this, "QR scansionato. Inserisci il codice di accoppiamento.", Toast.LENGTH_SHORT).show();
+                                            processScannedData();
                                         });
                                         return;
                                     }
@@ -215,134 +206,20 @@ public class SyncOnboardingActivity extends AppCompatActivity {
         }
     }
 
-    private void stopCamera() {
-        if (cameraProviderFuture != null) {
-            try {
-                cameraProviderFuture.get().unbindAll();
-            } catch (Exception e) {
-                Log.e("SyncOnboarding", "Errore stop fotocamera", e);
-            }
-        }
-    }
-
-    @SuppressLint("CheckResult")
-    private void setupShareMode() {
-        TextView instruction = findViewById(R.id.tv_onboarding_instruction);
-        instruction.setText(R.string.share_pantry);
+    private void processScannedData() {
+        if (scannedQrData == null) return;
         
-        ImageView qrView = findViewById(R.id.iv_qr_code);
-        TextView codeView = findViewById(R.id.tv_pairing_code);
-        Button shareBtn = findViewById(R.id.btn_share_link);
-        
-        qrView.setVisibility(View.VISIBLE);
-        codeView.setVisibility(View.VISIBLE);
-        if (shareBtn != null) shareBtn.setVisibility(View.VISIBLE);
+        previewViewScanner.setVisibility(View.GONE);
+        findViewById(R.id.btn_confirm_onboarding).setVisibility(View.GONE);
 
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        String url = prefs.getString(SyncManager.KEY_WEBDAV_URL, "");
-        String user = prefs.getString(SyncManager.KEY_WEBDAV_USER, "");
-        String pass = prefs.getString(SyncManager.KEY_WEBDAV_PASS, "");
-        String path = prefs.getString(SyncManager.KEY_WEBDAV_PATH, SyncManager.DEFAULT_PATH);
-        String pantryKey = prefs.getString(SyncManager.SYNC_WEBDAV_PANTRY_KEY, "");
-        boolean isShared = prefs.getBoolean(SyncManager.KEY_WEBDAV_MODE_SHARED, false);
+        new OnboardingCoordinator().joinPantry(null, scannedQrData)
+            .flatMap(payload -> {
+                // Check expiry (10 minutes = 600 seconds)
+                long nowSec = System.currentTimeMillis() / 1000;
+                if (nowSec - payload.issuedAt > 600) {
+                    return Single.error(new IllegalStateException(PAIRING_EXPIRED));
+                }
 
-        if (url.isEmpty() || (user.isEmpty() && !isShared) || pass.isEmpty()) {
-            Toast.makeText(this, "Configura prima il sync nelle impostazioni", Toast.LENGTH_LONG).show();
-            finish();
-            return;
-        }
-
-        currentPairingCode = OnboardingCoordinator.generatePairingCode();
-        codeView.setText(currentPairingCode);
-
-        // Recupera la dispensa passata come extra
-        Dispensa targetDispensa = (Dispensa) getIntent().getSerializableExtra(ManageDevicesActivity.PANTRY_ID);
-        
-        Single<String> nameSingle;
-        if (targetDispensa != null) {
-            nameSingle = Single.just(targetDispensa.getName());
-        } else {
-            nameSingle = eu.frigo.dispensa.data.Repository.getInstance(getApplication()).getCurrentDispensaNameSingle();
-        }
-
-        nameSingle.subscribeOn(Schedulers.io())
-                .flatMap(pantryName -> Single.fromCallable(() -> {
-                    String deviceId = eu.frigo.dispensa.sync.core.engine.InstallationIdProvider.getOrCreateInstallationId(this);
-                    WebDavConfig config = new WebDavConfig(url, user, pass, path, pantryKey, pantryName, deviceId, isShared);
-                    String deviceName = android.os.Build.MODEL;
-                    PairingPayload payload = WebDavPairingHandler.createPayload(deviceName, config);
-                    PairingPayloadCodecImpl codec = new PairingPayloadCodecImpl(currentPairingCode);
-                    String wireData = codec.encode(payload);
-                    String deepLink = "https://enricofrigo.github.io/dispensa/syncjoin?data=" + android.net.Uri.encode(wireData);
-                    Bitmap qrBitmap = QrCodeGenerator.generate(deepLink, 512);
-                    return new ShareInfo(deepLink, qrBitmap);
-                }))
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(info -> {
-                    qrView.setImageBitmap(info.qrBitmap);
-
-                    if (shareBtn != null) {
-                        shareBtn.setOnClickListener(v -> {
-                            Intent sendIntent = new Intent();
-                            sendIntent.setAction(Intent.ACTION_SEND);
-                            sendIntent.putExtra(Intent.EXTRA_TEXT, "Unisciti alla mia dispensa condivisa!\n\nLink: " + info.deepLink + "\n\nCodice di accoppiamento: " + currentPairingCode);
-                            sendIntent.setType("text/plain");
-
-                            Intent shareIntent = Intent.createChooser(sendIntent, null);
-                            startActivity(shareIntent);
-                        });
-                    }
-                    eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl.getInstance(this).triggerManualSync();
-                }, throwable -> {
-                    Log.e("SyncOnboarding", "Errore generazione QR", throwable);
-                    Toast.makeText(this, "Errore generazione QR: " + throwable.getMessage(), Toast.LENGTH_SHORT).show();
-                });
-    }
-
-    private static class ShareInfo {
-        final String deepLink;
-        final Bitmap qrBitmap;
-
-        ShareInfo(String deepLink, Bitmap qrBitmap) {
-            this.deepLink = deepLink;
-            this.qrBitmap = qrBitmap;
-        }
-    }
-
-    @SuppressLint("CheckResult")
-    private void setupJoinMode() {
-        TextView instruction = findViewById(R.id.tv_onboarding_instruction);
-        instruction.setText(R.string.join_pantry);
-
-        previewViewScanner = findViewById(R.id.previewViewScanner);
-        com.google.android.material.textfield.TextInputEditText etPairingCode = findViewById(R.id.et_pairing_code);
-        Button confirm = findViewById(R.id.btn_confirm_onboarding);
-
-        cameraExecutor = java.util.concurrent.Executors.newSingleThreadExecutor();
-        BarcodeScannerOptions options = new BarcodeScannerOptions.Builder()
-                .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
-                .build();
-        qrScanner = BarcodeScanning.getClient(options);
-
-        if (scannedQrData == null) {
-            checkCameraPermissionAndStartScanner();
-        }
-        
-        confirm.setOnClickListener(v -> {
-            String pairingCode = Objects.requireNonNull(etPairingCode.getText()).toString().trim();
-            if (pairingCode.isEmpty()) {
-                etPairingCode.setError("Codice richiesto");
-                return;
-            }
-
-            if (scannedQrData == null) {
-                Toast.makeText(this, "Scansiona prima il QR Code", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            confirm.setEnabled(false);
-            Single<PairingPayload> pd = new OnboardingCoordinator().joinPantry(pairingCode, scannedQrData);
-            pd.flatMap(payload -> {
                 String providerId = payload.providerId != null ? payload.providerId : payload.data.get("providerId");
                 if ("webdav".equals(providerId)) {
                     return checkVersionCompatibility(payload)
@@ -356,7 +233,6 @@ public class SyncOnboardingActivity extends AppCompatActivity {
                                 if (exists) {
                                     return Single.error(new IllegalStateException(DEVICE_ALREADY_REGISTERED));
                                 }
-                                // If not registered, register it now
                                 return registerDevice(payload).map(success -> payload);
                             });
                 }
@@ -368,10 +244,12 @@ public class SyncOnboardingActivity extends AppCompatActivity {
                 String ownerId = payload.data.get("ownerDeviceId");
                 String pantryName = payload.data.get("pantryName");
                 String ownerName = payload.deviceName;
+                String remoteId = payload.data.get("remoteId");
                 
                 Dispensa newDispensa = new Dispensa(pantryName, false);
                 newDispensa.deviceOwnerId = ownerId;
                 newDispensa.deviceOwnerName = ownerName;
+                newDispensa.remoteId = remoteId;
                 
                 long id = eu.frigo.dispensa.data.Repository.getInstance(getApplication()).insertDispensaSync(newDispensa, true);
                 
@@ -408,17 +286,129 @@ public class SyncOnboardingActivity extends AppCompatActivity {
                 setResult(RESULT_OK);
                 finish();
             }, throwable -> {
-                confirm.setEnabled(true);
-                Log.e("SyncOnboarding", "Errore decriptazione pairing", throwable);
-                if (DEVICE_ALREADY_REGISTERED.equals(throwable.getMessage())) {
+                Log.e("SyncOnboarding", "Errore join", throwable);
+                if (PAIRING_EXPIRED.equals(throwable.getMessage())) {
+                    Toast.makeText(this, R.string.sync_pairing_expired, Toast.LENGTH_LONG).show();
+                } else if (DEVICE_ALREADY_REGISTERED.equals(throwable.getMessage())) {
                     Toast.makeText(this, "Questo dispositivo è già registrato in questa dispensa.", Toast.LENGTH_LONG).show();
                 } else if (VERSION_MISMATCH.equals(throwable.getMessage())) {
                     Toast.makeText(this, "Incompatibilità Versione: La dispensa remota non è compatibile con questa app.", Toast.LENGTH_LONG).show();
                 } else {
                     Toast.makeText(this, R.string.sync_pairing_error, Toast.LENGTH_LONG).show();
                 }
+                // Riavvia lo scanner se è fallito ma non scaduto
+                if (!PAIRING_EXPIRED.equals(throwable.getMessage())) {
+                    startCamera();
+                }
             });
-        });
+    }
+
+    private void stopCamera() {
+        if (cameraProviderFuture != null) {
+            try {
+                cameraProviderFuture.get().unbindAll();
+            } catch (Exception e) {
+                Log.e("SyncOnboarding", "Errore stop fotocamera", e);
+            }
+        }
+    }
+
+    @SuppressLint("CheckResult")
+    private void setupShareMode() {
+        TextView instruction = findViewById(R.id.tv_onboarding_instruction);
+        instruction.setText(R.string.share_pantry);
+        
+        ImageView qrView = findViewById(R.id.iv_qr_code);
+        Button shareBtn = findViewById(R.id.btn_share_link);
+        
+        qrView.setVisibility(View.VISIBLE);
+        if (shareBtn != null) shareBtn.setVisibility(View.VISIBLE);
+
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        String url = prefs.getString(SyncManager.KEY_WEBDAV_URL, "");
+        String user = prefs.getString(SyncManager.KEY_WEBDAV_USER, "");
+        String pass = prefs.getString(SyncManager.KEY_WEBDAV_PASS, "");
+        String path = prefs.getString(SyncManager.KEY_WEBDAV_PATH, SyncManager.DEFAULT_PATH);
+        String pantryKey = prefs.getString(SyncManager.SYNC_WEBDAV_PANTRY_KEY, "");
+        boolean isShared = prefs.getBoolean(SyncManager.KEY_WEBDAV_MODE_SHARED, false);
+
+        if (url.isEmpty() || (user.isEmpty() && !isShared)) {
+            Toast.makeText(this, "Configura prima il sync nelle impostazioni", Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
+
+        // Recupera la dispensa passata come extra
+        Dispensa targetDispensa = (Dispensa) getIntent().getSerializableExtra(ManageDevicesActivity.PANTRY_ID);
+        
+        Single<eu.frigo.dispensa.data.dispensa.Dispensa> dispSingle;
+        if (targetDispensa != null) {
+            dispSingle = Single.just(targetDispensa);
+        } else {
+            dispSingle = eu.frigo.dispensa.data.Repository.getInstance(getApplication()).getCurrentDispensaSingle();
+        }
+
+        dispSingle.subscribeOn(Schedulers.io())
+                .flatMap(disp -> Single.fromCallable(() -> {
+                    String deviceId = eu.frigo.dispensa.sync.core.engine.InstallationIdProvider.getOrCreateInstallationId(this);
+                    WebDavConfig config = new WebDavConfig(url, user, pass, path, pantryKey, disp.getName(), deviceId, disp.remoteId, isShared);
+                    String deviceName = android.os.Build.MODEL;
+                    PairingPayload payload = WebDavPairingHandler.createPayload(deviceName, config);
+                    PairingPayloadCodecImpl codec = new PairingPayloadCodecImpl(null);
+                    String wireData = codec.encode(payload);
+                    String deepLink = "https://enricofrigo.github.io/dispensa/syncjoin?data=" + android.net.Uri.encode(wireData);
+                    Bitmap qrBitmap = QrCodeGenerator.generate(deepLink, 512);
+                    return new ShareInfo(deepLink, qrBitmap);
+                }))
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(info -> {
+                    qrView.setImageBitmap(info.qrBitmap);
+
+                    if (shareBtn != null) {
+                        shareBtn.setOnClickListener(v -> {
+                            Intent sendIntent = new Intent();
+                            sendIntent.setAction(Intent.ACTION_SEND);
+                            sendIntent.putExtra(Intent.EXTRA_TEXT, "Unisciti alla mia dispensa condivisa!\n\nLink: " + info.deepLink);
+                            sendIntent.setType("text/plain");
+
+                            Intent shareIntent = Intent.createChooser(sendIntent, null);
+                            startActivity(shareIntent);
+                        });
+                    }
+                    eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl.getInstance(this).triggerManualSync();
+                }, throwable -> {
+                    Log.e("SyncOnboarding", "Errore generazione QR", throwable);
+                    Toast.makeText(this, "Errore generazione QR: " + throwable.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private static class ShareInfo {
+        final String deepLink;
+        final Bitmap qrBitmap;
+
+        ShareInfo(String deepLink, Bitmap qrBitmap) {
+            this.deepLink = deepLink;
+            this.qrBitmap = qrBitmap;
+        }
+    }
+
+    @SuppressLint("CheckResult")
+    private void setupJoinMode() {
+        TextView instruction = findViewById(R.id.tv_onboarding_instruction);
+        instruction.setText(R.string.join_pantry);
+
+        previewViewScanner = findViewById(R.id.previewViewScanner);
+        previewViewScanner.setVisibility(View.VISIBLE);
+
+        cameraExecutor = java.util.concurrent.Executors.newSingleThreadExecutor();
+        BarcodeScannerOptions options = new BarcodeScannerOptions.Builder()
+                .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
+                .build();
+        qrScanner = BarcodeScanning.getClient(options);
+
+        if (scannedQrData == null) {
+            checkCameraPermissionAndStartScanner();
+        }
     }
 
     private Single<Boolean> checkVersionCompatibility(PairingPayload payload) {
@@ -428,13 +418,14 @@ public class SyncOnboardingActivity extends AppCompatActivity {
             String pass = payload.data.get("pass");
             String path = payload.data.get("path");
             String pantryName = payload.data.get("pantryName");
+            String remoteId = payload.data.get("remoteId");
 
             if (url == null || pass == null) return false;
 
             String effectivePath = path != null ? path : SyncManager.DEFAULT_PATH;
             String normalizedBase = effectivePath.endsWith("/") ? effectivePath : effectivePath + "/";
             if (normalizedBase.startsWith("/")) normalizedBase = normalizedBase.substring(1);
-            String pantryPath = normalizedBase + SyncManager.getSyncPath(pantryName);
+            String pantryPath = normalizedBase + SyncManager.getSyncPath(remoteId);
             String manifestPath = pantryPath + SyncManager.MANIFEST_JSON;
 
             WebDavClient client = WebDavClientFactory.getInstance().getClient(url, user, pass);
@@ -460,6 +451,7 @@ public class SyncOnboardingActivity extends AppCompatActivity {
             String path = payload.data.get("path");
             String pantryKey = payload.data.get("pantryKey");
             String pantryName = payload.data.get("pantryName");
+            String remoteId = payload.data.get("remoteId");
             boolean isShared = Boolean.parseBoolean(payload.data.get("isShared"));
 
             if (url == null || (!isShared && user == null) || pass == null || pantryKey == null) {
@@ -472,7 +464,7 @@ public class SyncOnboardingActivity extends AppCompatActivity {
             
             String normalizedBase = effectivePath.endsWith("/") ? effectivePath : effectivePath + "/";
             if (normalizedBase.startsWith("/")) normalizedBase = normalizedBase.substring(1);
-            String pantryPath = normalizedBase + SyncManager.getSyncPath(pantryName);
+            String pantryPath = normalizedBase + SyncManager.getSyncPath(remoteId);
             String devicePath = pantryPath + SyncManager.DEFAULT_DEVICES_FOLDER + deviceId + ".json";
 
             WebDavClient client = WebDavClientFactory.getInstance().getClient(url, user, pass);
@@ -493,6 +485,7 @@ public class SyncOnboardingActivity extends AppCompatActivity {
             String path = payload.data.get("path");
             String pantryKey = payload.data.get("pantryKey");
             String pantryName = payload.data.get("pantryName");
+            String remoteId = payload.data.get("remoteId");
             boolean isShared = Boolean.parseBoolean(payload.data.get("isShared"));
 
             if (url == null || (!isShared && user == null) || pass == null || pantryKey == null) {
@@ -504,7 +497,7 @@ public class SyncOnboardingActivity extends AppCompatActivity {
             
             String normalizedBase = effectivePath.endsWith("/") ? effectivePath : effectivePath + "/";
             if (normalizedBase.startsWith("/")) normalizedBase = normalizedBase.substring(1);
-            String pantryPath = normalizedBase + SyncManager.getSyncPath(pantryName);
+            String pantryPath = normalizedBase + SyncManager.getSyncPath(remoteId);
             String devicePath = pantryPath + SyncManager.DEFAULT_DEVICES_FOLDER + deviceId + ".json";
 
             eu.frigo.dispensa.sync.webdav.model.WebDavDevice device = new eu.frigo.dispensa.sync.webdav.model.WebDavDevice();

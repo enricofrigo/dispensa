@@ -1,424 +1,62 @@
 package eu.frigo.dispensa.sync.webdav;
 
-import com.google.gson.Gson;
-import android.util.Log;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import eu.frigo.dispensa.sync.core.engine.SyncEngine;
-import eu.frigo.dispensa.sync.core.engine.SyncManager;
-import eu.frigo.dispensa.sync.core.event.SyncBus;
-import eu.frigo.dispensa.sync.core.event.SyncEvent;
-import eu.frigo.dispensa.sync.core.policy.SyncPolicy;
-import eu.frigo.dispensa.data.sync.OutboxRepository;
-import eu.frigo.dispensa.sync.core.store.SyncCursorStore;
-import eu.frigo.dispensa.data.sync.SyncPayload;
-import eu.frigo.dispensa.sync.webdav.client.WebDavClient;
-import eu.frigo.dispensa.sync.webdav.model.WebDavEvent;
-import eu.frigo.dispensa.sync.webdav.model.WebDavManifest;
-import eu.frigo.dispensa.sync.webdav.model.WebDavSnapshot;
-import io.reactivex.rxjava3.core.Completable;
-import okhttp3.Response;
-import eu.frigo.dispensa.data.AppDatabase;
-import eu.frigo.dispensa.data.product.Product;
-import eu.frigo.dispensa.data.storage.StorageLocation;
-import eu.frigo.dispensa.data.shoppinglist.ShoppingItem;
-import eu.frigo.dispensa.sync.webdav.model.WebDavDevice;
+import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.preference.PreferenceManager;
-import android.content.Context;
 
+import eu.frigo.dispensa.data.AppDatabase;
+import eu.frigo.dispensa.data.sync.OutboxRepository;
+import eu.frigo.dispensa.data.sync.RoomPantryDataBridge;
+import eu.frigo.dispensa.sync.core.engine.FolderSyncEngine;
+import eu.frigo.dispensa.sync.core.engine.SyncEngine;
+import eu.frigo.dispensa.sync.core.engine.SyncManager;
+import eu.frigo.dispensa.sync.core.policy.SyncPolicy;
+import eu.frigo.dispensa.sync.core.store.SyncCursorStore;
+import eu.frigo.dispensa.sync.webdav.client.WebDavClient;
+import eu.frigo.dispensa.sync.webdav.store.WebDavFolderStore;
+import io.reactivex.rxjava3.core.Completable;
+
+/**
+ * WebDAV adapter for FolderSyncEngine.
+ */
 public class WebDavSyncEngine implements SyncEngine {
-    private final WebDavClient client;
-    private final Gson gson;
-    private final SyncCursorStore cursorStore;
-    private final OutboxRepository outbox;
-    private final String deviceId;
-    private final String pantryPath;
-    private final int dispensaId;
-    private final AppDatabase db;
-    private final Context context;
+    private final FolderSyncEngine delegate;
 
-    public WebDavSyncEngine(WebDavClient client, SyncCursorStore cursorStore, OutboxRepository outbox, String deviceId, String pantryPath, int dispensaId, AppDatabase db, Context context) {
-        this.client = client;
-        this.cursorStore = cursorStore;
-        this.outbox = outbox;
-        this.deviceId = deviceId;
-        this.pantryPath = pantryPath.endsWith("/") ? pantryPath : pantryPath + "/";
-        this.dispensaId = dispensaId;
-        this.db = db;
-        this.context = context;
-        this.gson = new Gson();
+    public WebDavSyncEngine(
+            WebDavClient client,
+            SyncCursorStore cursorStore,
+            OutboxRepository outbox,
+            String deviceId,
+            String pantryPath,
+            int dispensaId,
+            AppDatabase db,
+            Context context
+    ) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        String deviceName = prefs.getString(SyncManager.KEY_DEVICE_NAME, android.os.Build.MODEL);
+
+        WebDavFolderStore folderStore = new WebDavFolderStore(client);
+        RoomPantryDataBridge dataBridge = new RoomPantryDataBridge(db);
+
+        this.delegate = new FolderSyncEngine(
+                folderStore,
+                dataBridge,
+                cursorStore,
+                deviceId,
+                deviceName,
+                pantryPath,
+                dispensaId
+        );
     }
 
     @Override
     public Completable performSync(SyncPolicy policy) {
-        return Completable.fromAction(() -> {
-            if (!policy.canSyncNow()) return;
-            
-            Log.d("SyncFlow", "--- Inizio sessione di sincronizzazione ---"+pantryPath);
-
-            // 0. Migration check
-            if (!checkVersionAndMigrate()) {
-                Log.w("SyncFlow", "Sincronizzazione interrotta per incompatibilità di versione.");
-                return;
-            }
-
-            // 1. Pull
-            WebDavManifest manifest = fetchManifest();
-            if (manifest != null) {
-                processRemoteChanges(manifest);
-            }
-
-            // 2. Push local events
-            pushLocalChanges();
-
-            // 2b. Update device info
-            updateDeviceRegistration();
-
-            // 3. Ricarichiamo il manifest per avere lo stato post-push
-            manifest = fetchManifest();
-            if (manifest == null) manifest = new WebDavManifest();
-
-            // 4. Gestione Snapshot / Compattazione
-            if (manifest.latestSnapshotId == null) {
-                Log.d("SyncFlow", "Nessuno snapshot sul server. Creazione backup iniziale...");
-                performCompaction();
-            } else if (manifest.activeEventFiles.size() >= 50) {
-                Log.d("SyncFlow", "Raggiunta soglia eventi (" + manifest.activeEventFiles.size() + "). Compattazione in corso...");
-                performCompaction();
-            }
-            
-            Log.d("SyncFlow", "--- Sessione completata ---");
-        });
+        return delegate.performSync(policy);
     }
 
-    private boolean checkVersionAndMigrate() throws IOException {
-        // 1. Check Legacy Path
-        String basePath = pantryPath;
-        if (basePath.contains("-sync/")) {
-             basePath = basePath.substring(0, basePath.lastIndexOf("-sync/"));
-             if (basePath.contains("/")) {
-                 basePath = basePath.substring(0, basePath.lastIndexOf("/") + 1);
-             } else {
-                 basePath = "";
-             }
-        }
-        
-        String legacyManifestPath = basePath + SyncManager.LEGACY_SYNC_PATH + "pantries/main_pantry/manifest.json";
-        WebDavManifest legacyManifest = null;
-        try (Response response = client.get(legacyManifestPath)) {
-            if (response.isSuccessful() && response.body() != null) {
-                legacyManifest = gson.fromJson(response.body().string(), WebDavManifest.class);
-            }
-        }
-
-        if (legacyManifest != null) {
-            Log.i("SyncFlow", "Rilevata struttura legacy V1.");
-            if (deviceId.equals(legacyManifest.createdByDevice)) {
-                Log.i("SyncFlow", "Owner rilevato. Eliminazione struttura legacy...");
-                try (Response delResp = client.delete(basePath + SyncManager.LEGACY_SYNC_PATH)) {
-                    // Ignora esito, proseguiamo
-                }
-                // Continua e creerà la nuova struttura V2 sotto il nuovo percorso
-            } else {
-                Log.w("SyncFlow", "Guest rilevato su struttura legacy. Segnalazione VersionMismatch.");
-                SyncBus.getInstance().post(new SyncEvent.VersionMismatch(SyncManager.CURRENT_SYNC_VERSION, 1, true));
-                return false;
-            }
-        }
-
-        // 2. Check New Path Version
-        WebDavManifest currentManifest = fetchManifest();
-        if (currentManifest != null) {
-            if (currentManifest.version < SyncManager.CURRENT_SYNC_VERSION) {
-                if (deviceId.equals(currentManifest.createdByDevice)) {
-                    Log.i("SyncFlow", "Migrazione manifest da V" + currentManifest.version + " a V" + SyncManager.CURRENT_SYNC_VERSION);
-                    updateManifest(m -> m.version = SyncManager.CURRENT_SYNC_VERSION);
-                } else {
-                    SyncBus.getInstance().post(new SyncEvent.VersionMismatch(SyncManager.CURRENT_SYNC_VERSION, currentManifest.version, false));
-                    return false;
-                }
-            } else if (currentManifest.version > SyncManager.CURRENT_SYNC_VERSION) {
-                Log.e("SyncFlow", "Versione remota superiore alla locale (" + currentManifest.version + " > " + SyncManager.CURRENT_SYNC_VERSION + ")");
-                SyncBus.getInstance().post(new SyncEvent.VersionMismatch(SyncManager.CURRENT_SYNC_VERSION, currentManifest.version, false));
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private WebDavManifest fetchManifest() throws IOException {
-        try (Response response = client.get(pantryPath + "manifest.json")) {
-            if (response.isSuccessful() && response.body() != null) {
-                WebDavManifest m = gson.fromJson(response.body().string(), WebDavManifest.class);
-                m.etag = response.header("ETag");
-                return m;
-            }
-            return null;
-        }
-    }
-
-    private void updateManifest(java.util.function.Consumer<WebDavManifest> updater) throws IOException {
-        int retries = 3;
-        while (retries > 0) {
-            WebDavManifest manifest = fetchManifest();
-            if (manifest == null) {
-                manifest = new WebDavManifest();
-                manifest.createdByDevice = deviceId;
-                manifest.createdAt = System.currentTimeMillis();
-            }
-            
-            updater.accept(manifest);
-            String json = gson.toJson(manifest);
-            try (Response response = client.put(pantryPath + "manifest.json", json.getBytes(), manifest.etag)) {
-                if (response.isSuccessful()) {
-                    Log.d("SyncFlow", "Manifest aggiornato con successo.");
-                    return;
-                } else if (response.code() == 412) {
-                    Log.w("SyncFlow", "Concorrenza nel salvataggio manifest (412). Riprovo...");
-                    retries--;
-                } else {
-                    throw new IOException("Errore salvataggio manifest: " + response.code() + " " + response.message());
-                }
-            }
-        }
-        throw new IOException("Troppi tentativi falliti (412) per il salvataggio del manifest");
-    }
-
-    private void processRemoteChanges(WebDavManifest manifest) throws IOException {
-        long lastSync = cursorStore.getLastSyncTimestamp();
-        
-        if (lastSync == 0 && manifest.latestSnapshotId != null) {
-            downloadAndApplySnapshot(manifest.latestSnapshotId);
-        }
-
-        for (String eventFile : manifest.activeEventFiles) {
-            long eventTs = extractTimestampFromFilename(eventFile);
-            if (eventTs > lastSync) {
-                downloadAndApplyEvent(eventFile);
-            }
-        }
-        
-        cursorStore.updateLastSyncTimestamp(manifest.lastGlobalTimestamp);
-    }
-
-    private void updateDeviceRegistration() {
-        try {
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-            String currentName = prefs.getString(SyncManager.KEY_DEVICE_NAME, android.os.Build.MODEL);
-            
-            WebDavDevice device = new WebDavDevice();
-            device.deviceId = deviceId;
-            device.deviceName = currentName;
-            device.lastSeen = System.currentTimeMillis();
-
-            ensureFolderExists(SyncManager.DEFAULT_DEVICES_FOLDER);
-            String devicePath = SyncManager.DEFAULT_DEVICES_FOLDER + deviceId + ".json";
-            String json = gson.toJson(device);
-            
-            try (Response response = client.put(pantryPath + devicePath, json.getBytes(), null)) {
-                if (response.isSuccessful()) {
-                    Log.d("SyncFlow", "Device registration updated: " + currentName);
-                }
-            }
-        } catch (Exception e) {
-            Log.e("SyncFlow", "Failed to update device registration", e);
-        }
-    }
-
-    private void pushLocalChanges() throws Exception {
-        List<SyncPayload> pending = outbox.getPendingChanges(dispensaId).blockingGet();
-        if (pending.isEmpty()) return;
-
-        Log.d("SyncFlow", "Push di " + pending.size() + " eventi locali...");
-        
-        List<String> uploadedFiles = new ArrayList<>();
-        List<String> syncedIds = new ArrayList<>();
-        long maxTs = 0;
-
-        for (SyncPayload payload : pending) {
-            WebDavEvent event = new WebDavEvent();
-            event.eventId = payload.getSyncId();
-            event.deviceId = deviceId;
-            event.timestamp = payload.getTimestamp();
-            event.action = payload.getDataType();
-            event.payload = gson.fromJson(payload.getContent(), java.util.Map.class);
-
-            ensureFolderExists(SyncManager.DEFAULT_EVENTS_FOLDER);
-            String fileName = SyncManager.DEFAULT_EVENTS_FOLDER + "ev_" + deviceId + "_" + event.timestamp + ".json";
-            try (Response response = client.put(pantryPath + fileName, gson.toJson(event).getBytes(), null)) {
-                if (response.isSuccessful()) {
-                    uploadedFiles.add(fileName);
-                    syncedIds.add(payload.getSyncId());
-                    maxTs = Math.max(maxTs, event.timestamp);
-                } else {
-                    throw new IOException("Fallito caricamento evento: " + fileName + " (" + response.code() + ")");
-                }
-            }
-        }
-        
-        long finalMaxTs = maxTs;
-        updateManifest(m -> {
-            for (String file : uploadedFiles) {
-                if (!m.activeEventFiles.contains(file)) {
-                    m.activeEventFiles.add(file);
-                }
-            }
-            m.lastGlobalTimestamp = Math.max(m.lastGlobalTimestamp, finalMaxTs);
-        });
-
-        outbox.markAsSynced(syncedIds).blockingAwait();
-    }
-
-    private void performCompaction() throws IOException {
-        Log.d("SyncFlow", "Esecuzione compattazione...");
-        
-        WebDavSnapshot snapshot = new WebDavSnapshot();
-        snapshot.timestamp = System.currentTimeMillis();
-        snapshot.products = db.productDao().getAllProductsListStatic(dispensaId);
-        snapshot.locations = db.storageLocationDao().getAllLocationsSortedSync(dispensaId);
-        snapshot.shoppingItems = db.shoppingItemDao().getAllItemsSync(dispensaId);
-
-        ensureFolderExists(SyncManager.DEFAULT_SNAPSHOTS_FOLDER);
-        String snapshotName = "snap_" + snapshot.timestamp + ".json";
-        
-        try (Response response = client.put(pantryPath + SyncManager.DEFAULT_SNAPSHOTS_FOLDER + snapshotName, gson.toJson(snapshot).getBytes(), null)) {
-            if (response.isSuccessful()) {
-                updateManifest(m -> {
-                    m.latestSnapshotId = snapshotName;
-                    m.activeEventFiles.clear();
-                    m.lastGlobalTimestamp = Math.max(m.lastGlobalTimestamp, snapshot.timestamp);
-                });
-                Log.d("SyncFlow", "Snapshot creato e manifest aggiornato: " + snapshotName);
-            } else {
-                throw new IOException("Fallito caricamento snapshot: " + response.code());
-            }
-        }
-    }
-
-    private void downloadAndApplySnapshot(String snapshotId) throws IOException {
-        Log.d("SyncFlow", "Download snapshot: " + snapshotId);
-        try (Response response = client.get(pantryPath + "snapshots/" + snapshotId)) {
-            if (response.isSuccessful() && response.body() != null) {
-                WebDavSnapshot snapshot = gson.fromJson(response.body().string(), WebDavSnapshot.class);
-                applySnapshot(snapshot);
-            }
-        }
-    }
-
-    private void downloadAndApplyEvent(String eventFile) throws IOException {
-        try (Response response = client.get(pantryPath + eventFile)) {
-            if (response.isSuccessful() && response.body() != null) {
-                WebDavEvent event = gson.fromJson(response.body().string(), WebDavEvent.class);
-                applyRemoteEvent(event);
-            }
-        }
-    }
-
-    private void applySnapshot(WebDavSnapshot snapshot) {
-        db.runInTransaction(() -> {
-            if (snapshot.locations != null) {
-                for (StorageLocation remote : snapshot.locations) {
-                    remote.dispensaId = dispensaId;
-                    StorageLocation local = db.storageLocationDao().getLocationByInternalKeySync(remote.internalKey, dispensaId);
-                    if (local == null || remote.lastModified > local.lastModified) {
-                        if (local != null) remote.id = local.id;
-                        db.storageLocationDao().insert(remote);
-                    }
-                }
-            }
-            if (snapshot.products != null) {
-                for (Product p : snapshot.products) {
-                    p.dispensaId = dispensaId;
-                    p.validateImageUrlExistence();
-                    Product local = db.productDao().getProductByLotKeySync(p.barcode, p.expiryDate, p.getStorageLocation(), dispensaId);
-                    if (local == null || p.lastModified > local.lastModified) {
-                        if (local != null) p.id = local.id;
-                        db.productDao().insert(p);
-                    }
-                }
-            }
-            if (snapshot.shoppingItems != null) {
-                for (ShoppingItem s : snapshot.shoppingItems) {
-                    s.dispensaId = dispensaId;
-                    ShoppingItem local = db.shoppingItemDao().getItemByNameSync(s.name, dispensaId);
-                    if (local == null || s.lastModified > local.lastModified) {
-                        if (local != null) s.id = local.id;
-                        db.shoppingItemDao().insert(s);
-                    }
-                }
-            }
-        });
-    }
-
-    private void applyRemoteEvent(WebDavEvent event) {
-        db.runInTransaction(() -> {
-            if (event.payload == null) return;
-            String jsonPayload = gson.toJson(event.payload);
-            switch (event.action) {
-                case WebDavEvent.ACTION_UPSERT_PRODUCT:
-                    Product remoteP = gson.fromJson(jsonPayload, Product.class);
-                    remoteP.dispensaId = dispensaId;
-                    remoteP.validateImageUrlExistence();
-                    Product localP = db.productDao().getProductByLotKeySync(remoteP.barcode, remoteP.expiryDate, remoteP.getStorageLocation(), dispensaId);
-                    if (localP == null || remoteP.lastModified > localP.lastModified) {
-                        if (localP != null) remoteP.id = localP.id;
-                        db.productDao().insert(remoteP);
-                    }
-                    break;
-                case WebDavEvent.ACTION_DELETE_PRODUCT:
-                    Product toDelete = gson.fromJson(jsonPayload, Product.class);
-                    Product localDel = db.productDao().getProductByLotKeySync(toDelete.barcode, toDelete.expiryDate, toDelete.getStorageLocation(), dispensaId);
-                    if (localDel != null && event.timestamp > localDel.lastModified) {
-                        db.productDao().delete(localDel);
-                    }
-                    break;
-                case WebDavEvent.ACTION_UPSERT_LOCATION:
-                    StorageLocation remoteL = gson.fromJson(jsonPayload, StorageLocation.class);
-                    remoteL.dispensaId = dispensaId;
-                    StorageLocation localL = db.storageLocationDao().getLocationByInternalKeySync(remoteL.internalKey, dispensaId);
-                    if (localL == null || remoteL.lastModified > localL.lastModified) {
-                        if (localL != null) remoteL.id = localL.id;
-                        db.storageLocationDao().insert(remoteL);
-                    }
-                    break;
-                case WebDavEvent.ACTION_UPSERT_SHOPPING_ITEM:
-                    ShoppingItem remoteS = gson.fromJson(jsonPayload, ShoppingItem.class);
-                    remoteS.dispensaId = dispensaId;
-                    ShoppingItem localS = db.shoppingItemDao().getItemByNameSync(remoteS.name, dispensaId);
-                    if (localS == null || remoteS.lastModified > localS.lastModified) {
-                        if (localS != null) remoteS.id = localS.id;
-                        db.shoppingItemDao().insert(remoteS);
-                    }
-                    break;
-            }
-        });
-    }
-
-    private long extractTimestampFromFilename(String filename) {
-        try {
-            String[] parts = filename.split("_");
-            String tsPart = parts[parts.length - 1].replace(".json", "");
-            return Long.parseLong(tsPart);
-        } catch (Exception e) {
-            return 0;
-        }
-    }
-
-    private void ensureFolderExists(String folderPath) throws IOException {
-        String cleanPath = folderPath.endsWith("/") ? folderPath.substring(0, folderPath.length() - 1) : folderPath;
-        try (Response response = client.propfind(pantryPath + cleanPath + "/")) {
-            if (response.isSuccessful() || response.code() == 207) return;
-            if (response.code() != 404) {
-                throw new IOException("Errore verifica cartella " + cleanPath + ": " + response.code());
-            }
-        }
-        try (Response response = client.mkcol(pantryPath + cleanPath)) {
-            if (!response.isSuccessful() && response.code() != 201 && response.code() != 405) {
-                throw new IOException("Errore creazione cartella " + cleanPath + ": " + response.code());
-            }
-        }
+    @Override
+    public Completable initializeRemoteStructure() {
+        return delegate.initializeRemoteStructure();
     }
 }
+
