@@ -271,7 +271,8 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
                     oldItem.product.getExpiryDate().equals(newItem.product.getExpiryDate()) &&
                     (oldItem.product.getOpenedDate()==null || oldItem.product.getOpenedDate().equals(newItem.product.getOpenedDate())) &&
                     oldItem.product.getShelfLifeAfterOpeningDays() == newItem.product.getShelfLifeAfterOpeningDays() &&
-                    (oldItem.product.getStorageLocation()==null || oldItem.product.getStorageLocation().equals(newItem.product.getStorageLocation()));
+                    (oldItem.product.getStorageLocation()==null || oldItem.product.getStorageLocation().equals(newItem.product.getStorageLocation())) &&
+                    java.util.Objects.equals(oldItem.product.getNote(), newItem.product.getNote());
         }
     }
 }

@@ -51,6 +51,10 @@ public class Product {
     @ColumnInfo(name = "shelf_life_after_opening_days", defaultValue = "-1")
     public int shelfLifeAfterOpeningDays = -1;
 
+    @SerializedName("note")
+    @ColumnInfo(name = "note")
+    public String note;
+
     @SerializedName("last_modified")
     @ColumnInfo(name = "last_modified", defaultValue = "0")
     public long lastModified = 0L;
@@ -74,6 +78,13 @@ public class Product {
         this.storageLocation = storageLocation;
         this.openedDate = openedDate;
         this.shelfLifeAfterOpeningDays = shelfLifeAfterOpeningDays;
+    }
+
+    @Ignore
+    public Product(String barcode, int quantity, Long expiryDate, String productName, String imageUrl,
+            String storageLocation, Long openedDate, int shelfLifeAfterOpeningDays, String note) {
+        this(barcode, quantity, expiryDate, productName, imageUrl, storageLocation, openedDate, shelfLifeAfterOpeningDays);
+        this.note = note;
     }
 
     // Getters e Setters (opzionali se i campi sono pubblici, ma buona pratica
@@ -158,6 +169,14 @@ public class Product {
         this.shelfLifeAfterOpeningDays = shelfLifeAfterOpeningDays;
     }
 
+    public String getNote() {
+        return note;
+    }
+
+    public void setNote(String note) {
+        this.note = note;
+    }
+
     @Ignore
     public Long getActualExpiryTimestamp() {
         if (openedDate > 0 && shelfLifeAfterOpeningDays > 0) {
@@ -206,6 +225,7 @@ public class Product {
                 ", storageLocation='" + storageLocation + '\'' +
                 ", openedDate=" + openedDate +
                 ", shelfLifeAfterOpeningDays=" + shelfLifeAfterOpeningDays +
+                ", note='" + note + '\'' +
                 '}';
     }
 
@@ -220,6 +240,9 @@ public class Product {
         copy.storageLocation = this.storageLocation;
         copy.openedDate = this.openedDate;
         copy.shelfLifeAfterOpeningDays = this.shelfLifeAfterOpeningDays;
+        copy.lastModified = this.lastModified;
+        copy.dispensaId = this.dispensaId;
+        copy.note = this.note;
         return copy;
     }
 

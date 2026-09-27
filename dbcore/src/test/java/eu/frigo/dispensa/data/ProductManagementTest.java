@@ -58,6 +58,7 @@ public class ProductManagementTest {
                 -1
         );
         product.dispensaId = (int) dispId;
+        product.setNote("Comprare ancora se in offerta");
         product.lastModified = System.currentTimeMillis();
 
         long prodId = productDao.insert(product);
@@ -70,6 +71,7 @@ public class ProductManagementTest {
         Assert.assertEquals(3, retrieved.getQuantity());
         Assert.assertEquals("fridge", retrieved.getStorageLocation());
         Assert.assertEquals((int) dispId, retrieved.dispensaId);
+        Assert.assertEquals("Comprare ancora se in offerta", retrieved.getNote());
     }
 
     @Test
@@ -85,7 +87,8 @@ public class ProductManagementTest {
                 null,
                 "pantry",
                 0L,
-                -1
+                -1,
+                "Scorta base"
         );
         product.dispensaId = (int) dispId;
         long prodId = productDao.insert(product);
@@ -97,6 +100,7 @@ public class ProductManagementTest {
         product.setStorageLocation("cupboard");
         product.setOpenedDate(System.currentTimeMillis());
         product.setShelfLifeAfterOpeningDays(30);
+        product.setNote("Nuova nota aggiornata");
         product.lastModified = System.currentTimeMillis();
 
         productDao.update(product);
@@ -108,6 +112,7 @@ public class ProductManagementTest {
         Assert.assertEquals("cupboard", updated.getStorageLocation());
         Assert.assertTrue(updated.isOpened());
         Assert.assertEquals(30, updated.getShelfLifeAfterOpeningDays());
+        Assert.assertEquals("Nuova nota aggiornata", updated.getNote());
     }
 
     @Test

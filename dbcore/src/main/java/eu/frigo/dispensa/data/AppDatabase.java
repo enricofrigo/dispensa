@@ -42,7 +42,7 @@ import eu.frigo.dispensa.sync.core.engine.InstallationIdProvider;
 @Database(entities = {Product.class, CategoryDefinition.class,
         ProductCategoryLink.class, StorageLocation.class, OpenFoodFactCacheEntity.class,
         ShoppingItem.class, SyncOutbox.class, Dispensa.class, JoinedPantryConfig.class },
-        version = 19)
+        version = 20)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract ProductDao productDao();
@@ -178,12 +178,19 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    static final Migration MIGRATION_19_20 = new Migration(19, 20) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("ALTER TABLE products ADD COLUMN note TEXT");
+        }
+    };
+
     public static AppDatabase getDatabase(final Context context) {
         if (INSTANCE == null) {
             synchronized (AppDatabase.class) {
                 if (INSTANCE == null) {
                     // Esegui backup preventivo se è prevista una migrazione
-                    PreMigrationBackupHelper.checkAndBackup(context.getApplicationContext(), "dispensa_database", 17);
+                    PreMigrationBackupHelper.checkAndBackup(context.getApplicationContext(), "dispensa_database", 20);
 
                     RoomDatabase.Callback sRoomDatabaseCallback = new RoomDatabase.Callback() {
                         @UnstableApi
@@ -234,6 +241,7 @@ public abstract class AppDatabase extends RoomDatabase {
                             .addMigrations(MIGRATION_16_17)
                             .addMigrations(MIGRATION_17_18)
                             .addMigrations(MIGRATION_18_19)
+                            .addMigrations(MIGRATION_19_20)
                             .addCallback(sRoomDatabaseCallback)
                             //.fallbackToDestructiveMigration()
                             .build();
