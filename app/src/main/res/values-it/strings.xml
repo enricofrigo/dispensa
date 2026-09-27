@@ -90,6 +90,7 @@
     <string name="hint_product_name">Nome Prodotto</string>
     <string name="product_name_mandatory">Il nome è obbligatorio se il barcode è vuoto</string>
     <string name="hint_product_image">Immagine prodotto</string>
+    <string name="hint_product_notes">Note</string>
     <string name="hint_category_tags">Categorie (Tags)</string>
     <string name="hint_category_new">Nuova Categoria (es. en:dairy)</string>
 

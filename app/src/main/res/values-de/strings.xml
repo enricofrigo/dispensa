@@ -88,6 +88,7 @@
     <string name="hint_product_name">Produktname</string>
     <string name="product_name_mandatory">Produktname ist erforderlich, wenn der Barcode leer ist</string>
     <string name="hint_product_image">Produktbild</string>
+    <string name="hint_product_notes">Notizen</string>
     <string name="hint_category_tags">Tags</string>
     <string name="hint_category_new">Neues Tag (z. B. Milchprodukte)</string>
 

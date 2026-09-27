@@ -126,6 +126,7 @@ public class AddProductActivity extends AppCompatActivity {
     private String selectedStorageInternalKey;
     private ProductWithCategoryDefinitions productBeingEdited;
     private TextInputEditText editTextShelfLifeAfterOpening;
+    private TextInputEditText editTextNote;
     private Button buttonMarkAsOpened;
     private Button buttonMarkAsClosed;
     private TextView textViewOpenedDate;
@@ -249,6 +250,7 @@ public class AddProductActivity extends AppCompatActivity {
         setupStorageLocationSpinner();
 
         editTextShelfLifeAfterOpening = findViewById(R.id.editTextShelfLifeAfterOpening);
+        editTextNote = findViewById(R.id.editTextNote);
         buttonMarkAsOpened = findViewById(R.id.buttonMarkAsOpened);
         buttonMarkAsClosed = findViewById(R.id.buttonMarkAsClosed);
         textViewOpenedDate = findViewById(R.id.textViewOpenedDate);
@@ -707,6 +709,7 @@ public class AddProductActivity extends AppCompatActivity {
                 } else {
                     editTextShelfLifeAfterOpening.setText("");
                 }
+                editTextNote.setText(productBeingEdited.product.getNote() != null ? productBeingEdited.product.getNote() : "");
                 updateOpenedDateUI(currentOpenedDate);
 
                 if (productBeingEdited.categoryDefinitions != null) {
@@ -1116,6 +1119,11 @@ public class AddProductActivity extends AppCompatActivity {
         }
         Product product = new Product(barcode, quantity, DateConverter.parseDisplayDateToTimestampMs(expiryDate), name,
                 currentImageUrlFromApi, selectedStorageInternalKey, currentOpenedDate, shelfLifeDays);
+        String note = editTextNote.getText() != null ? editTextNote.getText().toString().trim() : null;
+        if (note != null && note.isEmpty()) {
+            note = null;
+        }
+        product.setNote(note);
         Log.d("AddProductActivity", "Salvataggio prodotto: " + product.toString());
         List<String> tagsToSave = new ArrayList<>(currentProductTagsSet);
         if (isEditMode) {
