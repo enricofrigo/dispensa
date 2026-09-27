@@ -249,6 +249,11 @@
     <string name="share_pantry_dialog_message">Wählen Sie den Dienst aus, um die Vorratskammer \'%s\' zu teilen. Es wird un dedizierter Ordner in der Cloud erstellt.</string>
     <string name="share_button">Teilen</string>
     <string name="provider_webdav">WebDAV</string>
+    <string name="provider_local_saf">Lokaler freigegebener Ordner (SAF)</string>
+    <string name="sync_configure_first">Konfigurieren Sie zuerst die Synchronisierung in den Einstellungen</string>
+    <string name="preparing_sync_server">Remote-Synchronisierung wird vorbereitet…</string>
+    <string name="sync_setup_error">Fehler beim Einrichten der Freigabe: %s</string>
+    <string name="sync_remote_delete_error">Fehler beim Löschen auf dem Server: %s. Lokales Löschen wird fortgesetzt.</string>
     <string name="join_pantry">Vorratskammer beitreten</string>
     <string name="pairing_code_title">Kopplungscode</string>
     <string name="pairing_code_hint">Code eingeben (z. B. AB-CDEF)</string>
@@ -287,5 +292,6 @@
     <string name="cannot_delete_default_dispensa">Standardvorratskammer kann nicht gelöscht werden</string>
     <string name="dispensa_name">Name der Speisekammer</string>
     <string name="pantry_owner_format">Besitzer: %s</string>
+    <string name="sync_pairing_expired">Der QR-Code ist abgelaufen (Gültigkeitsdauer: 10 Minuten). Bitte generieren Sie einen neuen.</string>
     <string name="sync_owner_delete_warning">Sie löschen den Besitzer dieser Freigabe. Dadurch wird der gesamte Remote-Synchronisierungsordner ENDGÜLTIG gelöscht und die Verbindung zu allen anderen Geräten getrennt. Möchten Sie fortfahren?</string>
 </resources>
