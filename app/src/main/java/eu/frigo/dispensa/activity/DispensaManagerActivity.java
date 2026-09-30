@@ -94,6 +94,10 @@ public class DispensaManagerActivity extends AppCompatActivity implements Dispen
             adapter.submitList(dispense);
         });
 
+        dispensaViewModel.getAllJoinedPantryConfigs().observe(this, configs -> {
+            adapter.setJoinedConfigs(configs);
+        });
+
         dispensaViewModel.getCurrentDispensaId().observe(this, id -> {
             adapter.setCurrentDispensaId(id != null ? id : -1);
         });
@@ -208,39 +212,82 @@ public class DispensaManagerActivity extends AppCompatActivity implements Dispen
     public void onShareClick(Dispensa dispensa) {
         Log.d("DispensaManager", "onShareClick called for dispensa: " + dispensa);
 
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        
-        // Controlla se è già sincronizzata
-        String syncedIdsStr = prefs.getString(SyncManager.SYNC_WEBDAV_SYNCED_IDS, "");
-        List<String> syncedIds = new ArrayList<>(Arrays.asList(syncedIdsStr.split(",")));
-        if (syncedIds.contains(String.valueOf(dispensa.id))) {
-            launchShareOnboarding(dispensa);
-            return;
+        List<JoinedPantryConfig> configs = dispensaViewModel.getAllJoinedPantryConfigs().getValue();
+        JoinedPantryConfig existingConfig = null;
+        if (configs != null) {
+            for (JoinedPantryConfig c : configs) {
+                if (c.dispensaId == dispensa.id) {
+                    existingConfig = c;
+                    break;
+                }
+            }
         }
 
-        List<SharingProvider> availableProviders = PantrySharingService.getInstance().getAvailableProviders(this);
-        if (availableProviders.isEmpty()) {
-            Toast.makeText(this, R.string.sync_configure_first, Toast.LENGTH_LONG).show();
-            return;
+        if (existingConfig != null) {
+            showAlreadySharedOptionsDialog(dispensa, existingConfig);
+        } else {
+            showProviderSelectionDialog(dispensa);
         }
-
-        showProviderSelectionDialog(dispensa, availableProviders);
     }
 
-    private void showProviderSelectionDialog(Dispensa dispensa, List<SharingProvider> providers) {
+    private void showAlreadySharedOptionsDialog(Dispensa dispensa, JoinedPantryConfig config) {
+        SharingProvider provider = PantrySharingService.getInstance().getProvider(config.providerId);
+        String providerName = provider != null ? provider.getDisplayName(this) : (config.providerId != null ? config.providerId : "Cloud");
+
+        String[] options = new String[]{
+                getString(R.string.show_pairing_qr),
+                getString(R.string.action_change_provider),
+                getString(R.string.action_manage_devices)
+        };
+
+        new AlertDialog.Builder(this)
+                .setTitle(dispensa.getName() + " (" + providerName + ")")
+                .setItems(options, (dialog, which) -> {
+                    if (which == 0) {
+                        launchShareOnboarding(dispensa);
+                    } else if (which == 1) {
+                        showProviderSelectionDialog(dispensa);
+                    } else if (which == 2) {
+                        onDevicesClick(dispensa);
+                    }
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
+    private void showProviderSelectionDialog(Dispensa dispensa) {
+        List<SharingProvider> providers = PantrySharingService.getInstance().getAllProviders();
+        if (providers.isEmpty()) {
+            Toast.makeText(this, R.string.no_devices_found, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         String[] items = new String[providers.size()];
         for (int i = 0; i < providers.size(); i++) {
-            items[i] = providers.get(i).getDisplayName(this);
+            SharingProvider p = providers.get(i);
+            String status = p.isConfigured(this) ? "" : getString(R.string.not_configured_badge);
+            items[i] = p.getDisplayName(this) + status;
         }
-        final int[] selectedIndex = {0}; // Pre-seleziona il primo
 
         new AlertDialog.Builder(this)
                 .setTitle(R.string.share_pantry_dialog_title)
-                .setMessage(String.format(getString(R.string.share_pantry_dialog_message), dispensa.getName()))
-                .setSingleChoiceItems(items, 0, (dialog, which) -> selectedIndex[0] = which)
-                .setPositiveButton(R.string.share_button, (dialog, which) -> {
-                    SharingProvider selectedProvider = providers.get(selectedIndex[0]);
-                    executeSharePantry(dispensa, selectedProvider.getProviderId());
+                .setItems(items, (dialog, which) -> {
+                    SharingProvider selectedProvider = providers.get(which);
+                    if (selectedProvider.isConfigured(this)) {
+                        executeSharePantry(dispensa, selectedProvider.getProviderId());
+                    } else {
+                        new AlertDialog.Builder(this)
+                                .setTitle(selectedProvider.getDisplayName(this))
+                                .setMessage(getString(R.string.provider_not_configured_prompt, selectedProvider.getDisplayName(this)))
+                                .setPositiveButton(R.string.action_configure_provider, (d2, w2) -> {
+                                    Intent intent = selectedProvider.getConfigIntent(this);
+                                    if (intent != null) {
+                                        startActivity(intent);
+                                    }
+                                })
+                                .setNegativeButton(R.string.cancel, null)
+                                .show();
+                    }
                 })
                 .setNegativeButton(R.string.cancel, null)
                 .show();
@@ -354,11 +401,51 @@ public class DispensaManagerActivity extends AppCompatActivity implements Dispen
     }
 
     @Override
+    public boolean onCreateOptionsMenu(android.view.Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_dispensa_manager, menu);
+        return true;
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == android.R.id.home) {
+        int id = item.getItemId();
+        if (id == android.R.id.home) {
             finish();
+            return true;
+        } else if (id == R.id.action_shared_dispense) {
+            startActivity(new Intent(this, SharedDispenseActivity.class));
+            return true;
+        } else if (id == R.id.action_configure_providers) {
+            showProviderConfigurationChooser();
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void showProviderConfigurationChooser() {
+        List<SharingProvider> providers = PantrySharingService.getInstance().getAllProviders();
+        if (providers.isEmpty()) {
+            Toast.makeText(this, R.string.no_devices_found, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String[] items = new String[providers.size()];
+        for (int i = 0; i < providers.size(); i++) {
+            SharingProvider p = providers.get(i);
+            String status = p.isConfigured(this) ? "" : " " + getString(R.string.not_configured_badge);
+            items[i] = p.getDisplayName(this) + status;
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.pref_providers_title)
+                .setItems(items, (dialog, which) -> {
+                    SharingProvider selected = providers.get(which);
+                    Intent intent = selected.getConfigIntent(this);
+                    if (intent != null) {
+                        startActivity(intent);
+                    }
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
     }
 }

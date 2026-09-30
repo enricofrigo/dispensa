@@ -26,6 +26,12 @@ public interface JoinedPantryConfigDao {
     @Query("SELECT * FROM joined_pantry_configs")
     List<JoinedPantryConfig> getAllConfigs();
 
+    @Query("SELECT * FROM joined_pantry_configs")
+    androidx.lifecycle.LiveData<List<JoinedPantryConfig>> getAllConfigsLive();
+
+    @Query("SELECT * FROM joined_pantry_configs WHERE dispensa_id = :dispensaId")
+    androidx.lifecycle.LiveData<JoinedPantryConfig> getConfigByDispensaIdLive(int dispensaId);
+
     @Query("DELETE FROM joined_pantry_configs WHERE dispensa_id = :dispensaId")
     void deleteByDispensaId(int dispensaId);
 

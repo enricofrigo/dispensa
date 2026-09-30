@@ -32,6 +32,26 @@ public class GDriveSharingProvider implements SharingProvider {
     }
 
     @Override
+    public int getIconResId() {
+        return R.drawable.ic_provider_gdrive;
+    }
+
+    @Override
+    public android.content.Intent getConfigIntent(Context context) {
+        return new android.content.Intent(context, eu.frigo.dispensa.activity.SyncGDriveConfigActivity.class);
+    }
+
+    @Override
+    public String getSummary(Context context) {
+        GDriveAuthManager authManager = new GDriveAuthManager(context);
+        if (authManager.isSignedIn()) {
+            String email = authManager.getAccountEmail();
+            return email != null ? email : context.getString(R.string.sync_status_connected, "");
+        }
+        return context.getString(R.string.sync_gdrive_not_connected);
+    }
+
+    @Override
     public SharedFolderStore createStore(Context context, Dispensa dispensa) {
         GDriveAuthManager authManager = new GDriveAuthManager(context);
         GDriveClient client = new GDriveClient(authManager);

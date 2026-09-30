@@ -79,6 +79,16 @@
             android:parentActivityName=".activity.SettingsActivity" />
 
         <activity
+            android:name=".activity.SyncLocalSafConfigActivity"
+            android:label="@string/sync_local_saf_config_title"
+            android:parentActivityName=".activity.SettingsActivity" />
+
+        <activity
+            android:name=".activity.SharedDispenseActivity"
+            android:label="@string/title_shared_dispense"
+            android:parentActivityName=".activity.DispensaManagerActivity" />
+
+        <activity
             android:name=".activity.SyncOnboardingActivity"
             android:label="@string/sync_setup_title"
             android:exported="true">

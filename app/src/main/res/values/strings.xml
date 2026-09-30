@@ -310,4 +310,35 @@
     <string name="cannot_delete_default_dispensa">Cannot delete default pantry</string>
     <string name="dispensa_name">Pantry name</string>
     <string name="pantry_owner_format">Owner: %s</string>
+
+    <!-- Shared Pantries & Provider Config -->
+    <string name="title_shared_dispense">Shared Pantries</string>
+    <string name="subtitle_shared_dispense">Manage pantries synced with various providers</string>
+    <string name="no_shared_dispense">No shared pantries</string>
+    <string name="no_shared_dispense_desc">You have not shared or connected any pantry yet.</string>
+    <string name="sync_local_saf_config_title">Local Folder (SAF) Configuration</string>
+    <string name="sync_local_saf_desc">Choose a directory on your device, SD card, or network folder to store and synchronize your pantries.</string>
+    <string name="sync_local_saf_select_folder">Select Folder</string>
+    <string name="sync_local_saf_selected_folder">Selected folder: %s</string>
+    <string name="sync_local_saf_no_folder">No folder selected</string>
+    <string name="sync_local_saf_test_permissions">Test Permissions</string>
+    <string name="sync_local_saf_clear_folder">Clear Folder</string>
+    <string name="sync_local_saf_permission_ok">Read and write permissions verified successfully</string>
+    <string name="sync_local_saf_permission_err">Permission error: %s</string>
+    <string name="action_configure_provider">Configure Providers</string>
+    <string name="action_stop_sharing">Stop Sharing</string>
+    <string name="stop_sharing_confirm_title">Stop Sharing?</string>
+    <string name="stop_sharing_confirm_message">Are you sure you want to stop syncing \'%1$s\' with %2$s?</string>
+    <string name="shared_with_provider_format">Shared with %s</string>
+    <string name="provider_not_configured_prompt">The provider \'%s\' is not configured yet. Would you like to configure it now?</string>
+    <string name="pref_shared_pantries_title">Shared Pantries</string>
+    <string name="pref_shared_pantries_summary">Manage synced pantries</string>
+    <string name="pref_providers_title">Sync Providers</string>
+    <string name="pref_providers_summary">Configure providers</string>
+    <string name="action_change_provider">Change Provider</string>
+    <string name="show_pairing_qr">Show Pairing Code / QR</string>
+    <string name="pantry_status_owner">Owner: You</string>
+    <string name="pantry_status_guest">Shared by: %s</string>
+    <string name="action_select_provider">Select Provider</string>
+    <string name="not_configured_badge">(Not configured)</string>
 </resources>

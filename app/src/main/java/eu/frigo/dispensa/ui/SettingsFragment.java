@@ -71,22 +71,27 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
         boolean syncEnabled = prefs.getBoolean(SyncManager.KEY_SYNC_ENABLED, false);
         updateSyncPreferencesVisibility(syncEnabled);
 
+        Preference sharedPantriesPref = findPreference("pref_shared_pantries");
+        if (sharedPantriesPref != null) {
+            sharedPantriesPref.setOnPreferenceClickListener(preference -> {
+                startActivity(new Intent(requireContext(), eu.frigo.dispensa.activity.SharedDispenseActivity.class));
+                return true;
+            });
+        }
+
         Preference syncConfigPref = findPreference(KEY_SYNC_CONFIG);
         if (syncConfigPref != null) {
             syncConfigPref.setOnPreferenceClickListener(preference -> {
-                String provider = prefs.getString("pref_sync_provider", "webdav");
-                if ("gdrive".equals(provider)) {
-                    try {
-                        Class<?> gdriveActivity = Class.forName("eu.frigo.dispensa.activity.SyncGDriveConfigActivity");
-                        startActivity(new Intent(requireContext(), gdriveActivity));
-                    } catch (ClassNotFoundException e) {
-                        Intent intent = new Intent(requireContext(), SyncWebDavConfigActivity.class);
-                        startActivity(intent);
-                    }
-                } else {
-                    Intent intent = new Intent(requireContext(), SyncWebDavConfigActivity.class);
-                    startActivity(intent);
-                }
+                showProviderConfigurationChooser();
+                return true;
+            });
+        }
+
+        Preference syncNowPref = findPreference("pref_sync_now");
+        if (syncNowPref != null) {
+            syncNowPref.setOnPreferenceClickListener(preference -> {
+                eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl.getInstance(requireContext()).triggerManualSync();
+                android.widget.Toast.makeText(requireContext(), R.string.sync_preparing_server, android.widget.Toast.LENGTH_SHORT).show();
                 return true;
             });
         }
@@ -289,15 +294,42 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
     }
 
     private void updateSyncPreferencesVisibility(boolean enabled) {
-        Preference providerPref = findPreference("pref_sync_provider");
+        Preference sharedPantriesPref = findPreference("pref_shared_pantries");
         Preference configPref = findPreference(KEY_SYNC_CONFIG);
+        Preference syncNowPref = findPreference("pref_sync_now");
         Preference statusPref = findPreference(KEY_SYNC_STATUS);
         Preference separator = findPreference("separator_sync");
 
-        if (providerPref != null) providerPref.setVisible(enabled);
+        if (sharedPantriesPref != null) sharedPantriesPref.setVisible(enabled);
         if (configPref != null) configPref.setVisible(enabled);
+        if (syncNowPref != null) syncNowPref.setVisible(enabled);
         if (statusPref != null) statusPref.setVisible(enabled);
         if (separator != null) separator.setVisible(enabled);
+    }
+
+    private void showProviderConfigurationChooser() {
+        java.util.List<eu.frigo.dispensa.sync.sharing.SharingProvider> providers =
+                eu.frigo.dispensa.sync.sharing.PantrySharingService.getInstance().getAllProviders();
+        if (providers.isEmpty()) return;
+
+        String[] items = new String[providers.size()];
+        for (int i = 0; i < providers.size(); i++) {
+            eu.frigo.dispensa.sync.sharing.SharingProvider p = providers.get(i);
+            String status = p.isConfigured(requireContext()) ? "" : " " + getString(R.string.not_configured_badge);
+            items[i] = p.getDisplayName(requireContext()) + status;
+        }
+
+        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle(R.string.pref_providers_title)
+                .setItems(items, (dialog, which) -> {
+                    eu.frigo.dispensa.sync.sharing.SharingProvider selected = providers.get(which);
+                    Intent intent = selected.getConfigIntent(requireContext());
+                    if (intent != null) {
+                        startActivity(intent);
+                    }
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
     }
 
     private void updateThemePreferenceSummary(ListPreference themePreference, String themeValue) {

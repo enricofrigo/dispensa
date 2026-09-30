@@ -301,4 +301,35 @@
     <string name="pantry_owner_format">Besitzer: %s</string>
     <string name="sync_pairing_expired">Der QR-Code ist abgelaufen (Gültigkeitsdauer: 10 Minuten). Bitte generieren Sie einen neuen.</string>
     <string name="sync_owner_delete_warning">Sie löschen den Besitzer dieser Freigabe. Dadurch wird der gesamte Remote-Synchronisierungsordner ENDGÜLTIG gelöscht und die Verbindung zu allen anderen Geräten getrennt. Möchten Sie fortfahren?</string>
+
+    <!-- Shared Pantries & Provider Config -->
+    <string name="title_shared_dispense">Geteilte Vorratskammern</string>
+    <string name="subtitle_shared_dispense">Über verschiedene Anbieter synchronisierte Vorratskammern verwalten</string>
+    <string name="no_shared_dispense">Keine geteilten Vorratskammern</string>
+    <string name="no_shared_dispense_desc">Sie haben noch keine Vorratskammer geteilt oder sind einer beigetreten.</string>
+    <string name="sync_local_saf_config_title">Lokaler Ordner (SAF) Konfiguration</string>
+    <string name="sync_local_saf_desc">Wählen Sie einen Ordner auf Ihrem Gerät, einer SD-Karte oder einem Netzwerkpfad, um Ihre Vorratskammern zu speichern und zu synchronisieren.</string>
+    <string name="sync_local_saf_select_folder">Ordner auswählen</string>
+    <string name="sync_local_saf_selected_folder">Ausgewählter Ordner: %s</string>
+    <string name="sync_local_saf_no_folder">Kein Ordner ausgewählt</string>
+    <string name="sync_local_saf_test_permissions">Berechtigungen testen</string>
+    <string name="sync_local_saf_clear_folder">Ordner entfernen</string>
+    <string name="sync_local_saf_permission_ok">Lese- und Schreibberechtigungen erfolgreich überprüft</string>
+    <string name="sync_local_saf_permission_err">Berechtigungsfehler: %s</string>
+    <string name="action_configure_provider">Anbieter konfigurieren</string>
+    <string name="action_stop_sharing">Freigabe beenden</string>
+    <string name="stop_sharing_confirm_title">Freigabe beenden?</string>
+    <string name="stop_sharing_confirm_message">Möchten Sie die Synchronisierung von \'%1$s\' mit %2$s wirklich beenden?</string>
+    <string name="shared_with_provider_format">Geteilt mit %s</string>
+    <string name="provider_not_configured_prompt">Der Anbieter \'%s\' ist noch nicht konfiguriert. Möchten Sie ihn jetzt konfigurieren?</string>
+    <string name="pref_shared_pantries_title">Geteilte Vorratskammern</string>
+    <string name="pref_shared_pantries_summary">Über verschiedene Anbieter synchronisierte Vorratskammern anzeigen und verwalten</string>
+    <string name="pref_providers_title">Synchronisierungsanbieter</string>
+    <string name="pref_providers_summary">Anbieter konfigurieren</string>
+    <string name="action_change_provider">Anbieter wechseln</string>
+    <string name="show_pairing_qr">Kopplungscode / QR anzeigen</string>
+    <string name="pantry_status_owner">Besitzer: Du</string>
+    <string name="pantry_status_guest">Geteilt von: %s</string>
+    <string name="action_select_provider">Anbieter auswählen</string>
+    <string name="not_configured_badge">(Nicht konfiguriert)</string>
 </resources>

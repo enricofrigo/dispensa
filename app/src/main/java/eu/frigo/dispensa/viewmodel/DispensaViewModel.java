@@ -71,6 +71,18 @@ public class DispensaViewModel extends AndroidViewModel {
         repository.insertJoinedPantryConfig(config);
     }
 
+    public LiveData<List<JoinedPantryConfig>> getAllJoinedPantryConfigs() {
+        return repository.getAllJoinedPantryConfigs();
+    }
+
+    public LiveData<JoinedPantryConfig> getJoinedPantryConfig(int dispensaId) {
+        return repository.getJoinedPantryConfig(dispensaId);
+    }
+
+    public void deleteJoinedPantryConfig(int dispensaId) {
+        repository.deleteJoinedPantryConfigByDispensaId(dispensaId);
+    }
+
     public io.reactivex.rxjava3.core.Single<Boolean> isPantryJoined(int dispensaId) {
         return io.reactivex.rxjava3.core.Single.fromCallable(() -> 
                 repository.getJoinedPantryConfigSync(dispensaId) != null);

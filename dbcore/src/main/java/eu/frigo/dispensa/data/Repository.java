@@ -203,6 +203,22 @@ public class Repository {
         return joinedPantryConfigDao.getConfigByDispensaId(dispensaId);
     }
 
+    public LiveData<List<JoinedPantryConfig>> getAllJoinedPantryConfigs() {
+        return joinedPantryConfigDao.getAllConfigsLive();
+    }
+
+    public LiveData<JoinedPantryConfig> getJoinedPantryConfig(int dispensaId) {
+        return joinedPantryConfigDao.getConfigByDispensaIdLive(dispensaId);
+    }
+
+    public void deleteJoinedPantryConfig(JoinedPantryConfig config) {
+        AppDatabase.databaseWriteExecutor.execute(() -> joinedPantryConfigDao.delete(config));
+    }
+
+    public void deleteJoinedPantryConfigByDispensaId(int dispensaId) {
+        AppDatabase.databaseWriteExecutor.execute(() -> joinedPantryConfigDao.deleteByDispensaId(dispensaId));
+    }
+
     public void cleanOrphanData() {
         AppDatabase.databaseWriteExecutor.execute(() -> {
             Log.d("Repository", "Avvio pulizia dati orfani...");

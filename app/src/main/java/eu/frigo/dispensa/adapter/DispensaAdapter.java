@@ -12,14 +12,18 @@ import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.List;
+
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.data.dispensa.Dispensa;
+import eu.frigo.dispensa.data.sync.JoinedPantryConfig;
 import eu.frigo.dispensa.sync.core.engine.InstallationIdProvider;
 
 public class DispensaAdapter extends ListAdapter<Dispensa, DispensaAdapter.DispensaViewHolder> {
 
     private final OnDispensaClickListener listener;
     private int currentDispensaId = -1;
+    private final java.util.Map<Integer, JoinedPantryConfig> joinedConfigsMap = new java.util.HashMap<>();
 
     public interface OnDispensaClickListener {
         void onDispensaClick(Dispensa dispensa);
@@ -40,6 +44,16 @@ public class DispensaAdapter extends ListAdapter<Dispensa, DispensaAdapter.Dispe
         notifyDataSetChanged();
     }
 
+    public void setJoinedConfigs(List<JoinedPantryConfig> configs) {
+        joinedConfigsMap.clear();
+        if (configs != null) {
+            for (JoinedPantryConfig c : configs) {
+                joinedConfigsMap.put(c.dispensaId, c);
+            }
+        }
+        notifyDataSetChanged();
+    }
+
     @NonNull
     @Override
     public DispensaViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -50,12 +64,14 @@ public class DispensaAdapter extends ListAdapter<Dispensa, DispensaAdapter.Dispe
     @Override
     public void onBindViewHolder(@NonNull DispensaViewHolder holder, int position) {
         Dispensa dispensa = getItem(position);
-        holder.bind(dispensa, listener, currentDispensaId);
+        JoinedPantryConfig config = joinedConfigsMap.get(dispensa.id);
+        holder.bind(dispensa, config, listener, currentDispensaId);
     }
 
     static class DispensaViewHolder extends RecyclerView.ViewHolder {
         private final TextView textViewName;
         private final TextView textViewOwnerName;
+        private final android.widget.ImageView imageViewProviderIcon;
         private final ImageButton buttonDefault;
         private final ImageButton buttonShare;
         private final ImageButton buttonDevices;
@@ -66,6 +82,7 @@ public class DispensaAdapter extends ListAdapter<Dispensa, DispensaAdapter.Dispe
             super(itemView);
             textViewName = itemView.findViewById(R.id.textViewDispensaName);
             textViewOwnerName = itemView.findViewById(R.id.textViewOwnerName);
+            imageViewProviderIcon = itemView.findViewById(R.id.imageViewProviderIcon);
             buttonDefault = itemView.findViewById(R.id.buttonDefault);
             buttonShare = itemView.findViewById(R.id.buttonShare);
             buttonEdit = itemView.findViewById(R.id.buttonEdit);
@@ -73,7 +90,7 @@ public class DispensaAdapter extends ListAdapter<Dispensa, DispensaAdapter.Dispe
             buttonDevices = itemView.findViewById(R.id.buttonDevices);
         }
 
-        public void bind(Dispensa dispensa, OnDispensaClickListener listener, int currentDispensaId) {
+        public void bind(Dispensa dispensa, JoinedPantryConfig config, OnDispensaClickListener listener, int currentDispensaId) {
             textViewName.setText(dispensa.getName());
             
             String currentDeviceId = InstallationIdProvider.getOrCreateInstallationId(itemView.getContext());
@@ -93,6 +110,20 @@ public class DispensaAdapter extends ListAdapter<Dispensa, DispensaAdapter.Dispe
                 buttonShare.setVisibility(View.VISIBLE);
                 buttonDevices.setVisibility(View.VISIBLE);
                 buttonEdit.setVisibility(View.VISIBLE);
+            }
+
+            // Provider Icon & Badge
+            if (config != null) {
+                eu.frigo.dispensa.sync.sharing.SharingProvider provider = 
+                        eu.frigo.dispensa.sync.sharing.PantrySharingService.getInstance().getProvider(config.providerId);
+                if (provider != null) {
+                    imageViewProviderIcon.setImageResource(provider.getIconResId());
+                } else {
+                    imageViewProviderIcon.setImageResource(R.drawable.ic_provider_webdav);
+                }
+                imageViewProviderIcon.setVisibility(View.VISIBLE);
+            } else {
+                imageViewProviderIcon.setVisibility(View.GONE);
             }
 
             if (dispensa.id == currentDispensaId) {
