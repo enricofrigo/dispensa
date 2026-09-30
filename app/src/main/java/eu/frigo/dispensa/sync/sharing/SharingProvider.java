@@ -37,6 +37,21 @@ public interface SharingProvider {
     String getPantryPath(Context context, Dispensa dispensa);
 
     /**
+     * Resource ID of the icon representing this provider.
+     */
+    int getIconResId();
+
+    /**
+     * Returns an Intent to open the configuration activity for this provider.
+     */
+    android.content.Intent getConfigIntent(Context context);
+
+    /**
+     * Human-readable summary of current configuration (e.g. server URL, path, or 'Not configured').
+     */
+    String getSummary(Context context);
+
+    /**
      * Creates the JoinedPantryConfig record for persisting in local DB.
      */
     JoinedPantryConfig createJoinedConfig(Context context, Dispensa dispensa);

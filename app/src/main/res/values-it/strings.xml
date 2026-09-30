@@ -306,4 +306,35 @@ I prodotti in questo deposito potrebbero dover essere riassegnati.</string>
     <string name="cannot_delete_default_dispensa">Impossibile eliminare la dispensa predefinita</string>
     <string name="dispensa_name">Nome dispensa</string>
     <string name="pantry_owner_format">Proprietario: %s</string>
+
+    <!-- Shared Pantries & Provider Config -->
+    <string name="title_shared_dispense">Dispense Condivise</string>
+    <string name="subtitle_shared_dispense">Gestisci le dispense sincronizzate con i vari provider</string>
+    <string name="no_shared_dispense">Nessuna dispensa condivisa</string>
+    <string name="no_shared_dispense_desc">Non hai ancora condiviso o collegato nessuna dispensa.</string>
+    <string name="sync_local_saf_config_title">Configurazione Cartella Locale (SAF)</string>
+    <string name="sync_local_saf_desc">Scegli una cartella sul tuo dispositivo, scheda SD o percorso di rete sincronizzato per memorizzare e condividere i dati della dispensa.</string>
+    <string name="sync_local_saf_select_folder">Seleziona cartella</string>
+    <string name="sync_local_saf_selected_folder">Cartella selezionata: %s</string>
+    <string name="sync_local_saf_no_folder">Nessuna cartella selezionata</string>
+    <string name="sync_local_saf_test_permissions">Verifica permessi</string>
+    <string name="sync_local_saf_clear_folder">Rimuovi cartella</string>
+    <string name="sync_local_saf_permission_ok">Permessi di lettura e scrittura verificati con successo</string>
+    <string name="sync_local_saf_permission_err">Errore permessi: %s</string>
+    <string name="action_configure_provider">Configura Provider</string>
+    <string name="action_stop_sharing">Interrompi condivisione</string>
+    <string name="stop_sharing_confirm_title">Interrompere la condivisione?</string>
+    <string name="stop_sharing_confirm_message">Sei sicuro di voler interrompere la sincronizzazione di \'%1$s\' con %2$s?</string>
+    <string name="shared_with_provider_format">Condivisa con %s</string>
+    <string name="provider_not_configured_prompt">Il provider \'%s\' non è ancora configurato. Vuoi configurarlo adesso?</string>
+    <string name="pref_shared_pantries_title">Dispense condivise</string>
+    <string name="pref_shared_pantries_summary">Gestisci le dispense sincronizzate</string>
+    <string name="pref_providers_title">Provider di Condivisione</string>
+    <string name="pref_providers_summary">Configura provider</string>
+    <string name="action_change_provider">Cambia Provider</string>
+    <string name="show_pairing_qr">Mostra Codice / QR</string>
+    <string name="pantry_status_owner">Proprietario: Tu</string>
+    <string name="pantry_status_guest">Condivisa da: %s</string>
+    <string name="action_select_provider">Seleziona Provider</string>
+    <string name="not_configured_badge">(Non configurato)</string>
 </resources>

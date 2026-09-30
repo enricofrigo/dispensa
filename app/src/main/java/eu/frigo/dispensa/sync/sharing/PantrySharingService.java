@@ -55,6 +55,10 @@ public class PantrySharingService {
         return providers.get(providerId);
     }
 
+    public List<SharingProvider> getAllProviders() {
+        return new ArrayList<>(providers.values());
+    }
+
     public List<SharingProvider> getAvailableProviders(Context context) {
         List<SharingProvider> available = new ArrayList<>();
         for (SharingProvider p : providers.values()) {
@@ -170,6 +174,22 @@ public class PantrySharingService {
                     .putString(SyncManager.SYNC_WEBDAV_SYNCED_IDS, TextUtils.join(",", syncedIds))
                     .apply();
             Log.i(TAG, "Remote pantry deleted for: " + dispensa.getName());
+        });
+    }
+
+    public Completable unsharePantryLocally(Context context, Dispensa dispensa) {
+        return Completable.fromAction(() -> {
+            AppDatabase db = AppDatabase.getDatabase(context);
+            db.joinedPantryConfigDao().deleteByDispensaId(dispensa.id);
+
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+            String syncedIdsStr = prefs.getString(SyncManager.SYNC_WEBDAV_SYNCED_IDS, "");
+            List<String> syncedIds = new ArrayList<>(Arrays.asList(syncedIdsStr.split(",")));
+            syncedIds.remove(String.valueOf(dispensa.id));
+            prefs.edit()
+                    .putString(SyncManager.SYNC_WEBDAV_SYNCED_IDS, TextUtils.join(",", syncedIds))
+                    .apply();
+            Log.i(TAG, "Pantry '" + dispensa.getName() + "' local sharing config removed.");
         });
     }
 }

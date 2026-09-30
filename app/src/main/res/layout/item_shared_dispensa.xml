@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="4dp"
+    android:layout_marginVertical="6dp"
+    app:cardElevation="2dp"
+    app:cardCornerRadius="12dp"
+    app:strokeWidth="1dp"
+    app:strokeColor="?attr/colorOutline">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Top Header: Pantry Name and Provider Badge -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tv_shared_pantry_name"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                tools:text="Dispensa Principale" />
+
+            <!-- Provider Badge Chip -->
+            <LinearLayout
+                android:id="@+id/badge_provider"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="8dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="10dp"
+                android:paddingBottom="4dp"
+                android:background="@drawable/list_item_border_default">
+
+                <ImageView
+                    android:id="@+id/iv_shared_provider_icon"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@drawable/ic_provider_webdav"
+                    app:tint="?attr/colorPrimary"
+                    android:contentDescription="@string/pref_sync_provider_title" />
+
+                <TextView
+                    android:id="@+id/tv_shared_provider_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:textColor="?attr/colorPrimary"
+                    tools:text="WebDAV" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Subtitle: Remote Path or URL -->
+        <TextView
+            android:id="@+id/tv_shared_pantry_details"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:textSize="13sp"
+            android:textColor="@android:color/darker_gray"
+            android:ellipsize="middle"
+            android:singleLine="true"
+            tools:text="https://dav.example.com/dispensa-sync/pantry-123" />
+
+        <!-- Owner info -->
+        <TextView
+            android:id="@+id/tv_shared_pantry_owner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textSize="13sp"
+            android:textColor="@android:color/darker_gray"
+            tools:text="Proprietario: Tu" />
+
+        <!-- Action Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="end|center_vertical"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/btn_shared_devices"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_devices_24"
+                android:contentDescription="@string/action_manage_devices"
+                app:tint="?attr/colorControlNormal" />
+
+            <ImageButton
+                android:id="@+id/btn_shared_qr"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_share_24"
+                android:contentDescription="@string/show_pairing_qr"
+                app:tint="?attr/colorControlNormal" />
+
+            <ImageButton
+                android:id="@+id/btn_shared_unshare"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_delete_24"
+                android:contentDescription="@string/action_stop_sharing"
+                app:tint="?attr/colorError" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

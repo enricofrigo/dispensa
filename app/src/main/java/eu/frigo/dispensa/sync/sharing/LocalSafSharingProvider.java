@@ -34,6 +34,32 @@ public class LocalSafSharingProvider implements SharingProvider {
     }
 
     @Override
+    public int getIconResId() {
+        return R.drawable.ic_provider_local_saf;
+    }
+
+    @Override
+    public android.content.Intent getConfigIntent(Context context) {
+        return new android.content.Intent(context, eu.frigo.dispensa.activity.SyncLocalSafConfigActivity.class);
+    }
+
+    @Override
+    public String getSummary(Context context) {
+        if (!isConfigured(context)) {
+            return context.getString(R.string.sync_not_configured);
+        }
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        String uriStr = prefs.getString(LocalSafSyncProviderLoader.PREF_KEY_SAF_URI, "");
+        try {
+            Uri uri = Uri.parse(uriStr);
+            String path = uri.getPath();
+            return path != null ? path : uriStr;
+        } catch (Exception e) {
+            return uriStr;
+        }
+    }
+
+    @Override
     public SharedFolderStore createStore(Context context, Dispensa dispensa) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         String uriStr = prefs.getString(LocalSafSyncProviderLoader.PREF_KEY_SAF_URI, null);

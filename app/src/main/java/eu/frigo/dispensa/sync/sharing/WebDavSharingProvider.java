@@ -38,6 +38,26 @@ public class WebDavSharingProvider implements SharingProvider {
     }
 
     @Override
+    public int getIconResId() {
+        return R.drawable.ic_provider_webdav;
+    }
+
+    @Override
+    public android.content.Intent getConfigIntent(Context context) {
+        return new android.content.Intent(context, eu.frigo.dispensa.activity.SyncWebDavConfigActivity.class);
+    }
+
+    @Override
+    public String getSummary(Context context) {
+        if (!isConfigured(context)) {
+            return context.getString(R.string.sync_not_configured);
+        }
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        String url = prefs.getString(SyncManager.KEY_WEBDAV_URL, "");
+        return url;
+    }
+
+    @Override
     public SharedFolderStore createStore(Context context, Dispensa dispensa) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         String url = prefs.getString(SyncManager.KEY_WEBDAV_URL, "");

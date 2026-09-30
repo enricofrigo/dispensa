@@ -3,6 +3,8 @@ package eu.frigo.dispensa.sync.sharing;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import android.content.Intent;
+
 import androidx.preference.PreferenceManager;
 import androidx.room.Room;
 import androidx.test.core.app.ApplicationProvider;
@@ -117,7 +119,10 @@ public class PantrySharingServiceTest {
         SharingProvider mockProvider = new SharingProvider() {
             @Override public String getProviderId() { return "custom_provider"; }
             @Override public String getDisplayName(Context context) { return "Mock Provider"; }
+            @Override public int getIconResId() { return 0; }
             @Override public boolean isConfigured(Context context) { return true; }
+            @Override public Intent getConfigIntent(Context context) { return null; }
+            @Override public String getSummary(Context context) { return "Mock Summary"; }
             @Override public SharedFolderStore createStore(Context context, Dispensa dispensa) { return memoryStore; }
             @Override public String getPantryPath(Context context, Dispensa dispensa) {
                 return SyncManager.getSyncPath(dispensa.remoteId);
@@ -150,7 +155,10 @@ public class PantrySharingServiceTest {
         Assert.assertTrue(storage.containsKey(pantryPath + SyncManager.DEFAULT_DEVICES_FOLDER + deviceId + ".json"));
 
         // 3. Verify JoinedPantryConfig saved
-        JoinedPantryConfig config = database.joinedPantryConfigDao().getConfigByDispensaId((int) dispId);
+        JoinedPantryConfig config = database.joinedPantryConfigDao().getConfigByJoinedId((int) dispId);
+        if (config == null) {
+            config = database.joinedPantryConfigDao().getConfigByDispensaId((int) dispId);
+        }
         Assert.assertNotNull(config);
         Assert.assertEquals("custom_provider", config.providerId);
         Assert.assertEquals("{\"token\":\"abc\"}", config.configPayload);
@@ -176,7 +184,10 @@ public class PantrySharingServiceTest {
         SharingProvider mockProvider = new SharingProvider() {
             @Override public String getProviderId() { return "custom_provider"; }
             @Override public String getDisplayName(Context context) { return "Mock Provider"; }
+            @Override public int getIconResId() { return 0; }
             @Override public boolean isConfigured(Context context) { return true; }
+            @Override public Intent getConfigIntent(Context context) { return null; }
+            @Override public String getSummary(Context context) { return "Mock Summary"; }
             @Override public SharedFolderStore createStore(Context context, Dispensa dispensa) { return memoryStore; }
             @Override public String getPantryPath(Context context, Dispensa dispensa) {
                 return SyncManager.getSyncPath(dispensa.remoteId);
