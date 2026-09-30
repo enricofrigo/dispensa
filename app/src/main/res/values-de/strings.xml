@@ -251,6 +251,12 @@
     <string name="share_button">Teilen</string>
     <string name="provider_webdav">WebDAV</string>
     <string name="provider_local_saf">Lokaler freigegebener Ordner (SAF)</string>
+    <string name="provider_gdrive">Google Drive</string>
+    <string name="sync_gdrive_config_title">Google Drive Konfiguration</string>
+    <string name="sync_gdrive_sign_in">Mit Google anmelden</string>
+    <string name="sync_gdrive_sign_out">Von Google Drive abmelden</string>
+    <string name="sync_gdrive_connected_as">Verbunden als: %s</string>
+    <string name="sync_gdrive_not_connected">Nicht mit Google Drive verbunden</string>
     <string name="sync_configure_first">Konfigurieren Sie zuerst die Synchronisierung in den Einstellungen</string>
     <string name="preparing_sync_server">Remote-Synchronisierung wird vorbereitet…</string>
     <string name="sync_setup_error">Fehler beim Einrichten der Freigabe: %s</string>

@@ -58,16 +58,8 @@ public class SyncCoordinatorImpl implements SyncCoordinator {
 
     public void applyOnboarding(PairingPayload payload) {
         String providerId = payload.providerId != null ? payload.providerId : payload.data.get("providerId");
-        Log.d("SyncFlow", "Applicazione onboarding per provider: " + providerId);
-        
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         SharedPreferences.Editor editor = prefs.edit();
-
-        if (!"webdav".equals(providerId)) {
-            Log.e("SyncFlow", "Provider non supportato per onboarding: " + providerId);
-            return;
-        }
-
         editor.putBoolean(SyncManager.KEY_SYNC_ENABLED, true);
         editor.apply();
 

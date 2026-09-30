@@ -81,6 +81,7 @@ dependencies {
     implementation(project(":sync-core"))
     implementation(project(":sync-webdav"))
     implementation(project(":sync-local"))
+    "playImplementation"(project(":sync-gdrive"))
     implementation(libs.cardview)
     implementation(libs.media3.common)
     implementation(libs.swiperefreshlayout)
@@ -111,5 +112,5 @@ dependencies {
     "fdroidImplementation"(libs.zxing.android.embedded)
     "playImplementation"(libs.play.services.mlkit.barcode.scanning)
     "playImplementation"(libs.text.recognition)
-
+    "playImplementation"(libs.play.services.auth)
 }

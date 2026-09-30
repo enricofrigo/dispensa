@@ -258,6 +258,12 @@
     <string name="share_button">Share</string>
     <string name="provider_webdav">WebDAV</string>
     <string name="provider_local_saf">Local Shared Folder (SAF)</string>
+    <string name="provider_gdrive">Google Drive</string>
+    <string name="sync_gdrive_config_title">Google Drive Configuration</string>
+    <string name="sync_gdrive_sign_in">Sign in with Google</string>
+    <string name="sync_gdrive_sign_out">Sign out from Google Drive</string>
+    <string name="sync_gdrive_connected_as">Connected as: %s</string>
+    <string name="sync_gdrive_not_connected">Not connected to Google Drive</string>
     <string name="sync_configure_first">Configure sync in settings first</string>
     <string name="preparing_sync_server">Preparing remote sync…</string>
     <string name="sync_setup_error">Sharing setup failed: %s</string>

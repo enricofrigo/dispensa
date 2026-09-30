@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <activity
+            android:name=".activity.SyncGDriveConfigActivity"
+            android:exported="false"
+            android:label="@string/sync_gdrive_config_title" />
+    </application>
+</manifest>

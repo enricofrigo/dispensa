@@ -255,6 +255,12 @@ I prodotti in questo deposito potrebbero dover essere riassegnati.</string>
     <string name="share_button">Condividi</string>
     <string name="provider_webdav">WebDAV</string>
     <string name="provider_local_saf">Cartella Condivisa Locale (SAF)</string>
+    <string name="provider_gdrive">Google Drive</string>
+    <string name="sync_gdrive_config_title">Configurazione Google Drive</string>
+    <string name="sync_gdrive_sign_in">Accedi con Google</string>
+    <string name="sync_gdrive_sign_out">Disconnetti Google Drive</string>
+    <string name="sync_gdrive_connected_as">Connesso come: %s</string>
+    <string name="sync_gdrive_not_connected">Non connesso a Google Drive</string>
     <string name="sync_configure_first">Configura prima la sincronizzazione nelle impostazioni</string>
     <string name="preparing_sync_server">Preparazione sincronizzazione remota…</string>
     <string name="sync_setup_error">Errore configurazione condivisione: %s</string>

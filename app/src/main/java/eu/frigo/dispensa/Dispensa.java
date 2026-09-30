@@ -24,9 +24,8 @@ public class Dispensa extends Application {
         createNotificationChannel();
         ExpiryCheckWorkerScheduler.scheduleWorker(this);
 
-        // Initialize Sync
-        SyncManager.getInstance().registerLoader(new WebDavSyncProviderLoader());
-        SyncManager.getInstance().registerLoader(new LocalSafSyncProviderLoader());
+        // Initialize Sync providers and loaders via flavor initializer
+        eu.frigo.dispensa.sync.SyncFlavorInitializer.initialize(this);
         SyncCoordinatorImpl coordinator = SyncCoordinatorImpl.getInstance(this);
         ProcessLifecycleOwner.get().getLifecycle().addObserver(
                 new AppLifecycleObserver(coordinator)

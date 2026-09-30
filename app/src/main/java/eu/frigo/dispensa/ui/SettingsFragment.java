@@ -74,8 +74,19 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
         Preference syncConfigPref = findPreference(KEY_SYNC_CONFIG);
         if (syncConfigPref != null) {
             syncConfigPref.setOnPreferenceClickListener(preference -> {
-                Intent intent = new Intent(requireContext(), SyncWebDavConfigActivity.class);
-                startActivity(intent);
+                String provider = prefs.getString("pref_sync_provider", "webdav");
+                if ("gdrive".equals(provider)) {
+                    try {
+                        Class<?> gdriveActivity = Class.forName("eu.frigo.dispensa.activity.SyncGDriveConfigActivity");
+                        startActivity(new Intent(requireContext(), gdriveActivity));
+                    } catch (ClassNotFoundException e) {
+                        Intent intent = new Intent(requireContext(), SyncWebDavConfigActivity.class);
+                        startActivity(intent);
+                    }
+                } else {
+                    Intent intent = new Intent(requireContext(), SyncWebDavConfigActivity.class);
+                    startActivity(intent);
+                }
                 return true;
             });
         }

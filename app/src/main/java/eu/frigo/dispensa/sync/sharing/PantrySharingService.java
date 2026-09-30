@@ -34,8 +34,6 @@ public class PantrySharingService {
     private final Map<String, SharingProvider> providers = new LinkedHashMap<>();
 
     public PantrySharingService() {
-        registerProvider(new WebDavSharingProvider());
-        registerProvider(new LocalSafSharingProvider());
     }
 
     public static synchronized PantrySharingService getInstance() {
