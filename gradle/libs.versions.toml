@@ -60,7 +60,10 @@ zxingCore = "3.5.3"
 documentfile = "1.0.1"
 robolectric = "4.14.1"
 
+playServicesAuth = "21.3.0"
+
 [libraries]
+play-services-auth = { group = "com.google.android.gms", name = "play-services-auth", version.ref = "playServicesAuth" }
 androidx-documentfile = { group = "androidx.documentfile", name = "documentfile", version.ref = "documentfile" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 mockwebserver = { module = "com.squareup.okhttp3:mockwebserver", version.ref = "okhttp" }

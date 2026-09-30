@@ -37,6 +37,7 @@ import com.google.mlkit.vision.common.InputImage;
 import java.util.Objects;
 
 import eu.frigo.dispensa.R;
+import eu.frigo.dispensa.data.AppDatabase;
 import eu.frigo.dispensa.data.dispensa.Dispensa;
 import eu.frigo.dispensa.data.sync.JoinedPantryConfig;
 import eu.frigo.dispensa.sync.core.engine.SyncManager;
@@ -235,12 +236,19 @@ public class SyncOnboardingActivity extends AppCompatActivity {
                                 }
                                 return registerDevice(payload).map(success -> payload);
                             });
+                } else if ("gdrive".equals(providerId)) {
+                    eu.frigo.dispensa.sync.gdrive.auth.GDriveAuthManager authManager = new eu.frigo.dispensa.sync.gdrive.auth.GDriveAuthManager(this);
+                    if (!authManager.isSignedIn()) {
+                        return Single.error(new IllegalStateException("Devi prima connettere Google Drive nelle impostazioni."));
+                    }
+                    return Single.just(payload);
                 }
                 return Single.just(payload);
             })
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .flatMap(payload -> Single.fromCallable(() -> {
+                String providerId = payload.providerId != null ? payload.providerId : payload.data.get("providerId");
                 String ownerId = payload.data.get("ownerDeviceId");
                 String pantryName = payload.data.get("pantryName");
                 String ownerName = payload.deviceName;
@@ -254,15 +262,21 @@ public class SyncOnboardingActivity extends AppCompatActivity {
                 long id = eu.frigo.dispensa.data.Repository.getInstance(getApplication()).insertDispensaSync(newDispensa, true);
                 
                 // Save secure config to DB
-                JoinedPantryConfig config = new JoinedPantryConfig(
-                        (int) id,
-                        payload.data.get("url"),
-                        payload.data.get("user"),
-                        payload.data.get("pass"),
-                        payload.data.get("path"),
-                        Boolean.parseBoolean(payload.data.get("isShared")),
-                        payload.data.get("pantryKey")
-                );
+                JoinedPantryConfig config;
+                if ("gdrive".equals(providerId)) {
+                    config = new JoinedPantryConfig((int) id, "gdrive", null, remoteId);
+                    config.url = payload.data.get("folderId");
+                } else {
+                    config = new JoinedPantryConfig(
+                            (int) id,
+                            payload.data.get("url"),
+                            payload.data.get("user"),
+                            payload.data.get("pass"),
+                            payload.data.get("path"),
+                            Boolean.parseBoolean(payload.data.get("isShared")),
+                            payload.data.get("pantryKey")
+                    );
+                }
                 eu.frigo.dispensa.data.Repository.getInstance(getApplication()).insertJoinedPantryConfig(config);
 
                 // Aggiorna le preferenze per includere la nuova dispensa nel sync
@@ -294,7 +308,7 @@ public class SyncOnboardingActivity extends AppCompatActivity {
                 } else if (VERSION_MISMATCH.equals(throwable.getMessage())) {
                     Toast.makeText(this, "Incompatibilità Versione: La dispensa remota non è compatibile con questa app.", Toast.LENGTH_LONG).show();
                 } else {
-                    Toast.makeText(this, R.string.sync_pairing_error, Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, throwable.getMessage() != null ? throwable.getMessage() : getString(R.string.sync_pairing_error), Toast.LENGTH_LONG).show();
                 }
                 // Riavvia lo scanner se è fallito ma non scaduto
                 if (!PAIRING_EXPIRED.equals(throwable.getMessage())) {
@@ -324,20 +338,6 @@ public class SyncOnboardingActivity extends AppCompatActivity {
         qrView.setVisibility(View.VISIBLE);
         if (shareBtn != null) shareBtn.setVisibility(View.VISIBLE);
 
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        String url = prefs.getString(SyncManager.KEY_WEBDAV_URL, "");
-        String user = prefs.getString(SyncManager.KEY_WEBDAV_USER, "");
-        String pass = prefs.getString(SyncManager.KEY_WEBDAV_PASS, "");
-        String path = prefs.getString(SyncManager.KEY_WEBDAV_PATH, SyncManager.DEFAULT_PATH);
-        String pantryKey = prefs.getString(SyncManager.SYNC_WEBDAV_PANTRY_KEY, "");
-        boolean isShared = prefs.getBoolean(SyncManager.KEY_WEBDAV_MODE_SHARED, false);
-
-        if (url.isEmpty() || (user.isEmpty() && !isShared)) {
-            Toast.makeText(this, "Configura prima il sync nelle impostazioni", Toast.LENGTH_LONG).show();
-            finish();
-            return;
-        }
-
         // Recupera la dispensa passata come extra
         Dispensa targetDispensa = (Dispensa) getIntent().getSerializableExtra(ManageDevicesActivity.PANTRY_ID);
         
@@ -350,10 +350,37 @@ public class SyncOnboardingActivity extends AppCompatActivity {
 
         dispSingle.subscribeOn(Schedulers.io())
                 .flatMap(disp -> Single.fromCallable(() -> {
+                    AppDatabase db = AppDatabase.getDatabase(this);
+                    JoinedPantryConfig config = db.joinedPantryConfigDao().getConfigByDispensaId(disp.id);
                     String deviceId = eu.frigo.dispensa.sync.core.engine.InstallationIdProvider.getOrCreateInstallationId(this);
-                    WebDavConfig config = new WebDavConfig(url, user, pass, path, pantryKey, disp.getName(), deviceId, disp.remoteId, isShared);
                     String deviceName = android.os.Build.MODEL;
-                    PairingPayload payload = WebDavPairingHandler.createPayload(deviceName, config);
+
+                    PairingPayload payload;
+                    if (config != null && "gdrive".equals(config.providerId)) {
+                        java.util.Map<String, String> data = new java.util.HashMap<>();
+                        data.put("providerId", "gdrive");
+                        data.put("ownerDeviceId", deviceId);
+                        data.put("pantryName", disp.getName());
+                        data.put("remoteId", disp.remoteId);
+                        data.put("folderId", config.url != null ? config.url : "root");
+                        payload = new PairingPayload("gdrive", deviceName, data);
+                        payload.version = 2;
+                    } else {
+                        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+                        String url = prefs.getString(SyncManager.KEY_WEBDAV_URL, "");
+                        String user = prefs.getString(SyncManager.KEY_WEBDAV_USER, "");
+                        String pass = prefs.getString(SyncManager.KEY_WEBDAV_PASS, "");
+                        String path = prefs.getString(SyncManager.KEY_WEBDAV_PATH, SyncManager.DEFAULT_PATH);
+                        String pantryKey = prefs.getString(SyncManager.SYNC_WEBDAV_PANTRY_KEY, "");
+                        boolean isShared = prefs.getBoolean(SyncManager.KEY_WEBDAV_MODE_SHARED, false);
+
+                        if (url.isEmpty() || (user.isEmpty() && !isShared)) {
+                            throw new IllegalStateException("Configura prima il sync nelle impostazioni");
+                        }
+                        WebDavConfig webDavConfig = new WebDavConfig(url, user, pass, path, pantryKey, disp.getName(), deviceId, disp.remoteId, isShared);
+                        payload = WebDavPairingHandler.createPayload(deviceName, webDavConfig);
+                    }
+
                     PairingPayloadCodecImpl codec = new PairingPayloadCodecImpl(null);
                     String wireData = codec.encode(payload);
                     String deepLink = "https://enricofrigo.github.io/dispensa/syncjoin?data=" + android.net.Uri.encode(wireData);
