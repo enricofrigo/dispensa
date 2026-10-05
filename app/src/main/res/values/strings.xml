@@ -26,11 +26,9 @@
     <string name="edit_product">Edit product</string>
     <string name="update_product">Update product</string>
     <string name="barcode_hint">Barcode</string>
-    <string name="barcode_mandatory">Barcode is mandatory</string>
     <string name="scan_barcode_description">Barcode scan</string>
     <string name="scan_barcode_error">Barcode scan failed or cancelled</string>
     <string name="no_barcode_in_image">Barcode not find.</string>
-    <string name="err_scan_from_image">Barcode scan failed.</string>
     <string name="err_load_image">Error loading image.</string>
     <string name="quantity_hint">Quantity</string>
     <string name="quantity_mandatory">Quantity is mandatory</string>
@@ -76,7 +74,6 @@
     <string name="cancel">Cancel</string>
     <string name="ok">OK</string>
     <string name="move">Move</string>
-    <string name="defaults" translatable="false">Default</string>
 
     <!-- Messages -->
     <string name="notify_saved">Saved successfully</string>
@@ -95,14 +92,11 @@
 
     <!-- Location -->
     <string name="hint_store_location">Location</string>
-    <string name="new_location">New Location</string>
     <string name="edit_location">Edit Location</string>
     <string name="delete_location">Delete Location</string>
-    <string name="default_icon">Default icon</string>
     <string name="add_new_location">Add a new location</string>
     <string name="title_manage_locations">Manage location</string>
     <string name="location_management_description">Reorder your location or select the default on application opening</string>
-    <string name="hint_new_location">Location name</string>
     <string name="error_empty_location">Name cannot be empty</string>
     <string name="notify_add_location">Location \'%s\' added</string>
     <string name="notify_update_location">Location updated</string>
@@ -115,7 +109,6 @@
 
     <!-- Version -->
     <string name="version_format_detailed">Version: %1$s (Build: %2$s)</string>
-    <string name="version_format_simple">Version: %1$s</string>
     <string name="version_not_available">Version: N/D</string>
     <string name="loading_version">Version: Loading…</string>
 
@@ -125,7 +118,6 @@
 
     <!-- Preferences -->
     <string name="pref_cat_expiry_title">Notifications</string>
-    <string name="pref_key_device_name" translatable="false">pref_device_name</string>
     <string name="pref_cat_device_title">Device</string>
     <string name="pref_device_name_title">Device Name</string>
     <string name="pref_device_name_summary">Name of this device for sharing</string>
@@ -140,15 +132,10 @@
     <string name="pref_default_expiry_days_title">Default expiry days</string>
     <string name="pref_default_expiry_days_summary">Pre-fill expiry date with today plus these days</string>
     <string name="pref_exp_days_error">Insert a valid number of days from 0 to 365.</string>
-    <string name="pref_exp_time_title">Select notification time</string>
 
-    <string name="pref_cat_locations_title">Locations</string>
     <string name="pref_key_location">manage_locations</string>
-    <string name="pref_location_title">Manage storage</string>
-    <string name="pref_location_summary">Add, edit or reorder your locations</string>
     <string name="pref_predefined_tab_style_icon">Show predefined tabs as icons</string>
 
-    <string name="pref_cat_theme_title">Theme</string>
     <string name="pref_key_theme">theme_preference</string>
     <string name="pref_theme_title">App theme</string>
     <string name="pref_theme_dark_entry">Dark</string>
@@ -163,17 +150,12 @@
     <string name="language_italian">Italian</string>
 
     <string name="pref_cat_data_title">Cache and Integrations</string>
-    <string name="pref_tosano_title">Enable Tosano API</string>
-    <string name="pref_tosano_summary">Enable app to download data from Tosano API</string>
     <string name="pref_off_title">Enable Open Food Fact API</string>
     <string name="pref_off_summary">Enable app to download data from Open Food Fact</string>
-    <string name="pref_clean_images_title">Clean unused images</string>
-    <string name="pref_clean_images_summary">Delete image files no longer associated with any product</string>
     <string name="notify_clean_images_done">Cleaned %d orphaned images</string>
     <string name="err_api">Cannot load data from API please enable Open Food Fact!</string>
 
     <!-- Cache Settings -->
-    <string name="pref_cat_off_cache_title">Open Food Facts Cache</string>
     <string name="pref_off_cache_limit_title">Offline Cache Limit</string>
     <string name="pref_off_cache_limit_summary">Max number of products to cache (default 100)</string>
     <string name="pref_off_cache_ttl_title">Cache TTL (days)</string>
@@ -186,9 +168,6 @@
     <string name="default_location_pantry_entry">Pantry</string>
     <string name="default_location_freezer_entry">Freezer</string>
     <string name="default_location_fridge_entry">Fridge</string>
-    <string name="default_location_fridge" translatable="false">FRIDGE</string>
-    <string name="default_location_freezer" translatable="false">FREEZER</string>
-    <string name="default_location_pantry" translatable="false">PANTRY</string>
 
     <string name="move_product_to_title">Move to %s</string>
     <string name="product_moved_toast">%s moved to %s</string>
@@ -236,7 +215,6 @@
     <string name="shopping_list_remove">Remove from shopping list</string>
     <string name="shopping_list_clear_checked">Clear purchased items</string>
     <string name="shopping_list_clear_confirm">Remove all purchased items from the list?</string>
-    <string name="shopping_list_badge_description">Shopping list: %d items</string>
     <string name="shopping_list_quantity">x%d</string>
     <string name="action_share">Share</string>
     <string name="share_shopping_list_title">My Shopping List</string>
@@ -246,7 +224,6 @@
     <string name="pref_sync_enabled_title">Enable Cloud Sync</string>
     <string name="pref_sync_enabled_summary">Synchronize your pantry across devices</string>
     <string name="pref_sync_provider_title">Sync Provider</string>
-    <string name="pref_sync_config_title">Configure Connection</string>
     <string name="pref_sync_now_title">Sync Now</string>
     <string name="pref_sync_status_title">Sync Status</string>
     <string name="sync_status_connected">Connected as %s</string>
@@ -254,8 +231,6 @@
     <string name="sync_last_time">Last synced: %s</string>
     <string name="share_pantry">Share Pantry</string>
     <string name="share_pantry_dialog_title">Share Pantry</string>
-    <string name="share_pantry_dialog_message">Choose the service to share the pantry \'%s\'. A dedicated folder will be created in the cloud.</string>
-    <string name="share_button">Share</string>
     <string name="provider_webdav">WebDAV</string>
     <string name="provider_local_saf">Local Shared Folder (SAF)</string>
     <string name="provider_gdrive">Google Drive</string>
@@ -264,12 +239,10 @@
     <string name="sync_gdrive_sign_out">Sign out from Google Drive</string>
     <string name="sync_gdrive_connected_as">Connected as: %s</string>
     <string name="sync_gdrive_not_connected">Not connected to Google Drive</string>
-    <string name="sync_configure_first">Configure sync in settings first</string>
     <string name="preparing_sync_server">Preparing remote sync…</string>
     <string name="sync_setup_error">Sharing setup failed: %s</string>
     <string name="sync_remote_delete_error">Remote delete error: %s. Local deletion will proceed.</string>
     <string name="join_pantry">Join Pantry</string>
-    <string name="pairing_code_title">Pairing Code</string>
     <string name="pairing_code_hint">Enter code (e.g. AB-CDEF)</string>
     <string name="sync_setup_title">Sync Setup</string>
     <string name="sync_webdav_url">WebDAV URL</string>
@@ -279,15 +252,10 @@
     <string name="sync_webdav_shared_mode">Shared Folder (Password only)</string>
     <string name="sync_pairing_success">Pantry joined successfully!</string>
     <string name="sync_pairing_error">Invalid pairing code or QR data</string>
-    <string name="overwrite">Overwrite</string>
-    <string name="sync_webdav_warn_existing">Existing configuration</string>
-    <string name="sync_webdav_warn_existing_desc">An existing sync configuration was found in this folder. Do you want to overwrite or cancel it?</string>
     <string name="action_manage_devices">Manage Devices</string>
     <string name="title_manage_devices">Registered Devices</string>
     <string name="no_devices_found">No devices found</string>
     <string name="warn_mandatory_fields">Fill in all the required fields</string>
-    <string name="sync_setup_err_device_already_present">This device is already registered for this pantry.</string>
-    <string name="sync_setup_err">Connection or setup failed.</string>
     <string name="sync_setup_saved">Configuration saved successfully</string>
     <string name="sync_device_delete_confirm">Are you sure you want to remove the device \'%s\'? It will no longer be able to sync until you add it back.</string>
     <string name="sync_device_delete_success">Device successfully removed</string>
@@ -329,7 +297,6 @@
     <string name="action_stop_sharing">Stop Sharing</string>
     <string name="stop_sharing_confirm_title">Stop Sharing?</string>
     <string name="stop_sharing_confirm_message">Are you sure you want to stop syncing \'%1$s\' with %2$s?</string>
-    <string name="shared_with_provider_format">Shared with %s</string>
     <string name="provider_not_configured_prompt">The provider \'%s\' is not configured yet. Would you like to configure it now?</string>
     <string name="pref_shared_pantries_title">Shared Pantries</string>
     <string name="pref_shared_pantries_summary">Manage synced pantries</string>
@@ -339,6 +306,5 @@
     <string name="show_pairing_qr">Show Pairing Code / QR</string>
     <string name="pantry_status_owner">Owner: You</string>
     <string name="pantry_status_guest">Shared by: %s</string>
-    <string name="action_select_provider">Select Provider</string>
     <string name="not_configured_badge">(Not configured)</string>
 </resources>

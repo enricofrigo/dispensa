@@ -23,9 +23,13 @@ public class RoomPantryDataBridge implements PantryDataBridge {
     }
 
     private static class SnapshotDto {
+        @com.google.gson.annotations.SerializedName("timestamp")
         public long timestamp;
+        @com.google.gson.annotations.SerializedName("products")
         public List<Product> products;
+        @com.google.gson.annotations.SerializedName("locations")
         public List<StorageLocation> locations;
+        @com.google.gson.annotations.SerializedName(value = "shoppingItems", alternate = {"shopping_items"})
         public List<ShoppingItem> shoppingItems;
     }
 

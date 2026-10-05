@@ -3,13 +3,13 @@ package eu.frigo.dispensa.sync.core.model;
 import com.google.gson.annotations.SerializedName;
 
 public class PantryDevice {
-    @SerializedName("device_id")
+    @SerializedName(value = "device_id", alternate = {"deviceId"})
     public String deviceId;
 
-    @SerializedName("device_name")
+    @SerializedName(value = "device_name", alternate = {"deviceName"})
     public String deviceName;
 
-    @SerializedName("last_seen")
+    @SerializedName(value = "last_seen", alternate = {"lastSeen"})
     public long lastSeen;
 
     public PantryDevice() {

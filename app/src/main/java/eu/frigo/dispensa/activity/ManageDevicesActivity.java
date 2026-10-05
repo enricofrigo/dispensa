@@ -33,7 +33,7 @@ import eu.frigo.dispensa.sync.core.engine.InstallationIdProvider;
 import eu.frigo.dispensa.sync.core.engine.SyncManager;
 import eu.frigo.dispensa.sync.webdav.client.WebDavClient;
 import eu.frigo.dispensa.sync.webdav.client.WebDavClientFactory;
-import eu.frigo.dispensa.sync.webdav.model.WebDavDevice;
+import eu.frigo.dispensa.sync.core.model.PantryDevice;
 import eu.frigo.dispensa.viewmodel.DispensaViewModel;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Completable;
@@ -49,7 +49,7 @@ public class ManageDevicesActivity extends AppCompatActivity {
     private TextView tvEmpty;
     private DeviceAdapter adapter;
     private DispensaViewModel dispensaViewModel;
-    private final List<WebDavDevice> deviceList = new ArrayList<>();
+    private final List<PantryDevice> deviceList = new ArrayList<>();
     private final Gson gson = new Gson();
     private boolean isMaster = false;
     private String devicesPath;
@@ -180,7 +180,7 @@ public class ManageDevicesActivity extends AppCompatActivity {
                 });
     }
 
-    private void showDeleteConfirmation(WebDavDevice device) {
+    private void showDeleteConfirmation(PantryDevice device) {
         boolean isDeletingOwner = currentDispensa != null && device.deviceId.equals(currentDispensa.deviceOwnerId);
         
         androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this);
@@ -198,7 +198,7 @@ public class ManageDevicesActivity extends AppCompatActivity {
     }
 
     @SuppressLint("CheckResult")
-    private void deleteDevice(WebDavDevice device) {
+    private void deleteDevice(PantryDevice device) {
         progressBar.setVisibility(View.VISIBLE);
         boolean isDeletingOwner = currentDispensa != null && device.deviceId.equals(currentDispensa.deviceOwnerId);
         String deletePath = isDeletingOwner ? pantryBasePath : devicesPath + device.deviceId + ".json";
@@ -243,10 +243,10 @@ public class ManageDevicesActivity extends AppCompatActivity {
         });
     }
 
-    private Single<List<WebDavDevice>> fetchDevices(String devicesPath) {
+    private Single<List<PantryDevice>> fetchDevices(String devicesPath) {
         return Single.fromCallable(() -> {
             WebDavClient client = WebDavClientFactory.getInstance().getClient(this);
-            List<WebDavDevice> devices = new ArrayList<>();
+            List<PantryDevice> devices = new ArrayList<>();
             
             try (Response response = client.propfind(devicesPath)) {
                 if (response.isSuccessful() && response.body() != null) {
@@ -262,7 +262,7 @@ public class ManageDevicesActivity extends AppCompatActivity {
                         
                         try (Response devResp = client.get(devicesPath + shortName)) {
                             if (devResp.isSuccessful() && devResp.body() != null) {
-                                WebDavDevice device = gson.fromJson(devResp.body().string(), WebDavDevice.class);
+                                PantryDevice device = gson.fromJson(devResp.body().string(), PantryDevice.class);
                                 if (device != null) {
                                     devices.add(device);
                                 }
@@ -294,15 +294,15 @@ public class ManageDevicesActivity extends AppCompatActivity {
     }
 
     private static class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder> {
-        private final List<WebDavDevice> devices;
+        private final List<PantryDevice> devices;
         private boolean isMaster = false;
         private final OnDeviceDeleteListener deleteListener;
 
         interface OnDeviceDeleteListener {
-            void onDelete(WebDavDevice device);
+            void onDelete(PantryDevice device);
         }
 
-        DeviceAdapter(List<WebDavDevice> devices, OnDeviceDeleteListener deleteListener) {
+        DeviceAdapter(List<PantryDevice> devices, OnDeviceDeleteListener deleteListener) {
             this.devices = devices;
             this.deleteListener = deleteListener;
         }
@@ -320,7 +320,7 @@ public class ManageDevicesActivity extends AppCompatActivity {
 
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            WebDavDevice device = devices.get(position);
+            PantryDevice device = devices.get(position);
             holder.tvName.setText(device.deviceName != null ? device.deviceName : "Unknown Device");
             holder.tvId.setText("ID: " + device.deviceId);
 

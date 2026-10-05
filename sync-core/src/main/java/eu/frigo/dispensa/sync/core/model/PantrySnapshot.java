@@ -14,7 +14,7 @@ public class PantrySnapshot {
     @SerializedName("locations")
     public List<Object> locations = new ArrayList<>();
 
-    @SerializedName("shoppingItems")
+    @SerializedName(value = "shoppingItems", alternate = {"shopping_items"})
     public List<Object> shoppingItems = new ArrayList<>();
 
     public PantrySnapshot() {

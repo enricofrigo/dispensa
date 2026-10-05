@@ -231,10 +231,10 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
         }
         @Override
         public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
-            MenuItem edit = menu.add(Menu.NONE, R.id.action_edit_product, 1, itemView.getContext().getString(R.string.edit));
-            MenuItem delete = menu.add(Menu.NONE, R.id.action_delete_product, 2, itemView.getContext().getString(R.string.delete));
-            MenuItem usa = menu.add(Menu.NONE, R.id.action_delete_product, 2, itemView.getContext().getString(R.string.use));
-            MenuItem sposta = menu.add(Menu.NONE, R.id.action_move_product, 2, itemView.getContext().getString(R.string.move));
+            MenuItem edit = menu.add(Menu.NONE, Menu.NONE, 1, itemView.getContext().getString(R.string.edit));
+            MenuItem delete = menu.add(Menu.NONE, Menu.NONE, 2, itemView.getContext().getString(R.string.delete));
+            MenuItem usa = menu.add(Menu.NONE, Menu.NONE, 3, itemView.getContext().getString(R.string.use));
+            MenuItem sposta = menu.add(Menu.NONE, Menu.NONE, 4, itemView.getContext().getString(R.string.move));
             edit.setOnMenuItemClickListener(item -> {
                 listenerInternal.onEditActionClicked(currentProduct);
                 return true;

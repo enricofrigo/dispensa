@@ -5,7 +5,6 @@ import android.content.SharedPreferences;
 import androidx.preference.PreferenceManager;
 
 import eu.frigo.dispensa.data.AppDatabase;
-import eu.frigo.dispensa.data.sync.OutboxRepository;
 import eu.frigo.dispensa.data.sync.RoomPantryDataBridge;
 import eu.frigo.dispensa.sync.core.engine.FolderSyncEngine;
 import eu.frigo.dispensa.sync.core.engine.SyncEngine;
@@ -25,7 +24,6 @@ public class WebDavSyncEngine implements SyncEngine {
     public WebDavSyncEngine(
             WebDavClient client,
             SyncCursorStore cursorStore,
-            OutboxRepository outbox,
             String deviceId,
             String pantryPath,
             int dispensaId,

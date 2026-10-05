@@ -91,9 +91,8 @@ public class WebDavSyncProviderLoader implements SyncProviderLoader {
 
                 // The main client is still used for general purposes, but engines use scope-specific clients
                 WebDavClient mainClient = WebDavClientFactory.getInstance().getClient(context);
-                WebDavRemoteStoreImpl remoteStore = new WebDavRemoteStoreImpl(mainClient);
 
-                return new WebDavSyncProvider(remoteStore, mainClient, deviceId, scopes);
+                return new WebDavSyncProvider(mainClient, deviceId, scopes);
             }
             return null;
         }).subscribeOn(Schedulers.io());

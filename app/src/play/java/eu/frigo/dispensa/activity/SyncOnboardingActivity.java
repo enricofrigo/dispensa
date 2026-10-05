@@ -48,8 +48,8 @@ import eu.frigo.dispensa.sync.QrCodeGenerator;
 import eu.frigo.dispensa.sync.webdav.WebDavConfig;
 import eu.frigo.dispensa.sync.webdav.WebDavPairingHandler;
 import eu.frigo.dispensa.sync.webdav.client.WebDavClient;
-import eu.frigo.dispensa.sync.webdav.client.WebDavClientFactory;
-import eu.frigo.dispensa.sync.webdav.model.WebDavManifest;
+import eu.frigo.dispensa.sync.core.model.PantryDevice;
+import eu.frigo.dispensa.sync.core.model.PantryManifest;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.schedulers.Schedulers;
@@ -455,10 +455,10 @@ public class SyncOnboardingActivity extends AppCompatActivity {
             String pantryPath = normalizedBase + SyncManager.getSyncPath(remoteId);
             String manifestPath = pantryPath + SyncManager.MANIFEST_JSON;
 
-            WebDavClient client = WebDavClientFactory.getInstance().getClient(url, user, pass);
+            WebDavClient client = eu.frigo.dispensa.sync.webdav.client.WebDavClientFactory.getInstance().getClient(url, user, pass);
             try (Response response = client.get(manifestPath)) {
                 if (response.isSuccessful()) {
-                    WebDavManifest manifest = new com.google.gson.Gson().fromJson(response.body().string(), WebDavManifest.class);
+                    PantryManifest manifest = new com.google.gson.Gson().fromJson(response.body().string(), PantryManifest.class);
                     if (manifest != null) {
                         return manifest.version == SyncManager.CURRENT_SYNC_VERSION;
                     }
@@ -494,7 +494,7 @@ public class SyncOnboardingActivity extends AppCompatActivity {
             String pantryPath = normalizedBase + SyncManager.getSyncPath(remoteId);
             String devicePath = pantryPath + SyncManager.DEFAULT_DEVICES_FOLDER + deviceId + ".json";
 
-            WebDavClient client = WebDavClientFactory.getInstance().getClient(url, user, pass);
+            WebDavClient client = eu.frigo.dispensa.sync.webdav.client.WebDavClientFactory.getInstance().getClient(url, user, pass);
             try (Response response = client.propfind(devicePath)) {
                 return response.isSuccessful() || response.code() == 207;
             } catch (Exception e) {
@@ -527,13 +527,13 @@ public class SyncOnboardingActivity extends AppCompatActivity {
             String pantryPath = normalizedBase + SyncManager.getSyncPath(remoteId);
             String devicePath = pantryPath + SyncManager.DEFAULT_DEVICES_FOLDER + deviceId + ".json";
 
-            eu.frigo.dispensa.sync.webdav.model.WebDavDevice device = new eu.frigo.dispensa.sync.webdav.model.WebDavDevice();
+            PantryDevice device = new PantryDevice();
             device.deviceId = deviceId;
             device.deviceName = PreferenceManager.getDefaultSharedPreferences(this).getString(SyncManager.KEY_DEVICE_NAME, android.os.Build.MODEL);
             device.lastSeen = System.currentTimeMillis();
 
             String deviceJson = new com.google.gson.Gson().toJson(device);
-            WebDavClient client = WebDavClientFactory.getInstance().getClient(url, user, pass);
+            WebDavClient client = eu.frigo.dispensa.sync.webdav.client.WebDavClientFactory.getInstance().getClient(url, user, pass);
             try (Response devResp = client.put(devicePath, deviceJson.getBytes(), null)) {
                 return devResp.isSuccessful();
             } catch (Exception e) {

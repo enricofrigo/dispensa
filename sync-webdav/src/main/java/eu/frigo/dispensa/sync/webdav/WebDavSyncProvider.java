@@ -2,8 +2,6 @@ package eu.frigo.dispensa.sync.webdav;
 
 import android.content.Context;
 import eu.frigo.dispensa.data.AppDatabase;
-import eu.frigo.dispensa.data.sync.OutboxRepositoryImpl;
-import eu.frigo.dispensa.sync.core.provider.RemoteStore;
 import eu.frigo.dispensa.sync.core.provider.SyncProvider;
 import eu.frigo.dispensa.sync.core.store.SyncCursorStoreImpl;
 import eu.frigo.dispensa.sync.webdav.client.WebDavClient;
@@ -14,7 +12,6 @@ import java.util.List;
 
 public class WebDavSyncProvider implements SyncProvider {
     private final String id = "webdav";
-    private final RemoteStore remoteStore;
     private final WebDavClient client;
     private final String deviceId;
     
@@ -37,8 +34,7 @@ public class WebDavSyncProvider implements SyncProvider {
     private final List<SyncScope> scopes;
     private final List<WebDavSyncEngine> engines = new ArrayList<>();
 
-    public WebDavSyncProvider(RemoteStore remoteStore, WebDavClient client, String deviceId, List<SyncScope> scopes) {
-        this.remoteStore = remoteStore;
+    public WebDavSyncProvider(WebDavClient client, String deviceId, List<SyncScope> scopes) {
         this.client = client;
         this.deviceId = deviceId;
         this.scopes = scopes;
@@ -49,9 +45,6 @@ public class WebDavSyncProvider implements SyncProvider {
 
     @Override
     public Single<Boolean> isAvailable() { return Single.just(true); }
-
-    @Override
-    public RemoteStore getRemoteStore() { return remoteStore; }
 
     @Override
     public Class<? extends androidx.work.ListenableWorker> getWorkerClass() {
@@ -66,7 +59,6 @@ public class WebDavSyncProvider implements SyncProvider {
                 engines.add(new WebDavSyncEngine(
                         engineClient,
                         new SyncCursorStoreImpl(context),
-                        new OutboxRepositoryImpl(db),
                         deviceId,
                         scope.pantryPath,
                         scope.dispensaId,
