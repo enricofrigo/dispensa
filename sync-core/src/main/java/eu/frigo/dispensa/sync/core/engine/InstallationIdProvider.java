@@ -34,13 +34,4 @@ public class InstallationIdProvider {
         return getOrCreateInstallationId(context).equals(createdByDevice);
     }
 
-    /**
-     * Determine whether the current installation is already part of the shared pantry group
-     * by checking if its device ID exists in the list of registered devices.
-     */
-    public static boolean isCurrentInstallationAlreadyLinked(Context context, java.util.List<String> registeredDeviceIds) {
-        if (registeredDeviceIds == null) return false;
-        String currentId = getOrCreateInstallationId(context);
-        return registeredDeviceIds.contains(currentId);
-    }
 }

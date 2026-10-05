@@ -5,4 +5,8 @@ import io.reactivex.rxjava3.core.Completable;
 
 public interface SyncEngine {
     Completable performSync(SyncPolicy policy);
+
+    default Completable initializeRemoteStructure() {
+        return Completable.complete();
+    }
 }

@@ -16,6 +16,8 @@ import eu.frigo.dispensa.data.category.CategoryDefinition;
 import eu.frigo.dispensa.data.category.CategoryDefinitionDao;
 import eu.frigo.dispensa.data.category.ProductCategoryLink;
 import eu.frigo.dispensa.data.category.ProductCategoryLinkDao;
+import eu.frigo.dispensa.data.dispensa.Dispensa;
+import eu.frigo.dispensa.data.dispensa.DispensaDao;
 import eu.frigo.dispensa.data.product.Product;
 import eu.frigo.dispensa.data.product.ProductDao;
 import eu.frigo.dispensa.data.shoppinglist.ShoppingItem;
@@ -31,27 +33,38 @@ public class BackupManager {
     private final int MIN_APP_VERSION = 1;
 
     public BackupManager(Context context) {
-        this.db = AppDatabase.getDatabase(context);
-        this.gson = new GsonBuilder().setPrettyPrinting().
-                create();
+        this(AppDatabase.getDatabase(context));
     }
 
-    public void exportData(OutputStream outputStream, int appVersion) throws Exception {
+    public BackupManager(AppDatabase db) {
+        this.db = db;
+        this.gson = new GsonBuilder().setPrettyPrinting().create();
+    }
+
+    public void exportData(OutputStream outputStream, int appVersion, int dispensaId) throws Exception {
         ProductDao productDao = db.productDao();
         StorageLocationDao locationDao = db.storageLocationDao();
         CategoryDefinitionDao categoryDao = db.categoryDefinitionDao();
         ProductCategoryLinkDao linkDao = db.productCategoryLinkDao();
         ShoppingItemDao shoppingItemDao = db.shoppingItemDao();
+        DispensaDao dispensaDao = db.dispensaDao();
 
         int version = db.getOpenHelper().getReadableDatabase().getVersion();
-        List<Product> products = productDao.getAllProductsListStatic();
-        List<StorageLocation> locations = locationDao.getAllLocationsSortedSync();
+        Dispensa dispensa = dispensaDao.getDispensaByIdSync(dispensaId);
+        List<Product> rawProducts = productDao.getAllProductsListStatic(dispensaId);
+        List<Product> products = new java.util.ArrayList<>();
+        if (rawProducts != null) {
+            for (Product p : rawProducts) {
+                products.add(p.createExportCopy());
+            }
+        }
+        List<StorageLocation> locations = locationDao.getAllLocationsSortedSync(dispensaId);
         List<CategoryDefinition> categories = categoryDao.getAllCategoryDefinitionsSync();
-        List<ProductCategoryLink> links = linkDao.getAllProductCategoryLinksSync();
-        List<ShoppingItem> shoppingItems = shoppingItemDao.getAllItemsSync();
+        List<ProductCategoryLink> links = linkDao.getAllProductCategoryLinksForDispensaSync(dispensaId);
+        List<ShoppingItem> shoppingItems = shoppingItemDao.getAllItemsSync(dispensaId);
 
         try (OutputStreamWriter writer = new OutputStreamWriter(outputStream)) {
-            gson.toJson(new BackupData(version, appVersion, products, locations, categories, links, shoppingItems), writer);
+            gson.toJson(new BackupData(version, appVersion, dispensa, products, locations, categories, links, shoppingItems), writer);
         }
     }
 
@@ -86,7 +99,13 @@ public class BackupManager {
         }
     }
 
-    public void importData(InputStream inputStream) throws Exception {
+    public BackupData peekBackupData(InputStream inputStream) throws Exception {
+        try (InputStreamReader reader = new InputStreamReader(inputStream)) {
+            return gson.fromJson(reader, BackupData.class);
+        }
+    }
+
+    public void importData(InputStream inputStream, int targetDispensaId) throws Exception {
         BackupData backupData;
         try (InputStreamReader reader = new InputStreamReader(inputStream)) {
             backupData = gson.fromJson(reader, BackupData.class);
@@ -109,22 +128,58 @@ public class BackupManager {
         migrateDataIfNeeded(backupData, currentVersion);
 
         db.runInTransaction(() -> {
-            db.productDao().deleteAllProducts();
-            db.productCategoryLinkDao().deleteAllProductCategoryLink();
-            db.categoryDefinitionDao().deleteAllCategoryDefinitions();
-            SupportSQLiteDatabase sdb = db.getOpenHelper().getWritableDatabase();
-            sdb.execSQL("DELETE FROM storage_locations");
+            // Delete existing data for the target pantry
+            db.productCategoryLinkDao().deleteByDispensaId(targetDispensaId);
+            db.productDao().deleteAllProducts(targetDispensaId);
+            db.storageLocationDao().deleteAllLocations(targetDispensaId);
+            db.shoppingItemDao().deleteAllItems(targetDispensaId);
 
-            if (backupData.locations != null)
-                db.storageLocationDao().insertAll(backupData.locations);
+            // Import categories (global, so we just add missing ones)
             if (backupData.categories != null)
                 db.categoryDefinitionDao().insertAll(backupData.categories);
-            if (backupData.products != null)
-                db.productDao().insertAll(backupData.products);
-            if (backupData.categoryLinks != null)
-                db.productCategoryLinkDao().insertAll(backupData.categoryLinks);
-            if (backupData.shoppingItems != null)
+
+            // Import locations
+            if (backupData.locations != null) {
+                for (StorageLocation loc : backupData.locations) {
+                    loc.id = 0; // Force auto-generation
+                    loc.dispensaId = targetDispensaId;
+                }
+                db.storageLocationDao().insertAll(backupData.locations);
+            }
+
+            // Import products and category links
+            if (backupData.products != null) {
+                for (Product p : backupData.products) {
+                    int oldProductId = p.id;
+                    p.id = 0; // Force auto-generation
+                    p.dispensaId = targetDispensaId;
+                    if (p.hasCustomLocalImage()) {
+                        p.setImageUrl(null);
+                    }
+                    p.validateImageUrlExistence();
+                    
+                    long newProductId = db.productDao().insert(p);
+                    
+                    // Re-link categories for this product
+                    if (backupData.categoryLinks != null) {
+                        for (ProductCategoryLink link : backupData.categoryLinks) {
+                            if (link.productIdFk == oldProductId) {
+                                link.productIdFk = (int) newProductId;
+                                db.productCategoryLinkDao().insert(link);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Import shopping items
+            if (backupData.shoppingItems != null) {
+                for (ShoppingItem item : backupData.shoppingItems) {
+                    item.id = 0; // Force auto-generation
+                    item.dispensaId = targetDispensaId;
+                }
                 db.shoppingItemDao().insertAll(backupData.shoppingItems);
+            }
         });
     }
 }

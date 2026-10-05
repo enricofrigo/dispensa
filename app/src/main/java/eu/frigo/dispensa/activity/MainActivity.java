@@ -31,7 +31,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.media3.common.util.Log;
+import android.util.Log;
 import androidx.preference.PreferenceManager;
 import androidx.viewpager2.widget.ViewPager2;
 
@@ -58,14 +58,19 @@ import eu.frigo.dispensa.adapter.ProductListAdapter;
 import eu.frigo.dispensa.data.AppDatabase;
 import eu.frigo.dispensa.data.backup.BackupManager;
 import eu.frigo.dispensa.data.category.ProductWithCategoryDefinitions;
+import eu.frigo.dispensa.data.dispensa.Dispensa;
 import eu.frigo.dispensa.data.product.Product;
 import eu.frigo.dispensa.data.storage.StorageLocation;
+import eu.frigo.dispensa.sync.core.engine.InstallationIdProvider;
 import eu.frigo.dispensa.sync.core.engine.SyncManager;
 import eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl;
+import eu.frigo.dispensa.sync.core.event.SyncBus;
+import eu.frigo.dispensa.sync.core.event.SyncEvent;
 import eu.frigo.dispensa.ui.ProductListFragment;
 import eu.frigo.dispensa.ui.SettingsFragment;
 import eu.frigo.dispensa.util.LocaleHelper;
 import eu.frigo.dispensa.util.LocationFormatter;
+import eu.frigo.dispensa.viewmodel.DispensaViewModel;
 import eu.frigo.dispensa.viewmodel.LocationViewModel;
 import eu.frigo.dispensa.viewmodel.ProductViewModel;
 import eu.frigo.dispensa.viewmodel.ShoppingListViewModel;
@@ -85,8 +90,12 @@ public class MainActivity extends AppCompatActivity
     private ViewPager2 viewPager;
     private LocationViewPagerAdapter locationViewPagerAdapter;
     private LocationViewModel locationViewModel;
+    private DispensaViewModel dispensaViewModel;
+    private Dispensa currentDispensa;
     private ShoppingListViewModel shoppingListViewModel;
+    private io.reactivex.rxjava3.disposables.Disposable syncDisposable;
     private BadgeDrawable shoppingBadge;
+    private boolean isOwner = true;
     private final ActivityResultLauncher<String> requestPermissionLauncher = registerForActivityResult(
             new ActivityResultContracts.RequestPermission(), isGranted -> {
                 if (isGranted) {
@@ -132,10 +141,23 @@ public class MainActivity extends AppCompatActivity
     private final ActivityResultLauncher<String> exportLauncher = registerForActivityResult(
             new ActivityResultContracts.CreateDocument("application/octet-stream"), uri -> {
                 if (uri != null) {
+                    Integer currentDispensaId = currentDispensa != null ? currentDispensa.id : dispensaViewModel.getCurrentDispensaId().getValue();
                     AppDatabase.databaseWriteExecutor.execute(() -> {
+                        int dispId = currentDispensaId != null ? currentDispensaId : 0;
+                        if (dispId <= 0) {
+                            Dispensa def = AppDatabase.getDatabase(this).dispensaDao().getDefaultDispensaSync();
+                            if (def != null) {
+                                dispId = def.id;
+                            }
+                        }
+                        if (dispId <= 0) {
+                            runOnUiThread(() -> Toast.makeText(this, "Errore: nessuna dispensa selezionata", Toast.LENGTH_SHORT).show());
+                            return;
+                        }
+                        final int finalDispId = dispId;
                         try (OutputStream os = getContentResolver().openOutputStream(uri)) {
                             BackupManager backupManager = new BackupManager(this);
-                            backupManager.exportData(os, BuildConfig.VERSION_CODE);
+                            backupManager.exportData(os, BuildConfig.VERSION_CODE, finalDispId);
                             runOnUiThread(
                                     () -> Toast.makeText(this, R.string.export_success, Toast.LENGTH_SHORT).show());
                         } catch (Exception e) {
@@ -161,10 +183,23 @@ public class MainActivity extends AppCompatActivity
             });
 
     private void performImport(android.net.Uri uri) {
+        Integer currentDispensaId = currentDispensa != null ? currentDispensa.id : dispensaViewModel.getCurrentDispensaId().getValue();
         AppDatabase.databaseWriteExecutor.execute(() -> {
+            int dispId = currentDispensaId != null ? currentDispensaId : 0;
+            if (dispId <= 0) {
+                Dispensa def = AppDatabase.getDatabase(this).dispensaDao().getDefaultDispensaSync();
+                if (def != null) {
+                    dispId = def.id;
+                }
+            }
+            if (dispId <= 0) {
+                runOnUiThread(() -> Toast.makeText(this, "Errore: nessuna dispensa selezionata per l'import", Toast.LENGTH_SHORT).show());
+                return;
+            }
+            final int finalDispId = dispId;
             try (InputStream is = getContentResolver().openInputStream(uri)) {
                 BackupManager backupManager = new BackupManager(this);
-                backupManager.importData(is);
+                backupManager.importData(is, finalDispId);
                 runOnUiThread(() -> {
                     Toast.makeText(this, R.string.import_success, Toast.LENGTH_LONG).show();
                     // Restart app to refresh all data and viewmodels
@@ -218,10 +253,35 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = findViewById(R.id.toolbar);
         toolbar.setTitle(R.string.app_name);
         setSupportActionBar(toolbar);
+        toolbar.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, DispensaManagerActivity.class);
+            startActivity(intent);
+        });
 
         productViewModel = new ViewModelProvider(this).get(ProductViewModel.class);
         locationViewModel = new ViewModelProvider(this).get(LocationViewModel.class);
+        dispensaViewModel = new ViewModelProvider(this).get(DispensaViewModel.class);
         productViewModel.getAllProducts().observe(this, products -> showHintsIfNeeded());
+
+        // Osserva la dispensa corrente per aggiornare il titolo e la proprietà
+        dispensaViewModel.getCurrentDispensa().observe(this, dispensa -> {
+            this.currentDispensa = dispensa;
+            if (dispensa != null) {
+                if (getSupportActionBar() != null) {
+                    getSupportActionBar().setTitle(dispensa.getName());
+                }
+                String currentDeviceId = InstallationIdProvider.getOrCreateInstallationId(this);
+                boolean wasOwner = isOwner;
+                isOwner = currentDeviceId.equals(dispensa.deviceOwnerId);
+                if (wasOwner != isOwner) {
+                    invalidateOptionsMenu();
+                }
+            } else if (getSupportActionBar() != null) {
+                getSupportActionBar().setTitle(R.string.app_name);
+            }
+        });
+
+        observeSyncEvents();
 
         viewPager = findViewById(R.id.viewPager);
         TabLayout tabLayout = findViewById(R.id.tabLayout);
@@ -322,6 +382,27 @@ public class MainActivity extends AppCompatActivity
             consumeScannerLauncher.launch(intent);
         });
 
+    }
+
+    private void observeSyncEvents() {
+        syncDisposable = SyncBus.getInstance().observe()
+                .filter(event -> event instanceof SyncEvent.VersionMismatch)
+                .observeOn(io.reactivex.rxjava3.android.schedulers.AndroidSchedulers.mainThread())
+                .subscribe(event -> {
+                    SyncEvent.VersionMismatch mismatch = (SyncEvent.VersionMismatch) event;
+                    showVersionMismatchDialog(mismatch);
+                });
+    }
+
+    private void showVersionMismatchDialog(SyncEvent.VersionMismatch mismatch) {
+        new AlertDialog.Builder(this)
+                .setTitle("Incompatibilità Versione")
+                .setMessage("La struttura di condivisione cloud è cambiata o non è compatibile con questa versione dell'app.\n\n" +
+                        "Se sei l'owner della dispensa, assicurati che la migrazione automatica avvenga riavviando il sync.\n" +
+                        "Se sei un ospite, contatta l'owner per migrare alla nuova versione o aggiorna l'app.")
+                .setPositiveButton(R.string.ok, null)
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .show();
     }
 
     private void showHintsIfNeeded() {
@@ -428,6 +509,11 @@ public class MainActivity extends AppCompatActivity
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
             boolean syncEnabled = prefs.getBoolean(SyncManager.KEY_SYNC_ENABLED, false);
             syncNowItem.setVisible(syncEnabled);
+        }
+
+        MenuItem importItem = menu.findItem(R.id.action_import);
+        if (importItem != null) {
+            importItem.setVisible(isOwner);
         }
 
         return super.onPrepareOptionsMenu(menu);
@@ -739,6 +825,7 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
@@ -793,6 +880,18 @@ public class MainActivity extends AppCompatActivity
         });
     }
 
+    private void launchExportForDispensa(Dispensa dispensa) {
+        if (dispensa == null) return;
+        String pantryName = dispensa.getName();
+        if (pantryName == null || pantryName.trim().isEmpty()) {
+            pantryName = "Dispensa";
+        }
+        String safePantryName = pantryName.replaceAll("[\\\\/:*?\"<>|\\s]", "_");
+        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        String fileName = safePantryName + "_backup_" + timestamp + ".dsp";
+        exportLauncher.launch(fileName);
+    }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
@@ -811,9 +910,24 @@ public class MainActivity extends AppCompatActivity
             startActivity(intent);
             return true;
         } else if (id == R.id.action_export) {
-            String fileName = "dispensa_backup_"
-                    + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date()) + ".dsp";
-            exportLauncher.launch(fileName);
+            if (currentDispensa != null) {
+                launchExportForDispensa(currentDispensa);
+                return true;
+            }
+            dispensaViewModel.getCurrentDispensaSingle()
+                    .subscribeOn(io.reactivex.rxjava3.schedulers.Schedulers.io())
+                    .observeOn(io.reactivex.rxjava3.android.schedulers.AndroidSchedulers.mainThread())
+                    .subscribe(disp -> {
+                        if (disp != null) {
+                            currentDispensa = disp;
+                            launchExportForDispensa(disp);
+                        } else {
+                            Toast.makeText(this, "Errore: dati dispensa non pronti", Toast.LENGTH_SHORT).show();
+                        }
+                    }, err -> {
+                        Log.e("MainActivity", "Errore recupero dispensa per export", err);
+                        Toast.makeText(this, "Errore: dati dispensa non pronti", Toast.LENGTH_SHORT).show();
+                    });
             return true;
         } else if (id == R.id.action_import) {
             importLauncher.launch(new String[] { "*/*" });
@@ -847,6 +961,9 @@ public class MainActivity extends AppCompatActivity
         super.onDestroy();
         if (viewPager != null) {
             viewPager.unregisterOnPageChangeCallback(pageChangeCallback);
+        }
+        if (syncDisposable != null && !syncDisposable.isDisposed()) {
+            syncDisposable.dispose();
         }
     }
 

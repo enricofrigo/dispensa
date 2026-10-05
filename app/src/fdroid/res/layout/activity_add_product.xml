@@ -111,17 +111,21 @@
                 android:visibility="gone"
                 />
 
-            <!-- NUOVO: Immagine Prodotto -->
+            <!-- Immagine Prodotto -->
             <ImageView
                 android:id="@+id/imageViewProduct"
-                android:layout_width="wrap_content"
-                android:layout_height="150dp"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
                 android:layout_marginTop="16dp"
                 android:layout_gravity="center_horizontal"
-                android:visibility="gone"
+                android:visibility="visible"
                 android:contentDescription="@string/hint_product_image"
                 android:scaleType="fitCenter"
-                tools:srcCompat="@tools:sample/avatars" />
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:src="@drawable/ic_placeholder_image"
+                tools:srcCompat="@drawable/ic_placeholder_image" />
 
 
             <!-- Pulsanti modifica immagine prodotto -->
@@ -364,6 +368,22 @@
                     android:text="@string/button_add_tag"
                     app:icon="@drawable/ic_add_circle_outline_24"/>
             </LinearLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/textFieldNoteLayout"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:hint="@string/hint_product_notes">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/editTextNote"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textMultiLine|textCapSentences"
+                    android:maxLines="4" />
+            </com.google.android.material.textfield.TextInputLayout>
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

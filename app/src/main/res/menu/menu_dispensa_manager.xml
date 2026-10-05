@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_shared_dispense"
+        android:icon="@drawable/ic_cloud_sync_24"
+        android:title="@string/title_shared_dispense"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_configure_providers"
+        android:title="@string/pref_providers_title"
+        app:showAsAction="never" />
+</menu>

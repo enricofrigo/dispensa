@@ -25,7 +25,7 @@ android {
     productFlavors {
         create("play") {
             dimension = "store"
-        }
+            }
         create("fdroid"){
             dimension = "store"
             versionNameSuffix = "-fdroid"
@@ -41,6 +41,7 @@ android {
             isMinifyEnabled = false
             isShrinkResources = false
             signingConfig = signingConfigs.getByName("debug")
+            resValue("string", "app_name", "Debug Dispensa")
         }
         release {
             isMinifyEnabled = true
@@ -79,21 +80,21 @@ dependencies {
     implementation(project(":dbcore"))
     implementation(project(":sync-core"))
     implementation(project(":sync-webdav"))
+    implementation(project(":sync-local"))
+    "playImplementation"(project(":sync-gdrive"))
     implementation(libs.cardview)
-    implementation(libs.media3.common)
     implementation(libs.swiperefreshlayout)
     implementation(libs.camera.core)
     implementation(libs.camera.camera2)
     implementation(libs.camera.lifecycle)
     implementation(libs.camera.view)
-    implementation(libs.converter.moshi)
-    implementation(libs.androidx.camera.view)
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
     implementation(libs.glide)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.preference.ktx)
     implementation(libs.balloon)
+    implementation(libs.guava)
     implementation(libs.lifecycle.process)
     implementation(libs.lifecycle.common.java8)
     implementation(libs.rxandroid)
@@ -101,11 +102,13 @@ dependencies {
     implementation(libs.zxing.core)
 
     testImplementation(libs.junit)
+    testImplementation(libs.ext.junit)
+    testImplementation(libs.robolectric)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
 
     "fdroidImplementation"(libs.zxing.android.embedded)
     "playImplementation"(libs.play.services.mlkit.barcode.scanning)
     "playImplementation"(libs.text.recognition)
-
+    "playImplementation"(libs.play.services.auth)
 }

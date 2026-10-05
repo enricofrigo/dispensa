@@ -20,4 +20,16 @@ public abstract class SyncEvent {
             this.error = error;
         }
     }
+
+    public static class VersionMismatch extends SyncEvent {
+        public final int currentVersion;
+        public final int remoteVersion;
+        public final boolean isLegacyPath;
+
+        public VersionMismatch(int currentVersion, int remoteVersion, boolean isLegacyPath) {
+            this.currentVersion = currentVersion;
+            this.remoteVersion = remoteVersion;
+            this.isLegacyPath = isLegacyPath;
+        }
+    }
 }

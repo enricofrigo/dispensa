@@ -114,7 +114,7 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
             textViewQuantity.setText(itemView.getContext().getString(R.string.quantity_label, product.product.getQuantity()));
 
             textViewExpiryDate.setText(itemView.getContext().getString(R.string.expiry_date_label, product.product.getExpiryDateString()));
-            if (product.product.getImageUrl() != null && !product.product.getImageUrl().isEmpty()) {
+            if (product.product.getImageUrl() != null && !product.product.getImageUrl().trim().isEmpty()) {
                 Glide.with(itemView.getContext())
                         .load(product.product.getImageUrl())
                         .placeholder(R.drawable.ic_placeholder_image)
@@ -123,6 +123,7 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
                 imageViewProduct.setVisibility(View.VISIBLE);
             } else {
                 imageViewProduct.setImageResource(R.drawable.ic_placeholder_image);
+                imageViewProduct.setVisibility(View.VISIBLE);
             }
 
             // Shopping cart button
@@ -231,10 +232,10 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
         }
         @Override
         public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
-            MenuItem edit = menu.add(Menu.NONE, R.id.action_edit_product, 1, itemView.getContext().getString(R.string.edit));
-            MenuItem delete = menu.add(Menu.NONE, R.id.action_delete_product, 2, itemView.getContext().getString(R.string.delete));
-            MenuItem usa = menu.add(Menu.NONE, R.id.action_delete_product, 2, itemView.getContext().getString(R.string.use));
-            MenuItem sposta = menu.add(Menu.NONE, R.id.action_move_product, 2, itemView.getContext().getString(R.string.move));
+            MenuItem edit = menu.add(Menu.NONE, Menu.NONE, 1, itemView.getContext().getString(R.string.edit));
+            MenuItem delete = menu.add(Menu.NONE, Menu.NONE, 2, itemView.getContext().getString(R.string.delete));
+            MenuItem usa = menu.add(Menu.NONE, Menu.NONE, 3, itemView.getContext().getString(R.string.use));
+            MenuItem sposta = menu.add(Menu.NONE, Menu.NONE, 4, itemView.getContext().getString(R.string.move));
             edit.setOnMenuItemClickListener(item -> {
                 listenerInternal.onEditActionClicked(currentProduct);
                 return true;
@@ -271,7 +272,8 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
                     oldItem.product.getExpiryDate().equals(newItem.product.getExpiryDate()) &&
                     (oldItem.product.getOpenedDate()==null || oldItem.product.getOpenedDate().equals(newItem.product.getOpenedDate())) &&
                     oldItem.product.getShelfLifeAfterOpeningDays() == newItem.product.getShelfLifeAfterOpeningDays() &&
-                    (oldItem.product.getStorageLocation()==null || oldItem.product.getStorageLocation().equals(newItem.product.getStorageLocation()));
+                    (oldItem.product.getStorageLocation()==null || oldItem.product.getStorageLocation().equals(newItem.product.getStorageLocation())) &&
+                    java.util.Objects.equals(oldItem.product.getNote(), newItem.product.getNote());
         }
     }
 }

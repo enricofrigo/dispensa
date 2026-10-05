@@ -19,7 +19,6 @@ android {
 
 dependencies {
     implementation(libs.androidx.preference)
-    implementation(libs.room.rxjava3)
     implementation(libs.rxandroid)
     implementation(libs.rxjava)
     implementation(libs.androidx.work.runtime)
@@ -27,6 +26,8 @@ dependencies {
     implementation(libs.converter.gson)
     
     testImplementation(libs.junit)
+    testImplementation(libs.ext.junit)
+    testImplementation(libs.robolectric)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
 }

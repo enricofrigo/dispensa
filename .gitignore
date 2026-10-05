@@ -34,3 +34,9 @@ google-services.json
 *.hprof
 .vscode/settings.json
 /.artifacts/
+
+# Gemini artifact
+task.artifact.md
+walkthrough.artifact.md
+/.jdk21/
+*.dm

@@ -4,6 +4,7 @@ import java.util.List;
 
 import eu.frigo.dispensa.data.category.CategoryDefinition;
 import eu.frigo.dispensa.data.category.ProductCategoryLink;
+import eu.frigo.dispensa.data.dispensa.Dispensa;
 import eu.frigo.dispensa.data.product.Product;
 import eu.frigo.dispensa.data.shoppinglist.ShoppingItem;
 import eu.frigo.dispensa.data.storage.StorageLocation;
@@ -11,6 +12,7 @@ import eu.frigo.dispensa.data.storage.StorageLocation;
 public class BackupData {
     public int dbVersion;
     public int appVersion;
+    public Dispensa dispensa; // La dispensa esportata
     public List<Product> products;
     public List<StorageLocation> locations;
     public List<CategoryDefinition> categories;
@@ -20,11 +22,12 @@ public class BackupData {
     public BackupData() {
     }
 
-    public BackupData(int dbVersion, int appVersion, List<Product> products, List<StorageLocation> locations,
+    public BackupData(int dbVersion, int appVersion, Dispensa dispensa, List<Product> products, List<StorageLocation> locations,
                       List<CategoryDefinition> categories, List<ProductCategoryLink> categoryLinks,
                       List<ShoppingItem> shoppingItems) {
         this.dbVersion = dbVersion;
         this.appVersion = appVersion;
+        this.dispensa = dispensa;
         this.products = products;
         this.locations = locations;
         this.categories = categories;

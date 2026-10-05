@@ -5,14 +5,20 @@ import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
+import androidx.room.Index;
+
 import com.google.gson.annotations.SerializedName;
 
-@Entity(tableName = "shopping_items")
+@Entity(tableName = "shopping_items", indices = {@Index(value = "dispensa_id")})
 public class ShoppingItem {
 
     @SerializedName("id")
     @PrimaryKey(autoGenerate = true)
     public int id;
+
+    @SerializedName("dispensa_id")
+    @ColumnInfo(name = "dispensa_id", defaultValue = "1")
+    public int dispensaId;
 
     @SerializedName("name")
     @ColumnInfo(name = "name")

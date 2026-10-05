@@ -1,4 +1,14 @@
-<?xml version="1.0" encoding="utf-8"?>
-<selector xmlns:android="http://schemas.android.com/apk/res/android">
-
-</selector>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Sfondo neutro con angoli arrotondati -->
+    <path
+        android:fillColor="#1A808080"
+        android:pathData="M4,2 h16 c1.1,0 2,0.9 2,2 v16 c0,1.1 -0.9,2 -2,2 H4 c-1.1,0 -2,-0.9 -2,-2 V4 c0,-1.1 0.9,-2 2,-2 z" />
+    <!-- Material Icon: restaurant -->
+    <path
+        android:fillColor="#888888"
+        android:pathData="M11,9H9V2H7v7H5V2H3v7c0,2.12 1.66,3.84 3.75,3.97V22h2.5v-9.03C11.34,12.84 13,11.12 13,9V2h-2V9zm5,-3v8h2.5v8H21V2c-2.76,0 -5,2.24 -5,4z" />
+</vector>

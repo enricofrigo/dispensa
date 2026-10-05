@@ -27,6 +27,7 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.widget.Toolbar;
@@ -40,7 +41,7 @@ import androidx.core.view.ViewCompat;
 
 import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.media3.common.util.Log;
+import android.util.Log;
 import androidx.preference.PreferenceManager;
 
 import com.bumptech.glide.Glide;
@@ -126,6 +127,7 @@ public class AddProductActivity extends AppCompatActivity {
     private String selectedStorageInternalKey;
     private ProductWithCategoryDefinitions productBeingEdited;
     private TextInputEditText editTextShelfLifeAfterOpening;
+    private TextInputEditText editTextNote;
     private Button buttonMarkAsOpened;
     private Button buttonMarkAsClosed;
     private TextView textViewOpenedDate;
@@ -240,6 +242,11 @@ public class AddProductActivity extends AppCompatActivity {
         previewViewScanner = findViewById(R.id.previewViewScanner);
         editTextProductName = findViewById(R.id.editTextProductName);
         imageViewProduct = findViewById(R.id.imageViewProduct);
+        if (imageViewProduct != null) {
+            imageViewProduct.setImageResource(R.drawable.ic_placeholder_image);
+            imageViewProduct.setVisibility(View.VISIBLE);
+            imageViewProduct.setOnClickListener(v -> showProductImageOptionsDialog());
+        }
         cameraExecutor = Executors.newSingleThreadExecutor();
         spinnerStorageLocation = findViewById(R.id.spinnerStorageLocation);
         if (getIntent().hasExtra(PRESELECTED_LOCATION_INTERNAL_KEY)) {
@@ -249,6 +256,7 @@ public class AddProductActivity extends AppCompatActivity {
         setupStorageLocationSpinner();
 
         editTextShelfLifeAfterOpening = findViewById(R.id.editTextShelfLifeAfterOpening);
+        editTextNote = findViewById(R.id.editTextNote);
         buttonMarkAsOpened = findViewById(R.id.buttonMarkAsOpened);
         buttonMarkAsClosed = findViewById(R.id.buttonMarkAsClosed);
         textViewOpenedDate = findViewById(R.id.textViewOpenedDate);
@@ -506,11 +514,54 @@ public class AddProductActivity extends AppCompatActivity {
      * da usare come immagine del prodotto.
      * Aggiorna currentImageUrlFromApi e mostra l'immagine nell'ImageView.
      */
+    private void showProductImageOptionsDialog() {
+        CharSequence[] options;
+        if (currentImageUrlFromApi != null && !currentImageUrlFromApi.trim().isEmpty()) {
+            options = new CharSequence[] {
+                    getString(R.string.take_product_photo),
+                    getString(R.string.pick_product_image_gallery),
+                    getString(R.string.delete)
+            };
+        } else {
+            options = new CharSequence[] {
+                    getString(R.string.take_product_photo),
+                    getString(R.string.pick_product_image_gallery)
+            };
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.hint_product_image)
+                .setItems(options, (dialog, which) -> {
+                    if (which == 0) {
+                        Uri uri = createProductPhotoUri();
+                        if (uri != null) {
+                            productPhotoCaptureUri = uri;
+                            takeProductPhotoLauncher.launch(uri);
+                        } else {
+                            Toast.makeText(this, getString(R.string.err_create_photo_file), Toast.LENGTH_SHORT).show();
+                        }
+                    } else if (which == 1) {
+                        pickProductImageLauncher.launch("image/*");
+                    } else if (which == 2) {
+                        currentImageUrlFromApi = null;
+                        if (imageViewProduct != null) {
+                            imageViewProduct.setImageResource(R.drawable.ic_placeholder_image);
+                            imageViewProduct.setVisibility(View.VISIBLE);
+                        }
+                        Toast.makeText(this, getString(R.string.image_changed), Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
     private void onProductImageSelected(Uri uri) {
         currentImageUrlFromApi = uri.toString();
         imageViewProduct.setVisibility(View.VISIBLE);
         Glide.with(this)
                 .load(uri)
+                .placeholder(R.drawable.ic_placeholder_image)
+                .error(R.drawable.ic_placeholder_image)
                 .into(imageViewProduct);
         Toast.makeText(this, getString(R.string.image_changed), Toast.LENGTH_SHORT).show();
     }
@@ -695,9 +746,13 @@ public class AddProductActivity extends AppCompatActivity {
                 if (currentImageUrlFromApi != null && !currentImageUrlFromApi.trim().isEmpty()) {
                     Glide.with(AddProductActivity.this)
                             .load(currentImageUrlFromApi)
+                            .placeholder(R.drawable.ic_placeholder_image)
+                            .error(R.drawable.ic_placeholder_image)
                             .into(imageViewProduct);
-                    imageViewProduct.setVisibility(View.VISIBLE);
+                } else {
+                    imageViewProduct.setImageResource(R.drawable.ic_placeholder_image);
                 }
+                imageViewProduct.setVisibility(View.VISIBLE);
 
                 currentOpenedDate = productBeingEdited.product.getOpenedDate();
                 currentShelfLifeDays = productBeingEdited.product.getShelfLifeAfterOpeningDays();
@@ -707,6 +762,7 @@ public class AddProductActivity extends AppCompatActivity {
                 } else {
                     editTextShelfLifeAfterOpening.setText("");
                 }
+                editTextNote.setText(productBeingEdited.product.getNote() != null ? productBeingEdited.product.getNote() : "");
                 updateOpenedDateUI(currentOpenedDate);
 
                 if (productBeingEdited.categoryDefinitions != null) {
@@ -920,12 +976,17 @@ public class AddProductActivity extends AppCompatActivity {
                         editTextProductName.setText(getString(R.string.not_find));
                     }
                     currentImageUrlFromApi = cached.imageLocalPath;
-                    if (cached.imageLocalPath != null && !cached.imageLocalPath.trim().isEmpty()) {
-                        Glide.with(AddProductActivity.this).load(cached.imageLocalPath).into(imageViewProduct);
-                        imageViewProduct.setVisibility(View.VISIBLE);
+                    if (cached.imageLocalPath != null && !cached.imageLocalPath.trim().isEmpty()
+                            && eu.frigo.dispensa.data.openfoodfacts.OpenFoodFactCacheManager.isFileExisting(cached.imageLocalPath)) {
+                        Glide.with(AddProductActivity.this)
+                                .load(cached.imageLocalPath)
+                                .placeholder(R.drawable.ic_placeholder_image)
+                                .error(R.drawable.ic_placeholder_image)
+                                .into(imageViewProduct);
                     } else {
-                        imageViewProduct.setVisibility(GONE);
+                        imageViewProduct.setImageResource(R.drawable.ic_placeholder_image);
                     }
+                    imageViewProduct.setVisibility(View.VISIBLE);
                     if (cached.categoriesTags != null && !cached.categoriesTags.trim().isEmpty()) {
                         currentProductTagsSet.clear();
                         currentProductTagsSet.addAll(java.util.Arrays.asList(cached.categoriesTags.split(",")));
@@ -987,11 +1048,15 @@ public class AddProductActivity extends AppCompatActivity {
 
                                             currentImageUrlFromApi = localPath;
                                             if (localPath != null && !localPath.trim().isEmpty()) {
-                                                Glide.with(AddProductActivity.this).load(localPath).into(imageViewProduct);
-                                                imageViewProduct.setVisibility(View.VISIBLE);
+                                                Glide.with(AddProductActivity.this)
+                                                        .load(localPath)
+                                                        .placeholder(R.drawable.ic_placeholder_image)
+                                                        .error(R.drawable.ic_placeholder_image)
+                                                        .into(imageViewProduct);
                                             } else {
-                                                imageViewProduct.setVisibility(GONE);
+                                                imageViewProduct.setImageResource(R.drawable.ic_placeholder_image);
                                             }
+                                            imageViewProduct.setVisibility(View.VISIBLE);
 
                                             if (fetchedCategories != null && !fetchedCategories.isEmpty()) {
                                                 currentProductTagsSet.clear();
@@ -1025,8 +1090,10 @@ public class AddProductActivity extends AppCompatActivity {
 
     private void clearProductApiFieldsAndData() {
         editTextProductName.setText("");
-        imageViewProduct.setImageDrawable(null);
-        imageViewProduct.setVisibility(GONE);
+        if (imageViewProduct != null) {
+            imageViewProduct.setImageResource(R.drawable.ic_placeholder_image);
+            imageViewProduct.setVisibility(View.VISIBLE);
+        }
         currentProductNameFromApi = null;
         currentImageUrlFromApi = null;
     }
@@ -1115,6 +1182,11 @@ public class AddProductActivity extends AppCompatActivity {
         }
         Product product = new Product(barcode, quantity, DateConverter.parseDisplayDateToTimestampMs(expiryDate), name,
                 currentImageUrlFromApi, selectedStorageInternalKey, currentOpenedDate, shelfLifeDays);
+        String note = editTextNote.getText() != null ? editTextNote.getText().toString().trim() : null;
+        if (note != null && note.isEmpty()) {
+            note = null;
+        }
+        product.setNote(note);
         Log.d("AddProductActivity", "Salvataggio prodotto: " + product.toString());
         List<String> tagsToSave = new ArrayList<>(currentProductTagsSet);
         if (isEditMode) {

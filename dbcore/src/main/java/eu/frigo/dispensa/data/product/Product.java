@@ -14,13 +14,18 @@ import java.util.Date;
 import java.util.Locale;
 
 @Entity(tableName = "products", indices = { // 6. Definizione degli indici
-        @Index(value = { "storage_location" })
+        @Index(value = { "storage_location" }),
+        @Index(value = { "dispensa_id" })
 })
 public class Product {
 
     @SerializedName("id")
     @PrimaryKey(autoGenerate = true)
     public int id;
+
+    @SerializedName("dispensa_id")
+    @ColumnInfo(name = "dispensa_id", defaultValue = "1")
+    public int dispensaId;
     @SerializedName("barcode")
     @ColumnInfo(name = "barcode")
     public String barcode;
@@ -46,6 +51,10 @@ public class Product {
     @ColumnInfo(name = "shelf_life_after_opening_days", defaultValue = "-1")
     public int shelfLifeAfterOpeningDays = -1;
 
+    @SerializedName("note")
+    @ColumnInfo(name = "note")
+    public String note;
+
     @SerializedName("last_modified")
     @ColumnInfo(name = "last_modified", defaultValue = "0")
     public long lastModified = 0L;
@@ -69,6 +78,13 @@ public class Product {
         this.storageLocation = storageLocation;
         this.openedDate = openedDate;
         this.shelfLifeAfterOpeningDays = shelfLifeAfterOpeningDays;
+    }
+
+    @Ignore
+    public Product(String barcode, int quantity, Long expiryDate, String productName, String imageUrl,
+            String storageLocation, Long openedDate, int shelfLifeAfterOpeningDays, String note) {
+        this(barcode, quantity, expiryDate, productName, imageUrl, storageLocation, openedDate, shelfLifeAfterOpeningDays);
+        this.note = note;
     }
 
     // Getters e Setters (opzionali se i campi sono pubblici, ma buona pratica
@@ -153,6 +169,14 @@ public class Product {
         this.shelfLifeAfterOpeningDays = shelfLifeAfterOpeningDays;
     }
 
+    public String getNote() {
+        return note;
+    }
+
+    public void setNote(String note) {
+        this.note = note;
+    }
+
     @Ignore
     public Long getActualExpiryTimestamp() {
         if (openedDate > 0 && shelfLifeAfterOpeningDays > 0) {
@@ -201,6 +225,7 @@ public class Product {
                 ", storageLocation='" + storageLocation + '\'' +
                 ", openedDate=" + openedDate +
                 ", shelfLifeAfterOpeningDays=" + shelfLifeAfterOpeningDays +
+                ", note='" + note + '\'' +
                 '}';
     }
 
@@ -215,6 +240,64 @@ public class Product {
         copy.storageLocation = this.storageLocation;
         copy.openedDate = this.openedDate;
         copy.shelfLifeAfterOpeningDays = this.shelfLifeAfterOpeningDays;
+        copy.lastModified = this.lastModified;
+        copy.dispensaId = this.dispensaId;
+        copy.note = this.note;
         return copy;
+    }
+
+    public static boolean isCustomLocalImage(String url) {
+        if (url == null || url.trim().isEmpty()) {
+            return false;
+        }
+        String trimmed = url.trim();
+        return !trimmed.startsWith("http://") && !trimmed.startsWith("https://");
+    }
+
+    @Ignore
+    public boolean hasCustomLocalImage() {
+        return isCustomLocalImage(this.imageUrl);
+    }
+
+    public Product createExportCopy() {
+        Product copy = new Product();
+        copy.id = this.id;
+        copy.dispensaId = this.dispensaId;
+        copy.barcode = this.barcode;
+        copy.quantity = this.quantity;
+        copy.expiryDate = this.expiryDate;
+        copy.productName = this.productName;
+        copy.imageUrl = hasCustomLocalImage() ? null : this.imageUrl;
+        copy.storageLocation = this.storageLocation;
+        copy.openedDate = this.openedDate;
+        copy.shelfLifeAfterOpeningDays = this.shelfLifeAfterOpeningDays;
+        copy.note = this.note;
+        copy.lastModified = this.lastModified;
+        return copy;
+    }
+
+    @Ignore
+    public void validateImageUrlExistence() {
+        if (imageUrl != null && hasCustomLocalImage()) {
+            try {
+                String path = null;
+                if (imageUrl.startsWith("file://")) {
+                    path = android.net.Uri.parse(imageUrl).getPath();
+                } else if (imageUrl.startsWith("/")) {
+                    path = imageUrl;
+                }
+                if (path != null) {
+                    java.io.File file = new java.io.File(path);
+                    if (!file.exists()) {
+                        imageUrl = null;
+                    }
+                } else {
+                    imageUrl = null;
+                }
+            } catch (Exception e) {
+                // In case of malformed URI or other errors, play safe
+                imageUrl = null;
+            }
+        }
     }
 }

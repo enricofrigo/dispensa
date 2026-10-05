@@ -7,6 +7,8 @@ import java.util.Map;
 
 import eu.frigo.dispensa.sync.core.provider.SyncProvider;
 import eu.frigo.dispensa.sync.core.provider.SyncProviderLoader;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
 
 public class SyncManager {
@@ -17,10 +19,20 @@ public class SyncManager {
     public static final String KEY_WEBDAV_MODE_SHARED = "sync_webdav_mode_shared";
     public static final String KEY_SYNC_ENABLED = "pref_sync_enabled";
     public static final String SYNC_WEBDAV_PANTRY_KEY = "sync_webdav_pantry_key";
-    public static final String DEFAULT_PATH = "/dispensa/";
-    public static final String DEFAULT_MAIN_PANTRY = "main_pantry";
-    public static final String DEFAULT_SYNC_PATH = "dispensa-sync/";
-    public static final String DEFAULT_PANTRY_PATH = DEFAULT_SYNC_PATH+"pantries/";
+    public static final String SYNC_WEBDAV_PANTRY_NAME = "sync_webdav_pantry_name";
+    public static final String SYNC_WEBDAV_DISPENSA_ID = "sync_webdav_dispensa_id";
+    public static final String SYNC_WEBDAV_SYNCED_IDS = "sync_webdav_synced_ids";
+    public static final String KEY_DEVICE_NAME = "pref_key_device_name";
+    public static final String DEFAULT_PATH = "/";
+    
+    public static final int CURRENT_SYNC_VERSION = 2;
+    public static final String LEGACY_SYNC_PATH = "dispensa-sync/";
+    
+    public static String getSyncPath(String remoteId) {
+        String id = (remoteId == null || remoteId.trim().isEmpty()) ? "default" : remoteId.trim();
+        return "pantry-" + id + "-sync/";
+    }
+
     public static final String DEFAULT_EVENTS_FOLDER = "events/";
     public static final String DEFAULT_DEVICES_FOLDER = "devices/";
     public static final String DEFAULT_SNAPSHOTS_FOLDER = "snapshots/";
@@ -60,18 +72,17 @@ public class SyncManager {
         return prefs.contains(SYNC_WEBDAV_PANTRY_KEY);
     }
 
-    public SyncProvider getOrInitProvider(Context context) {
+    public Single<SyncProvider> getOrInitProvider(Context context) {
         SyncProvider active = currentProvider.getValue();
-        if (active != null) return active;
+        if (active != null) return Single.just(active);
 
-        for (SyncProviderLoader loader : loaders.values()) {
-            SyncProvider provider = loader.load(context);
-            if (provider != null) {
-                setProvider(provider);
-                return provider;
-            }
-        }
+        if (loaders.isEmpty()) return Single.error(new IllegalStateException("No loaders registered"));
 
-        return null;
+        return Observable.fromIterable(loaders.values())
+                .concatMapSingle(loader -> loader.load(context))
+                .filter(java.util.Objects::nonNull)
+                .firstElement()
+                .doOnSuccess(this::setProvider)
+                .toSingle();
     }
 }

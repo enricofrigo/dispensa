@@ -1,5 +1,8 @@
 package eu.frigo.dispensa.ui;
 
+import static eu.frigo.dispensa.sync.core.store.SyncCursorStoreImpl.KEY_LAST_SYNC;
+import static eu.frigo.dispensa.sync.core.store.SyncCursorStoreImpl.PREF_NAME;
+
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -24,7 +27,7 @@ import java.util.Objects;
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.sync.core.engine.InstallationIdProvider;
 import eu.frigo.dispensa.sync.core.engine.SyncManager;
-import eu.frigo.dispensa.sync.ui.SyncWebDavConfigActivity;
+import eu.frigo.dispensa.activity.SyncWebDavConfigActivity;
 import eu.frigo.dispensa.util.LocaleHelper;
 import eu.frigo.dispensa.work.ExpiryCheckWorkerScheduler;
 
@@ -41,10 +44,10 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
     public static final String KEY_OFF_CACHE_TTL_DAYS = "pref_off_cache_ttl_days";
     public static final String KEY_OFF_CACHE_CLEAR = "pref_off_cache_clear";
     public static final String KEY_DEFUALT_ICON = "pref_predefined_tab_icon";
-    public static final String KEY_SYNC_NOW = "pref_sync_now";
     public static final String KEY_SYNC_CONFIG = "pref_sync_config";
     public static final String KEY_SYNC_STATUS = "pref_sync_status";
     public static final String KEY_THEME_PREFERENCE = "theme_preference";
+    public static final String KEY_DEVICE_NAME = "pref_key_device_name";
 
     private Preference notificationTimePreference;
     private ListPreference languagePreference;
@@ -53,6 +56,13 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         setPreferencesFromResource(R.xml.preferences, rootKey);
+
+        EditTextPreference deviceNamePref = findPreference(KEY_DEVICE_NAME);
+        if (deviceNamePref != null) {
+            if (deviceNamePref.getText() == null || deviceNamePref.getText().isEmpty()) {
+                deviceNamePref.setText(android.os.Build.MODEL);
+            }
+        }
         
         syncStatusPreference = findPreference(KEY_SYNC_STATUS);
         updateSyncStatus();
@@ -61,11 +71,10 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
         boolean syncEnabled = prefs.getBoolean(SyncManager.KEY_SYNC_ENABLED, false);
         updateSyncPreferencesVisibility(syncEnabled);
 
-        Preference syncNowPref = findPreference(KEY_SYNC_NOW);
-        if (syncNowPref != null) {
-            syncNowPref.setOnPreferenceClickListener(preference -> {
-                eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl.getInstance(requireContext()).triggerManualSync();
-                android.widget.Toast.makeText(getContext(), getString(R.string.pref_sync_now_title), android.widget.Toast.LENGTH_SHORT).show();
+        Preference sharedPantriesPref = findPreference("pref_shared_pantries");
+        if (sharedPantriesPref != null) {
+            sharedPantriesPref.setOnPreferenceClickListener(preference -> {
+                startActivity(new Intent(requireContext(), eu.frigo.dispensa.activity.SharedDispenseActivity.class));
                 return true;
             });
         }
@@ -73,8 +82,16 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
         Preference syncConfigPref = findPreference(KEY_SYNC_CONFIG);
         if (syncConfigPref != null) {
             syncConfigPref.setOnPreferenceClickListener(preference -> {
-                Intent intent = new Intent(requireContext(), SyncWebDavConfigActivity.class);
-                startActivity(intent);
+                showProviderConfigurationChooser();
+                return true;
+            });
+        }
+
+        Preference syncNowPref = findPreference("pref_sync_now");
+        if (syncNowPref != null) {
+            syncNowPref.setOnPreferenceClickListener(preference -> {
+                eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl.getInstance(requireContext()).triggerManualSync();
+                android.widget.Toast.makeText(requireContext(), R.string.sync_preparing_server, android.widget.Toast.LENGTH_SHORT).show();
                 return true;
             });
         }
@@ -149,14 +166,6 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
             updateLanguagePreferenceSummary(currentLangValue);
         }
 
-        Preference cleanImagesPref = findPreference("pref_clean_images");
-        if (cleanImagesPref != null) {
-            cleanImagesPref.setOnPreferenceClickListener(preference -> {
-                cleanOrphanImages();
-                return true;
-            });
-        }
-
         Preference clearCachePref = findPreference(KEY_OFF_CACHE_CLEAR);
         if (clearCachePref != null) {
             clearCachePref.setOnPreferenceClickListener(preference -> {
@@ -179,11 +188,20 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
     private void clearOpenFoodFactCache() {
         Context context = requireContext();
         java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> {
-            eu.frigo.dispensa.data.openfoodfacts.OpenFoodFactCacheManager.clearAllCache(
-                context, eu.frigo.dispensa.data.AppDatabase.getDatabase(context));
-            new android.os.Handler(android.os.Looper.getMainLooper()).post(() ->
-                android.widget.Toast.makeText(context, getString(R.string.notify_cache_cleared), android.widget.Toast.LENGTH_SHORT).show()
-            );
+            eu.frigo.dispensa.data.AppDatabase db = eu.frigo.dispensa.data.AppDatabase.getDatabase(context);
+            eu.frigo.dispensa.data.openfoodfacts.OpenFoodFactCacheManager.clearAllCache(context, db);
+            
+            // Pulizia dati orfani (entity senza dispensa)
+            eu.frigo.dispensa.data.Repository.getInstance(requireActivity().getApplication()).cleanOrphanData();
+
+            // Pulizia immagini orfane (file su disco senza riferimento nel DB o viceversa)
+            eu.frigo.dispensa.data.Repository.cleanOrphanImages(context, count -> {
+                new android.os.Handler(android.os.Looper.getMainLooper()).post(() ->
+                    android.widget.Toast.makeText(context, 
+                            getString(R.string.notify_cache_cleared) + " e " + getString(R.string.notify_clean_images_done, count), 
+                            android.widget.Toast.LENGTH_LONG).show()
+                );
+            });
         });
     }
 
@@ -276,17 +294,42 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
     }
 
     private void updateSyncPreferencesVisibility(boolean enabled) {
-        Preference providerPref = findPreference("pref_sync_provider");
+        Preference sharedPantriesPref = findPreference("pref_shared_pantries");
         Preference configPref = findPreference(KEY_SYNC_CONFIG);
-        Preference nowPref = findPreference(KEY_SYNC_NOW);
+        Preference syncNowPref = findPreference("pref_sync_now");
         Preference statusPref = findPreference(KEY_SYNC_STATUS);
         Preference separator = findPreference("separator_sync");
 
-        if (providerPref != null) providerPref.setVisible(enabled);
+        if (sharedPantriesPref != null) sharedPantriesPref.setVisible(enabled);
         if (configPref != null) configPref.setVisible(enabled);
-        if (nowPref != null) nowPref.setVisible(enabled);
+        if (syncNowPref != null) syncNowPref.setVisible(enabled);
         if (statusPref != null) statusPref.setVisible(enabled);
         if (separator != null) separator.setVisible(enabled);
+    }
+
+    private void showProviderConfigurationChooser() {
+        java.util.List<eu.frigo.dispensa.sync.sharing.SharingProvider> providers =
+                eu.frigo.dispensa.sync.sharing.PantrySharingService.getInstance().getAllProviders();
+        if (providers.isEmpty()) return;
+
+        String[] items = new String[providers.size()];
+        for (int i = 0; i < providers.size(); i++) {
+            eu.frigo.dispensa.sync.sharing.SharingProvider p = providers.get(i);
+            String status = p.isConfigured(requireContext()) ? "" : " " + getString(R.string.not_configured_badge);
+            items[i] = p.getDisplayName(requireContext()) + status;
+        }
+
+        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle(R.string.pref_providers_title)
+                .setItems(items, (dialog, which) -> {
+                    eu.frigo.dispensa.sync.sharing.SharingProvider selected = providers.get(which);
+                    Intent intent = selected.getConfigIntent(requireContext());
+                    if (intent != null) {
+                        startActivity(intent);
+                    }
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
     }
 
     private void updateThemePreferenceSummary(ListPreference themePreference, String themeValue) {
@@ -337,12 +380,13 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
 
     private void updateSyncStatus() {
         if (syncStatusPreference != null) {
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
-            boolean enabled = prefs.getBoolean(SyncManager.KEY_SYNC_ENABLED, false);
+            SharedPreferences prefs = getContext().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+            if (prefs == null) prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+            boolean enabled = PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(SyncManager.KEY_SYNC_ENABLED, false);
             if (!enabled) {
                 syncStatusPreference.setSummary(R.string.sync_status_disconnected);
             } else {
-                long lastSync = prefs.getLong("last_sync_timestamp", 0);
+                long lastSync = prefs.getLong(KEY_LAST_SYNC, 0);
                 String time = lastSync == 0 ? "Never" : DateFormat.getTimeFormat(requireContext()).format(new java.util.Date(lastSync));
                 syncStatusPreference.setSummary(getString(R.string.sync_last_time, time));
             }

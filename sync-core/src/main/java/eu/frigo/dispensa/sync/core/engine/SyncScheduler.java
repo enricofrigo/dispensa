@@ -12,23 +12,25 @@ import eu.frigo.dispensa.sync.core.provider.SyncProvider;
 
 public class SyncScheduler {
     public static void enqueueOneTimeSync(Context context) {
-        SyncProvider provider = SyncManager.getInstance().getOrInitProvider(context);
-        if (provider == null) return;
+        SyncManager.getInstance().getOrInitProvider(context)
+                .subscribe(provider -> {
+                    Class<? extends ListenableWorker> workerClass = provider.getWorkerClass();
+                    if (workerClass == null) return;
 
-        Class<? extends ListenableWorker> workerClass = provider.getWorkerClass();
-        if (workerClass == null) return;
+                    OneTimeWorkRequest syncRequest = new OneTimeWorkRequest.Builder(workerClass)
+                            .setConstraints(new Constraints.Builder()
+                                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                                    .build())
+                            .addTag("SYNC_WORKER")
+                            .build();
 
-        OneTimeWorkRequest syncRequest = new OneTimeWorkRequest.Builder(workerClass)
-                .setConstraints(new Constraints.Builder()
-                        .setRequiredNetworkType(NetworkType.CONNECTED)
-                        .build())
-                .addTag("SYNC_WORKER")
-                .build();
-
-        WorkManager.getInstance(context).enqueueUniqueWork(
-                "SESSION_SYNC",
-                ExistingWorkPolicy.REPLACE,
-                syncRequest
-        );
+                    WorkManager.getInstance(context).enqueueUniqueWork(
+                            "SESSION_SYNC",
+                            ExistingWorkPolicy.REPLACE,
+                            syncRequest
+                    );
+                }, throwable -> {
+                    // Log error or ignore if no provider available
+                });
     }
 }

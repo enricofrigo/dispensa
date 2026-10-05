@@ -30,13 +30,15 @@ dependencies {
     api(libs.room.ktx)
     api(project(":sync-core"))
 
-    implementation(libs.room.paging)
-    implementation(libs.room.rxjava2)
     implementation(libs.room.rxjava3)
-    implementation(libs.room.guava)
     annotationProcessor(libs.room.compiler)
 
-    implementation(libs.media3.common)
     implementation(libs.converter.gson)
     implementation(libs.androidx.lifecycle.livedata.ktx)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.ext.junit)
+    testImplementation(libs.robolectric)
+    androidTestImplementation(libs.ext.junit)
+    androidTestImplementation(libs.espresso.core)
 }
