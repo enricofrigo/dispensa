@@ -29,6 +29,7 @@ import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
@@ -120,6 +121,7 @@ public class AddProductActivity extends AppCompatActivity {
     private String selectedStorageInternalKey;
     private ProductWithCategoryDefinitions productBeingEdited;
     private TextInputEditText editTextShelfLifeAfterOpening;
+    private TextInputEditText editTextNote;
     private Button buttonMarkAsOpened;
     private Button buttonMarkAsClosed;
     private TextView textViewOpenedDate;
@@ -139,6 +141,7 @@ public class AddProductActivity extends AppCompatActivity {
     private ActivityResultLauncher<String> pickImageForBarcodeLauncher;
 
     /** URI del file temporaneo per la foto del prodotto scattata con la fotocamera */
+    private Uri productPhotoCaptureUri;
     private String currentPhotoPath; // <-- Per salvare il path assoluto
 
     /** Picker galleria per l'immagine del prodotto */
@@ -167,7 +170,7 @@ public class AddProductActivity extends AppCompatActivity {
 
                 if (isValidProductBarcode(barcode)) {
                     isScanning = false;
-                    androidx.media3.common.util.Log.d("BarcodeScanner",
+                    Log.d("BarcodeScanner",
                             "Codice a barre trovato: " + barcode +
                                     " (Formato: " + result.getBarcodeFormat() + ")");
 
@@ -246,16 +249,22 @@ public class AddProductActivity extends AppCompatActivity {
         barcodeView = findViewById(R.id.previewViewBarcode);
         editTextProductName = findViewById(R.id.editTextProductName);
         imageViewProduct = findViewById(R.id.imageViewProduct);
+        if (imageViewProduct != null) {
+            imageViewProduct.setImageResource(R.drawable.ic_placeholder_image);
+            imageViewProduct.setVisibility(View.VISIBLE);
+            imageViewProduct.setOnClickListener(v -> showProductImageOptionsDialog());
+        }
         spinnerStorageLocation = findViewById(R.id.spinnerStorageLocation);
 
         if (getIntent().hasExtra(PRESELECTED_LOCATION_INTERNAL_KEY)) {
             preselectedLocationValue = getIntent().getStringExtra(PRESELECTED_LOCATION_INTERNAL_KEY);
-            androidx.media3.common.util.Log.d("AddProductActivity",
+            Log.d("AddProductActivity",
                     "Ricevuta location preselezionata: " + preselectedLocationValue);
         }
         setupStorageLocationSpinner();
 
         editTextShelfLifeAfterOpening = findViewById(R.id.editTextShelfLifeAfterOpening);
+        editTextNote = findViewById(R.id.editTextNote);
         buttonMarkAsOpened = findViewById(R.id.buttonMarkAsOpened);
         buttonMarkAsClosed = findViewById(R.id.buttonMarkAsClosed);
         textViewOpenedDate = findViewById(R.id.textViewOpenedDate);
@@ -280,12 +289,12 @@ public class AddProductActivity extends AppCompatActivity {
                 new ActivityResultContracts.GetContent(),
                 uri -> {
                     if (uri != null) {
-                        androidx.media3.common.util.Log.d("BarcodeScan",
+                        Log.d("BarcodeScan",
                                 "Immagine selezionata dalla galleria per barcode: " + uri);
                         stopCamera();
                         processImageForBarcode(uri);
                     } else {
-                        androidx.media3.common.util.Log.d("BarcodeScan",
+                        Log.d("BarcodeScan",
                                 "Selezione immagine per barcode annullata.");
                     }
                 }
@@ -376,7 +385,7 @@ public class AddProductActivity extends AppCompatActivity {
                     updateLabel();
                 }
             } catch (NumberFormatException e) {
-                androidx.media3.common.util.Log.e("AddProductActivity", "Errore conversione default expiry days: " + e.getMessage());
+                Log.e("AddProductActivity", "Errore conversione default expiry days: " + e.getMessage());
             }
 
             checkCameraPermissionAndStartScanner();
@@ -503,14 +512,14 @@ public class AddProductActivity extends AppCompatActivity {
             if (bitmap != null) {
                 String barcode = decodeBarcode(bitmap);
                 if (barcode != null) {
-                    androidx.media3.common.util.Log.d("BarcodeScanner",
+                    Log.d("BarcodeScanner",
                             "Codice a barre da immagine trovato: " + barcode);
                     runOnUiThread(() -> {
                         editTextBarcode.setText(barcode);
                         fetchProductDetailsFromApi(barcode);
                     });
                 } else {
-                    androidx.media3.common.util.Log.d("BarcodeScanner",
+                    Log.d("BarcodeScanner",
                             "Nessun codice a barre trovato nell'immagine.");
                     runOnUiThread(() ->
                             Toast.makeText(this,
@@ -655,12 +664,12 @@ public class AddProductActivity extends AppCompatActivity {
                     spinnerStorageLocation.setSelection(0);
                     selectedStorageInternalKey =
                             availableLocations.get(0).getInternalKey();
-                    androidx.media3.common.util.Log.d("AddProductActivity",
+                    Log.d("AddProductActivity",
                             "Spinner default su: " + availableLocations.get(0).getName());
                 }
 
             } else {
-                androidx.media3.common.util.Log.w("AddProductActivity",
+                Log.w("AddProductActivity",
                         "Nessuna location disponibile per lo spinner.");
                 availableLocations.clear();
                 locationDisplayNames.clear();
@@ -681,7 +690,7 @@ public class AddProductActivity extends AppCompatActivity {
                 if (position >= 0 && position < availableLocations.size()) {
                     StorageLocation selectedLoc = availableLocations.get(position);
                     selectedStorageInternalKey = selectedLoc.getInternalKey();
-                    androidx.media3.common.util.Log.d("AddProductActivity",
+                    Log.d("AddProductActivity",
                             "Location selezionata: "
                                     + selectedLoc.getName()
                                     + " (Key: " + selectedStorageInternalKey + ")");
@@ -713,13 +722,13 @@ public class AddProductActivity extends AppCompatActivity {
             if (internalKey.equals(availableLocations.get(i).getInternalKey())) {
                 spinnerStorageLocation.setSelection(i);
                 selectedStorageInternalKey = internalKey;
-                androidx.media3.common.util.Log.d("AddProductActivity",
+                Log.d("AddProductActivity",
                         "Spinner preselezionato (dinamicamente) su: "
                                 + availableLocations.get(i).getName());
                 return;
             }
         }
-        androidx.media3.common.util.Log.w("AddProductActivity",
+        Log.w("AddProductActivity",
                 "Valore di location (internalKey) '"
                         + internalKey + "' non trovato nello spinner dinamico.");
     }
@@ -745,9 +754,13 @@ public class AddProductActivity extends AppCompatActivity {
                         && !currentImageUrlFromApi.trim().isEmpty()) {
                     Glide.with(AddProductActivity.this)
                             .load(currentImageUrlFromApi)
+                            .placeholder(R.drawable.ic_placeholder_image)
+                            .error(R.drawable.ic_placeholder_image)
                             .into(imageViewProduct);
-                    imageViewProduct.setVisibility(View.VISIBLE);
+                } else {
+                    imageViewProduct.setImageResource(R.drawable.ic_placeholder_image);
                 }
+                imageViewProduct.setVisibility(View.VISIBLE);
 
                 currentOpenedDate = productBeingEdited.product.getOpenedDate();
                 currentShelfLifeDays =
@@ -759,6 +772,7 @@ public class AddProductActivity extends AppCompatActivity {
                 } else {
                     editTextShelfLifeAfterOpening.setText("");
                 }
+                editTextNote.setText(productBeingEdited.product.getNote() != null ? productBeingEdited.product.getNote() : "");
                 updateOpenedDateUI(currentOpenedDate);
 
                 if (productBeingEdited.categoryDefinitions != null) {
@@ -823,7 +837,7 @@ public class AddProductActivity extends AppCompatActivity {
 
     private void startCamera() {
         if (!isCameraPermissionGranted) {
-            androidx.media3.common.util.Log.e("AddProductActivity",
+            Log.e("AddProductActivity",
                     "Tentativo di avviare la fotocamera senza permesso.");
             return;
         }
@@ -847,7 +861,7 @@ public class AddProductActivity extends AppCompatActivity {
             return;
         }
 
-        androidx.media3.common.util.Log.d("OpenFoodFacts", "Fetching details for barcode: " + barcode);
+        Log.d("OpenFoodFacts", "Fetching details for barcode: " + barcode);
         Toast.makeText(this, getString(R.string.notify_load_product), Toast.LENGTH_SHORT).show();
 
         java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> {
@@ -872,12 +886,17 @@ public class AddProductActivity extends AppCompatActivity {
                         editTextProductName.setText(getString(R.string.not_find));
                     }
                     currentImageUrlFromApi = cached.imageLocalPath;
-                    if (cached.imageLocalPath != null && !cached.imageLocalPath.trim().isEmpty()) {
-                        Glide.with(AddProductActivity.this).load(cached.imageLocalPath).into(imageViewProduct);
-                        imageViewProduct.setVisibility(View.VISIBLE);
+                    if (cached.imageLocalPath != null && !cached.imageLocalPath.trim().isEmpty() 
+                            && eu.frigo.dispensa.data.openfoodfacts.OpenFoodFactCacheManager.isFileExisting(cached.imageLocalPath)) {
+                        Glide.with(AddProductActivity.this)
+                                .load(cached.imageLocalPath)
+                                .placeholder(R.drawable.ic_placeholder_image)
+                                .error(R.drawable.ic_placeholder_image)
+                                .into(imageViewProduct);
                     } else {
-                        imageViewProduct.setVisibility(GONE);
+                        imageViewProduct.setImageResource(R.drawable.ic_placeholder_image);
                     }
+                    imageViewProduct.setVisibility(View.VISIBLE);
                     if (cached.categoriesTags != null && !cached.categoriesTags.trim().isEmpty()) {
                         currentProductTagsSet.clear();
                         currentProductTagsSet.addAll(java.util.Arrays.asList(cached.categoriesTags.split(",")));
@@ -942,11 +961,15 @@ public class AddProductActivity extends AppCompatActivity {
 
                                             currentImageUrlFromApi = localPath;
                                             if (localPath != null && !localPath.trim().isEmpty()) {
-                                                Glide.with(AddProductActivity.this).load(localPath).into(imageViewProduct);
-                                                imageViewProduct.setVisibility(View.VISIBLE);
+                                                Glide.with(AddProductActivity.this)
+                                                        .load(localPath)
+                                                        .placeholder(R.drawable.ic_placeholder_image)
+                                                        .error(R.drawable.ic_placeholder_image)
+                                                        .into(imageViewProduct);
                                             } else {
-                                                imageViewProduct.setVisibility(GONE);
+                                                imageViewProduct.setImageResource(R.drawable.ic_placeholder_image);
                                             }
+                                            imageViewProduct.setVisibility(View.VISIBLE);
 
                                             if (fetchedCategories != null && !fetchedCategories.isEmpty()) {
                                                 currentProductTagsSet.clear();
@@ -980,8 +1003,10 @@ public class AddProductActivity extends AppCompatActivity {
 
     private void clearProductApiFieldsAndData() {
         editTextProductName.setText("");
-        imageViewProduct.setImageDrawable(null);
-        imageViewProduct.setVisibility(GONE);
+        if (imageViewProduct != null) {
+            imageViewProduct.setImageResource(R.drawable.ic_placeholder_image);
+            imageViewProduct.setVisibility(View.VISIBLE);
+        }
         currentProductNameFromApi = null;
         currentImageUrlFromApi = null;
     }
@@ -995,7 +1020,7 @@ public class AddProductActivity extends AppCompatActivity {
         try {
             File imagesDir = new File(getExternalFilesDir(null), "product_images");
             if (!imagesDir.exists() && !imagesDir.mkdirs()) {
-                androidx.media3.common.util.Log.e("AddProductActivity",
+                Log.e("AddProductActivity",
                         "Impossibile creare la cartella product_images");
                 return null;
             }
@@ -1005,7 +1030,7 @@ public class AddProductActivity extends AppCompatActivity {
             currentPhotoPath = photoFile.getAbsolutePath();
             return FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", photoFile);
         } catch (Exception e) {
-            androidx.media3.common.util.Log.e("AddProductActivity",
+            Log.e("AddProductActivity",
                     "Errore nella creazione del file foto", e);
             return null;
         }
@@ -1040,16 +1065,54 @@ public class AddProductActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * Callback comune per quando l'utente ha selezionato/scattato un'immagine
-     * da usare come immagine del prodotto.
-     * Aggiorna currentImageUrlFromApi e mostra l'immagine nell'ImageView.
-     */
+    private void showProductImageOptionsDialog() {
+        CharSequence[] options;
+        if (currentImageUrlFromApi != null && !currentImageUrlFromApi.trim().isEmpty()) {
+            options = new CharSequence[] {
+                    getString(R.string.take_product_photo),
+                    getString(R.string.pick_product_image_gallery),
+                    getString(R.string.delete)
+            };
+        } else {
+            options = new CharSequence[] {
+                    getString(R.string.take_product_photo),
+                    getString(R.string.pick_product_image_gallery)
+            };
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.hint_product_image)
+                .setItems(options, (dialog, which) -> {
+                    if (which == 0) {
+                        Uri uri = createProductPhotoUri();
+                        if (uri != null) {
+                            productPhotoCaptureUri = uri;
+                            takeProductPhotoLauncher.launch(uri);
+                        } else {
+                            Toast.makeText(this, getString(R.string.err_create_photo_file), Toast.LENGTH_SHORT).show();
+                        }
+                    } else if (which == 1) {
+                        pickProductImageLauncher.launch("image/*");
+                    } else if (which == 2) {
+                        currentImageUrlFromApi = null;
+                        if (imageViewProduct != null) {
+                            imageViewProduct.setImageResource(R.drawable.ic_placeholder_image);
+                            imageViewProduct.setVisibility(View.VISIBLE);
+                        }
+                        Toast.makeText(this, getString(R.string.image_changed), Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
     private void onProductImageSelected(Uri uri) {
         currentImageUrlFromApi = uri.toString();
         imageViewProduct.setVisibility(View.VISIBLE);
         Glide.with(this)
                 .load(uri)
+                .placeholder(R.drawable.ic_placeholder_image)
+                .error(R.drawable.ic_placeholder_image)
                 .into(imageViewProduct);
         Toast.makeText(this, getString(R.string.image_changed), Toast.LENGTH_SHORT).show();
     }
@@ -1156,6 +1219,11 @@ public class AddProductActivity extends AppCompatActivity {
                 currentOpenedDate,
                 shelfLifeDays
         );
+        String note = editTextNote.getText() != null ? editTextNote.getText().toString().trim() : null;
+        if (note != null && note.isEmpty()) {
+            note = null;
+        }
+        product.setNote(note);
         List<String> tagsToSave = new ArrayList<>(currentProductTagsSet);
         if (isEditMode) {
             product.setId(currentProductId);

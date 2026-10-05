@@ -9,13 +9,18 @@ import androidx.room.Ignore;
 import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
-@Entity(tableName = "storage_locations", indices = { @Index(value = { "internal_key" }, unique = true),
-        @Index(value = { "order_index" }) })
+@Entity(tableName = "storage_locations", indices = { @Index(value = { "internal_key", "dispensa_id" }, unique = true),
+        @Index(value = { "order_index" }),
+        @Index(value = { "dispensa_id" }) })
 public class StorageLocation {
 
     @SerializedName("id")
     @PrimaryKey(autoGenerate = true)
     public int id;
+
+    @SerializedName("dispensa_id")
+    @ColumnInfo(name = "dispensa_id", defaultValue = "1")
+    public int dispensaId;
 
     @SerializedName("name")
     @ColumnInfo(name = "name")

@@ -26,11 +26,9 @@
     <string name="edit_product">Produkt bearbeiten</string>
     <string name="update_product">Produkt aktualisieren</string>
     <string name="barcode_hint">Barcode</string>
-    <string name="barcode_mandatory">Barcode erforderlich</string>
     <string name="scan_barcode_description">Barcode scannen</string>
     <string name="scan_barcode_error">Das Scannen ist fehlgeschlagen oder wurde abgebrochen</string>
     <string name="no_barcode_in_image">Barcode nicht gefunden.</string>
-    <string name="err_scan_from_image">Barcode-Scan fehlgeschlagen.</string>
     <string name="err_load_image">Fehler beim Laden des Bildes.</string>
     <string name="quantity_hint">Anzahl</string>
     <string name="quantity_mandatory">Anzahl ist erforderlich</string>
@@ -88,19 +86,17 @@
     <string name="hint_product_name">Produktname</string>
     <string name="product_name_mandatory">Produktname ist erforderlich, wenn der Barcode leer ist</string>
     <string name="hint_product_image">Produktbild</string>
+    <string name="hint_product_notes">Notizen</string>
     <string name="hint_category_tags">Tags</string>
     <string name="hint_category_new">Neues Tag (z. B. Milchprodukte)</string>
 
     <!-- Location -->
     <string name="hint_store_location">Lagerort</string>
-    <string name="new_location">Neuer Lagerort</string>
     <string name="edit_location">Lagerort bearbeiten</string>
     <string name="delete_location">Lagerort löschen</string>
-    <string name="default_icon">Standard-Symbol</string>
     <string name="add_new_location">Neuen Lagerort hinzufügen</string>
     <string name="title_manage_locations">Lagerortverwaltung</string>
     <string name="location_management_description">Ändern Sie die Reihenfolge Ihrer Lagerortverwaltung oder wählen Sie beim Öffnen der App die Standardeinstellung aus</string>
-    <string name="hint_new_location">Lagerortname</string>
     <string name="error_empty_location">Name darf nicht leer sein</string>
     <string name="notify_add_location">Lagerort \'%s\' hinzugefügt</string>
     <string name="notify_update_location">Lagerort aktualisiert</string>
@@ -113,7 +109,6 @@
 
     <!-- Version -->
     <string name="version_format_detailed">Version: %1$s (Build: %2$s)</string>
-    <string name="version_format_simple">Version: %1$s</string>
     <string name="version_not_available">Version: N/D</string>
     <string name="loading_version">Version: Lade…</string>
 
@@ -123,6 +118,9 @@
 
     <!-- Preferences -->
     <string name="pref_cat_expiry_title">Benachrichtigungen</string>
+    <string name="pref_cat_device_title">Gerät</string>
+    <string name="pref_device_name_title">Gerätename</string>
+    <string name="pref_device_name_summary">Name dieses Geräts für die Freigabe</string>
     <string name="pref_exp_days_title">Tage vor Ablauf</string>
     <string name="pref_exp_days_summary">Anzahl der Tage vor Ablauf, nach denen die Benachrichtigung erfolgt.</string>
     <string name="pref_key_exp_days">pref_expiry_days_before</string>
@@ -134,15 +132,10 @@
     <string name="pref_default_expiry_days_title">Standard-Ablaufstage</string>
     <string name="pref_default_expiry_days_summary">Ablaufdatum mit heute plus diesen Tagen vorfocussieren</string>
     <string name="pref_exp_days_error">Geben Sie eine gültige Anzahl von Tagen zwischen 0 und 365 ein.</string>
-    <string name="pref_exp_time_title">Benachrichtigungszeit auswählen</string>
 
-    <string name="pref_cat_locations_title">Lagerorte</string>
     <string name="pref_key_location">manage_locations</string>
-    <string name="pref_location_title">Lager verwalten</string>
-    <string name="pref_location_summary">Lagerorte hinzufügen, bearbeiten oder umordnen</string>
     <string name="pref_predefined_tab_style_icon">Vordefinierte Tabs als Symbole anzeigen</string>
 
-    <string name="pref_cat_theme_title">Thema</string>
     <string name="pref_key_theme">theme_preference</string>
     <string name="pref_theme_title">App-Thema</string>
     <string name="pref_theme_dark_entry">Dunkel</string>
@@ -158,17 +151,12 @@
     <string name="language_german">Deutsch</string>
 
     <string name="pref_cat_data_title">Cache und Integrationen</string>
-    <string name="pref_tosano_title">Tosano-API aktivieren</string>
-    <string name="pref_tosano_summary">Der App das Herunterladen von Daten aus der Tosano-API ermöglichen</string>
     <string name="pref_off_title">Open Food Fact API aktivieren</string>
     <string name="pref_off_summary">Der App das Herunterladen von Daten aus Open Food Fact ermöglichen</string>
-    <string name="pref_clean_images_title">Nicht verwendete Bilder löschen</string>
-    <string name="pref_clean_images_summary">Bilddateien löschen, die keinem Produkt mehr zugeordnet sind</string>
     <string name="notify_clean_images_done">%d verwaiste Bilder wurden gelöscht</string>
     <string name="err_api">Daten können nicht über die API geladen werden. Bitte aktivieren Sie Open Food Fact!</string>
 
     <!-- Cache Settings -->
-    <string name="pref_cat_off_cache_title">Open Food Facts Cache</string>
     <string name="pref_off_cache_limit_title">Offline Cache Limit</string>
     <string name="pref_off_cache_limit_summary">Maximale Anzahl der zu zwischenspeichernden Produkte (Standard: 100)</string>
     <string name="pref_off_cache_ttl_title">Cache-TTL (Tage)</string>
@@ -227,7 +215,6 @@
     <string name="shopping_list_remove">Von der Einkaufsliste entfernen</string>
     <string name="shopping_list_clear_checked">Gekaufte Artikel löschen</string>
     <string name="shopping_list_clear_confirm">Alle gekauften Artikel aus der Liste entfernen?</string>
-    <string name="shopping_list_badge_description">Einkaufsliste: %d Artikel</string>
     <string name="shopping_list_quantity">x%d</string>
     <string name="action_share">Teilen</string>
     <string name="share_shopping_list_title">Meine Einkaufsliste</string>
@@ -235,15 +222,25 @@
     <string name="pref_sync_enabled_title">Cloud-Synchronisierung aktivieren</string>
     <string name="pref_sync_enabled_summary">Ihre Vorratskammer geräteübergreifend synchronisieren</string>
     <string name="pref_sync_provider_title">Synchronisierungsanbieter</string>
-    <string name="pref_sync_config_title">Verbindung konfigurieren</string>
     <string name="pref_sync_now_title">Jetzt synchronisieren</string>
     <string name="pref_sync_status_title">Synchronisierungsstatus</string>
     <string name="sync_status_connected">Verbunden als %s</string>
     <string name="sync_status_disconnected">Getrennt</string>
     <string name="sync_last_time">Zuletzt synchronisiert: %s</string>
     <string name="share_pantry">Vorratskammer teilen</string>
+    <string name="share_pantry_dialog_title">Vorratskammer teilen</string>
+    <string name="provider_webdav">WebDAV</string>
+    <string name="provider_local_saf">Lokaler freigegebener Ordner (SAF)</string>
+    <string name="provider_gdrive">Google Drive</string>
+    <string name="sync_gdrive_config_title">Google Drive Konfiguration</string>
+    <string name="sync_gdrive_sign_in">Mit Google anmelden</string>
+    <string name="sync_gdrive_sign_out">Von Google Drive abmelden</string>
+    <string name="sync_gdrive_connected_as">Verbunden als: %s</string>
+    <string name="sync_gdrive_not_connected">Nicht mit Google Drive verbunden</string>
+    <string name="preparing_sync_server">Remote-Synchronisierung wird vorbereitet…</string>
+    <string name="sync_setup_error">Fehler beim Einrichten der Freigabe: %s</string>
+    <string name="sync_remote_delete_error">Fehler beim Löschen auf dem Server: %s. Lokales Löschen wird fortgesetzt.</string>
     <string name="join_pantry">Vorratskammer beitreten</string>
-    <string name="pairing_code_title">Kopplungscode</string>
     <string name="pairing_code_hint">Code eingeben (z. B. AB-CDEF)</string>
     <string name="sync_setup_title">Synchronisierung einrichten</string>
     <string name="sync_webdav_url">WebDAV-URL</string>
@@ -253,18 +250,57 @@
     <string name="sync_webdav_shared_mode">Gemeinsamer Ordner (nur Passwort)</string>
     <string name="sync_pairing_success">Vorratskammer erfolgreich beigetreten!</string>
     <string name="sync_pairing_error">Ungültiger Kopplungscode oder ungültige QR-Daten</string>
-    <string name="overwrite">Überschreiben</string>
-    <string name="sync_webdav_warn_existing">Vorhandene Konfiguration</string>
-    <string name="sync_webdav_warn_existing_desc">In diesem Ordner wurde eine vorhandene Synchronisierungskonfiguration gefunden. Möchten Sie diese überschreiben oder abbrechen?</string>
     <string name="action_manage_devices">Geräte verwalten</string>
     <string name="title_manage_devices">Registrierte Geräte</string>
     <string name="no_devices_found">Keine Geräte gefunden</string>
     <string name="warn_mandatory_fields">Füllen Sie alle erforderlichen Felder aus</string>
-    <string name="sync_setup_err_device_already_present">Dieses Gerät ist bereits für diese Abgabe registriert.</string>
-    <string name="sync_setup_err">Verbindungs- oder Einrichtungsfehler.</string>
     <string name="sync_setup_saved">Konfiguration erfolgreich gespeichert</string>
     <string name="sync_device_delete_confirm">Sind Sie sicher, dass Sie das Gerät \'%s\' entfernen möchten? Es kann erst wieder synchronisiert werden, wenn Sie es erneut hinzufügen.</string>
     <string name="sync_device_delete_success">Gerät erfolgreich entfernt</string>
     <string name="sync_delete_device_err">Fehler beim Entfernen: %s</string>
     <string name="sync_not_configured">Synchronisierung nicht konfiguriert</string>
+    <string name="sync_not_active_for_pantry">Die Synchronisierung ist für diese Vorratskammer non attivo per questa dispensa</string>
+    <string name="sync_preparing_server">Server wird vorbereitet…</string>
+    <string name="sync_pantry_deleted_success">Remote-Freigabeordner erfolgreich gelöscht</string>
+    <string name="manage_dispense_title">Vorratskammern verwalten</string>
+    <string name="add_dispensa">Vorratskammer hinzufügen</string>
+    <string name="import_pantry">Aus Datei importieren</string>
+    <string name="edit_dispensa">Vorratskammer bearbeiten</string>
+    <string name="delete_dispensa_title">Vorratskammer löschen</string>
+    <string name="delete_dispensa_message">Möchten Sie diese Vorratskammer wirklich löschen? Alle zugehörigen Produkte und Standorte gehen dabei verloren.</string>
+    <string name="name_required">Name erforderlich</string>
+    <string name="cannot_delete_default_dispensa">Standardvorratskammer kann nicht gelöscht werden</string>
+    <string name="dispensa_name">Name der Speisekammer</string>
+    <string name="pantry_owner_format">Besitzer: %s</string>
+    <string name="sync_pairing_expired">Der QR-Code ist abgelaufen (Gültigkeitsdauer: 10 Minuten). Bitte generieren Sie einen neuen.</string>
+    <string name="sync_owner_delete_warning">Sie löschen den Besitzer dieser Freigabe. Dadurch wird der gesamte Remote-Synchronisierungsordner ENDGÜLTIG gelöscht und die Verbindung zu allen anderen Geräten getrennt. Möchten Sie fortfahren?</string>
+
+    <!-- Shared Pantries & Provider Config -->
+    <string name="title_shared_dispense">Geteilte Vorratskammern</string>
+    <string name="subtitle_shared_dispense">Über verschiedene Anbieter synchronisierte Vorratskammern verwalten</string>
+    <string name="no_shared_dispense">Keine geteilten Vorratskammern</string>
+    <string name="no_shared_dispense_desc">Sie haben noch keine Vorratskammer geteilt oder sind einer beigetreten.</string>
+    <string name="sync_local_saf_config_title">Lokaler Ordner (SAF) Konfiguration</string>
+    <string name="sync_local_saf_desc">Wählen Sie einen Ordner auf Ihrem Gerät, einer SD-Karte oder einem Netzwerkpfad, um Ihre Vorratskammern zu speichern und zu synchronisieren.</string>
+    <string name="sync_local_saf_select_folder">Ordner auswählen</string>
+    <string name="sync_local_saf_selected_folder">Ausgewählter Ordner: %s</string>
+    <string name="sync_local_saf_no_folder">Kein Ordner ausgewählt</string>
+    <string name="sync_local_saf_test_permissions">Berechtigungen testen</string>
+    <string name="sync_local_saf_clear_folder">Ordner entfernen</string>
+    <string name="sync_local_saf_permission_ok">Lese- und Schreibberechtigungen erfolgreich überprüft</string>
+    <string name="sync_local_saf_permission_err">Berechtigungsfehler: %s</string>
+    <string name="action_configure_provider">Anbieter konfigurieren</string>
+    <string name="action_stop_sharing">Freigabe beenden</string>
+    <string name="stop_sharing_confirm_title">Freigabe beenden?</string>
+    <string name="stop_sharing_confirm_message">Möchten Sie die Synchronisierung von \'%1$s\' mit %2$s wirklich beenden?</string>
+    <string name="provider_not_configured_prompt">Der Anbieter \'%s\' ist noch nicht konfiguriert. Möchten Sie ihn jetzt konfigurieren?</string>
+    <string name="pref_shared_pantries_title">Geteilte Vorratskammern</string>
+    <string name="pref_shared_pantries_summary">Über verschiedene Anbieter synchronisierte Vorratskammern anzeigen und verwalten</string>
+    <string name="pref_providers_title">Synchronisierungsanbieter</string>
+    <string name="pref_providers_summary">Anbieter konfigurieren</string>
+    <string name="action_change_provider">Anbieter wechseln</string>
+    <string name="show_pairing_qr">Kopplungscode / QR anzeigen</string>
+    <string name="pantry_status_owner">Besitzer: Du</string>
+    <string name="pantry_status_guest">Geteilt von: %s</string>
+    <string name="not_configured_badge">(Nicht konfiguriert)</string>
 </resources>

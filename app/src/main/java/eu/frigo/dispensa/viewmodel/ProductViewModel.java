@@ -5,7 +5,7 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
-import androidx.media3.common.util.Log;
+import android.util.Log;
 
 import java.util.List;
 import eu.frigo.dispensa.data.product.Product;
@@ -21,7 +21,7 @@ public class ProductViewModel extends AndroidViewModel {
 
     public ProductViewModel(@NonNull Application application) {
         super(application);
-        repository = new Repository(application); // Usa il tuo Repository
+        repository = Repository.getInstance(application); // Usa il tuo Repository
         allProducts = repository.getAllProducts();
     }
 

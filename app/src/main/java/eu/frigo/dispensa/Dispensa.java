@@ -9,6 +9,7 @@ import androidx.lifecycle.ProcessLifecycleOwner;
 import eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl;
 import eu.frigo.dispensa.sync.core.engine.SyncManager;
 import eu.frigo.dispensa.sync.core.lifecycle.AppLifecycleObserver;
+import eu.frigo.dispensa.sync.local.LocalSafSyncProviderLoader;
 import eu.frigo.dispensa.sync.webdav.WebDavSyncProviderLoader;
 import eu.frigo.dispensa.util.ThemeHelper;
 import eu.frigo.dispensa.work.ExpiryCheckWorker;
@@ -23,8 +24,11 @@ public class Dispensa extends Application {
         createNotificationChannel();
         ExpiryCheckWorkerScheduler.scheduleWorker(this);
 
-        // Initialize Sync
-        SyncManager.getInstance().registerLoader(new WebDavSyncProviderLoader());
+        // Pulisce le immagini con percorsi non validi o orfani all'avvio dell'app
+        eu.frigo.dispensa.data.Repository.cleanOrphanImages(this, null);
+
+        // Initialize Sync providers and loaders via flavor initializer
+        eu.frigo.dispensa.sync.SyncFlavorInitializer.initialize(this);
         SyncCoordinatorImpl coordinator = SyncCoordinatorImpl.getInstance(this);
         ProcessLifecycleOwner.get().getLifecycle().addObserver(
                 new AppLifecycleObserver(coordinator)

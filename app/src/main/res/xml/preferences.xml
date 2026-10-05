@@ -4,6 +4,21 @@
     app:theme="@style/Base.Theme.Dispensa">
 
     <PreferenceCategory
+        app:title="@string/pref_cat_device_title"
+        app:layout="@layout/custom_category"
+        app:iconSpaceReserved="false">
+
+        <EditTextPreference
+            app:key="pref_key_device_name"
+            app:title="@string/pref_device_name_title"
+            app:summary="@string/pref_device_name_summary"
+            app:useSimpleSummaryProvider="true"
+            app:layout="@layout/preference_single_line"
+            app:iconSpaceReserved="false"/>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
         app:title="@string/pref_cat_expiry_title"
         app:layout="@layout/custom_category"
         app:iconSpaceReserved="false">
@@ -112,12 +127,6 @@
             app:defaultValue="@bool/pref_enable_api"
             app:iconSpaceReserved="false"/>
 
-        <Preference
-            app:key="pref_clean_images"
-            app:title="@string/pref_clean_images_title"
-            app:summary="@string/pref_clean_images_summary"
-            app:iconSpaceReserved="false"/>
-
     </PreferenceCategory>
 
     <PreferenceCategory
@@ -133,19 +142,18 @@
             app:defaultValue="false"
             app:iconSpaceReserved="false"/>
 
-        <ListPreference
-            app:key="pref_sync_provider"
-            app:title="@string/pref_sync_provider_title"
-            app:entries="@array/sync_provider_entries"
-            app:entryValues="@array/sync_provider_values"
-            app:defaultValue="webdav"
+        <Preference
+            app:key="pref_shared_pantries"
+            app:title="@string/pref_shared_pantries_title"
+            app:summary="@string/pref_shared_pantries_summary"
             app:dependency="pref_sync_enabled"
             app:layout="@layout/preference_single_line"
             app:iconSpaceReserved="false"/>
 
         <Preference
             app:key="pref_sync_config"
-            app:title="@string/pref_sync_config_title"
+            app:title="@string/pref_providers_title"
+            app:summary="@string/pref_providers_summary"
             app:dependency="pref_sync_enabled"
             app:layout="@layout/preference_single_line"
             app:iconSpaceReserved="false"/>

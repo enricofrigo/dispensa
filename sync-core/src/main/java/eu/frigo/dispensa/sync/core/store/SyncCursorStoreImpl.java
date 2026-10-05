@@ -4,8 +4,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 public class SyncCursorStoreImpl implements SyncCursorStore {
-    private static final String PREF_NAME = "sync_cursor_prefs";
-    private static final String KEY_LAST_SYNC = "last_sync_timestamp";
+    public static final String PREF_NAME = "sync_cursor_prefs";
+    public static final String KEY_LAST_SYNC = "last_sync_timestamp";
     private final SharedPreferences prefs;
 
     public SyncCursorStoreImpl(Context context) {

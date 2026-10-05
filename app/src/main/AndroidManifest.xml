@@ -21,6 +21,15 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Dispensa">
         <activity
+            android:name=".activity.DispensaManagerActivity"
+            android:label="@string/manage_dispense_title"
+            android:parentActivityName=".activity.MainActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".activity.MainActivity" />
+        </activity>
+
+        <activity
             android:name=".activity.SettingsActivity"
             android:label="Impostazioni"
             android:parentActivityName=".activity.MainActivity">
@@ -65,12 +74,22 @@
         </activity>
 
         <activity
-            android:name=".sync.ui.SyncWebDavConfigActivity"
+            android:name=".activity.SyncWebDavConfigActivity"
             android:label="@string/sync_setup_title"
             android:parentActivityName=".activity.SettingsActivity" />
 
         <activity
-            android:name=".sync.ui.SyncOnboardingActivity"
+            android:name=".activity.SyncLocalSafConfigActivity"
+            android:label="@string/sync_local_saf_config_title"
+            android:parentActivityName=".activity.SettingsActivity" />
+
+        <activity
+            android:name=".activity.SharedDispenseActivity"
+            android:label="@string/title_shared_dispense"
+            android:parentActivityName=".activity.DispensaManagerActivity" />
+
+        <activity
+            android:name=".activity.SyncOnboardingActivity"
             android:label="@string/sync_setup_title"
             android:exported="true">
             <intent-filter android:autoVerify="true">
@@ -85,7 +104,7 @@
         </activity>
 
         <activity
-            android:name=".sync.ui.ManageDevicesActivity"
+            android:name=".activity.ManageDevicesActivity"
             android:label="@string/title_manage_devices"
             android:parentActivityName=".activity.MainActivity" />
 

@@ -17,7 +17,7 @@ import androidx.core.content.pm.PackageInfoCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.media3.common.util.Log;
+import android.util.Log;
 
 import java.util.Objects;
 
@@ -53,6 +53,13 @@ public class SettingsActivity extends AppCompatActivity {
                         systemBars.bottom);
             }
             return windowInsets;
+        });
+
+        getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                navigateToListAndFinish();
+            }
         });
 
         if (savedInstanceState == null) {
@@ -130,12 +137,6 @@ public class SettingsActivity extends AppCompatActivity {
     public boolean onSupportNavigateUp() {
         navigateToListAndFinish();
         return true;
-    }
-
-    @Override
-    public void onBackPressed() {
-        super.onBackPressed();
-        navigateToListAndFinish();
     }
 
     private void navigateToListAndFinish() {
