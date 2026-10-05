@@ -24,16 +24,15 @@ import eu.frigo.dispensa.data.AppDatabase;
 import eu.frigo.dispensa.data.dispensa.Dispensa;
 import eu.frigo.dispensa.data.product.Product;
 import eu.frigo.dispensa.data.sync.JoinedPantryConfig;
-import eu.frigo.dispensa.data.sync.OutboxRepositoryImpl;
 import eu.frigo.dispensa.data.sync.SyncOutbox;
 import eu.frigo.dispensa.sync.core.pairing.PairingPayload;
 import eu.frigo.dispensa.sync.core.pairing.PairingPayloadCodecImpl;
 import eu.frigo.dispensa.sync.core.engine.SyncManager;
 import eu.frigo.dispensa.sync.core.policy.SyncPolicy;
 import eu.frigo.dispensa.sync.core.store.SyncCursorStore;
+import eu.frigo.dispensa.sync.core.model.PantryManifest;
+import eu.frigo.dispensa.sync.core.model.PantrySnapshot;
 import eu.frigo.dispensa.sync.webdav.client.WebDavClient;
-import eu.frigo.dispensa.sync.webdav.model.WebDavManifest;
-import eu.frigo.dispensa.sync.webdav.model.WebDavSnapshot;
 import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -230,12 +229,12 @@ public class PantrySharingSyncTest {
         SyncCursorStore cursorStoreGuest = new InMemoryCursorStore();
 
         WebDavSyncEngine syncEngineOwner = new WebDavSyncEngine(
-                clientOwner, cursorStoreOwner, new OutboxRepositoryImpl(dbOwner),
+                clientOwner, cursorStoreOwner,
                 ownerDeviceId, pantryPath, ownerPantryId, dbOwner, context
         );
 
         WebDavSyncEngine syncEngineGuest = new WebDavSyncEngine(
-                clientGuest, cursorStoreGuest, new OutboxRepositoryImpl(dbGuest),
+                clientGuest, cursorStoreGuest,
                 guestDeviceId, pantryPath, guestPantryId, dbGuest, context
         );
 
@@ -279,7 +278,7 @@ public class PantrySharingSyncTest {
         // Verify remote manifest contains event file or snapshot
         byte[] manifestBytes = remoteStorage.get(pantryPath + "manifest.json");
         Assert.assertNotNull(manifestBytes);
-        WebDavManifest remoteManifest = gson.fromJson(new String(manifestBytes), WebDavManifest.class);
+        PantryManifest remoteManifest = gson.fromJson(new String(manifestBytes), PantryManifest.class);
         Assert.assertNotNull(remoteManifest);
 
         // ==========================================
@@ -370,7 +369,6 @@ public class PantrySharingSyncTest {
         WebDavSyncEngine guestSyncEngine = new WebDavSyncEngine(
                 client,
                 new InMemoryCursorStore(),
-                new OutboxRepositoryImpl(dbGuest),
                 guestDeviceId,
                 pantryPath,
                 guestPantryId,
@@ -410,7 +408,6 @@ public class PantrySharingSyncTest {
         WebDavSyncEngine ownerSyncEngine = new WebDavSyncEngine(
                 client,
                 new InMemoryCursorStore(),
-                new OutboxRepositoryImpl(dbOwner),
                 ownerDeviceId,
                 pantryPath,
                 ownerPantryId,
@@ -424,7 +421,7 @@ public class PantrySharingSyncTest {
         // 4. Verify manifest.json was created
         byte[] manifestData = remoteStorage.get(pantryPath + "manifest.json");
         Assert.assertNotNull("Manifest should be created on server", manifestData);
-        WebDavManifest manifest = gson.fromJson(new String(manifestData), WebDavManifest.class);
+        PantryManifest manifest = gson.fromJson(new String(manifestData), PantryManifest.class);
         Assert.assertEquals(SyncManager.CURRENT_SYNC_VERSION, manifest.version);
         Assert.assertEquals("Dispensa Inizializzata", manifest.pantryName);
         Assert.assertEquals(ownerDeviceId, manifest.createdByDevice);
@@ -437,10 +434,11 @@ public class PantrySharingSyncTest {
         // 6. Verify snapshot was saved containing local products
         byte[] snapshotData = remoteStorage.get(pantryPath + "snapshots/" + manifest.latestSnapshotId);
         Assert.assertNotNull("Snapshot file should exist in storage", snapshotData);
-        WebDavSnapshot snapshot = gson.fromJson(new String(snapshotData), WebDavSnapshot.class);
+        PantrySnapshot snapshot = gson.fromJson(new String(snapshotData), PantrySnapshot.class);
         Assert.assertNotNull(snapshot.products);
         Assert.assertEquals(1, snapshot.products.size());
-        Assert.assertEquals("Prodotto Esistente", snapshot.products.get(0).getProductName());
+        Map<?, ?> prodMap = (Map<?, ?>) snapshot.products.get(0);
+        Assert.assertEquals("Prodotto Esistente", prodMap.get("product_name"));
 
         // 7. Now Guest can sync successfully
         guestSyncEngine.performSync(FORCE_POLICY).blockingAwait();

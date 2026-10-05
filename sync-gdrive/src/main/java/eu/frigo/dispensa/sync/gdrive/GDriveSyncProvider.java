@@ -9,7 +9,6 @@ import java.util.List;
 import eu.frigo.dispensa.data.AppDatabase;
 import eu.frigo.dispensa.data.sync.RoomPantryDataBridge;
 import eu.frigo.dispensa.sync.core.engine.FolderSyncEngine;
-import eu.frigo.dispensa.sync.core.provider.RemoteStore;
 import eu.frigo.dispensa.sync.core.provider.SyncProvider;
 import eu.frigo.dispensa.sync.core.store.SyncCursorStoreImpl;
 import eu.frigo.dispensa.sync.gdrive.store.GDriveFolderStore;
@@ -46,11 +45,6 @@ public class GDriveSyncProvider implements SyncProvider {
     @Override
     public Single<Boolean> isAvailable() {
         return Single.just(true);
-    }
-
-    @Override
-    public RemoteStore getRemoteStore() {
-        return null;
     }
 
     @Override

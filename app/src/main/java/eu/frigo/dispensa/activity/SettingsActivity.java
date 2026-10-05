@@ -55,6 +55,13 @@ public class SettingsActivity extends AppCompatActivity {
             return windowInsets;
         });
 
+        getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                navigateToListAndFinish();
+            }
+        });
+
         if (savedInstanceState == null) {
             boolean openManageLocations = getIntent().getBooleanExtra("OPEN_MANAGE_LOCATIONS", false);
             if (openManageLocations) {
@@ -130,12 +137,6 @@ public class SettingsActivity extends AppCompatActivity {
     public boolean onSupportNavigateUp() {
         navigateToListAndFinish();
         return true;
-    }
-
-    @Override
-    public void onBackPressed() {
-        super.onBackPressed();
-        navigateToListAndFinish();
     }
 
     private void navigateToListAndFinish() {

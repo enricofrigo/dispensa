@@ -26,11 +26,9 @@
     <string name="edit_product">Modifica Prodotto</string>
     <string name="update_product">Aggiorna Prodotto</string>
     <string name="barcode_hint">Codice a Barre</string>
-    <string name="barcode_mandatory">Il codice a barre è obbligatorio</string>
     <string name="scan_barcode_description">Scansiona codice a barre</string>
     <string name="scan_barcode_error">Scansione codice a barre fallita o annullata</string>
     <string name="no_barcode_in_image">Nessun codice a barre trovato nell\'immagine.</string>
-    <string name="err_scan_from_image">Errore nella scansione del codice a barre da immagine.</string>
     <string name="err_load_image">Errore nel caricamento dell\'immagine.</string>
     <string name="quantity_hint">Quantità</string>
     <string name="quantity_mandatory">La quantità è obbligatoria</string>
@@ -76,8 +74,6 @@
     <string name="cancel">Annulla</string>
     <string name="ok">OK</string>
     <string name="move">Sposta</string>
-    <string name="overwrite">Sovrascrivi</string>
-
 
     <!-- Messages -->
     <string name="notify_saved">Salvataggio effettuato</string>
@@ -96,14 +92,11 @@
 
     <!-- Location -->
     <string name="hint_store_location">Posizione deposito</string>
-    <string name="new_location">Nuovo deposito</string>
     <string name="edit_location">Modifica deposito</string>
     <string name="delete_location">Elimina deposito</string>
-    <string name="default_icon">Icona Default</string>
     <string name="add_new_location">Aggiungi nuova deposito</string>
     <string name="title_manage_locations">Gestione depositi</string>
     <string name="location_management_description">Riordina i tuoi depositi o seleziona la dispensa predefinita all\'avvio dell\'applicazione</string>
-    <string name="hint_new_location">Nome della dispensa</string>
     <string name="error_empty_location">Il nome non può essere vuoto</string>
     <string name="notify_add_location">deposito \'%s\' aggiunta</string>
     <string name="notify_update_location">deposito aggiornata</string>
@@ -117,7 +110,6 @@ I prodotti in questo deposito potrebbero dover essere riassegnati.</string>
 
     <!-- Version -->
     <string name="version_format_detailed">Versione: %1$s (Build: %2$s)</string>
-    <string name="version_format_simple">Versione: %1$s</string>
     <string name="version_not_available">Versione: N/D</string>
     <string name="loading_version">Versione: Caricamento…</string>
 
@@ -141,15 +133,10 @@ I prodotti in questo deposito potrebbero dover essere riassegnati.</string>
     <string name="pref_default_expiry_days_title">Giorni di scadenza predefiniti</string>
     <string name="pref_default_expiry_days_summary">Pre-imposta la data di scadenza con oggi più questi giorni</string>
     <string name="pref_exp_days_error">Inserisci un numero di giorni valido da 0 a 365.</string>
-    <string name="pref_exp_time_title">Seleziona ora notifica</string>
 
-    <string name="pref_cat_locations_title">Locations</string>
     <string name="pref_key_location">manage_locations</string>
-    <string name="pref_location_title">Gestione degli storage</string>
-    <string name="pref_location_summary">Aggiungi, modifica o riordina le tue location</string>
     <string name="pref_predefined_tab_style_icon">Mostra tab predefiniti come icone</string>
 
-    <string name="pref_cat_theme_title">Aspetto</string>
     <string name="pref_key_theme">theme_preference</string>
     <string name="pref_theme_title">Tema dell\'app</string>
     <string name="pref_theme_dark_entry">Scuro</string>
@@ -164,15 +151,10 @@ I prodotti in questo deposito potrebbero dover essere riassegnati.</string>
     <string name="language_italian">Italiano</string>
 
     <string name="pref_cat_data_title">Cache e Integrazioni</string>
-    <string name="pref_tosano_title">Abilita API Tosano</string>
-    <string name="pref_tosano_summary">Consenti all\'app di scaricare dati da Supermercati Tosano</string>
-    <string name="pref_clean_images_title">Pulisci immagini residue</string>
-    <string name="pref_clean_images_summary">Elimina i file immagine non associati ad alcun prodotto</string>
     <string name="notify_clean_images_done">Eliminate %d immagini orfane</string>
     <string name="err_api">Impossibile caricare i dati dalle API, abilitare le API Open Food Fact!</string>
 
     <!-- Cache Settings -->
-    <string name="pref_cat_off_cache_title">Cache Locale Open Food Facts</string>
     <string name="pref_off_cache_limit_title">Dimensione cache offline</string>
     <string name="pref_off_cache_limit_summary">Numero massimo di prodotti nella cache (default 100)</string>
     <string name="pref_off_cache_ttl_title">Durata cache (giorni)</string>
@@ -235,7 +217,6 @@ I prodotti in questo deposito potrebbero dover essere riassegnati.</string>
     <string name="shopping_list_remove">Rimuovi dalla lista della spesa</string>
     <string name="shopping_list_clear_checked">Svuota prodotti comprati</string>
     <string name="shopping_list_clear_confirm">Rimuovere tutti i prodotti comprati dalla lista?</string>
-    <string name="shopping_list_badge_description">Lista della spesa: %d prodotti</string>
     <string name="shopping_list_quantity">x%d</string>
     <string name="action_share">Condividi</string>
     <string name="share_shopping_list_title">Lista della spesa</string>
@@ -243,7 +224,6 @@ I prodotti in questo deposito potrebbero dover essere riassegnati.</string>
     <string name="pref_sync_enabled_title">Abilita la sincronizzazione Cloud Sync</string>
     <string name="pref_sync_enabled_summary">Sincronizza la tua dispensa su tutti i dispositivi</string>
     <string name="pref_sync_provider_title">Provider di sincronizzazione</string>
-    <string name="pref_sync_config_title">Configura la connessione</string>
     <string name="pref_sync_now_title">Sincronizza ora</string>
     <string name="pref_sync_status_title">Stato della sincronizzazione</string>
     <string name="sync_status_connected">Connesso come %s</string>
@@ -251,8 +231,6 @@ I prodotti in questo deposito potrebbero dover essere riassegnati.</string>
     <string name="sync_last_time">Ultima sincronizzazione: %s</string>
     <string name="share_pantry">Condividi la dispensa</string>
     <string name="share_pantry_dialog_title">Condividi Dispensa</string>
-    <string name="share_pantry_dialog_message">Scegli il servizio per condividere la dispensa \'%s\'. Verrà creata una cartella dedicata nel cloud.</string>
-    <string name="share_button">Condividi</string>
     <string name="provider_webdav">WebDAV</string>
     <string name="provider_local_saf">Cartella Condivisa Locale (SAF)</string>
     <string name="provider_gdrive">Google Drive</string>
@@ -261,12 +239,10 @@ I prodotti in questo deposito potrebbero dover essere riassegnati.</string>
     <string name="sync_gdrive_sign_out">Disconnetti Google Drive</string>
     <string name="sync_gdrive_connected_as">Connesso come: %s</string>
     <string name="sync_gdrive_not_connected">Non connesso a Google Drive</string>
-    <string name="sync_configure_first">Configura prima la sincronizzazione nelle impostazioni</string>
     <string name="preparing_sync_server">Preparazione sincronizzazione remota…</string>
     <string name="sync_setup_error">Errore configurazione condivisione: %s</string>
     <string name="sync_remote_delete_error">Errore cancellazione remota: %s. Procedo con la cancellazione locale.</string>
     <string name="join_pantry">Unisciti alla dispensa</string>
-    <string name="pairing_code_title">Codice di abbinamento</string>
     <string name="pairing_code_hint">Inserisci il codice (es. AB-CDEF)</string>
     <string name="sync_setup_title">Configurazione della sincronizzazione</string>
     <string name="sync_webdav_url">URL WebDAV</string>
@@ -276,14 +252,10 @@ I prodotti in questo deposito potrebbero dover essere riassegnati.</string>
     <string name="sync_webdav_shared_mode">Cartella Condivisa (Solo password)</string>
     <string name="sync_pairing_success">Dispensa aggiunta con successo!</string>
     <string name="sync_pairing_error">Codice di abbinamento o dati QR non validi</string>
-    <string name="sync_webdav_warn_existing">Configurazione Esistente</string>
-    <string name="sync_webdav_warn_existing_desc">È stata trovata una configurazione di sincronizzazione esistente in questa cartella. Vuoi sovrascriverla o annullare?</string>
     <string name="action_manage_devices">Gestione Dispositivi</string>
     <string name="title_manage_devices">Dispositivi Registrati</string>
     <string name="no_devices_found">Nessun dispositivo trovato</string>
     <string name="warn_mandatory_fields">Compila tutti i campi obbligatori</string>
-    <string name="sync_setup_err_device_already_present">Questo dispositivo è già registrato in questa dispensa.</string>
-    <string name="sync_setup_err">Connessione o configurazione fallita.</string>
     <string name="sync_setup_saved">Configurazione salvata con successo</string>
     <string name="sync_device_delete_confirm">Sei sicuro di voler rimuovere il dispositivo \'%s\'? Non potrà più sincronizzarsi finché non verrà ri-aggiunto.</string>
     <string name="sync_device_delete_success">Dispositivo rimosso con successo</string>
@@ -325,7 +297,6 @@ I prodotti in questo deposito potrebbero dover essere riassegnati.</string>
     <string name="action_stop_sharing">Interrompi condivisione</string>
     <string name="stop_sharing_confirm_title">Interrompere la condivisione?</string>
     <string name="stop_sharing_confirm_message">Sei sicuro di voler interrompere la sincronizzazione di \'%1$s\' con %2$s?</string>
-    <string name="shared_with_provider_format">Condivisa con %s</string>
     <string name="provider_not_configured_prompt">Il provider \'%s\' non è ancora configurato. Vuoi configurarlo adesso?</string>
     <string name="pref_shared_pantries_title">Dispense condivise</string>
     <string name="pref_shared_pantries_summary">Gestisci le dispense sincronizzate</string>
@@ -335,6 +306,5 @@ I prodotti in questo deposito potrebbero dover essere riassegnati.</string>
     <string name="show_pairing_qr">Mostra Codice / QR</string>
     <string name="pantry_status_owner">Proprietario: Tu</string>
     <string name="pantry_status_guest">Condivisa da: %s</string>
-    <string name="action_select_provider">Seleziona Provider</string>
     <string name="not_configured_badge">(Non configurato)</string>
 </resources>

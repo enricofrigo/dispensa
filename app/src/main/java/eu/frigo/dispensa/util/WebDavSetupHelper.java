@@ -9,9 +9,9 @@ import com.google.gson.Gson;
 
 import eu.frigo.dispensa.sync.core.engine.InstallationIdProvider;
 import eu.frigo.dispensa.sync.core.engine.SyncManager;
+import eu.frigo.dispensa.sync.core.model.PantryDevice;
+import eu.frigo.dispensa.sync.core.model.PantryManifest;
 import eu.frigo.dispensa.sync.webdav.client.WebDavClient;
-import eu.frigo.dispensa.sync.webdav.model.WebDavDevice;
-import eu.frigo.dispensa.sync.webdav.model.WebDavManifest;
 import io.reactivex.rxjava3.core.Single;
 import okhttp3.Response;
 
@@ -37,7 +37,7 @@ public class WebDavSetupHelper {
 
             // 3. Create manifest.json
             String manifestPath = fullPath + SyncManager.MANIFEST_JSON;
-            WebDavManifest manifest = new WebDavManifest();
+            PantryManifest manifest = new PantryManifest();
             manifest.version = SyncManager.CURRENT_SYNC_VERSION;
             manifest.pantryName = pantryName;
             manifest.createdAt = System.currentTimeMillis();
@@ -52,7 +52,7 @@ public class WebDavSetupHelper {
             // 4. Register current device
             String deviceName = PreferenceManager.getDefaultSharedPreferences(context)
                     .getString(SyncManager.KEY_DEVICE_NAME, Build.MODEL);
-            WebDavDevice device = new WebDavDevice();
+            PantryDevice device = new PantryDevice();
             device.deviceId = deviceId;
             device.deviceName = deviceName;
             device.lastSeen = System.currentTimeMillis();
