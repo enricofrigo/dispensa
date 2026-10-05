@@ -19,7 +19,6 @@ android {
 
 dependencies {
     implementation(libs.androidx.preference)
-    implementation(libs.room.rxjava3)
     implementation(libs.rxandroid)
     implementation(libs.rxjava)
     implementation(libs.androidx.work.runtime)

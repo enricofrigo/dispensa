@@ -5,7 +5,7 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
-import androidx.media3.common.util.Log;
+import android.util.Log;
 
 import java.util.List;
 import eu.frigo.dispensa.data.product.Product;

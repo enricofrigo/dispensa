@@ -32,7 +32,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-import androidx.media3.common.util.Log;
+import android.util.Log;
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.adapter.DispensaAdapter;
 import eu.frigo.dispensa.data.AppDatabase;

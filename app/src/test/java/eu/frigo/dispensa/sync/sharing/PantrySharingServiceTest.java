@@ -60,6 +60,8 @@ public class PantrySharingServiceTest {
     @Test
     public void testAvailableProviders_NoneConfigured() {
         PantrySharingService service = new PantrySharingService();
+        service.registerProvider(new WebDavSharingProvider());
+        service.registerProvider(new LocalSafSharingProvider());
         List<SharingProvider> available = service.getAvailableProviders(context);
         Assert.assertTrue(available.isEmpty());
     }
@@ -73,6 +75,8 @@ public class PantrySharingServiceTest {
                 .apply();
 
         PantrySharingService service = new PantrySharingService();
+        service.registerProvider(new WebDavSharingProvider());
+        service.registerProvider(new LocalSafSharingProvider());
         List<SharingProvider> available = service.getAvailableProviders(context);
         Assert.assertEquals(1, available.size());
         Assert.assertEquals("webdav", available.get(0).getProviderId());
@@ -85,6 +89,8 @@ public class PantrySharingServiceTest {
                 .apply();
 
         PantrySharingService service = new PantrySharingService();
+        service.registerProvider(new WebDavSharingProvider());
+        service.registerProvider(new LocalSafSharingProvider());
         List<SharingProvider> available = service.getAvailableProviders(context);
         Assert.assertEquals(1, available.size());
         Assert.assertEquals("local_saf", available.get(0).getProviderId());
@@ -100,6 +106,8 @@ public class PantrySharingServiceTest {
                 .apply();
 
         PantrySharingService service = new PantrySharingService();
+        service.registerProvider(new WebDavSharingProvider());
+        service.registerProvider(new LocalSafSharingProvider());
         List<SharingProvider> available = service.getAvailableProviders(context);
         Assert.assertEquals(2, available.size());
     }
@@ -155,10 +163,7 @@ public class PantrySharingServiceTest {
         Assert.assertTrue(storage.containsKey(pantryPath + SyncManager.DEFAULT_DEVICES_FOLDER + deviceId + ".json"));
 
         // 3. Verify JoinedPantryConfig saved
-        JoinedPantryConfig config = database.joinedPantryConfigDao().getConfigByJoinedId((int) dispId);
-        if (config == null) {
-            config = database.joinedPantryConfigDao().getConfigByDispensaId((int) dispId);
-        }
+        JoinedPantryConfig config = database.joinedPantryConfigDao().getConfigByDispensaId((int) dispId);
         Assert.assertNotNull(config);
         Assert.assertEquals("custom_provider", config.providerId);
         Assert.assertEquals("{\"token\":\"abc\"}", config.configPayload);

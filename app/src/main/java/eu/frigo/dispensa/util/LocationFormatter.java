@@ -1,7 +1,6 @@
 package eu.frigo.dispensa.util;
 
 import android.content.Context;
-import androidx.media3.common.util.Log;
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.data.storage.PredefinedData;
 import eu.frigo.dispensa.data.storage.StorageLocation;
