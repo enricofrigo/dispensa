@@ -17,7 +17,7 @@ import androidx.core.content.pm.PackageInfoCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.media3.common.util.Log;
+import android.util.Log;
 
 import java.util.Objects;
 

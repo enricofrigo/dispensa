@@ -19,6 +19,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import eu.frigo.dispensa.sync.gdrive.client.GDriveClient;
+import eu.frigo.dispensa.sync.gdrive.client.GDriveTokenProvider;
 import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -195,7 +196,16 @@ public class GDriveFolderStoreContractTest {
 
         String baseUrl = server.url("/drive/v3/").toString();
         String uploadUrl = server.url("/upload/drive/v3/").toString();
-        GDriveClient client = new GDriveClient(() -> "mock-token", baseUrl, uploadUrl);
+        GDriveTokenProvider tokenProvider = new GDriveTokenProvider() {
+            @Override
+            public String getAccessToken() {
+                return "mock-token";
+            }
+
+            @Override
+            public void invalidateToken(String token) {}
+        };
+        GDriveClient client = new GDriveClient(tokenProvider, baseUrl, uploadUrl);
         folderStore = new GDriveFolderStore(client, "root");
     }
 

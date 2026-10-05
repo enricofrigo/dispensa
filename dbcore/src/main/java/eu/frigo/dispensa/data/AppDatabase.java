@@ -1,10 +1,9 @@
 package eu.frigo.dispensa.data;
 
 import android.content.Context;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
-import androidx.media3.common.util.Log;
-import androidx.media3.common.util.UnstableApi;
 import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
@@ -193,7 +192,6 @@ public abstract class AppDatabase extends RoomDatabase {
                     PreMigrationBackupHelper.checkAndBackup(context.getApplicationContext(), "dispensa_database", 20);
 
                     RoomDatabase.Callback sRoomDatabaseCallback = new RoomDatabase.Callback() {
-                        @UnstableApi
                         @Override
                         public void onCreate(@NonNull SupportSQLiteDatabase db) {
                             super.onCreate(db);
@@ -218,7 +216,6 @@ public abstract class AppDatabase extends RoomDatabase {
                             });
                         }
 
-                        @UnstableApi
                         @Override
                         public void onOpen(@NonNull SupportSQLiteDatabase db) {
                             super.onOpen(db);

@@ -40,7 +40,7 @@ import androidx.core.view.ViewCompat;
 
 import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.media3.common.util.Log;
+import android.util.Log;
 import androidx.preference.PreferenceManager;
 
 import com.bumptech.glide.Glide;

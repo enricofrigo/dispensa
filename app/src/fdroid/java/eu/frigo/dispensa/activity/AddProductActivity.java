@@ -168,7 +168,7 @@ public class AddProductActivity extends AppCompatActivity {
 
                 if (isValidProductBarcode(barcode)) {
                     isScanning = false;
-                    androidx.media3.common.util.Log.d("BarcodeScanner",
+                    Log.d("BarcodeScanner",
                             "Codice a barre trovato: " + barcode +
                                     " (Formato: " + result.getBarcodeFormat() + ")");
 
@@ -251,7 +251,7 @@ public class AddProductActivity extends AppCompatActivity {
 
         if (getIntent().hasExtra(PRESELECTED_LOCATION_INTERNAL_KEY)) {
             preselectedLocationValue = getIntent().getStringExtra(PRESELECTED_LOCATION_INTERNAL_KEY);
-            androidx.media3.common.util.Log.d("AddProductActivity",
+            Log.d("AddProductActivity",
                     "Ricevuta location preselezionata: " + preselectedLocationValue);
         }
         setupStorageLocationSpinner();
@@ -282,12 +282,12 @@ public class AddProductActivity extends AppCompatActivity {
                 new ActivityResultContracts.GetContent(),
                 uri -> {
                     if (uri != null) {
-                        androidx.media3.common.util.Log.d("BarcodeScan",
+                        Log.d("BarcodeScan",
                                 "Immagine selezionata dalla galleria per barcode: " + uri);
                         stopCamera();
                         processImageForBarcode(uri);
                     } else {
-                        androidx.media3.common.util.Log.d("BarcodeScan",
+                        Log.d("BarcodeScan",
                                 "Selezione immagine per barcode annullata.");
                     }
                 }
@@ -378,7 +378,7 @@ public class AddProductActivity extends AppCompatActivity {
                     updateLabel();
                 }
             } catch (NumberFormatException e) {
-                androidx.media3.common.util.Log.e("AddProductActivity", "Errore conversione default expiry days: " + e.getMessage());
+                Log.e("AddProductActivity", "Errore conversione default expiry days: " + e.getMessage());
             }
 
             checkCameraPermissionAndStartScanner();
@@ -505,14 +505,14 @@ public class AddProductActivity extends AppCompatActivity {
             if (bitmap != null) {
                 String barcode = decodeBarcode(bitmap);
                 if (barcode != null) {
-                    androidx.media3.common.util.Log.d("BarcodeScanner",
+                    Log.d("BarcodeScanner",
                             "Codice a barre da immagine trovato: " + barcode);
                     runOnUiThread(() -> {
                         editTextBarcode.setText(barcode);
                         fetchProductDetailsFromApi(barcode);
                     });
                 } else {
-                    androidx.media3.common.util.Log.d("BarcodeScanner",
+                    Log.d("BarcodeScanner",
                             "Nessun codice a barre trovato nell'immagine.");
                     runOnUiThread(() ->
                             Toast.makeText(this,
@@ -657,12 +657,12 @@ public class AddProductActivity extends AppCompatActivity {
                     spinnerStorageLocation.setSelection(0);
                     selectedStorageInternalKey =
                             availableLocations.get(0).getInternalKey();
-                    androidx.media3.common.util.Log.d("AddProductActivity",
+                    Log.d("AddProductActivity",
                             "Spinner default su: " + availableLocations.get(0).getName());
                 }
 
             } else {
-                androidx.media3.common.util.Log.w("AddProductActivity",
+                Log.w("AddProductActivity",
                         "Nessuna location disponibile per lo spinner.");
                 availableLocations.clear();
                 locationDisplayNames.clear();
@@ -683,7 +683,7 @@ public class AddProductActivity extends AppCompatActivity {
                 if (position >= 0 && position < availableLocations.size()) {
                     StorageLocation selectedLoc = availableLocations.get(position);
                     selectedStorageInternalKey = selectedLoc.getInternalKey();
-                    androidx.media3.common.util.Log.d("AddProductActivity",
+                    Log.d("AddProductActivity",
                             "Location selezionata: "
                                     + selectedLoc.getName()
                                     + " (Key: " + selectedStorageInternalKey + ")");
@@ -715,13 +715,13 @@ public class AddProductActivity extends AppCompatActivity {
             if (internalKey.equals(availableLocations.get(i).getInternalKey())) {
                 spinnerStorageLocation.setSelection(i);
                 selectedStorageInternalKey = internalKey;
-                androidx.media3.common.util.Log.d("AddProductActivity",
+                Log.d("AddProductActivity",
                         "Spinner preselezionato (dinamicamente) su: "
                                 + availableLocations.get(i).getName());
                 return;
             }
         }
-        androidx.media3.common.util.Log.w("AddProductActivity",
+        Log.w("AddProductActivity",
                 "Valore di location (internalKey) '"
                         + internalKey + "' non trovato nello spinner dinamico.");
     }
@@ -826,7 +826,7 @@ public class AddProductActivity extends AppCompatActivity {
 
     private void startCamera() {
         if (!isCameraPermissionGranted) {
-            androidx.media3.common.util.Log.e("AddProductActivity",
+            Log.e("AddProductActivity",
                     "Tentativo di avviare la fotocamera senza permesso.");
             return;
         }
@@ -850,7 +850,7 @@ public class AddProductActivity extends AppCompatActivity {
             return;
         }
 
-        androidx.media3.common.util.Log.d("OpenFoodFacts", "Fetching details for barcode: " + barcode);
+        Log.d("OpenFoodFacts", "Fetching details for barcode: " + barcode);
         Toast.makeText(this, getString(R.string.notify_load_product), Toast.LENGTH_SHORT).show();
 
         java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> {
@@ -999,7 +999,7 @@ public class AddProductActivity extends AppCompatActivity {
         try {
             File imagesDir = new File(getExternalFilesDir(null), "product_images");
             if (!imagesDir.exists() && !imagesDir.mkdirs()) {
-                androidx.media3.common.util.Log.e("AddProductActivity",
+                Log.e("AddProductActivity",
                         "Impossibile creare la cartella product_images");
                 return null;
             }
@@ -1009,7 +1009,7 @@ public class AddProductActivity extends AppCompatActivity {
             currentPhotoPath = photoFile.getAbsolutePath();
             return FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", photoFile);
         } catch (Exception e) {
-            androidx.media3.common.util.Log.e("AddProductActivity",
+            Log.e("AddProductActivity",
                     "Errore nella creazione del file foto", e);
             return null;
         }
