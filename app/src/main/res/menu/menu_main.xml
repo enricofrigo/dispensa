@@ -14,6 +14,11 @@
         app:iconTint="?attr/colorControlNormal"
         app:showAsAction="ifRoom" />
     <item
+        android:id="@+id/action_manage_dispense"
+        android:orderInCategory="90"
+        android:title="@string/manage_dispense_title"
+        app:showAsAction="never"/>
+    <item
         android:id="@+id/action_sync_now"
         android:orderInCategory="100"
         android:title="@string/pref_sync_now_title"
