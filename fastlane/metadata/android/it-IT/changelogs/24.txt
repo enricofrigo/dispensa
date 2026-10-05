@@ -1,0 +1,2 @@
+• aggiunta del campo note
+• possibilità di aggiungere Dispense

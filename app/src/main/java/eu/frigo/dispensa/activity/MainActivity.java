@@ -13,6 +13,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 import eu.frigo.dispensa.BuildConfig;
 
@@ -251,12 +253,25 @@ public class MainActivity extends AppCompatActivity
         mainCoordinatorLayout = findViewById(R.id.main_coordinator_layout);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
-        toolbar.setTitle(R.string.app_name);
         setSupportActionBar(toolbar);
-        toolbar.setOnClickListener(v -> {
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayShowTitleEnabled(false);
+        }
+
+        TextView toolbarDispensaTitle = findViewById(R.id.toolbar_dispensa_title);
+        View layoutDispensaTitle = findViewById(R.id.layout_dispensa_title);
+        ImageView buttonManageDispensa = findViewById(R.id.button_manage_dispensa);
+
+        View.OnClickListener openDispensaManager = v -> {
             Intent intent = new Intent(MainActivity.this, DispensaManagerActivity.class);
             startActivity(intent);
-        });
+        };
+        if (layoutDispensaTitle != null) {
+            layoutDispensaTitle.setOnClickListener(openDispensaManager);
+        }
+        if (buttonManageDispensa != null) {
+            buttonManageDispensa.setOnClickListener(openDispensaManager);
+        }
 
         productViewModel = new ViewModelProvider(this).get(ProductViewModel.class);
         locationViewModel = new ViewModelProvider(this).get(LocationViewModel.class);
@@ -267,8 +282,8 @@ public class MainActivity extends AppCompatActivity
         dispensaViewModel.getCurrentDispensa().observe(this, dispensa -> {
             this.currentDispensa = dispensa;
             if (dispensa != null) {
-                if (getSupportActionBar() != null) {
-                    getSupportActionBar().setTitle(dispensa.getName());
+                if (toolbarDispensaTitle != null) {
+                    toolbarDispensaTitle.setText(dispensa.getName());
                 }
                 String currentDeviceId = InstallationIdProvider.getOrCreateInstallationId(this);
                 boolean wasOwner = isOwner;
@@ -276,8 +291,8 @@ public class MainActivity extends AppCompatActivity
                 if (wasOwner != isOwner) {
                     invalidateOptionsMenu();
                 }
-            } else if (getSupportActionBar() != null) {
-                getSupportActionBar().setTitle(R.string.app_name);
+            } else if (toolbarDispensaTitle != null) {
+                toolbarDispensaTitle.setText(R.string.app_name);
             }
         });
 
@@ -895,7 +910,11 @@ public class MainActivity extends AppCompatActivity
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-        if (id == R.id.action_toggle_layout) {
+        if (id == R.id.action_manage_dispense) {
+            Intent intent = new Intent(MainActivity.this, DispensaManagerActivity.class);
+            startActivity(intent);
+            return true;
+        } else if (id == R.id.action_toggle_layout) {
             Fragment currentFragment = getSupportFragmentManager().findFragmentByTag("f" + viewPager.getCurrentItem());
             if (currentFragment instanceof ProductListFragment) {
                 ((ProductListFragment) currentFragment).toggleLayoutManager();
