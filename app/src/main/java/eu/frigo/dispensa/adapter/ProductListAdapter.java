@@ -114,7 +114,7 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
             textViewQuantity.setText(itemView.getContext().getString(R.string.quantity_label, product.product.getQuantity()));
 
             textViewExpiryDate.setText(itemView.getContext().getString(R.string.expiry_date_label, product.product.getExpiryDateString()));
-            if (product.product.getImageUrl() != null && !product.product.getImageUrl().isEmpty()) {
+            if (product.product.getImageUrl() != null && !product.product.getImageUrl().trim().isEmpty()) {
                 Glide.with(itemView.getContext())
                         .load(product.product.getImageUrl())
                         .placeholder(R.drawable.ic_placeholder_image)
@@ -123,6 +123,7 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
                 imageViewProduct.setVisibility(View.VISIBLE);
             } else {
                 imageViewProduct.setImageResource(R.drawable.ic_placeholder_image);
+                imageViewProduct.setVisibility(View.VISIBLE);
             }
 
             // Shopping cart button

@@ -33,9 +33,12 @@ public class BackupManager {
     private final int MIN_APP_VERSION = 1;
 
     public BackupManager(Context context) {
-        this.db = AppDatabase.getDatabase(context);
-        this.gson = new GsonBuilder().setPrettyPrinting().
-                create();
+        this(AppDatabase.getDatabase(context));
+    }
+
+    public BackupManager(AppDatabase db) {
+        this.db = db;
+        this.gson = new GsonBuilder().setPrettyPrinting().create();
     }
 
     public void exportData(OutputStream outputStream, int appVersion, int dispensaId) throws Exception {
@@ -48,7 +51,13 @@ public class BackupManager {
 
         int version = db.getOpenHelper().getReadableDatabase().getVersion();
         Dispensa dispensa = dispensaDao.getDispensaByIdSync(dispensaId);
-        List<Product> products = productDao.getAllProductsListStatic(dispensaId);
+        List<Product> rawProducts = productDao.getAllProductsListStatic(dispensaId);
+        List<Product> products = new java.util.ArrayList<>();
+        if (rawProducts != null) {
+            for (Product p : rawProducts) {
+                products.add(p.createExportCopy());
+            }
+        }
         List<StorageLocation> locations = locationDao.getAllLocationsSortedSync(dispensaId);
         List<CategoryDefinition> categories = categoryDao.getAllCategoryDefinitionsSync();
         List<ProductCategoryLink> links = linkDao.getAllProductCategoryLinksForDispensaSync(dispensaId);
@@ -144,6 +153,9 @@ public class BackupManager {
                     int oldProductId = p.id;
                     p.id = 0; // Force auto-generation
                     p.dispensaId = targetDispensaId;
+                    if (p.hasCustomLocalImage()) {
+                        p.setImageUrl(null);
+                    }
                     p.validateImageUrlExistence();
                     
                     long newProductId = db.productDao().insert(p);

@@ -1,5 +1,0 @@
-- [ ] Update `PairingPayloadCodecImpl` to support an internal default key
-- [ ] Simplify `activity_sync_onboarding.xml` UI
-- [ ] Update `SyncOnboardingActivity` (both flavors) for immediate join and timeout check
-- [ ] Add expiration string resources
-- [ ] Verify functionality

@@ -87,4 +87,8 @@ public class DispensaViewModel extends AndroidViewModel {
         return io.reactivex.rxjava3.core.Single.fromCallable(() -> 
                 repository.getJoinedPantryConfigSync(dispensaId) != null);
     }
+
+    public io.reactivex.rxjava3.core.Single<Dispensa> getCurrentDispensaSingle() {
+        return repository.getCurrentDispensaSingle();
+    }
 }
