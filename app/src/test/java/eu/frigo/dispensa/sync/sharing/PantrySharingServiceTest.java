@@ -225,4 +225,52 @@ public class PantrySharingServiceTest {
         String syncedIdsStr = prefs.getString(SyncManager.SYNC_WEBDAV_SYNCED_IDS, "");
         Assert.assertFalse(syncedIdsStr.contains(String.valueOf(dispId)));
     }
+
+    @Test
+    public void testSharePantry_CreatesInitialSnapshotAndFolderStructure() {
+        Dispensa dispensa = new Dispensa("Dispensa Snapshot Test", false);
+        long dispId = database.dispensaDao().insert(dispensa);
+        dispensa.id = (int) dispId;
+
+        Map<String, byte[]> storage = new ConcurrentHashMap<>();
+        HashSet<String> folders = new HashSet<>();
+        InMemorySharedFolderStore memoryStore = new InMemorySharedFolderStore("custom_provider", storage, folders);
+
+        SharingProvider mockProvider = new SharingProvider() {
+            @Override public String getProviderId() { return "custom_provider"; }
+            @Override public String getDisplayName(Context context) { return "Mock Provider"; }
+            @Override public int getIconResId() { return 0; }
+            @Override public boolean isConfigured(Context context) { return true; }
+            @Override public Intent getConfigIntent(Context context) { return null; }
+            @Override public String getSummary(Context context) { return "Mock Summary"; }
+            @Override public SharedFolderStore createStore(Context context, Dispensa dispensa) { return memoryStore; }
+            @Override public String getPantryPath(Context context, Dispensa dispensa) {
+                return SyncManager.getSyncPath(dispensa.remoteId);
+            }
+            @Override public JoinedPantryConfig createJoinedConfig(Context context, Dispensa dispensa) {
+                return new JoinedPantryConfig(dispensa.id, "custom_provider", "{}", dispensa.remoteId);
+            }
+        };
+
+        PantrySharingService service = new PantrySharingService();
+        service.registerProvider(mockProvider);
+
+        service.sharePantry(context, dispensa, "custom_provider").blockingAwait();
+
+        String pantryPath = SyncManager.getSyncPath(dispensa.remoteId);
+
+        // Verify folder structure is completely present
+        Assert.assertTrue("Root pantry folder must exist", folders.contains(pantryPath));
+        Assert.assertTrue("Events folder must exist", folders.contains(pantryPath + SyncManager.DEFAULT_EVENTS_FOLDER));
+        Assert.assertTrue("Devices folder must exist", folders.contains(pantryPath + SyncManager.DEFAULT_DEVICES_FOLDER));
+        Assert.assertTrue("Snapshots folder must exist", folders.contains(pantryPath + SyncManager.DEFAULT_SNAPSHOTS_FOLDER));
+
+        // Verify manifest is present
+        Assert.assertTrue("Manifest file must exist", storage.containsKey(pantryPath + SyncManager.MANIFEST_JSON));
+
+        // Verify device registration file is present
+        String deviceId = InstallationIdProvider.getOrCreateInstallationId(context);
+        Assert.assertTrue("Device file must exist", storage.containsKey(pantryPath + SyncManager.DEFAULT_DEVICES_FOLDER + deviceId + ".json"));
+    }
 }
+

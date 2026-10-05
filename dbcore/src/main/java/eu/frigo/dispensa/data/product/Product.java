@@ -246,16 +246,53 @@ public class Product {
         return copy;
     }
 
+    public static boolean isCustomLocalImage(String url) {
+        if (url == null || url.trim().isEmpty()) {
+            return false;
+        }
+        String trimmed = url.trim();
+        return !trimmed.startsWith("http://") && !trimmed.startsWith("https://");
+    }
+
+    @Ignore
+    public boolean hasCustomLocalImage() {
+        return isCustomLocalImage(this.imageUrl);
+    }
+
+    public Product createExportCopy() {
+        Product copy = new Product();
+        copy.id = this.id;
+        copy.dispensaId = this.dispensaId;
+        copy.barcode = this.barcode;
+        copy.quantity = this.quantity;
+        copy.expiryDate = this.expiryDate;
+        copy.productName = this.productName;
+        copy.imageUrl = hasCustomLocalImage() ? null : this.imageUrl;
+        copy.storageLocation = this.storageLocation;
+        copy.openedDate = this.openedDate;
+        copy.shelfLifeAfterOpeningDays = this.shelfLifeAfterOpeningDays;
+        copy.note = this.note;
+        copy.lastModified = this.lastModified;
+        return copy;
+    }
+
     @Ignore
     public void validateImageUrlExistence() {
-        if (imageUrl != null && imageUrl.startsWith("file://")) {
+        if (imageUrl != null && hasCustomLocalImage()) {
             try {
-                String path = android.net.Uri.parse(imageUrl).getPath();
+                String path = null;
+                if (imageUrl.startsWith("file://")) {
+                    path = android.net.Uri.parse(imageUrl).getPath();
+                } else if (imageUrl.startsWith("/")) {
+                    path = imageUrl;
+                }
                 if (path != null) {
                     java.io.File file = new java.io.File(path);
                     if (!file.exists()) {
                         imageUrl = null;
                     }
+                } else {
+                    imageUrl = null;
                 }
             } catch (Exception e) {
                 // In case of malformed URI or other errors, play safe

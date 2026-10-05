@@ -237,7 +237,14 @@ public class Repository {
         Integer dispId = currentDispensaId.getValue();
         entry.dispensaId = dispId != null ? dispId : 0;
         entry.dataType = action;
-        entry.payload = gson.toJson(payload);
+        Object payloadToSerialize = payload;
+        if (payload instanceof Product) {
+            Product p = (Product) payload;
+            if (p.hasCustomLocalImage()) {
+                payloadToSerialize = p.createExportCopy();
+            }
+        }
+        entry.payload = gson.toJson(payloadToSerialize);
         entry.timestamp = System.currentTimeMillis();
         syncOutboxDao.insert(entry);
         
@@ -465,10 +472,13 @@ public class Repository {
     }
 
     public static void cleanOrphanImages(android.content.Context context, java.util.function.Consumer<Integer> onComplete) {
+        java.io.File imagesDir = new java.io.File(context.getExternalFilesDir(null), "product_images");
+        AppDatabase db = AppDatabase.getDatabase(context);
+        cleanOrphanImages(db, imagesDir, context.getContentResolver(), onComplete);
+    }
+
+    public static void cleanOrphanImages(AppDatabase db, java.io.File imagesDir, android.content.ContentResolver contentResolver, java.util.function.Consumer<Integer> onComplete) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
-            java.io.File imagesDir = new java.io.File(context.getExternalFilesDir(null), "product_images");
-            
-            AppDatabase db = AppDatabase.getDatabase(context);
             java.util.List<eu.frigo.dispensa.data.product.Product> products = 
                     db.productDao().getAllProductsListStatic();
             
@@ -476,25 +486,42 @@ public class Repository {
             int countDbCleaned = 0;
 
             for (eu.frigo.dispensa.data.product.Product p : products) {
-                if (p.getImageUrl() != null && p.getImageUrl().startsWith("file://")) {
-                    String path = android.net.Uri.parse(p.getImageUrl()).getPath();
-                    if (path != null) {
-                        java.io.File file = new java.io.File(path);
-                        if (file.exists()) {
-                            validPaths.add(file.getAbsolutePath());
-                        } else {
-                            // Riferimento nel DB presente ma file rimosso dal disco
-                            p.setImageUrl(null);
-                            p.lastModified = System.currentTimeMillis();
-                            db.productDao().update(p);
-                            countDbCleaned++;
+                if (p.getImageUrl() != null && p.hasCustomLocalImage()) {
+                    String imgUrl = p.getImageUrl();
+                    boolean exists = false;
+                    try {
+                        String filePath = null;
+                        if (imgUrl.startsWith("file://")) {
+                            filePath = android.net.Uri.parse(imgUrl).getPath();
+                        } else if (imgUrl.startsWith("/")) {
+                            filePath = imgUrl;
+                        } else if (imgUrl.startsWith("content://") && contentResolver != null) {
+                            try (java.io.InputStream is = contentResolver.openInputStream(android.net.Uri.parse(imgUrl))) {
+                                if (is != null) exists = true;
+                            } catch (Exception ignored) {}
                         }
+
+                        if (filePath != null) {
+                            java.io.File file = new java.io.File(filePath);
+                            if (file.exists()) {
+                                validPaths.add(file.getAbsolutePath());
+                                exists = true;
+                            }
+                        }
+                    } catch (Exception ignored) {}
+
+                    if (!exists) {
+                        // Riferimento nel DB presente ma file inesistente sul disco: resetta a default (null)
+                        p.setImageUrl(null);
+                        p.lastModified = System.currentTimeMillis();
+                        db.productDao().update(p);
+                        countDbCleaned++;
                     }
                 }
             }
 
             int countFilesDeleted = 0;
-            if (imagesDir.exists()) {
+            if (imagesDir != null && imagesDir.exists()) {
                 java.io.File[] files = imagesDir.listFiles();
                 if (files != null) {
                     for (java.io.File file : files) {

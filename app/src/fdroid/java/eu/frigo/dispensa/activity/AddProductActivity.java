@@ -29,6 +29,7 @@ import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
@@ -140,6 +141,7 @@ public class AddProductActivity extends AppCompatActivity {
     private ActivityResultLauncher<String> pickImageForBarcodeLauncher;
 
     /** URI del file temporaneo per la foto del prodotto scattata con la fotocamera */
+    private Uri productPhotoCaptureUri;
     private String currentPhotoPath; // <-- Per salvare il path assoluto
 
     /** Picker galleria per l'immagine del prodotto */
@@ -247,6 +249,11 @@ public class AddProductActivity extends AppCompatActivity {
         barcodeView = findViewById(R.id.previewViewBarcode);
         editTextProductName = findViewById(R.id.editTextProductName);
         imageViewProduct = findViewById(R.id.imageViewProduct);
+        if (imageViewProduct != null) {
+            imageViewProduct.setImageResource(R.drawable.ic_placeholder_image);
+            imageViewProduct.setVisibility(View.VISIBLE);
+            imageViewProduct.setOnClickListener(v -> showProductImageOptionsDialog());
+        }
         spinnerStorageLocation = findViewById(R.id.spinnerStorageLocation);
 
         if (getIntent().hasExtra(PRESELECTED_LOCATION_INTERNAL_KEY)) {
@@ -747,9 +754,13 @@ public class AddProductActivity extends AppCompatActivity {
                         && !currentImageUrlFromApi.trim().isEmpty()) {
                     Glide.with(AddProductActivity.this)
                             .load(currentImageUrlFromApi)
+                            .placeholder(R.drawable.ic_placeholder_image)
+                            .error(R.drawable.ic_placeholder_image)
                             .into(imageViewProduct);
-                    imageViewProduct.setVisibility(View.VISIBLE);
+                } else {
+                    imageViewProduct.setImageResource(R.drawable.ic_placeholder_image);
                 }
+                imageViewProduct.setVisibility(View.VISIBLE);
 
                 currentOpenedDate = productBeingEdited.product.getOpenedDate();
                 currentShelfLifeDays =
@@ -877,11 +888,15 @@ public class AddProductActivity extends AppCompatActivity {
                     currentImageUrlFromApi = cached.imageLocalPath;
                     if (cached.imageLocalPath != null && !cached.imageLocalPath.trim().isEmpty() 
                             && eu.frigo.dispensa.data.openfoodfacts.OpenFoodFactCacheManager.isFileExisting(cached.imageLocalPath)) {
-                        Glide.with(AddProductActivity.this).load(cached.imageLocalPath).into(imageViewProduct);
-                        imageViewProduct.setVisibility(View.VISIBLE);
+                        Glide.with(AddProductActivity.this)
+                                .load(cached.imageLocalPath)
+                                .placeholder(R.drawable.ic_placeholder_image)
+                                .error(R.drawable.ic_placeholder_image)
+                                .into(imageViewProduct);
                     } else {
-                        imageViewProduct.setVisibility(GONE);
+                        imageViewProduct.setImageResource(R.drawable.ic_placeholder_image);
                     }
+                    imageViewProduct.setVisibility(View.VISIBLE);
                     if (cached.categoriesTags != null && !cached.categoriesTags.trim().isEmpty()) {
                         currentProductTagsSet.clear();
                         currentProductTagsSet.addAll(java.util.Arrays.asList(cached.categoriesTags.split(",")));
@@ -946,11 +961,15 @@ public class AddProductActivity extends AppCompatActivity {
 
                                             currentImageUrlFromApi = localPath;
                                             if (localPath != null && !localPath.trim().isEmpty()) {
-                                                Glide.with(AddProductActivity.this).load(localPath).into(imageViewProduct);
-                                                imageViewProduct.setVisibility(View.VISIBLE);
+                                                Glide.with(AddProductActivity.this)
+                                                        .load(localPath)
+                                                        .placeholder(R.drawable.ic_placeholder_image)
+                                                        .error(R.drawable.ic_placeholder_image)
+                                                        .into(imageViewProduct);
                                             } else {
-                                                imageViewProduct.setVisibility(GONE);
+                                                imageViewProduct.setImageResource(R.drawable.ic_placeholder_image);
                                             }
+                                            imageViewProduct.setVisibility(View.VISIBLE);
 
                                             if (fetchedCategories != null && !fetchedCategories.isEmpty()) {
                                                 currentProductTagsSet.clear();
@@ -984,8 +1003,10 @@ public class AddProductActivity extends AppCompatActivity {
 
     private void clearProductApiFieldsAndData() {
         editTextProductName.setText("");
-        imageViewProduct.setImageDrawable(null);
-        imageViewProduct.setVisibility(GONE);
+        if (imageViewProduct != null) {
+            imageViewProduct.setImageResource(R.drawable.ic_placeholder_image);
+            imageViewProduct.setVisibility(View.VISIBLE);
+        }
         currentProductNameFromApi = null;
         currentImageUrlFromApi = null;
     }
@@ -1044,16 +1065,54 @@ public class AddProductActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * Callback comune per quando l'utente ha selezionato/scattato un'immagine
-     * da usare come immagine del prodotto.
-     * Aggiorna currentImageUrlFromApi e mostra l'immagine nell'ImageView.
-     */
+    private void showProductImageOptionsDialog() {
+        CharSequence[] options;
+        if (currentImageUrlFromApi != null && !currentImageUrlFromApi.trim().isEmpty()) {
+            options = new CharSequence[] {
+                    getString(R.string.take_product_photo),
+                    getString(R.string.pick_product_image_gallery),
+                    getString(R.string.delete)
+            };
+        } else {
+            options = new CharSequence[] {
+                    getString(R.string.take_product_photo),
+                    getString(R.string.pick_product_image_gallery)
+            };
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.hint_product_image)
+                .setItems(options, (dialog, which) -> {
+                    if (which == 0) {
+                        Uri uri = createProductPhotoUri();
+                        if (uri != null) {
+                            productPhotoCaptureUri = uri;
+                            takeProductPhotoLauncher.launch(uri);
+                        } else {
+                            Toast.makeText(this, getString(R.string.err_create_photo_file), Toast.LENGTH_SHORT).show();
+                        }
+                    } else if (which == 1) {
+                        pickProductImageLauncher.launch("image/*");
+                    } else if (which == 2) {
+                        currentImageUrlFromApi = null;
+                        if (imageViewProduct != null) {
+                            imageViewProduct.setImageResource(R.drawable.ic_placeholder_image);
+                            imageViewProduct.setVisibility(View.VISIBLE);
+                        }
+                        Toast.makeText(this, getString(R.string.image_changed), Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
     private void onProductImageSelected(Uri uri) {
         currentImageUrlFromApi = uri.toString();
         imageViewProduct.setVisibility(View.VISIBLE);
         Glide.with(this)
                 .load(uri)
+                .placeholder(R.drawable.ic_placeholder_image)
+                .error(R.drawable.ic_placeholder_image)
                 .into(imageViewProduct);
         Toast.makeText(this, getString(R.string.image_changed), Toast.LENGTH_SHORT).show();
     }

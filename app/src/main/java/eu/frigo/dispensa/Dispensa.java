@@ -24,6 +24,9 @@ public class Dispensa extends Application {
         createNotificationChannel();
         ExpiryCheckWorkerScheduler.scheduleWorker(this);
 
+        // Pulisce le immagini con percorsi non validi o orfani all'avvio dell'app
+        eu.frigo.dispensa.data.Repository.cleanOrphanImages(this, null);
+
         // Initialize Sync providers and loaders via flavor initializer
         eu.frigo.dispensa.sync.SyncFlavorInitializer.initialize(this);
         SyncCoordinatorImpl coordinator = SyncCoordinatorImpl.getInstance(this);

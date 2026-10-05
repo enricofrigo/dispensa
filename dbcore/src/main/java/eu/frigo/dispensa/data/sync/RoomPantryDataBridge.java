@@ -38,7 +38,16 @@ public class RoomPantryDataBridge implements PantryDataBridge {
         List<SyncOutbox> entries = db.syncOutboxDao().getPendingChangesSync(dispensaId);
         List<PantryOutboxItem> items = new ArrayList<>();
         for (SyncOutbox entry : entries) {
-            items.add(new PantryOutboxItem(entry.syncId, entry.dataType, entry.payload, entry.timestamp));
+            String payload = entry.payload;
+            if (PantryEvent.ACTION_UPSERT_PRODUCT.equals(entry.dataType) && payload != null) {
+                try {
+                    Product p = gson.fromJson(payload, Product.class);
+                    if (p != null && p.hasCustomLocalImage()) {
+                        payload = gson.toJson(p.createExportCopy());
+                    }
+                } catch (Exception ignored) {}
+            }
+            items.add(new PantryOutboxItem(entry.syncId, entry.dataType, payload, entry.timestamp));
         }
         return items;
     }
@@ -52,7 +61,14 @@ public class RoomPantryDataBridge implements PantryDataBridge {
     public String createSnapshotJson(int dispensaId) {
         SnapshotDto dto = new SnapshotDto();
         dto.timestamp = System.currentTimeMillis();
-        dto.products = db.productDao().getAllProductsListStatic(dispensaId);
+        List<Product> rawProducts = db.productDao().getAllProductsListStatic(dispensaId);
+        List<Product> snapshotProducts = new ArrayList<>();
+        if (rawProducts != null) {
+            for (Product p : rawProducts) {
+                snapshotProducts.add(p.createExportCopy());
+            }
+        }
+        dto.products = snapshotProducts;
         dto.locations = db.storageLocationDao().getAllLocationsSortedSync(dispensaId);
         dto.shoppingItems = db.shoppingItemDao().getAllItemsSync(dispensaId);
         return gson.toJson(dto);
@@ -77,6 +93,9 @@ public class RoomPantryDataBridge implements PantryDataBridge {
             if (snapshot.products != null) {
                 for (Product p : snapshot.products) {
                     p.dispensaId = dispensaId;
+                    if (p.hasCustomLocalImage()) {
+                        p.setImageUrl(null);
+                    }
                     p.validateImageUrlExistence();
                     Product local = db.productDao().getProductByLotKeySync(p.barcode, p.expiryDate, p.getStorageLocation(), dispensaId);
                     if (local == null || p.lastModified > local.lastModified) {
@@ -106,6 +125,9 @@ public class RoomPantryDataBridge implements PantryDataBridge {
                 case PantryEvent.ACTION_UPSERT_PRODUCT:
                     Product remoteP = gson.fromJson(payloadJson, Product.class);
                     remoteP.dispensaId = dispensaId;
+                    if (remoteP.hasCustomLocalImage()) {
+                        remoteP.setImageUrl(null);
+                    }
                     remoteP.validateImageUrlExistence();
                     Product localP = db.productDao().getProductByLotKeySync(remoteP.barcode, remoteP.expiryDate, remoteP.getStorageLocation(), dispensaId);
                     if (localP == null || remoteP.lastModified > localP.lastModified) {

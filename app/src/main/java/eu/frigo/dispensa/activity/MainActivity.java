@@ -58,6 +58,7 @@ import eu.frigo.dispensa.adapter.ProductListAdapter;
 import eu.frigo.dispensa.data.AppDatabase;
 import eu.frigo.dispensa.data.backup.BackupManager;
 import eu.frigo.dispensa.data.category.ProductWithCategoryDefinitions;
+import eu.frigo.dispensa.data.dispensa.Dispensa;
 import eu.frigo.dispensa.data.product.Product;
 import eu.frigo.dispensa.data.storage.StorageLocation;
 import eu.frigo.dispensa.sync.core.engine.InstallationIdProvider;
@@ -90,6 +91,7 @@ public class MainActivity extends AppCompatActivity
     private LocationViewPagerAdapter locationViewPagerAdapter;
     private LocationViewModel locationViewModel;
     private DispensaViewModel dispensaViewModel;
+    private Dispensa currentDispensa;
     private ShoppingListViewModel shoppingListViewModel;
     private io.reactivex.rxjava3.disposables.Disposable syncDisposable;
     private BadgeDrawable shoppingBadge;
@@ -139,16 +141,23 @@ public class MainActivity extends AppCompatActivity
     private final ActivityResultLauncher<String> exportLauncher = registerForActivityResult(
             new ActivityResultContracts.CreateDocument("application/octet-stream"), uri -> {
                 if (uri != null) {
-                    Integer currentDispensaId = dispensaViewModel.getCurrentDispensaId().getValue();
-                    if (currentDispensaId == null) {
-                        Toast.makeText(this, "Errore: nessuna dispensa selezionata", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    final int dispId = currentDispensaId;
+                    Integer currentDispensaId = currentDispensa != null ? currentDispensa.id : dispensaViewModel.getCurrentDispensaId().getValue();
                     AppDatabase.databaseWriteExecutor.execute(() -> {
+                        int dispId = currentDispensaId != null ? currentDispensaId : 0;
+                        if (dispId <= 0) {
+                            Dispensa def = AppDatabase.getDatabase(this).dispensaDao().getDefaultDispensaSync();
+                            if (def != null) {
+                                dispId = def.id;
+                            }
+                        }
+                        if (dispId <= 0) {
+                            runOnUiThread(() -> Toast.makeText(this, "Errore: nessuna dispensa selezionata", Toast.LENGTH_SHORT).show());
+                            return;
+                        }
+                        final int finalDispId = dispId;
                         try (OutputStream os = getContentResolver().openOutputStream(uri)) {
                             BackupManager backupManager = new BackupManager(this);
-                            backupManager.exportData(os, BuildConfig.VERSION_CODE, dispId);
+                            backupManager.exportData(os, BuildConfig.VERSION_CODE, finalDispId);
                             runOnUiThread(
                                     () -> Toast.makeText(this, R.string.export_success, Toast.LENGTH_SHORT).show());
                         } catch (Exception e) {
@@ -174,17 +183,23 @@ public class MainActivity extends AppCompatActivity
             });
 
     private void performImport(android.net.Uri uri) {
-        Integer currentDispensaId = dispensaViewModel.getCurrentDispensaId().getValue();
-        if (currentDispensaId == null) {
-            Toast.makeText(this, "Errore: nessuna dispensa selezionata per l'import", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        final int dispId = currentDispensaId;
-
+        Integer currentDispensaId = currentDispensa != null ? currentDispensa.id : dispensaViewModel.getCurrentDispensaId().getValue();
         AppDatabase.databaseWriteExecutor.execute(() -> {
+            int dispId = currentDispensaId != null ? currentDispensaId : 0;
+            if (dispId <= 0) {
+                Dispensa def = AppDatabase.getDatabase(this).dispensaDao().getDefaultDispensaSync();
+                if (def != null) {
+                    dispId = def.id;
+                }
+            }
+            if (dispId <= 0) {
+                runOnUiThread(() -> Toast.makeText(this, "Errore: nessuna dispensa selezionata per l'import", Toast.LENGTH_SHORT).show());
+                return;
+            }
+            final int finalDispId = dispId;
             try (InputStream is = getContentResolver().openInputStream(uri)) {
                 BackupManager backupManager = new BackupManager(this);
-                backupManager.importData(is, dispId);
+                backupManager.importData(is, finalDispId);
                 runOnUiThread(() -> {
                     Toast.makeText(this, R.string.import_success, Toast.LENGTH_LONG).show();
                     // Restart app to refresh all data and viewmodels
@@ -250,6 +265,7 @@ public class MainActivity extends AppCompatActivity
 
         // Osserva la dispensa corrente per aggiornare il titolo e la proprietà
         dispensaViewModel.getCurrentDispensa().observe(this, dispensa -> {
+            this.currentDispensa = dispensa;
             if (dispensa != null) {
                 if (getSupportActionBar() != null) {
                     getSupportActionBar().setTitle(dispensa.getName());
@@ -864,6 +880,18 @@ public class MainActivity extends AppCompatActivity
         });
     }
 
+    private void launchExportForDispensa(Dispensa dispensa) {
+        if (dispensa == null) return;
+        String pantryName = dispensa.getName();
+        if (pantryName == null || pantryName.trim().isEmpty()) {
+            pantryName = "Dispensa";
+        }
+        String safePantryName = pantryName.replaceAll("[\\\\/:*?\"<>|\\s]", "_");
+        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        String fileName = safePantryName + "_backup_" + timestamp + ".dsp";
+        exportLauncher.launch(fileName);
+    }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
@@ -882,32 +910,24 @@ public class MainActivity extends AppCompatActivity
             startActivity(intent);
             return true;
         } else if (id == R.id.action_export) {
-            Integer currentId = dispensaViewModel.getCurrentDispensaId().getValue();
-            String pantryName = dispensaViewModel.getCurrentDispensaName().getValue();
-            
-            if (currentId != null && pantryName == null) {
-                // Tenta fallback dalla lista completa se il LiveData del nome non è ancora pronto
-                List<eu.frigo.dispensa.data.dispensa.Dispensa> list = dispensaViewModel.getAllDispense().getValue();
-                if (list != null) {
-                    for (eu.frigo.dispensa.data.dispensa.Dispensa d : list) {
-                        if (d.id == currentId) {
-                            pantryName = d.getName();
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if (currentId == null || pantryName == null) {
-                Toast.makeText(this, "Errore: dati dispensa non pronti", Toast.LENGTH_SHORT).show();
+            if (currentDispensa != null) {
+                launchExportForDispensa(currentDispensa);
                 return true;
             }
-
-            String safePantryName = pantryName.replaceAll("[\\\\/:*?\"<>|\\s]", "_");
-            String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-            String fileName = safePantryName + "_backup_" + timestamp + ".dsp";
-            
-            exportLauncher.launch(fileName);
+            dispensaViewModel.getCurrentDispensaSingle()
+                    .subscribeOn(io.reactivex.rxjava3.schedulers.Schedulers.io())
+                    .observeOn(io.reactivex.rxjava3.android.schedulers.AndroidSchedulers.mainThread())
+                    .subscribe(disp -> {
+                        if (disp != null) {
+                            currentDispensa = disp;
+                            launchExportForDispensa(disp);
+                        } else {
+                            Toast.makeText(this, "Errore: dati dispensa non pronti", Toast.LENGTH_SHORT).show();
+                        }
+                    }, err -> {
+                        Log.e("MainActivity", "Errore recupero dispensa per export", err);
+                        Toast.makeText(this, "Errore: dati dispensa non pronti", Toast.LENGTH_SHORT).show();
+                    });
             return true;
         } else if (id == R.id.action_import) {
             importLauncher.launch(new String[] { "*/*" });

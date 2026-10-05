@@ -223,36 +223,23 @@ public class DispensaManagerActivity extends AppCompatActivity implements Dispen
             }
         }
 
-        if (existingConfig != null) {
-            showAlreadySharedOptionsDialog(dispensa, existingConfig);
+        if (existingConfig != null && existingConfig.providerId != null) {
+            SharingProvider provider = PantrySharingService.getInstance().getProvider(existingConfig.providerId);
+            if (provider != null && provider.isConfigured(this)) {
+                // Provider is defined and configured for this dispensa: check/ensure remote structure and open share
+                executeSharePantry(dispensa, existingConfig.providerId);
+                return;
+            }
+        }
+
+        List<SharingProvider> availableProviders = PantrySharingService.getInstance().getAvailableProviders(this);
+        if (availableProviders.size() == 1) {
+            // Exactly 1 provider is configured: share directly using that provider without asking
+            executeSharePantry(dispensa, availableProviders.get(0).getProviderId());
         } else {
+            // Multiple configured providers or none configured yet: show selection / configuration dialog
             showProviderSelectionDialog(dispensa);
         }
-    }
-
-    private void showAlreadySharedOptionsDialog(Dispensa dispensa, JoinedPantryConfig config) {
-        SharingProvider provider = PantrySharingService.getInstance().getProvider(config.providerId);
-        String providerName = provider != null ? provider.getDisplayName(this) : (config.providerId != null ? config.providerId : "Cloud");
-
-        String[] options = new String[]{
-                getString(R.string.show_pairing_qr),
-                getString(R.string.action_change_provider),
-                getString(R.string.action_manage_devices)
-        };
-
-        new AlertDialog.Builder(this)
-                .setTitle(dispensa.getName() + " (" + providerName + ")")
-                .setItems(options, (dialog, which) -> {
-                    if (which == 0) {
-                        launchShareOnboarding(dispensa);
-                    } else if (which == 1) {
-                        showProviderSelectionDialog(dispensa);
-                    } else if (which == 2) {
-                        onDevicesClick(dispensa);
-                    }
-                })
-                .setNegativeButton(R.string.cancel, null)
-                .show();
     }
 
     private void showProviderSelectionDialog(Dispensa dispensa) {
