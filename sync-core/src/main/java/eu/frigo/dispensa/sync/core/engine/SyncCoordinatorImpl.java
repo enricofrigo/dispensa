@@ -68,7 +68,7 @@ public class SyncCoordinatorImpl implements SyncCoordinator {
         Log.d("SyncFlow", "Cursore resettato per nuovo onboarding.");
 
         // 2. Initialize the correct SyncProvider
-        SyncManager.getInstance().getOrInitProvider(context)
+        SyncManager.getInstance().reloadProvider(context)
                 .subscribe(provider -> {
                     // 3. Trigger initial sync
                     triggerManualSync();

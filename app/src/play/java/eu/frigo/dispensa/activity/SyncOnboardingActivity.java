@@ -81,6 +81,63 @@ public class SyncOnboardingActivity extends AppCompatActivity {
                 }
             });
 
+    private Runnable pendingAuthAction;
+    private final ActivityResultLauncher<Intent> consentLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == RESULT_OK) {
+                    if (pendingAuthAction != null) {
+                        Runnable action = pendingAuthAction;
+                        pendingAuthAction = null;
+                        action.run();
+                    } else {
+                        Toast.makeText(this, "Autorizzazione concessa", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    pendingAuthAction = null;
+                    Toast.makeText(this, "Consenso Google Drive non concesso", Toast.LENGTH_LONG).show();
+                }
+            });
+
+    private final ActivityResultLauncher<Intent> contactPickerLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                    android.net.Uri contactUri = result.getData().getData();
+                    if (contactUri != null) {
+                        String email = extractEmailFromContactUri(contactUri);
+                        if (email != null && !email.isEmpty()) {
+                            com.google.android.material.textfield.TextInputEditText etEmail = findViewById(R.id.et_gdrive_email);
+                            com.google.android.material.textfield.TextInputLayout tilEmail = findViewById(R.id.til_gdrive_email);
+                            if (etEmail != null) etEmail.setText(email);
+                            if (tilEmail != null) tilEmail.setError(null);
+                        } else {
+                            Toast.makeText(this, R.string.sync_gdrive_no_email_in_contact, Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                }
+            });
+
+    private String extractEmailFromContactUri(android.net.Uri contactUri) {
+        String email = null;
+        try (android.database.Cursor cursor = getContentResolver().query(
+                contactUri,
+                new String[]{android.provider.ContactsContract.CommonDataKinds.Email.ADDRESS},
+                null,
+                null,
+                null)) {
+            if (cursor != null && cursor.moveToFirst()) {
+                int emailIndex = cursor.getColumnIndex(android.provider.ContactsContract.CommonDataKinds.Email.ADDRESS);
+                if (emailIndex >= 0) {
+                    email = cursor.getString(emailIndex);
+                }
+            }
+        } catch (Exception e) {
+            Log.e("SyncOnboarding", "Errore estrazione email da contatto", e);
+        }
+        return email != null ? email.trim() : null;
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -241,6 +298,11 @@ public class SyncOnboardingActivity extends AppCompatActivity {
                     if (!authManager.isSignedIn()) {
                         return Single.error(new IllegalStateException("Devi prima connettere Google Drive nelle impostazioni."));
                     }
+                    try {
+                        authManager.getAccessToken();
+                    } catch (Exception e) {
+                        return Single.error(e);
+                    }
                     return Single.just(payload);
                 }
                 return Single.just(payload);
@@ -301,6 +363,12 @@ public class SyncOnboardingActivity extends AppCompatActivity {
                 finish();
             }, throwable -> {
                 Log.e("SyncOnboarding", "Errore join", throwable);
+                Intent consentIntent = eu.frigo.dispensa.sync.gdrive.auth.GDriveAuthManager.extractConsentIntent(throwable);
+                if (consentIntent != null) {
+                    pendingAuthAction = () -> processScannedData();
+                    consentLauncher.launch(consentIntent);
+                    return;
+                }
                 if (PAIRING_EXPIRED.equals(throwable.getMessage())) {
                     Toast.makeText(this, R.string.sync_pairing_expired, Toast.LENGTH_LONG).show();
                 } else if (DEVICE_ALREADY_REGISTERED.equals(throwable.getMessage())) {
@@ -331,16 +399,13 @@ public class SyncOnboardingActivity extends AppCompatActivity {
     private void setupShareMode() {
         TextView instruction = findViewById(R.id.tv_onboarding_instruction);
         instruction.setText(R.string.share_pantry);
-        
+
         ImageView qrView = findViewById(R.id.iv_qr_code);
         Button shareBtn = findViewById(R.id.btn_share_link);
-        
-        qrView.setVisibility(View.VISIBLE);
-        if (shareBtn != null) shareBtn.setVisibility(View.VISIBLE);
 
         // Recupera la dispensa passata come extra
         Dispensa targetDispensa = (Dispensa) getIntent().getSerializableExtra(ManageDevicesActivity.PANTRY_ID);
-        
+
         Single<eu.frigo.dispensa.data.dispensa.Dispensa> dispSingle;
         if (targetDispensa != null) {
             dispSingle = Single.just(targetDispensa);
@@ -349,50 +414,167 @@ public class SyncOnboardingActivity extends AppCompatActivity {
         }
 
         dispSingle.subscribeOn(Schedulers.io())
-                .flatMap(disp -> Single.fromCallable(() -> {
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(disp -> {
+                    Schedulers.io().scheduleDirect(() -> {
+                        AppDatabase db = AppDatabase.getDatabase(this);
+                        JoinedPantryConfig config = db.joinedPantryConfigDao().getConfigByDispensaId(disp.id);
+                        boolean isGDrive = (config != null && "gdrive".equals(config.providerId));
+
+                        runOnUiThread(() -> {
+                            if (isGDrive) {
+                                setupGDriveShareUI(disp, config, qrView, shareBtn);
+                            } else {
+                                setupStandardShareUI(disp, config, qrView, shareBtn);
+                            }
+                        });
+                    });
+                }, throwable -> {
+                    Log.e("SyncOnboarding", "Errore recupero dispensa", throwable);
+                    Toast.makeText(this, "Errore recupero dispensa: " + throwable.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void setupGDriveShareUI(Dispensa disp, JoinedPantryConfig config, ImageView qrView, Button shareBtn) {
+        View gdriveCard = findViewById(R.id.card_gdrive_share_section);
+        if (gdriveCard != null) gdriveCard.setVisibility(View.VISIBLE);
+
+        com.google.android.material.textfield.TextInputLayout tilEmail = findViewById(R.id.til_gdrive_email);
+        com.google.android.material.textfield.TextInputEditText etEmail = findViewById(R.id.et_gdrive_email);
+        View btnPickContact = findViewById(R.id.btn_pick_contact);
+        View btnShareAction = findViewById(R.id.btn_gdrive_share_action);
+        View pbSharing = findViewById(R.id.pb_gdrive_sharing);
+        TextView tvSharedRecipient = findViewById(R.id.tv_gdrive_shared_recipient);
+        View btnShareAnother = findViewById(R.id.btn_gdrive_share_another);
+        View emailInputRow = findViewById(R.id.ll_gdrive_email_input_row);
+
+        View.OnClickListener pickContactAction = v -> {
+            try {
+                Intent pickIntent = new Intent(Intent.ACTION_PICK, android.provider.ContactsContract.CommonDataKinds.Email.CONTENT_URI);
+                contactPickerLauncher.launch(pickIntent);
+            } catch (Exception e) {
+                Toast.makeText(this, R.string.sync_gdrive_contacts_not_available, Toast.LENGTH_SHORT).show();
+            }
+        };
+        if (btnPickContact != null) btnPickContact.setOnClickListener(pickContactAction);
+        if (tilEmail != null) tilEmail.setEndIconOnClickListener(pickContactAction);
+
+        if (btnShareAnother != null) {
+            btnShareAnother.setOnClickListener(v -> {
+                if (emailInputRow != null) emailInputRow.setVisibility(View.VISIBLE);
+                if (btnShareAction != null) btnShareAction.setVisibility(View.VISIBLE);
+                if (etEmail != null) etEmail.setText("");
+                if (tilEmail != null) tilEmail.setError(null);
+            });
+        }
+
+        if (btnShareAction != null) {
+            btnShareAction.setOnClickListener(v -> {
+                String email = etEmail != null && etEmail.getText() != null ? etEmail.getText().toString().trim() : "";
+                if (email.isEmpty() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                    if (tilEmail != null) tilEmail.setError(getString(R.string.sync_gdrive_invalid_email));
+                    return;
+                }
+                if (tilEmail != null) tilEmail.setError(null);
+
+                if (pbSharing != null) pbSharing.setVisibility(View.VISIBLE);
+                btnShareAction.setEnabled(false);
+
+                Single.fromCallable(() -> {
+                    eu.frigo.dispensa.sync.gdrive.auth.GDriveAuthManager authManager = new eu.frigo.dispensa.sync.gdrive.auth.GDriveAuthManager(this);
+                    if (!authManager.isSignedIn()) {
+                        throw new IllegalStateException(getString(R.string.sync_gdrive_not_connected));
+                    }
+                    eu.frigo.dispensa.sync.gdrive.client.GDriveClient client = new eu.frigo.dispensa.sync.gdrive.client.GDriveClient(authManager);
+
                     AppDatabase db = AppDatabase.getDatabase(this);
-                    JoinedPantryConfig config = db.joinedPantryConfigDao().getConfigByDispensaId(disp.id);
+                    String remoteId = (disp.remoteId != null && !disp.remoteId.trim().isEmpty()) ? disp.remoteId.trim() : String.valueOf(disp.id);
+                    if (disp.remoteId == null || disp.remoteId.trim().isEmpty()) {
+                        disp.remoteId = remoteId;
+                        db.dispensaDao().update(disp);
+                    }
+                    String pantryPath = SyncManager.getSyncPath(remoteId);
+
+                    JoinedPantryConfig currentConfig = db.joinedPantryConfigDao().getConfigByDispensaId(disp.id);
+                    String folderId = (currentConfig != null && currentConfig.url != null && !currentConfig.url.isEmpty() && !"root".equals(currentConfig.url))
+                            ? currentConfig.url
+                            : null;
+
+                    if (folderId == null) {
+                        eu.frigo.dispensa.sync.gdrive.store.GDriveFolderStore rootStore = new eu.frigo.dispensa.sync.gdrive.store.GDriveFolderStore(client, "root");
+                        folderId = rootStore.getOrCreateFolderId(pantryPath);
+                        if (currentConfig != null) {
+                            currentConfig.url = folderId;
+                            db.joinedPantryConfigDao().update(currentConfig);
+                        } else {
+                            currentConfig = new JoinedPantryConfig(disp.id, "gdrive", null, remoteId);
+                            currentConfig.url = folderId;
+                            db.joinedPantryConfigDao().insert(currentConfig);
+                        }
+                    } else if (currentConfig == null) {
+                        currentConfig = new JoinedPantryConfig(disp.id, "gdrive", null, remoteId);
+                        currentConfig.url = folderId;
+                        db.joinedPantryConfigDao().insert(currentConfig);
+                    }
+
+                    // Assicurati che la dispensa sia inclusa nel sync locale
+                    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+                    String syncedIds = prefs.getString(SyncManager.SYNC_WEBDAV_SYNCED_IDS, "");
+                    if (syncedIds.isEmpty()) {
+                        syncedIds = String.valueOf(disp.id);
+                    } else if (!java.util.Arrays.asList(syncedIds.split(",")).contains(String.valueOf(disp.id))) {
+                        syncedIds += "," + disp.id;
+                    }
+                    prefs.edit()
+                            .putString(SyncManager.SYNC_WEBDAV_SYNCED_IDS, syncedIds)
+                            .putString(SyncManager.SYNC_WEBDAV_PANTRY_NAME + "_" + disp.id, disp.getName())
+                            .putBoolean(SyncManager.KEY_SYNC_ENABLED, true)
+                            .apply();
+
+                    // Condividi la cartella tramite Drive Permissions API con l'email destinatario
+                    client.shareFolderWithUser(folderId, email, "writer");
+
                     String deviceId = eu.frigo.dispensa.sync.core.engine.InstallationIdProvider.getOrCreateInstallationId(this);
                     String deviceName = android.os.Build.MODEL;
 
-                    PairingPayload payload;
-                    if (config != null && "gdrive".equals(config.providerId)) {
-                        java.util.Map<String, String> data = new java.util.HashMap<>();
-                        data.put("providerId", "gdrive");
-                        data.put("ownerDeviceId", deviceId);
-                        data.put("pantryName", disp.getName());
-                        data.put("remoteId", disp.remoteId);
-                        data.put("folderId", config.url != null ? config.url : "root");
-                        payload = new PairingPayload("gdrive", deviceName, data);
-                        payload.version = 2;
-                    } else {
-                        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-                        String url = prefs.getString(SyncManager.KEY_WEBDAV_URL, "");
-                        String user = prefs.getString(SyncManager.KEY_WEBDAV_USER, "");
-                        String pass = prefs.getString(SyncManager.KEY_WEBDAV_PASS, "");
-                        String path = prefs.getString(SyncManager.KEY_WEBDAV_PATH, SyncManager.DEFAULT_PATH);
-                        String pantryKey = prefs.getString(SyncManager.SYNC_WEBDAV_PANTRY_KEY, "");
-                        boolean isShared = prefs.getBoolean(SyncManager.KEY_WEBDAV_MODE_SHARED, false);
+                    java.util.Map<String, String> data = new java.util.HashMap<>();
+                    data.put("providerId", "gdrive");
+                    data.put("ownerDeviceId", deviceId);
+                    data.put("pantryName", disp.getName());
+                    data.put("remoteId", remoteId);
+                    data.put("folderId", folderId);
+                    data.put("recipientEmail", email);
 
-                        if (url.isEmpty() || (user.isEmpty() && !isShared)) {
-                            throw new IllegalStateException("Configura prima il sync nelle impostazioni");
-                        }
-                        WebDavConfig webDavConfig = new WebDavConfig(url, user, pass, path, pantryKey, disp.getName(), deviceId, disp.remoteId, isShared);
-                        payload = WebDavPairingHandler.createPayload(deviceName, webDavConfig);
-                    }
+                    PairingPayload payload = new PairingPayload("gdrive", deviceName, data);
+                    payload.version = 2;
 
                     PairingPayloadCodecImpl codec = new PairingPayloadCodecImpl(null);
                     String wireData = codec.encode(payload);
                     String deepLink = "https://enricofrigo.github.io/dispensa/syncjoin?data=" + android.net.Uri.encode(wireData);
                     Bitmap qrBitmap = QrCodeGenerator.generate(deepLink, 512);
-                    return new ShareInfo(deepLink, qrBitmap);
-                }))
+
+                    return new ShareInfo(deepLink, qrBitmap, email);
+                })
+                .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(info -> {
+                    if (pbSharing != null) pbSharing.setVisibility(View.GONE);
+                    btnShareAction.setEnabled(true);
+
                     qrView.setImageBitmap(info.qrBitmap);
+                    qrView.setVisibility(View.VISIBLE);
+
+                    if (tvSharedRecipient != null) {
+                        tvSharedRecipient.setText(getString(R.string.sync_gdrive_shared_with, info.recipientEmail));
+                        tvSharedRecipient.setVisibility(View.VISIBLE);
+                    }
+                    if (btnShareAnother != null) btnShareAnother.setVisibility(View.VISIBLE);
+                    if (emailInputRow != null) emailInputRow.setVisibility(View.GONE);
+                    btnShareAction.setVisibility(View.GONE);
 
                     if (shareBtn != null) {
-                        shareBtn.setOnClickListener(v -> {
+                        shareBtn.setVisibility(View.VISIBLE);
+                        shareBtn.setOnClickListener(v2 -> {
                             Intent sendIntent = new Intent();
                             sendIntent.setAction(Intent.ACTION_SEND);
                             sendIntent.putExtra(Intent.EXTRA_TEXT, "Unisciti alla mia dispensa condivisa!\n\nLink: " + info.deepLink);
@@ -403,19 +585,87 @@ public class SyncOnboardingActivity extends AppCompatActivity {
                         });
                     }
                     eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl.getInstance(this).triggerManualSync();
+                    Toast.makeText(this, getString(R.string.sync_gdrive_shared_with, info.recipientEmail), Toast.LENGTH_SHORT).show();
                 }, throwable -> {
-                    Log.e("SyncOnboarding", "Errore generazione QR", throwable);
-                    Toast.makeText(this, "Errore generazione QR: " + throwable.getMessage(), Toast.LENGTH_SHORT).show();
+                    if (pbSharing != null) pbSharing.setVisibility(View.GONE);
+                    btnShareAction.setEnabled(true);
+                    Log.e("SyncOnboarding", "Errore condivisione GDrive", throwable);
+                    Intent consentIntent = eu.frigo.dispensa.sync.gdrive.auth.GDriveAuthManager.extractConsentIntent(throwable);
+                    if (consentIntent != null) {
+                        pendingAuthAction = () -> btnShareAction.performClick();
+                        consentLauncher.launch(consentIntent);
+                        return;
+                    }
+                    Toast.makeText(this, "Errore condivisione: " + throwable.getMessage(), Toast.LENGTH_LONG).show();
                 });
+            });
+        }
+    }
+
+    private void setupStandardShareUI(Dispensa disp, JoinedPantryConfig config, ImageView qrView, Button shareBtn) {
+        qrView.setVisibility(View.VISIBLE);
+        if (shareBtn != null) shareBtn.setVisibility(View.VISIBLE);
+
+        Single.fromCallable(() -> {
+            String deviceId = eu.frigo.dispensa.sync.core.engine.InstallationIdProvider.getOrCreateInstallationId(this);
+            String deviceName = android.os.Build.MODEL;
+
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+            String url = prefs.getString(SyncManager.KEY_WEBDAV_URL, "");
+            String user = prefs.getString(SyncManager.KEY_WEBDAV_USER, "");
+            String pass = prefs.getString(SyncManager.KEY_WEBDAV_PASS, "");
+            String path = prefs.getString(SyncManager.KEY_WEBDAV_PATH, SyncManager.DEFAULT_PATH);
+            String pantryKey = prefs.getString(SyncManager.SYNC_WEBDAV_PANTRY_KEY, "");
+            boolean isShared = prefs.getBoolean(SyncManager.KEY_WEBDAV_MODE_SHARED, false);
+
+            if (url.isEmpty() || (user.isEmpty() && !isShared)) {
+                throw new IllegalStateException("Configura prima il sync nelle impostazioni");
+            }
+            WebDavConfig webDavConfig = new WebDavConfig(url, user, pass, path, pantryKey, disp.getName(), deviceId, disp.remoteId, isShared);
+            PairingPayload payload = WebDavPairingHandler.createPayload(deviceName, webDavConfig);
+
+            PairingPayloadCodecImpl codec = new PairingPayloadCodecImpl(null);
+            String wireData = codec.encode(payload);
+            String deepLink = "https://enricofrigo.github.io/dispensa/syncjoin?data=" + android.net.Uri.encode(wireData);
+            Bitmap qrBitmap = QrCodeGenerator.generate(deepLink, 512);
+            return new ShareInfo(deepLink, qrBitmap, null);
+        })
+        .subscribeOn(Schedulers.io())
+        .observeOn(AndroidSchedulers.mainThread())
+        .subscribe(info -> {
+            qrView.setImageBitmap(info.qrBitmap);
+
+            if (shareBtn != null) {
+                shareBtn.setOnClickListener(v -> {
+                    Intent sendIntent = new Intent();
+                    sendIntent.setAction(Intent.ACTION_SEND);
+                    sendIntent.putExtra(Intent.EXTRA_TEXT, "Unisciti alla mia dispensa condivisa!\n\nLink: " + info.deepLink);
+                    sendIntent.setType("text/plain");
+
+                    Intent shareIntent = Intent.createChooser(sendIntent, null);
+                    startActivity(shareIntent);
+                });
+            }
+            eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl.getInstance(this).triggerManualSync();
+        }, throwable -> {
+            Log.e("SyncOnboarding", "Errore generazione QR", throwable);
+            Toast.makeText(this, "Errore generazione QR: " + throwable.getMessage(), Toast.LENGTH_SHORT).show();
+        });
     }
 
     private static class ShareInfo {
         final String deepLink;
         final Bitmap qrBitmap;
+        final String recipientEmail;
 
-        ShareInfo(String deepLink, Bitmap qrBitmap) {
+        ShareInfo(String deepLink, Bitmap qrBitmap, String recipientEmail) {
             this.deepLink = deepLink;
             this.qrBitmap = qrBitmap;
+            this.recipientEmail = recipientEmail;
+        }
+
+        ShareInfo(String deepLink, Bitmap qrBitmap) {
+            this(deepLink, qrBitmap, null);
         }
     }
 

@@ -5,5 +5,14 @@
             android:name=".activity.SyncGDriveConfigActivity"
             android:exported="false"
             android:label="@string/sync_gdrive_config_title" />
+        <activity
+            android:name=".activity.GDriveDebugActivity"
+            android:exported="true"
+            android:label="[DEBUG] GDrive Inspector">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
     </application>
 </manifest>

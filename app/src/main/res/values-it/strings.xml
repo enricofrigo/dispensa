@@ -239,6 +239,17 @@ I prodotti in questo deposito potrebbero dover essere riassegnati.</string>
     <string name="sync_gdrive_sign_out">Disconnetti Google Drive</string>
     <string name="sync_gdrive_connected_as">Connesso come: %s</string>
     <string name="sync_gdrive_not_connected">Non connesso a Google Drive</string>
+    <string name="sync_gdrive_share_with_title">Condividi con account Google</string>
+    <string name="sync_gdrive_share_with_desc">Inserisci l\'indirizzo email Google del destinatario o selezionalo dalla rubrica per condividere questa dispensa.</string>
+    <string name="sync_gdrive_email_hint">Email account Google</string>
+    <string name="sync_gdrive_pick_contact">Scegli dai contatti</string>
+    <string name="sync_gdrive_share_action">Condividi e Mostra QR</string>
+    <string name="sync_gdrive_sharing_in_progress">Condivisione cartella su Google Drive in corso…</string>
+    <string name="sync_gdrive_shared_with">Condiviso con: %s</string>
+    <string name="sync_gdrive_share_another">Condividi con un altro account</string>
+    <string name="sync_gdrive_invalid_email">Inserisci un indirizzo email Google valido</string>
+    <string name="sync_gdrive_no_email_in_contact">Nessun indirizzo email trovato nel contatto selezionato</string>
+    <string name="sync_gdrive_contacts_not_available">Applicazione contatti non disponibile</string>
     <string name="preparing_sync_server">Preparazione sincronizzazione remota…</string>
     <string name="sync_setup_error">Errore configurazione condivisione: %s</string>
     <string name="sync_remote_delete_error">Errore cancellazione remota: %s. Procedo con la cancellazione locale.</string>

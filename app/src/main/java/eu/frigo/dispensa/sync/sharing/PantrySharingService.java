@@ -107,13 +107,23 @@ public class PantrySharingService {
             // Inizializza la struttura remota sul provider (cartelle, manifest.json, registrazione device)
             engine.initializeRemoteStructure().blockingAwait();
 
+            // Esegui la prima sincronizzazione (crea snapshot iniziale compattato con i prodotti correnti)
+            try {
+                engine.performSync(new eu.frigo.dispensa.sync.core.policy.SyncPolicy() {
+                    @Override public boolean canSyncNow() { return true; }
+                    @Override public long getRetryIntervalMillis() { return 0; }
+                }).blockingAwait();
+            } catch (Exception e) {
+                Log.w(TAG, "Initial sync during share encountered an issue: " + e.getMessage(), e);
+            }
+
             // Salva la configurazione della dispensa condivisa
-            JoinedPantryConfig config = provider.createJoinedConfig(context, dispensa);
+            JoinedPantryConfig config = provider.createJoinedConfig(context, dispensa, store);
             if (config != null) {
                 db.joinedPantryConfigDao().insert(config);
             }
 
-            // Aggiorna la lista delle dispense sincronizzate nelle preferenze
+            // Aggiorna la lista delle dispense sincronizzate nelle preferenze e attiva il sync
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
             String syncedIdsStr = prefs.getString(SyncManager.SYNC_WEBDAV_SYNCED_IDS, "");
             List<String> syncedIds = new ArrayList<>(Arrays.asList(syncedIdsStr.split(",")));
@@ -123,11 +133,17 @@ public class PantrySharingService {
                 } else {
                     syncedIdsStr += "," + dispensa.id;
                 }
-                prefs.edit()
-                        .putString(SyncManager.SYNC_WEBDAV_SYNCED_IDS, syncedIdsStr)
-                        .putString(SyncManager.SYNC_WEBDAV_PANTRY_NAME + "_" + dispensa.id, dispensa.getName())
-                        .apply();
             }
+            prefs.edit()
+                    .putString(SyncManager.SYNC_WEBDAV_SYNCED_IDS, syncedIdsStr)
+                    .putString(SyncManager.SYNC_WEBDAV_PANTRY_NAME + "_" + dispensa.id, dispensa.getName())
+                    .putBoolean(SyncManager.KEY_SYNC_ENABLED, true)
+                    .apply();
+
+            // Ricarica il provider e schedula il sync di sincronizzazione
+            SyncManager.getInstance().reloadProvider(context)
+                    .subscribe(p -> eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl.getInstance(context).triggerManualSync(), err -> {});
+
             Log.i(TAG, "Pantry '" + dispensa.getName() + "' successfully shared via provider '" + providerId + "'.");
         });
     }

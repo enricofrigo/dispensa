@@ -239,6 +239,17 @@
     <string name="sync_gdrive_sign_out">Sign out from Google Drive</string>
     <string name="sync_gdrive_connected_as">Connected as: %s</string>
     <string name="sync_gdrive_not_connected">Not connected to Google Drive</string>
+    <string name="sync_gdrive_share_with_title">Share with Google Account</string>
+    <string name="sync_gdrive_share_with_desc">Enter the recipient\'s Google email address or select them from contacts to share this pantry.</string>
+    <string name="sync_gdrive_email_hint">Google Account Email</string>
+    <string name="sync_gdrive_pick_contact">Pick from contacts</string>
+    <string name="sync_gdrive_share_action">Share &amp; Show QR</string>
+    <string name="sync_gdrive_sharing_in_progress">Sharing folder on Google Drive…</string>
+    <string name="sync_gdrive_shared_with">Shared with: %s</string>
+    <string name="sync_gdrive_share_another">Share with another account</string>
+    <string name="sync_gdrive_invalid_email">Please enter a valid Google email address</string>
+    <string name="sync_gdrive_no_email_in_contact">No email address found in selected contact</string>
+    <string name="sync_gdrive_contacts_not_available">Contacts app not available</string>
     <string name="preparing_sync_server">Preparing remote sync…</string>
     <string name="sync_setup_error">Sharing setup failed: %s</string>
     <string name="sync_remote_delete_error">Remote delete error: %s. Local deletion will proceed.</string>

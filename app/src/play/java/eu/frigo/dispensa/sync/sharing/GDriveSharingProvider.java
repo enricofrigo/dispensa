@@ -71,11 +71,24 @@ public class GDriveSharingProvider implements SharingProvider {
 
     @Override
     public JoinedPantryConfig createJoinedConfig(Context context, Dispensa dispensa) {
+        return createJoinedConfig(context, dispensa, null);
+    }
+
+    @Override
+    public JoinedPantryConfig createJoinedConfig(Context context, Dispensa dispensa, SharedFolderStore store) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         String rootFolderId = prefs.getString(GDriveAuthManager.PREF_KEY_GDRIVE_ROOT_FOLDER_ID, "root");
         String remoteId = (dispensa.remoteId != null && !dispensa.remoteId.trim().isEmpty())
                 ? dispensa.remoteId.trim()
                 : String.valueOf(dispensa.id);
+
+        if (store instanceof GDriveFolderStore) {
+            String pantryPath = getPantryPath(context, dispensa);
+            String realFolderId = ((GDriveFolderStore) store).getFolderId(pantryPath);
+            if (realFolderId != null && !realFolderId.isEmpty()) {
+                rootFolderId = realFolderId;
+            }
+        }
 
         JoinedPantryConfig config = new JoinedPantryConfig(dispensa.id, "gdrive", null, remoteId);
         config.url = rootFolderId;

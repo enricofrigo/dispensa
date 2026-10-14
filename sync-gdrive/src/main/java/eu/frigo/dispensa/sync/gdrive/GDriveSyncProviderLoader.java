@@ -55,9 +55,10 @@ public class GDriveSyncProviderLoader implements SyncProviderLoader {
                                 String remoteId = (disp != null && disp.remoteId != null && !disp.remoteId.trim().isEmpty())
                                         ? disp.remoteId.trim()
                                         : (config.remotePantryId != null ? config.remotePantryId : String.valueOf(id));
-                                String syncPath = SyncManager.getSyncPath(remoteId);
-
                                 String rootFolderId = (config.url != null && !config.url.isEmpty()) ? config.url : "root";
+                                boolean isDirectFolder = !"root".equals(rootFolderId);
+                                String syncPath = isDirectFolder ? "" : SyncManager.getSyncPath(remoteId);
+
                                 GDriveFolderStore store = new GDriveFolderStore(client, rootFolderId);
                                 scopes.add(new GDriveSyncProvider.SyncScope(id, syncPath, store));
                             }

@@ -40,6 +40,17 @@ public class SyncGDriveConfigActivity extends AppCompatActivity {
 
     private GDriveAuthManager authManager;
 
+    private final ActivityResultLauncher<Intent> consentLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == RESULT_OK) {
+                    verifyAndCompleteSignIn();
+                } else {
+                    Toast.makeText(this, "Consenso Google Drive non concesso", Toast.LENGTH_LONG).show();
+                    updateUiState();
+                }
+            });
+
     private final ActivityResultLauncher<Intent> signInLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
@@ -48,9 +59,7 @@ public class SyncGDriveConfigActivity extends AppCompatActivity {
                     try {
                         GoogleSignInAccount account = task.getResult(ApiException.class);
                         if (account != null) {
-                            authManager.saveAccountEmail(account.getEmail());
-                            updateUiState();
-                            Toast.makeText(this, getString(R.string.notify_saved), Toast.LENGTH_SHORT).show();
+                            verifyAndCompleteSignIn();
                         }
                     } catch (ApiException e) {
                         Log.e(TAG, "Google sign in failed", e);
@@ -58,6 +67,36 @@ public class SyncGDriveConfigActivity extends AppCompatActivity {
                     }
                 }
             });
+
+    private void verifyAndCompleteSignIn() {
+        if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
+        if (signInButton != null) signInButton.setEnabled(false);
+
+        io.reactivex.rxjava3.core.Single.fromCallable(() -> authManager.getAccessToken())
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(token -> {
+                    if (progressBar != null) progressBar.setVisibility(View.GONE);
+                    if (signInButton != null) signInButton.setEnabled(true);
+                    GoogleSignInAccount account = authManager.getAccount();
+                    if (account != null) {
+                        authManager.saveAccountEmail(account.getEmail());
+                    }
+                    updateUiState();
+                    Toast.makeText(this, getString(R.string.notify_saved), Toast.LENGTH_SHORT).show();
+                }, throwable -> {
+                    if (progressBar != null) progressBar.setVisibility(View.GONE);
+                    if (signInButton != null) signInButton.setEnabled(true);
+                    Intent consentIntent = GDriveAuthManager.extractConsentIntent(throwable);
+                    if (consentIntent != null) {
+                        consentLauncher.launch(consentIntent);
+                    } else {
+                        Log.e(TAG, "Failed to get Drive token", throwable);
+                        Toast.makeText(this, "Errore autorizzazione: " + throwable.getMessage(), Toast.LENGTH_LONG).show();
+                        updateUiState();
+                    }
+                });
+    }
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -88,6 +127,15 @@ public class SyncGDriveConfigActivity extends AppCompatActivity {
         });
 
         saveButton.setOnClickListener(v -> saveConfiguration());
+
+        Button debugButton = findViewById(R.id.btn_gdrive_debug_explorer);
+        if (debugButton != null) {
+            debugButton.setVisibility(eu.frigo.dispensa.BuildConfig.DEBUG ? View.VISIBLE : View.GONE);
+            debugButton.setOnClickListener(v -> {
+                Intent intent = new Intent(this, GDriveDebugActivity.class);
+                startActivity(intent);
+            });
+        }
 
         updateUiState();
     }

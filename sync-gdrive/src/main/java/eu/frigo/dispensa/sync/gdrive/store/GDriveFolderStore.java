@@ -42,6 +42,32 @@ public class GDriveFolderStore implements SharedFolderStore {
         return "gdrive";
     }
 
+    public GDriveClient getClient() {
+        return client;
+    }
+
+    public String getRootFolderId() {
+        return rootFolderId;
+    }
+
+    public Map<String, String> getFolderIdCache() {
+        return Collections.unmodifiableMap(folderIdCache);
+    }
+
+    @Nullable
+    public String getFolderId(String relativePath) {
+        String clean = cleanPath(relativePath);
+        return folderIdCache.get(clean);
+    }
+
+    public String getOrCreateFolderId(String relativePath) throws IOException {
+        String folderId = resolveFolderId(relativePath, true);
+        if (folderId == null) {
+            throw new IOException("Failed to resolve folder id for " + relativePath);
+        }
+        return folderId;
+    }
+
     @Override
     public Single<Boolean> isAvailable() {
         return Single.fromCallable(() -> {
@@ -165,9 +191,17 @@ public class GDriveFolderStore implements SharedFolderStore {
     public Single<Boolean> exists(String relativePath) {
         return Single.fromCallable(() -> {
             try {
-                String fileId = resolveFileId(relativePath);
+                String clean = cleanPath(relativePath);
+                if (clean.isEmpty()) {
+                    if ("root".equals(rootFolderId)) {
+                        return true;
+                    }
+                    GDriveClient.DriveFile rf = client.getFile(rootFolderId);
+                    return rf != null && !Boolean.TRUE.equals(rf.trashed);
+                }
+                String fileId = resolveFileId(clean);
                 if (fileId != null) return true;
-                String folderId = resolveFolderId(relativePath, false);
+                String folderId = resolveFolderId(clean, false);
                 return folderId != null;
             } catch (Exception e) {
                 return false;
@@ -213,7 +247,4 @@ public class GDriveFolderStore implements SharedFolderStore {
         });
     }
 
-    public String getRootFolderId() {
-        return rootFolderId;
-    }
 }

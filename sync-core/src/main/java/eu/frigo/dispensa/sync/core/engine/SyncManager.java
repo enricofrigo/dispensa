@@ -76,6 +76,10 @@ public class SyncManager {
         SyncProvider active = currentProvider.getValue();
         if (active != null) return Single.just(active);
 
+        return reloadProvider(context);
+    }
+
+    public Single<SyncProvider> reloadProvider(Context context) {
         if (loaders.isEmpty()) return Single.error(new IllegalStateException("No loaders registered"));
 
         return Observable.fromIterable(loaders.values())
