@@ -80,10 +80,23 @@ public class WebDavSyncProviderLoader implements SyncProviderLoader {
                             if (!url.isEmpty() && (!user.isEmpty() || isShared)) {
                                 String base = (path == null) ? "" : (path.endsWith("/") ? path : path + "/");
                                 if (base.startsWith("/")) base = base.substring(1);
-                                String pantryPath = base + syncPath;
-                                
+                                String standardPath = base.endsWith(SyncManager.APP_FOLDER_NAME + "/")
+                                        ? base + syncPath
+                                        : base + SyncManager.APP_FOLDER_NAME + "/" + syncPath;
+                                String pantryPath = standardPath;
+
                                 // Create a temporary client for this scope's credentials
                                 WebDavClient scopeClient = new WebDavClient(url, user, pass);
+                                try (okhttp3.Response checkResp = scopeClient.head(standardPath + SyncManager.MANIFEST_JSON)) {
+                                    if (!checkResp.isSuccessful()) {
+                                        try (okhttp3.Response legacyResp = scopeClient.head(base + syncPath + SyncManager.MANIFEST_JSON)) {
+                                            if (legacyResp.isSuccessful()) {
+                                                pantryPath = base + syncPath;
+                                            }
+                                        } catch (Exception ignored) {}
+                                    }
+                                } catch (Exception ignored) {}
+
                                 scopes.add(new WebDavSyncProvider.SyncScope(id, pantryPath, scopeClient));
                             }
                         } catch (NumberFormatException ignored) {}

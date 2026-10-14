@@ -9,6 +9,7 @@ import org.robolectric.RobolectricTestRunner;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -49,6 +50,22 @@ public class WebDavFolderStoreContractTest {
                 }
                 if ("PROPFIND".equals(method)) {
                     String folderPath = path.endsWith("/") ? path : path + "/";
+                    String depth = request.getHeader("Depth");
+                    if ("1".equals(depth)) {
+                        StringBuilder sb = new StringBuilder();
+                        sb.append("<d:multistatus xmlns:d=\"DAV:\">");
+                        sb.append("<d:response><d:href>/").append(folderPath).append("</d:href></d:response>");
+                        for (String key : remoteStorage.keySet()) {
+                            if (key.startsWith(folderPath)) {
+                                String relative = key.substring(folderPath.length());
+                                if (!relative.contains("/")) {
+                                    sb.append("<d:response><d:href>/").append(key).append("</d:href></d:response>");
+                                }
+                            }
+                        }
+                        sb.append("</d:multistatus>");
+                        return new MockResponse().setResponseCode(207).setBody(sb.toString());
+                    }
                     if (remoteStorage.containsKey(path) || remoteFolders.contains(folderPath) || path.isEmpty()) {
                         return new MockResponse().setResponseCode(207).setBody("<d:multistatus><d:response><d:status>HTTP/1.1 200 OK</d:status></d:response></d:multistatus>");
                     }
@@ -110,5 +127,17 @@ public class WebDavFolderStoreContractTest {
 
         folderStore.deleteFile("pantry-webdav-test/snapshots/snap_1.json").blockingAwait();
         Assert.assertFalse(folderStore.exists("pantry-webdav-test/snapshots/snap_1.json").blockingGet());
+    }
+
+    @Test
+    public void testListFiles() {
+        byte[] data = "{}".getBytes(StandardCharsets.UTF_8);
+        folderStore.writeAtomic("pantry-webdav-test/devices/dev1.json", data, null).blockingAwait();
+        folderStore.writeAtomic("pantry-webdav-test/devices/dev2.json", data, null).blockingAwait();
+
+        List<String> files = folderStore.listFiles("pantry-webdav-test/devices").blockingGet();
+        Assert.assertEquals(2, files.size());
+        Assert.assertTrue(files.contains("dev1.json"));
+        Assert.assertTrue(files.contains("dev2.json"));
     }
 }
