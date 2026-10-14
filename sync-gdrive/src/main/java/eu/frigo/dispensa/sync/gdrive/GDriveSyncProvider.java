@@ -62,7 +62,7 @@ public class GDriveSyncProvider implements SyncProvider {
                 engines.add(new FolderSyncEngine(
                         scope.store,
                         dataBridge,
-                        new SyncCursorStoreImpl(context),
+                        new SyncCursorStoreImpl(context, scope.dispensaId),
                         deviceId,
                         deviceName,
                         scope.pantryPath,

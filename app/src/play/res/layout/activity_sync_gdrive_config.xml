@@ -72,13 +72,5 @@
             android:layout_height="wrap_content"
             android:text="@string/save" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_gdrive_debug_explorer"
-            style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="🛠 [DEBUG] Esplora Cartelle &amp; Sync Drive" />
-
     </LinearLayout>
 </ScrollView>

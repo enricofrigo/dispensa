@@ -247,5 +247,43 @@ public class FolderSyncEngineTest {
         Assert.assertEquals(0, manifest.activeEventFiles.size());
         Assert.assertTrue(sharedStore.exists(pantryPath + "snapshots/" + manifest.latestSnapshotId).blockingGet());
     }
+
+    @Test
+    public void testGuestNeverOverwritesOwnerStructureEvenIfDataBridgeSaysOwner() {
+        String pantryPath = "pantry-guest-no-overwrite/";
+        bridgeDeviceA.isOwner = true;
+
+        FolderSyncEngine ownerEngine = new FolderSyncEngine(
+                sharedStore, bridgeDeviceA, cursorStoreA, "device-A", "Pixel 8", pantryPath, 1
+        );
+        ownerEngine.initializeRemoteStructure().blockingAwait();
+
+        // Remote manifest is owned by device-A
+        byte[] manifestData = sharedStore.read(pantryPath + "manifest.json").blockingGet();
+        PantryManifest manifest = gson.fromJson(new String(manifestData, StandardCharsets.UTF_8), PantryManifest.class);
+        Assert.assertEquals("device-A", manifest.createdByDevice);
+
+        // Delete snapshots folder to simulate incomplete structure
+        sharedStore.deleteFolder(pantryPath + "snapshots/").blockingAwait();
+        Assert.assertFalse(sharedStore.exists(pantryPath + "snapshots/").blockingGet());
+
+        // Device B simulates joining, but has buggy bridge saying isOwner=true
+        bridgeDeviceB.isOwner = true;
+        FolderSyncEngine guestEngine = new FolderSyncEngine(
+                sharedStore, bridgeDeviceB, cursorStoreB, "device-B", "Galaxy S24", pantryPath, 2
+        );
+
+        try {
+            guestEngine.performSync(FORCE_POLICY).blockingAwait();
+            Assert.fail("Guest should have failed because manifest belongs to device-A");
+        } catch (Exception e) {
+            Assert.assertTrue(e.getCause() instanceof RemoteStructureNotFoundException || e instanceof RemoteStructureNotFoundException);
+        }
+
+        // Verify remote manifest was NOT overwritten with device-B
+        manifestData = sharedStore.read(pantryPath + "manifest.json").blockingGet();
+        manifest = gson.fromJson(new String(manifestData, StandardCharsets.UTF_8), PantryManifest.class);
+        Assert.assertEquals("device-A", manifest.createdByDevice);
+    }
 }
 

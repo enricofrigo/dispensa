@@ -55,7 +55,7 @@ public interface ProductDao {
     @Query("SELECT * FROM products WHERE barcode = :barcode ORDER BY expiry_date ASC")
     List<Product> getProductsByBarcode(String barcode);
 
-    @Query("SELECT * FROM products WHERE barcode = :barcode AND expiry_date = :expiryDate AND storage_location = :storageLocation AND dispensa_id = :dispensaId LIMIT 1")
+    @Query("SELECT * FROM products WHERE barcode IS :barcode AND expiry_date IS :expiryDate AND storage_location IS :storageLocation AND dispensa_id = :dispensaId LIMIT 1")
     Product getProductByLotKeySync(String barcode, Long expiryDate, String storageLocation, int dispensaId);
 
     @Transaction

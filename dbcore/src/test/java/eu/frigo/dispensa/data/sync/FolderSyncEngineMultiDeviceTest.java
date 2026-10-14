@@ -193,4 +193,190 @@ public class FolderSyncEngineMultiDeviceTest {
         Assert.assertNotNull(guestShop);
         Assert.assertEquals(2, guestShop.quantity);
     }
+
+    @Test
+    public void testEagerDeviceRegistrationAndInitialSnapshotPullOnJoin() throws Exception {
+        String ownerDeviceId = "device_owner_abc";
+        String guestDeviceId = "device_guest_xyz";
+        int ownerPantryId = 1;
+        int guestPantryId = 2;
+        String pantryPath = ""; // tests direct folder / root pantry path
+
+        // 1. Owner dispensa in local DB
+        Dispensa ownerDisp = new Dispensa("Dispensa Famiglia", true);
+        ownerDisp.id = ownerPantryId;
+        ownerDisp.deviceOwnerId = ownerDeviceId;
+        dbOwner.dispensaDao().insert(ownerDisp);
+
+        // Prepopulate products on owner
+        Product p1 = new Product("800111222333", 3, System.currentTimeMillis() + 86400000L, "Pasta Barilla", null, "PANTRY", 0L, -1);
+        p1.dispensaId = ownerPantryId;
+        p1.lastModified = System.currentTimeMillis();
+        dbOwner.productDao().insert(p1);
+
+        RoomPantryDataBridge bridgeOwner = new RoomPantryDataBridge(dbOwner);
+        SyncCursorStore cursorOwner = new InMemoryCursorStore();
+        FolderSyncEngine engineOwner = new FolderSyncEngine(
+                sharedStore, bridgeOwner, cursorOwner, ownerDeviceId, "Owner Phone", pantryPath, ownerPantryId
+        );
+
+        // Owner shares: initializes remote structure and forces compaction (creates snapshot)
+        engineOwner.initializeRemoteStructure().blockingAwait();
+        engineOwner.forceCompaction();
+
+        // Verify remote store has manifest and snapshot
+        Assert.assertTrue(sharedStore.exists("manifest.json").blockingGet());
+        Assert.assertTrue(sharedStore.exists("devices/" + ownerDeviceId + ".json").blockingGet());
+
+        // 2. Guest joins:
+        // Guest registers device eagerly on remote storage
+        eu.frigo.dispensa.sync.core.model.PantryDevice guestDevice = new eu.frigo.dispensa.sync.core.model.PantryDevice(guestDeviceId, "Guest Phone");
+        String guestDeviceJson = new com.google.gson.Gson().toJson(guestDevice);
+        sharedStore.writeAtomic("devices/" + guestDeviceId + ".json", guestDeviceJson.getBytes(java.nio.charset.StandardCharsets.UTF_8), null).blockingAwait();
+
+        // Verify device file exists eagerly on remote storage BEFORE sync!
+        Assert.assertTrue(sharedStore.exists("devices/" + guestDeviceId + ".json").blockingGet());
+
+        // Guest sets up local Dispensa with deviceOwnerId = ownerDeviceId
+        Dispensa guestDisp = new Dispensa("Dispensa Famiglia", false);
+        guestDisp.id = guestPantryId;
+        guestDisp.deviceOwnerId = ownerDeviceId;
+        dbGuest.dispensaDao().insert(guestDisp);
+
+        JoinedPantryConfig guestConfig = new JoinedPantryConfig(guestPantryId, "gdrive", null, "remote_pantry_1");
+        dbGuest.joinedPantryConfigDao().insert(guestConfig);
+
+        RoomPantryDataBridge bridgeGuest = new RoomPantryDataBridge(dbGuest);
+        // Verify bridgeGuest does NOT consider guest as owner
+        Assert.assertFalse(bridgeGuest.isPantryOwner(guestPantryId, guestDeviceId));
+
+        // Guest performs initial eager sync pull
+        SyncCursorStore cursorGuest = new InMemoryCursorStore();
+        FolderSyncEngine engineGuest = new FolderSyncEngine(
+                sharedStore, bridgeGuest, cursorGuest, guestDeviceId, "Guest Phone", pantryPath, guestPantryId
+        );
+        engineGuest.performSync(FORCE_POLICY).blockingAwait();
+
+        // Verify guest immediately has the product in DB!
+        List<Product> guestProducts = dbGuest.productDao().getAllProductsListStatic(guestPantryId);
+        Assert.assertEquals(1, guestProducts.size());
+        Assert.assertEquals("Pasta Barilla", guestProducts.get(0).getProductName());
+        Assert.assertEquals(3, guestProducts.get(0).getQuantity());
+    }
+
+    @Test
+    public void testSnapshotDoesNotOverwriteExistingProductsInOtherPantry() throws Exception {
+        // 1. Guest already has a product in Dispensa 1 (local)
+        Dispensa guestLocalDisp = new Dispensa("Dispensa Locale", true);
+        guestLocalDisp.id = 1;
+        guestLocalDisp.deviceOwnerId = "guest_dev";
+        dbGuest.dispensaDao().insert(guestLocalDisp);
+
+        Product existingProd = new Product();
+        existingProd.id = 1;
+        existingProd.dispensaId = 1;
+        existingProd.barcode = "BARCODE_LOCAL";
+        existingProd.setProductName("Latte Locale");
+        existingProd.quantity = 2;
+        existingProd.lastModified = System.currentTimeMillis();
+        dbGuest.productDao().insert(existingProd);
+
+        // 2. Owner has a product with id=1 in their pantry
+        int ownerPantryId = 1;
+        int guestPantryId = 2;
+        String ownerDeviceId = "owner_dev";
+        String guestDeviceId = "guest_dev";
+
+        Dispensa ownerDisp = new Dispensa("Owner Pantry", false);
+        ownerDisp.id = ownerPantryId;
+        ownerDisp.deviceOwnerId = ownerDeviceId;
+        dbOwner.dispensaDao().insert(ownerDisp);
+
+        Product remoteProd = new Product();
+        remoteProd.id = 1; // Same ID as guest's local product!
+        remoteProd.dispensaId = ownerPantryId;
+        remoteProd.barcode = "BARCODE_REMOTE";
+        remoteProd.setProductName("Pasta Remota");
+        remoteProd.quantity = 5;
+        remoteProd.lastModified = System.currentTimeMillis();
+        dbOwner.productDao().insert(remoteProd);
+
+        RoomPantryDataBridge bridgeOwner = new RoomPantryDataBridge(dbOwner);
+        SyncCursorStore cursorOwner = new InMemoryCursorStore();
+        FolderSyncEngine engineOwner = new FolderSyncEngine(
+                sharedStore, bridgeOwner, cursorOwner, ownerDeviceId, "Owner Phone", "", ownerPantryId
+        );
+        engineOwner.initializeRemoteStructure().blockingAwait();
+        engineOwner.forceCompaction();
+
+        // 3. Guest joins pantry 2
+        Dispensa guestJoinedDisp = new Dispensa("Dispensa Famiglia", false);
+        guestJoinedDisp.id = guestPantryId;
+        guestJoinedDisp.deviceOwnerId = ownerDeviceId;
+        dbGuest.dispensaDao().insert(guestJoinedDisp);
+
+        RoomPantryDataBridge bridgeGuest = new RoomPantryDataBridge(dbGuest);
+        SyncCursorStore cursorGuest = new InMemoryCursorStore();
+        FolderSyncEngine engineGuest = new FolderSyncEngine(
+                sharedStore, bridgeGuest, cursorGuest, guestDeviceId, "Guest Phone", "", guestPantryId
+        );
+        engineGuest.performSync(FORCE_POLICY).blockingAwait();
+
+        // 4. Verify guest local product in Dispensa 1 was NOT overwritten
+        Product localAfter = dbGuest.productDao().getProductByIdSync(1);
+        Assert.assertNotNull(localAfter);
+        Assert.assertEquals(1, localAfter.dispensaId);
+        Assert.assertEquals("Latte Locale", localAfter.getProductName());
+
+        // 5. Verify guest joined product in Dispensa 2 exists with its own new ID!
+        List<Product> joinedProducts = dbGuest.productDao().getAllProductsListStatic(guestPantryId);
+        Assert.assertEquals(1, joinedProducts.size());
+        Assert.assertEquals("Pasta Remota", joinedProducts.get(0).getProductName());
+        Assert.assertEquals(guestPantryId, joinedProducts.get(0).dispensaId);
+        Assert.assertNotEquals(1, joinedProducts.get(0).id);
+    }
+
+    @Test
+    public void testNullExpiryDateLotKeyMatching() {
+        Product p = new Product();
+        p.dispensaId = 1;
+        p.barcode = "123456";
+        p.expiryDate = null;
+        p.setStorageLocation("pantry");
+        p.setProductName("Sale");
+        p.quantity = 1;
+        p.lastModified = System.currentTimeMillis();
+        dbOwner.productDao().insert(p);
+
+        Product match = dbOwner.productDao().getProductByLotKeySync("123456", null, "pantry", 1);
+        Assert.assertNotNull("Product with null expiryDate should match via IS operator", match);
+        Assert.assertEquals("Sale", match.getProductName());
+    }
+
+    @Test
+    public void testPerDispensaCursorStoreImplIsolation() {
+        Context context = ApplicationProvider.getApplicationContext();
+        eu.frigo.dispensa.sync.core.store.SyncCursorStoreImpl cursorPantry1 =
+                new eu.frigo.dispensa.sync.core.store.SyncCursorStoreImpl(context, 1);
+        eu.frigo.dispensa.sync.core.store.SyncCursorStoreImpl cursorPantry2 =
+                new eu.frigo.dispensa.sync.core.store.SyncCursorStoreImpl(context, 2);
+
+        cursorPantry1.clear();
+        cursorPantry2.clear();
+
+        Assert.assertEquals(0L, cursorPantry1.getLastSyncTimestamp());
+        Assert.assertEquals(0L, cursorPantry2.getLastSyncTimestamp());
+
+        cursorPantry1.updateLastSyncTimestamp(1000L);
+        Assert.assertEquals(1000L, cursorPantry1.getLastSyncTimestamp());
+        Assert.assertEquals(0L, cursorPantry2.getLastSyncTimestamp()); // Must stay 0!
+
+        cursorPantry2.updateLastSyncTimestamp(2000L);
+        Assert.assertEquals(1000L, cursorPantry1.getLastSyncTimestamp());
+        Assert.assertEquals(2000L, cursorPantry2.getLastSyncTimestamp());
+
+        cursorPantry1.clear();
+        Assert.assertEquals(0L, cursorPantry1.getLastSyncTimestamp());
+        Assert.assertEquals(2000L, cursorPantry2.getLastSyncTimestamp());
+    }
 }

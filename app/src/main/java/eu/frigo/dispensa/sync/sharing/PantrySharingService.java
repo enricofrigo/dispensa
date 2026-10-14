@@ -69,6 +69,24 @@ public class PantrySharingService {
         return available;
     }
 
+    public SharedFolderStore createStore(Context context, Dispensa dispensa, JoinedPantryConfig config) {
+        String providerId = (config != null && config.providerId != null) ? config.providerId : "webdav";
+        SharingProvider provider = getProvider(providerId);
+        if (provider != null) {
+            return provider.createStore(context, dispensa, config);
+        }
+        return null;
+    }
+
+    public String getPantryPath(Context context, Dispensa dispensa, JoinedPantryConfig config) {
+        String providerId = (config != null && config.providerId != null) ? config.providerId : "webdav";
+        SharingProvider provider = getProvider(providerId);
+        if (provider != null) {
+            return provider.getPantryPath(context, dispensa, config);
+        }
+        return "";
+    }
+
     public Completable sharePantry(Context context, Dispensa dispensa, String providerId) {
         return Completable.fromAction(() -> {
             SharingProvider provider = getProvider(providerId);
@@ -90,7 +108,7 @@ public class PantrySharingService {
             String pantryPath = provider.getPantryPath(context, dispensa);
 
             RoomPantryDataBridge dataBridge = new RoomPantryDataBridge(db);
-            SyncCursorStore cursorStore = new SyncCursorStoreImpl(context);
+            SyncCursorStore cursorStore = new SyncCursorStoreImpl(context, dispensa.id);
             String deviceName = PreferenceManager.getDefaultSharedPreferences(context)
                     .getString(SyncManager.KEY_DEVICE_NAME, Build.MODEL);
 

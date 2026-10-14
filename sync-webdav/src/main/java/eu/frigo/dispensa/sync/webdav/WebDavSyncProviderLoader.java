@@ -52,9 +52,12 @@ public class WebDavSyncProviderLoader implements SyncProviderLoader {
                             String syncPath;
 
                             if (config != null) {
-                                url = config.url;
-                                user = config.username;
-                                pass = config.password;
+                                if (config.providerId != null && !"webdav".equals(config.providerId)) {
+                                    continue;
+                                }
+                                url = config.url != null ? config.url : "";
+                                user = config.username != null ? config.username : "";
+                                pass = config.password != null ? config.password : "";
                                 path = config.path;
                                 isShared = config.isShared;
                                 

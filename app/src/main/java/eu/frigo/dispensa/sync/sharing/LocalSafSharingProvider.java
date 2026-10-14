@@ -61,8 +61,14 @@ public class LocalSafSharingProvider implements SharingProvider {
 
     @Override
     public SharedFolderStore createStore(Context context, Dispensa dispensa) {
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        String uriStr = prefs.getString(LocalSafSyncProviderLoader.PREF_KEY_SAF_URI, null);
+        return createStore(context, dispensa, null);
+    }
+
+    @Override
+    public SharedFolderStore createStore(Context context, Dispensa dispensa, JoinedPantryConfig config) {
+        String uriStr = (config != null && config.url != null && !config.url.isEmpty())
+                ? config.url
+                : PreferenceManager.getDefaultSharedPreferences(context).getString(LocalSafSyncProviderLoader.PREF_KEY_SAF_URI, null);
         if (uriStr == null || uriStr.trim().isEmpty()) {
             throw new IllegalStateException("Local SAF folder URI is not configured");
         }
@@ -72,9 +78,14 @@ public class LocalSafSharingProvider implements SharingProvider {
 
     @Override
     public String getPantryPath(Context context, Dispensa dispensa) {
-        String remoteId = (dispensa.remoteId != null && !dispensa.remoteId.trim().isEmpty())
+        return getPantryPath(context, dispensa, null);
+    }
+
+    @Override
+    public String getPantryPath(Context context, Dispensa dispensa, JoinedPantryConfig config) {
+        String remoteId = (dispensa != null && dispensa.remoteId != null && !dispensa.remoteId.trim().isEmpty())
                 ? dispensa.remoteId.trim()
-                : String.valueOf(dispensa.id);
+                : (config != null && config.remotePantryId != null ? config.remotePantryId : (dispensa != null ? String.valueOf(dispensa.id) : "default"));
         return SyncManager.getSyncPath(remoteId);
     }
 

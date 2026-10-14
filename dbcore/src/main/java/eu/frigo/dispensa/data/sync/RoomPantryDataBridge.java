@@ -85,7 +85,7 @@ public class RoomPantryDataBridge implements PantryDataBridge {
                     remote.dispensaId = dispensaId;
                     StorageLocation local = db.storageLocationDao().getLocationByInternalKeySync(remote.internalKey, dispensaId);
                     if (local == null || remote.lastModified > local.lastModified) {
-                        if (local != null) remote.id = local.id;
+                        remote.id = (local != null) ? local.id : 0;
                         db.storageLocationDao().insert(remote);
                     }
                 }
@@ -99,7 +99,7 @@ public class RoomPantryDataBridge implements PantryDataBridge {
                     p.validateImageUrlExistence();
                     Product local = db.productDao().getProductByLotKeySync(p.barcode, p.expiryDate, p.getStorageLocation(), dispensaId);
                     if (local == null || p.lastModified > local.lastModified) {
-                        if (local != null) p.id = local.id;
+                        p.id = (local != null) ? local.id : 0;
                         db.productDao().insert(p);
                     }
                 }
@@ -109,7 +109,7 @@ public class RoomPantryDataBridge implements PantryDataBridge {
                     s.dispensaId = dispensaId;
                     ShoppingItem local = db.shoppingItemDao().getItemByNameSync(s.name, dispensaId);
                     if (local == null || s.lastModified > local.lastModified) {
-                        if (local != null) s.id = local.id;
+                        s.id = (local != null) ? local.id : 0;
                         db.shoppingItemDao().insert(s);
                     }
                 }
@@ -131,7 +131,7 @@ public class RoomPantryDataBridge implements PantryDataBridge {
                     remoteP.validateImageUrlExistence();
                     Product localP = db.productDao().getProductByLotKeySync(remoteP.barcode, remoteP.expiryDate, remoteP.getStorageLocation(), dispensaId);
                     if (localP == null || remoteP.lastModified > localP.lastModified) {
-                        if (localP != null) remoteP.id = localP.id;
+                        remoteP.id = (localP != null) ? localP.id : 0;
                         db.productDao().insert(remoteP);
                     }
                     break;
@@ -147,7 +147,7 @@ public class RoomPantryDataBridge implements PantryDataBridge {
                     remoteL.dispensaId = dispensaId;
                     StorageLocation localL = db.storageLocationDao().getLocationByInternalKeySync(remoteL.internalKey, dispensaId);
                     if (localL == null || remoteL.lastModified > localL.lastModified) {
-                        if (localL != null) remoteL.id = localL.id;
+                        remoteL.id = (localL != null) ? localL.id : 0;
                         db.storageLocationDao().insert(remoteL);
                     }
                     break;
@@ -156,7 +156,7 @@ public class RoomPantryDataBridge implements PantryDataBridge {
                     remoteS.dispensaId = dispensaId;
                     ShoppingItem localS = db.shoppingItemDao().getItemByNameSync(remoteS.name, dispensaId);
                     if (localS == null || remoteS.lastModified > localS.lastModified) {
-                        if (localS != null) remoteS.id = localS.id;
+                        remoteS.id = (localS != null) ? localS.id : 0;
                         db.shoppingItemDao().insert(remoteS);
                     }
                     break;
@@ -181,12 +181,16 @@ public class RoomPantryDataBridge implements PantryDataBridge {
             Dispensa disp = db.dispensaDao().getDispensaByIdSync(dispensaId);
             if (disp != null) {
                 if (disp.deviceOwnerId == null || disp.deviceOwnerId.trim().isEmpty()) {
+                    JoinedPantryConfig config = db.joinedPantryConfigDao().getConfigByDispensaId(dispensaId);
+                    if (config != null) {
+                        return false;
+                    }
                     return true;
                 }
                 return disp.deviceOwnerId.equals(currentDeviceId);
             }
         } catch (Exception ignored) {}
-        return true;
+        return false;
     }
 }
 

@@ -21,6 +21,7 @@ import io.reactivex.rxjava3.core.Single;
  * Google Drive implementation of SharedFolderStore.
  */
 public class GDriveFolderStore implements SharedFolderStore {
+    public static final String APP_FOLDER_NAME = "Dispensa";
     private static final String TAG = "GDriveFolderStore";
 
     private final GDriveClient client;
@@ -66,6 +67,24 @@ public class GDriveFolderStore implements SharedFolderStore {
             throw new IOException("Failed to resolve folder id for " + relativePath);
         }
         return folderId;
+    }
+
+    public void ensureFolderMovedToAppParent(String folderId) {
+        if (folderId == null || "root".equals(folderId)) return;
+        try {
+            GDriveClient.DriveFile file = client.getFile(folderId);
+            if (file != null && file.parents != null && !file.parents.isEmpty()) {
+                String appFolderId = getOrCreateFolderId(APP_FOLDER_NAME);
+                if (!file.parents.contains(appFolderId)) {
+                    for (String parentId : file.parents) {
+                        client.moveFile(folderId, appFolderId, parentId);
+                    }
+                    Log.i(TAG, "Cartella " + folderId + " spostata dentro " + APP_FOLDER_NAME);
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "ensureFolderMovedToAppParent fallito per " + folderId, e);
+        }
     }
 
     @Override
@@ -118,10 +137,36 @@ public class GDriveFolderStore implements SharedFolderStore {
                 if (found != null && found.isFolder()) {
                     segmentFolderId = found.id;
                 } else if (createIfMissing) {
-                    GDriveClient.DriveFile created = client.createFolder(currentParentId, segment);
-                    segmentFolderId = created.id;
+                    if (!"root".equals(currentParentId)) {
+                        try {
+                            GDriveClient.DriveFile legacyInRoot = client.findFile("root", segment);
+                            if (legacyInRoot != null && legacyInRoot.isFolder()) {
+                                client.moveFile(legacyInRoot.id, currentParentId, "root");
+                                segmentFolderId = legacyInRoot.id;
+                                Log.i(TAG, "Cartella legacy " + segment + " spostata con successo dentro " + currentParentId);
+                            }
+                        } catch (Exception e) {
+                            Log.w(TAG, "Tentativo spostamento cartella legacy " + segment + " fallito: " + e.getMessage());
+                        }
+                    }
+
+                    if (segmentFolderId == null) {
+                        GDriveClient.DriveFile created = client.createFolder(currentParentId, segment);
+                        segmentFolderId = created.id;
+                    }
                 } else {
-                    return null;
+                    if (!"root".equals(currentParentId)) {
+                        try {
+                            GDriveClient.DriveFile legacyInRoot = client.findFile("root", segment);
+                            if (legacyInRoot != null && legacyInRoot.isFolder()) {
+                                client.moveFile(legacyInRoot.id, currentParentId, "root");
+                                segmentFolderId = legacyInRoot.id;
+                            }
+                        } catch (Exception ignored) {}
+                    }
+                    if (segmentFolderId == null) {
+                        return null;
+                    }
                 }
                 folderIdCache.put(currentPath, segmentFolderId);
             }
@@ -239,6 +284,13 @@ public class GDriveFolderStore implements SharedFolderStore {
     public Completable deleteFolder(String folderRelativePath) {
         return Completable.fromAction(() -> {
             String clean = cleanPath(folderRelativePath);
+            if (clean.isEmpty()) {
+                if (!"root".equals(rootFolderId)) {
+                    client.delete(rootFolderId);
+                    folderIdCache.clear();
+                }
+                return;
+            }
             String folderId = resolveFolderId(clean, false);
             if (folderId != null && !folderId.equals(rootFolderId)) {
                 client.delete(folderId);

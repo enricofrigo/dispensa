@@ -128,15 +128,6 @@ public class SyncGDriveConfigActivity extends AppCompatActivity {
 
         saveButton.setOnClickListener(v -> saveConfiguration());
 
-        Button debugButton = findViewById(R.id.btn_gdrive_debug_explorer);
-        if (debugButton != null) {
-            debugButton.setVisibility(eu.frigo.dispensa.BuildConfig.DEBUG ? View.VISIBLE : View.GONE);
-            debugButton.setOnClickListener(v -> {
-                Intent intent = new Intent(this, GDriveDebugActivity.class);
-                startActivity(intent);
-            });
-        }
-
         updateUiState();
     }
 

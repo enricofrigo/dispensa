@@ -53,20 +53,35 @@ public class GDriveSharingProvider implements SharingProvider {
 
     @Override
     public SharedFolderStore createStore(Context context, Dispensa dispensa) {
+        return createStore(context, dispensa, null);
+    }
+
+    @Override
+    public SharedFolderStore createStore(Context context, Dispensa dispensa, JoinedPantryConfig config) {
         GDriveAuthManager authManager = new GDriveAuthManager(context);
         GDriveClient client = new GDriveClient(authManager);
 
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        String rootFolderId = prefs.getString(GDriveAuthManager.PREF_KEY_GDRIVE_ROOT_FOLDER_ID, "root");
+        String rootFolderId = (config != null && config.url != null && !config.url.isEmpty())
+                ? config.url
+                : PreferenceManager.getDefaultSharedPreferences(context)
+                        .getString(GDriveAuthManager.PREF_KEY_GDRIVE_ROOT_FOLDER_ID, "root");
         return new GDriveFolderStore(client, rootFolderId);
     }
 
     @Override
     public String getPantryPath(Context context, Dispensa dispensa) {
+        return getPantryPath(context, dispensa, null);
+    }
+
+    @Override
+    public String getPantryPath(Context context, Dispensa dispensa, JoinedPantryConfig config) {
+        if (config != null && config.url != null && !config.url.isEmpty() && !"root".equals(config.url)) {
+            return "";
+        }
         String remoteId = (dispensa.remoteId != null && !dispensa.remoteId.trim().isEmpty())
                 ? dispensa.remoteId.trim()
                 : String.valueOf(dispensa.id);
-        return SyncManager.getSyncPath(remoteId);
+        return GDriveFolderStore.APP_FOLDER_NAME + "/" + SyncManager.getSyncPath(remoteId);
     }
 
     @Override
