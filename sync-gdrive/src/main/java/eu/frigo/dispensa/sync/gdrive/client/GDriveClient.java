@@ -343,6 +343,23 @@ public class GDriveClient {
         }
     }
 
+    public void moveFile(String fileId, String newParentId, @Nullable String previousParentId) throws IOException {
+        HttpUrl.Builder urlBuilder = HttpUrl.parse(apiBaseUrl + "files/" + fileId).newBuilder()
+                .addQueryParameter("addParents", newParentId)
+                .addQueryParameter("supportsAllDrives", "true");
+        if (previousParentId != null && !previousParentId.isEmpty()) {
+            urlBuilder.addQueryParameter("removeParents", previousParentId);
+        }
+
+        RequestBody body = RequestBody.create("{}", JSON_MEDIA_TYPE);
+        Request request = newAuthenticatedRequest(urlBuilder.build().toString()).patch(body).build();
+        try (Response response = executeWithRetry(request)) {
+            if (!response.isSuccessful()) {
+                throw new IOException("Failed to move file " + fileId + ": HTTP " + response.code());
+            }
+        }
+    }
+
     public void shareFolderWithUser(String folderId, String emailAddress, String role) throws IOException {
         JsonObject permission = new JsonObject();
         permission.addProperty("role", (role != null && !role.isEmpty()) ? role : "writer");

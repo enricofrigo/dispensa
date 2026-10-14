@@ -31,6 +31,10 @@ import eu.frigo.dispensa.sync.webdav.client.WebDavClient;
 import eu.frigo.dispensa.sync.webdav.client.WebDavClientFactory;
 import eu.frigo.dispensa.sync.core.model.PantryDevice;
 import eu.frigo.dispensa.sync.core.model.PantryManifest;
+import eu.frigo.dispensa.data.AppDatabase;
+import eu.frigo.dispensa.data.sync.RoomPantryDataBridge;
+import eu.frigo.dispensa.sync.core.engine.FolderSyncEngine;
+import eu.frigo.dispensa.sync.core.store.SyncCursorStoreImpl;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.schedulers.Schedulers;
@@ -124,8 +128,33 @@ public class SyncOnboardingActivity extends AppCompatActivity {
         dispSingle.subscribeOn(Schedulers.io())
                 .flatMap(disp -> Single.fromCallable(() -> {
                     String deviceId = eu.frigo.dispensa.sync.core.engine.InstallationIdProvider.getOrCreateInstallationId(this);
-                    WebDavConfig config = new WebDavConfig(url, user, pass, path, pantryKey, disp.getName(), deviceId, disp.remoteId, isShared);
-                    String deviceName = android.os.Build.MODEL;
+                    String deviceName = PreferenceManager.getDefaultSharedPreferences(this)
+                            .getString(SyncManager.KEY_DEVICE_NAME, android.os.Build.MODEL);
+
+                    String effectivePath = path != null ? path : SyncManager.DEFAULT_PATH;
+                    String normalizedBase = effectivePath.endsWith("/") ? effectivePath : effectivePath + "/";
+                    if (normalizedBase.startsWith("/")) normalizedBase = normalizedBase.substring(1);
+                    String pantryPath = normalizedBase + SyncManager.getSyncPath(disp.remoteId);
+
+                    WebDavClient client = WebDavClientFactory.getInstance().getClient(url, user, pass);
+                    eu.frigo.dispensa.sync.webdav.store.WebDavFolderStore store = new eu.frigo.dispensa.sync.webdav.store.WebDavFolderStore(client);
+                    FolderSyncEngine ownerEngine = new FolderSyncEngine(
+                            store,
+                            new RoomPantryDataBridge(AppDatabase.getDatabase(this)),
+                            new SyncCursorStoreImpl(this, disp.id),
+                            deviceId,
+                            deviceName,
+                            pantryPath,
+                            disp.id
+                    );
+                    ownerEngine.initializeRemoteStructure().blockingAwait();
+                    ownerEngine.forceCompaction();
+
+                    String ownerDeviceId = (disp.deviceOwnerId != null && !disp.deviceOwnerId.trim().isEmpty())
+                            ? disp.deviceOwnerId.trim()
+                            : deviceId;
+
+                    WebDavConfig config = new WebDavConfig(url, user, pass, path, pantryKey, disp.getName(), ownerDeviceId, disp.remoteId, isShared);
                     PairingPayload payload = WebDavPairingHandler.createPayload(deviceName, config);
                     PairingPayloadCodecImpl codec = new PairingPayloadCodecImpl(null); // Use internal key
                     String wireData = codec.encode(payload);
@@ -223,7 +252,7 @@ public class SyncOnboardingActivity extends AppCompatActivity {
                 String remoteId = payload.data.get("remoteId");
                 
                 Dispensa newDispensa = new Dispensa(pantryName, false);
-                newDispensa.deviceOwnerId = ownerId;
+                newDispensa.deviceOwnerId = (ownerId != null && !ownerId.trim().isEmpty()) ? ownerId.trim() : "REMOTE_OWNER";
                 newDispensa.deviceOwnerName = ownerName;
                 newDispensa.remoteId = remoteId;
                 
@@ -253,6 +282,32 @@ public class SyncOnboardingActivity extends AppCompatActivity {
                         .putString(SyncManager.SYNC_WEBDAV_SYNCED_IDS, syncedIds)
                         .putString(SyncManager.SYNC_WEBDAV_PANTRY_NAME + "_" + id, pantryName)
                         .apply();
+
+                // Eager initial sync pull
+                String myDeviceId = eu.frigo.dispensa.sync.core.engine.InstallationIdProvider.getOrCreateInstallationId(this);
+                String myDeviceName = PreferenceManager.getDefaultSharedPreferences(this)
+                        .getString(SyncManager.KEY_DEVICE_NAME, android.os.Build.MODEL);
+                try {
+                    String effectivePath = config.path != null ? config.path : SyncManager.DEFAULT_PATH;
+                    String normalizedBase = effectivePath.endsWith("/") ? effectivePath : effectivePath + "/";
+                    if (normalizedBase.startsWith("/")) normalizedBase = normalizedBase.substring(1);
+                    String pantryPath = normalizedBase + SyncManager.getSyncPath(config.remotePantryId);
+
+                    WebDavClient client = WebDavClientFactory.getInstance().getClient(config.url, config.username, config.password);
+                    eu.frigo.dispensa.sync.webdav.store.WebDavFolderStore store = new eu.frigo.dispensa.sync.webdav.store.WebDavFolderStore(client);
+                    FolderSyncEngine engine = new FolderSyncEngine(
+                            store,
+                            new RoomPantryDataBridge(AppDatabase.getDatabase(this)),
+                            new SyncCursorStoreImpl(this, (int) id),
+                            myDeviceId,
+                            myDeviceName,
+                            pantryPath,
+                            (int) id
+                    );
+                    engine.sync().blockingAwait();
+                } catch (Exception e) {
+                    Log.w("SyncOnboarding", "Initial eager pull encountered an issue; background worker will retry", e);
+                }
                 
                 return payload;
             }).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()))
@@ -305,6 +360,9 @@ public class SyncOnboardingActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null) {
                     PantryManifest manifest = new com.google.gson.Gson().fromJson(response.body().string(), PantryManifest.class);
                     if (manifest != null) {
+                        if (payload.data.get("ownerDeviceId") == null && manifest.createdByDevice != null && !manifest.createdByDevice.trim().isEmpty()) {
+                            payload.data.put("ownerDeviceId", manifest.createdByDevice.trim());
+                        }
                         return manifest.version == SyncManager.CURRENT_SYNC_VERSION;
                     }
                 }

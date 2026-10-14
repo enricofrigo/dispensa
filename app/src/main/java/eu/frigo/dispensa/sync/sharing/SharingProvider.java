@@ -31,10 +31,18 @@ public interface SharingProvider {
      */
     SharedFolderStore createStore(Context context, Dispensa dispensa);
 
+    default SharedFolderStore createStore(Context context, Dispensa dispensa, JoinedPantryConfig config) {
+        return createStore(context, dispensa);
+    }
+
     /**
      * Computes the relative pantry path on the store for this dispensa.
      */
     String getPantryPath(Context context, Dispensa dispensa);
+
+    default String getPantryPath(Context context, Dispensa dispensa, JoinedPantryConfig config) {
+        return getPantryPath(context, dispensa);
+    }
 
     /**
      * Resource ID of the icon representing this provider.

@@ -85,6 +85,7 @@ public class InMemorySharedFolderStore implements SharedFolderStore {
     public Single<Boolean> exists(String relativePath) {
         return Single.fromCallable(() -> {
             String path = normalizePath(relativePath);
+            if (path.isEmpty()) return true;
             return storage.containsKey(path) || folders.contains(path.endsWith("/") ? path : path + "/");
         });
     }

@@ -59,6 +59,15 @@ public class WebDavSharingProvider implements SharingProvider {
 
     @Override
     public SharedFolderStore createStore(Context context, Dispensa dispensa) {
+        return createStore(context, dispensa, null);
+    }
+
+    @Override
+    public SharedFolderStore createStore(Context context, Dispensa dispensa, JoinedPantryConfig config) {
+        if (config != null && config.url != null && !config.url.isEmpty()) {
+            WebDavClient client = WebDavClientFactory.getInstance().getClient(config.url, config.username, config.password);
+            return new WebDavFolderStore(client);
+        }
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         String url = prefs.getString(SyncManager.KEY_WEBDAV_URL, "");
         String user = prefs.getString(SyncManager.KEY_WEBDAV_USER, "");
@@ -70,13 +79,19 @@ public class WebDavSharingProvider implements SharingProvider {
 
     @Override
     public String getPantryPath(Context context, Dispensa dispensa) {
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        String path = prefs.getString(SyncManager.KEY_WEBDAV_PATH, SyncManager.DEFAULT_PATH);
+        return getPantryPath(context, dispensa, null);
+    }
+
+    @Override
+    public String getPantryPath(Context context, Dispensa dispensa, JoinedPantryConfig config) {
+        String path = (config != null && config.path != null)
+                ? config.path
+                : PreferenceManager.getDefaultSharedPreferences(context).getString(SyncManager.KEY_WEBDAV_PATH, SyncManager.DEFAULT_PATH);
         String base = (path == null) ? "" : (path.endsWith("/") ? path : path + "/");
         if (base.startsWith("/")) base = base.substring(1);
-        String remoteId = (dispensa.remoteId != null && !dispensa.remoteId.trim().isEmpty())
+        String remoteId = (dispensa != null && dispensa.remoteId != null && !dispensa.remoteId.trim().isEmpty())
                 ? dispensa.remoteId.trim()
-                : String.valueOf(dispensa.id);
+                : (config != null && config.remotePantryId != null ? config.remotePantryId : (dispensa != null ? String.valueOf(dispensa.id) : "default"));
         return base + SyncManager.getSyncPath(remoteId);
     }
 

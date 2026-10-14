@@ -64,6 +64,13 @@ public class FolderSyncEngine implements SyncEngine {
         return dispensaId;
     }
 
+    public Completable sync() {
+        return performSync(new SyncPolicy() {
+            @Override public boolean canSyncNow() { return true; }
+            @Override public long getRetryIntervalMillis() { return 0; }
+        });
+    }
+
     @Override
     public Completable performSync(SyncPolicy policy) {
         return Completable.fromAction(() -> {
@@ -188,7 +195,7 @@ public class FolderSyncEngine implements SyncEngine {
     }
 
     private void processRemoteChanges(PantryManifest manifest) throws Exception {
-        long lastSync = cursorStore.getLastSyncTimestamp();
+        long lastSync = cursorStore.getLastSyncTimestamp(dispensaId);
 
         if (lastSync == 0 && manifest.latestSnapshotId != null) {
             downloadAndApplySnapshot(manifest.latestSnapshotId);
@@ -203,7 +210,7 @@ public class FolderSyncEngine implements SyncEngine {
             }
         }
 
-        cursorStore.updateLastSyncTimestamp(manifest.lastGlobalTimestamp);
+        cursorStore.updateLastSyncTimestamp(manifest.lastGlobalTimestamp, dispensaId);
     }
 
     private void updateDeviceRegistration() {
@@ -393,6 +400,13 @@ public class FolderSyncEngine implements SyncEngine {
 
     public void verifyRemoteStructureExists() throws IOException {
         if (!isRemoteStructureComplete()) {
+            PantryManifest manifest = fetchManifest();
+            if (manifest != null && manifest.createdByDevice != null && !manifest.createdByDevice.trim().isEmpty()) {
+                if (!deviceId.equals(manifest.createdByDevice.trim())) {
+                    throw new RemoteStructureNotFoundException(pantryPath,
+                            "Remote pantry structure is incomplete on storage and current device is not the owner (" + manifest.createdByDevice + "): " + pantryPath);
+                }
+            }
             if (dataBridge.isPantryOwner(dispensaId, deviceId)) {
                 Log.i(TAG, "Struttura remota mancante o incompleta per " + pantryPath + ". Ricreazione silenziosa automatica per l'owner (" + deviceId + ")...");
                 try {

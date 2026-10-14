@@ -58,7 +58,7 @@ public class WebDavSyncProvider implements SyncProvider {
                 WebDavClient engineClient = scope.client != null ? scope.client : client;
                 engines.add(new WebDavSyncEngine(
                         engineClient,
-                        new SyncCursorStoreImpl(context),
+                        new SyncCursorStoreImpl(context, scope.dispensaId),
                         deviceId,
                         scope.pantryPath,
                         scope.dispensaId,

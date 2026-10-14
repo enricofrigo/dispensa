@@ -135,7 +135,43 @@ public class GDriveFolderStoreContractTest {
                             JsonObject result = new JsonObject();
                             result.add("files", filesArr);
                             return new MockResponse().setResponseCode(200).setBody(gson.toJson(result));
+                        } else {
+                            String fileId = path.substring("/drive/v3/files/".length());
+                            int queryIdx = fileId.indexOf("?");
+                            if (queryIdx >= 0) fileId = fileId.substring(0, queryIdx);
+                            MockFile mf = filesById.get(fileId);
+                            if (mf != null) {
+                                JsonObject obj = new JsonObject();
+                                obj.addProperty("id", mf.id);
+                                obj.addProperty("name", mf.name);
+                                obj.addProperty("mimeType", mf.mimeType);
+                                if (mf.parentId != null) {
+                                    JsonArray p = new JsonArray();
+                                    p.add(mf.parentId);
+                                    obj.add("parents", p);
+                                }
+                                return new MockResponse().setResponseCode(200).setBody(gson.toJson(obj));
+                            }
+                            return new MockResponse().setResponseCode(404);
                         }
+                    } else if ("PATCH".equals(method)) {
+                        String fileId = path.substring("/drive/v3/files/".length());
+                        int queryIdx = fileId.indexOf("?");
+                        if (queryIdx >= 0) fileId = fileId.substring(0, queryIdx);
+                        MockFile mf = filesById.get(fileId);
+                        if (mf != null) {
+                            if (request.getRequestUrl() != null) {
+                                String addParents = request.getRequestUrl().queryParameter("addParents");
+                                if (addParents != null) {
+                                    mf.parentId = addParents;
+                                }
+                            }
+                            JsonObject resJson = new JsonObject();
+                            resJson.addProperty("id", mf.id);
+                            resJson.addProperty("name", mf.name);
+                            return new MockResponse().setResponseCode(200).setBody(gson.toJson(resJson));
+                        }
+                        return new MockResponse().setResponseCode(404);
                     } else if ("POST".equals(method)) {
                         // Create folder
                         String body = request.getBody().readUtf8();
@@ -329,5 +365,28 @@ public class GDriveFolderStoreContractTest {
         List<String> eventFiles = directStore.listFiles("events").blockingGet();
         Assert.assertEquals(1, eventFiles.size());
         Assert.assertEquals("evt1.json", eventFiles.get(0));
+    }
+
+    @Test
+    public void testAppFolderMigrationAndNesting() throws IOException {
+        // 1. Suppose a legacy folder exists directly under root
+        String legacyFolderId = folderStore.getOrCreateFolderId("pantry-legacy-sync");
+        Assert.assertNotNull(legacyFolderId);
+
+        // Verify it was in root
+        GDriveClient.DriveFile legacyFile = folderStore.getClient().getFile(legacyFolderId);
+        Assert.assertNotNull(legacyFile);
+        Assert.assertTrue(legacyFile.parents.contains("root"));
+
+        // 2. Now resolve path inside "Dispensa/pantry-legacy-sync"
+        String movedFolderId = folderStore.getOrCreateFolderId(GDriveFolderStore.APP_FOLDER_NAME + "/pantry-legacy-sync");
+        // Folder ID should be preserved (moved, not recreated)
+        Assert.assertEquals(legacyFolderId, movedFolderId);
+
+        // 3. Verify it was moved to parent "Dispensa"
+        String appFolderId = folderStore.getOrCreateFolderId(GDriveFolderStore.APP_FOLDER_NAME);
+        GDriveClient.DriveFile movedFile = folderStore.getClient().getFile(legacyFolderId);
+        Assert.assertNotNull(movedFile);
+        Assert.assertTrue(movedFile.parents.contains(appFolderId));
     }
 }

@@ -24,22 +24,22 @@ import com.google.gson.Gson;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import eu.frigo.dispensa.R;
+import eu.frigo.dispensa.data.AppDatabase;
 import eu.frigo.dispensa.data.dispensa.Dispensa;
+import eu.frigo.dispensa.data.sync.JoinedPantryConfig;
 import eu.frigo.dispensa.sync.core.engine.InstallationIdProvider;
 import eu.frigo.dispensa.sync.core.engine.SyncManager;
-import eu.frigo.dispensa.sync.webdav.client.WebDavClient;
-import eu.frigo.dispensa.sync.webdav.client.WebDavClientFactory;
 import eu.frigo.dispensa.sync.core.model.PantryDevice;
+import eu.frigo.dispensa.sync.core.store.SharedFolderStore;
+import eu.frigo.dispensa.sync.sharing.PantrySharingService;
+import eu.frigo.dispensa.sync.sharing.SharingProvider;
 import eu.frigo.dispensa.viewmodel.DispensaViewModel;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.schedulers.Schedulers;
-import okhttp3.Response;
 
 public class ManageDevicesActivity extends AppCompatActivity {
 
@@ -54,6 +54,7 @@ public class ManageDevicesActivity extends AppCompatActivity {
     private boolean isMaster = false;
     private String devicesPath;
     private String pantryBasePath;
+    private SharedFolderStore activeStore;
     private Dispensa currentDispensa;
 
     @Override
@@ -112,86 +113,90 @@ public class ManageDevicesActivity extends AppCompatActivity {
 
     @SuppressLint("CheckResult")
     private void loadDevices(int pantryId) {
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        String url = prefs.getString(SyncManager.KEY_WEBDAV_URL, "");
-        String user = prefs.getString(SyncManager.KEY_WEBDAV_USER, "");
-        String pass = prefs.getString(SyncManager.KEY_WEBDAV_PASS, "");
-        String path = prefs.getString(SyncManager.KEY_WEBDAV_PATH, SyncManager.DEFAULT_PATH);
-        
-        String syncedIdsStr = prefs.getString(SyncManager.SYNC_WEBDAV_SYNCED_IDS, "");
-        boolean isSynced = false;
-        if (!syncedIdsStr.isEmpty()) {
-            for (String sId : syncedIdsStr.split(",")) {
-                if (sId.equals(String.valueOf(pantryId))) {
-                    isSynced = true;
-                    break;
+        progressBar.setVisibility(View.VISIBLE);
+
+        Single.fromCallable(() -> {
+            AppDatabase db = AppDatabase.getDatabase(this);
+            if (currentDispensa == null) {
+                currentDispensa = db.dispensaDao().getDispensaByIdSync(pantryId);
+            }
+            JoinedPantryConfig config = db.joinedPantryConfigDao().getConfigByDispensaId(pantryId);
+
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+            String syncedIdsStr = prefs.getString(SyncManager.SYNC_WEBDAV_SYNCED_IDS, "");
+            boolean isSynced = config != null;
+            if (!isSynced && !syncedIdsStr.isEmpty()) {
+                for (String sId : syncedIdsStr.split(",")) {
+                    if (sId.equals(String.valueOf(pantryId))) {
+                        isSynced = true;
+                        break;
+                    }
                 }
             }
-        }
 
-        if (!isSynced) {
-            tvEmpty.setText(R.string.sync_not_active_for_pantry);
-            tvEmpty.setVisibility(View.VISIBLE);
+            if (!isSynced) {
+                throw new IllegalStateException("NOT_SYNCED");
+            }
+
+            String providerId = (config != null && config.providerId != null) ? config.providerId : "webdav";
+            SharingProvider provider = PantrySharingService.getInstance().getProvider(providerId);
+            if (provider == null || !provider.isConfigured(this)) {
+                throw new IllegalStateException("NOT_CONFIGURED");
+            }
+
+            String currentId = InstallationIdProvider.getOrCreateInstallationId(this);
+            this.isMaster = (currentDispensa == null || currentDispensa.deviceOwnerId == null || currentId.equals(currentDispensa.deviceOwnerId));
+
+            this.activeStore = provider.createStore(this, currentDispensa, config);
+            this.pantryBasePath = provider.getPantryPath(this, currentDispensa, config);
+
+            String normalizedBase = (pantryBasePath == null) ? "" : pantryBasePath;
+            if (!normalizedBase.isEmpty() && !normalizedBase.endsWith("/")) {
+                normalizedBase += "/";
+            }
+            this.devicesPath = normalizedBase + SyncManager.DEFAULT_DEVICES_FOLDER;
+
+            return activeStore;
+        })
+        .flatMap(store -> fetchDevices(store, devicesPath))
+        .subscribeOn(Schedulers.io())
+        .observeOn(AndroidSchedulers.mainThread())
+        .subscribe(devices -> {
+            progressBar.setVisibility(View.GONE);
             deviceList.clear();
+            deviceList.addAll(devices);
+            adapter.setMaster(isMaster);
             adapter.notifyDataSetChanged();
-            return;
-        }
-
-        boolean isShared = prefs.getBoolean(SyncManager.KEY_WEBDAV_MODE_SHARED, false);
-
-        if (url.isEmpty() || (user.isEmpty() && !isShared) || pass.isEmpty()) {
-            Toast.makeText(this, R.string.sync_not_configured, Toast.LENGTH_SHORT).show();
-            finish();
-            return;
-        }
-
-        String normalizedBase = path.endsWith("/") ? path : path + "/";
-        if (normalizedBase.startsWith("/")) normalizedBase = normalizedBase.substring(1);
-        String remoteId = (currentDispensa != null && currentDispensa.remoteId != null && !currentDispensa.remoteId.trim().isEmpty()) ? currentDispensa.remoteId.trim() : String.valueOf(pantryId);
-        pantryBasePath = normalizedBase + SyncManager.getSyncPath(remoteId);
-        devicesPath = pantryBasePath + SyncManager.DEFAULT_DEVICES_FOLDER;
-
-        progressBar.setVisibility(View.VISIBLE);
-        
-        Single.fromCallable(() -> {
-                    if (currentDispensa != null && currentDispensa.deviceOwnerId != null) {
-                        String currentId = InstallationIdProvider.getOrCreateInstallationId(this);
-                        return currentId.equals(currentDispensa.deviceOwnerId);
-                    }
-                    return false;
-                })
-                .flatMap(master -> {
-                    this.isMaster = master;
-                    return fetchDevices(devicesPath);
-                })
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(devices -> {
-                    progressBar.setVisibility(View.GONE);
-                    deviceList.clear();
-                    deviceList.addAll(devices);
-                    adapter.setMaster(isMaster);
-                    adapter.notifyDataSetChanged();
-                    tvEmpty.setVisibility(deviceList.isEmpty() ? View.VISIBLE : View.GONE);
-                }, throwable -> {
-                    progressBar.setVisibility(View.GONE);
-                    Log.e("ManageDevices", "Error loading devices", throwable);
-                    Toast.makeText(this, "Error: " + throwable.getMessage(), Toast.LENGTH_SHORT).show();
-                });
+            tvEmpty.setVisibility(deviceList.isEmpty() ? View.VISIBLE : View.GONE);
+        }, throwable -> {
+            progressBar.setVisibility(View.GONE);
+            if ("NOT_SYNCED".equals(throwable.getMessage())) {
+                tvEmpty.setText(R.string.sync_not_active_for_pantry);
+                tvEmpty.setVisibility(View.VISIBLE);
+                deviceList.clear();
+                adapter.notifyDataSetChanged();
+            } else if ("NOT_CONFIGURED".equals(throwable.getMessage())) {
+                Toast.makeText(this, R.string.sync_not_configured, Toast.LENGTH_SHORT).show();
+                finish();
+            } else {
+                Log.e("ManageDevices", "Error loading devices", throwable);
+                Toast.makeText(this, "Error: " + throwable.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void showDeleteConfirmation(PantryDevice device) {
         boolean isDeletingOwner = currentDispensa != null && device.deviceId.equals(currentDispensa.deviceOwnerId);
-        
+
         androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this);
         builder.setTitle(R.string.delete_product_title);
-        
+
         if (isDeletingOwner) {
             builder.setMessage(R.string.sync_owner_delete_warning);
         } else {
             builder.setMessage(String.format(getString(R.string.sync_device_delete_confirm), device.deviceName));
         }
-        
+
         builder.setPositiveButton(R.string.delete, (dialog, which) -> deleteDevice(device))
                 .setNegativeButton(R.string.cancel, null)
                 .show();
@@ -201,13 +206,14 @@ public class ManageDevicesActivity extends AppCompatActivity {
     private void deleteDevice(PantryDevice device) {
         progressBar.setVisibility(View.VISIBLE);
         boolean isDeletingOwner = currentDispensa != null && device.deviceId.equals(currentDispensa.deviceOwnerId);
-        String deletePath = isDeletingOwner ? pantryBasePath : devicesPath + device.deviceId + ".json";
+        String deleteFilePath = devicesPath + device.deviceId + ".json";
 
         Completable.fromAction(() -> {
-             WebDavClient client = WebDavClientFactory.getInstance().getClient(this);
-            try (Response response = client.delete(deletePath)) {
-                if (!response.isSuccessful() && response.code() != 404) {
-                    throw new IOException("Failed to delete remote content: " + response.code());
+            if (activeStore != null) {
+                if (isDeletingOwner) {
+                    activeStore.deleteFolder(pantryBasePath).blockingAwait();
+                } else {
+                    activeStore.deleteFile(deleteFilePath).blockingAwait();
                 }
             }
         })
@@ -220,16 +226,10 @@ public class ManageDevicesActivity extends AppCompatActivity {
             String currentDeviceId = InstallationIdProvider.getOrCreateInstallationId(this);
             if (currentDeviceId.equals(device.deviceId) || isDeletingOwner) {
                 // We removed ourselves or destroyed the whole share: disable sync locally for this pantry
-                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-                String syncedIdsStr = prefs.getString(SyncManager.SYNC_WEBDAV_SYNCED_IDS, "");
-                List<String> syncedIds = new ArrayList<>(java.util.Arrays.asList(syncedIdsStr.split(",")));
-                syncedIds.remove(String.valueOf(currentDispensa != null ? currentDispensa.id : -1));
-                
-                prefs.edit()
-                        .putString(SyncManager.SYNC_WEBDAV_SYNCED_IDS, android.text.TextUtils.join(",", syncedIds))
-                        .apply();
-                
-                finish();
+                PantrySharingService.getInstance().unsharePantryLocally(this, currentDispensa)
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(this::finish, err -> finish());
             } else {
                 Integer currentId = currentDispensa != null ? currentDispensa.id : (dispensaViewModel != null ? dispensaViewModel.getCurrentDispensaId().getValue() : null);
                 if (currentId != null) {
@@ -239,58 +239,35 @@ public class ManageDevicesActivity extends AppCompatActivity {
         }, throwable -> {
             progressBar.setVisibility(View.GONE);
             Log.e("ManageDevices", "Error deleting device", throwable);
-            Toast.makeText(this, String.format(getString(R.string.sync_delete_device_err),throwable.getMessage()), Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, String.format(getString(R.string.sync_delete_device_err), throwable.getMessage()), Toast.LENGTH_SHORT).show();
         });
     }
 
-    private Single<List<PantryDevice>> fetchDevices(String devicesPath) {
-        return Single.fromCallable(() -> {
-            WebDavClient client = WebDavClientFactory.getInstance().getClient(this);
-            List<PantryDevice> devices = new ArrayList<>();
-            
-            try (Response response = client.propfind(devicesPath)) {
-                if (response.isSuccessful() && response.body() != null) {
-                    String xml = response.body().string();
-                    List<String> jsonFiles = extractJsonFiles(xml);
-                    
-                    for (String fileName : jsonFiles) {
-                        // Extract just the filename if it's a full path
-                        String shortName = fileName;
-                        if (fileName.contains("/")) {
-                            shortName = fileName.substring(fileName.lastIndexOf("/") + 1);
+    private Single<List<PantryDevice>> fetchDevices(SharedFolderStore store, String folderPath) {
+        return store.listFiles(folderPath)
+                .map(fileNames -> {
+                    List<PantryDevice> devices = new ArrayList<>();
+                    for (String fileName : fileNames) {
+                        if (!fileName.endsWith(".json")) continue;
+                        String cleanFile = fileName;
+                        if (cleanFile.contains("/")) {
+                            cleanFile = cleanFile.substring(cleanFile.lastIndexOf("/") + 1);
                         }
-                        
-                        try (Response devResp = client.get(devicesPath + shortName)) {
-                            if (devResp.isSuccessful() && devResp.body() != null) {
-                                PantryDevice device = gson.fromJson(devResp.body().string(), PantryDevice.class);
+                        String fullFilePath = folderPath + cleanFile;
+                        try {
+                            byte[] data = store.read(fullFilePath).blockingGet();
+                            if (data != null && data.length > 0) {
+                                PantryDevice device = gson.fromJson(new String(data, java.nio.charset.StandardCharsets.UTF_8), PantryDevice.class);
                                 if (device != null) {
                                     devices.add(device);
                                 }
                             }
+                        } catch (Exception e) {
+                            Log.w("ManageDevices", "Failed reading device file: " + fullFilePath, e);
                         }
                     }
-                }
-            }
-            return devices;
-        });
-    }
-
-    private List<String> extractJsonFiles(String xml) {
-        List<String> files = new ArrayList<>();
-        Pattern pattern = Pattern.compile("<[Dd]:href>([^<]+\\.json)</[Dd]:href>");
-        Matcher matcher = pattern.matcher(xml);
-        while (matcher.find()) {
-            files.add(matcher.group(1));
-        }
-        if (files.isEmpty()) {
-            // Try without D: prefix
-            pattern = Pattern.compile("<href>([^<]+\\.json)</href>");
-            matcher = pattern.matcher(xml);
-            while (matcher.find()) {
-                files.add(matcher.group(1));
-            }
-        }
-        return files;
+                    return devices;
+                });
     }
 
     private static class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder> {
