@@ -55,4 +55,11 @@ public interface SharingProvider {
      * Creates the JoinedPantryConfig record for persisting in local DB.
      */
     JoinedPantryConfig createJoinedConfig(Context context, Dispensa dispensa);
+
+    /**
+     * Creates the JoinedPantryConfig record with access to the initialized store.
+     */
+    default JoinedPantryConfig createJoinedConfig(Context context, Dispensa dispensa, SharedFolderStore store) {
+        return createJoinedConfig(context, dispensa);
+    }
 }

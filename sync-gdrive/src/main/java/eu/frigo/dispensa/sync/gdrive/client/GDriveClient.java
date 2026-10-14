@@ -1,5 +1,6 @@
 package eu.frigo.dispensa.sync.gdrive.client;
 
+import androidx.annotation.Nullable;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -38,6 +39,10 @@ public class GDriveClient {
         public String mimeType;
         public String md5Checksum;
         public String version;
+        public Long size;
+        public String modifiedTime;
+        public List<String> parents;
+        public Boolean trashed;
 
         public DriveFile(String id, String name, String mimeType) {
             this.id = id;
@@ -105,12 +110,32 @@ public class GDriveClient {
         }
     }
 
+    @Nullable
+    public DriveFile getFile(String fileId) throws IOException {
+        HttpUrl url = HttpUrl.parse(apiBaseUrl + "files/" + fileId).newBuilder()
+                .addQueryParameter("fields", "id, name, mimeType, trashed, parents")
+                .addQueryParameter("supportsAllDrives", "true")
+                .build();
+
+        Request request = newAuthenticatedRequest(url.toString()).get().build();
+        try (Response response = executeWithRetry(request)) {
+            if (!response.isSuccessful()) {
+                if (response.code() == 404) return null;
+                throw new IOException("Failed to get file " + fileId + ": HTTP " + response.code());
+            }
+            ResponseBody body = response.body();
+            if (body == null) return null;
+            JsonObject json = gson.fromJson(body.string(), JsonObject.class);
+            return parseDriveFile(json);
+        }
+    }
+
     public DriveFile findFile(String parentId, String name) throws IOException {
         String escapedName = name.replace("'", "\\'");
         String query = "'" + parentId + "' in parents and name = '" + escapedName + "' and trashed = false";
         HttpUrl url = HttpUrl.parse(apiBaseUrl + "files").newBuilder()
                 .addQueryParameter("q", query)
-                .addQueryParameter("fields", "files(id, name, mimeType, md5Checksum, version)")
+                .addQueryParameter("fields", "files(id, name, mimeType, md5Checksum, version, size, modifiedTime, parents)")
                 .addQueryParameter("pageSize", "10")
                 .addQueryParameter("supportsAllDrives", "true")
                 .addQueryParameter("includeItemsFromAllDrives", "true")
@@ -126,15 +151,7 @@ public class GDriveClient {
             JsonObject json = gson.fromJson(body.string(), JsonObject.class);
             JsonArray files = json.getAsJsonArray("files");
             if (files != null && files.size() > 0) {
-                JsonObject first = files.get(0).getAsJsonObject();
-                DriveFile df = new DriveFile(
-                        first.get("id").getAsString(),
-                        first.get("name").getAsString(),
-                        first.has("mimeType") ? first.get("mimeType").getAsString() : null
-                );
-                if (first.has("md5Checksum")) df.md5Checksum = first.get("md5Checksum").getAsString();
-                if (first.has("version")) df.version = first.get("version").getAsString();
-                return df;
+                return parseDriveFile(files.get(0).getAsJsonObject());
             }
             return null;
         }
@@ -142,18 +159,23 @@ public class GDriveClient {
 
     public List<DriveFile> listFiles(String parentId) throws IOException {
         String query = "'" + parentId + "' in parents and trashed = false";
-        HttpUrl url = HttpUrl.parse(apiBaseUrl + "files").newBuilder()
-                .addQueryParameter("q", query)
-                .addQueryParameter("fields", "files(id, name, mimeType, md5Checksum, version)")
+        return searchFiles(query);
+    }
+
+    public List<DriveFile> searchFiles(String query) throws IOException {
+        HttpUrl.Builder urlBuilder = HttpUrl.parse(apiBaseUrl + "files").newBuilder()
+                .addQueryParameter("fields", "files(id, name, mimeType, md5Checksum, version, size, modifiedTime, parents)")
                 .addQueryParameter("pageSize", "1000")
                 .addQueryParameter("supportsAllDrives", "true")
-                .addQueryParameter("includeItemsFromAllDrives", "true")
-                .build();
+                .addQueryParameter("includeItemsFromAllDrives", "true");
+        if (query != null && !query.trim().isEmpty()) {
+            urlBuilder.addQueryParameter("q", query);
+        }
 
-        Request request = newAuthenticatedRequest(url.toString()).get().build();
+        Request request = newAuthenticatedRequest(urlBuilder.build().toString()).get().build();
         try (Response response = executeWithRetry(request)) {
             if (!response.isSuccessful()) {
-                throw new IOException("Failed to list files in folder " + parentId + ": HTTP " + response.code());
+                throw new IOException("Failed to query files (" + query + "): HTTP " + response.code());
             }
             ResponseBody body = response.body();
             if (body == null) return Collections.emptyList();
@@ -163,18 +185,33 @@ public class GDriveClient {
 
             List<DriveFile> result = new ArrayList<>();
             for (JsonElement el : files) {
-                JsonObject obj = el.getAsJsonObject();
-                DriveFile df = new DriveFile(
-                        obj.get("id").getAsString(),
-                        obj.get("name").getAsString(),
-                        obj.has("mimeType") ? obj.get("mimeType").getAsString() : null
-                );
-                if (obj.has("md5Checksum")) df.md5Checksum = obj.get("md5Checksum").getAsString();
-                if (obj.has("version")) df.version = obj.get("version").getAsString();
-                result.add(df);
+                result.add(parseDriveFile(el.getAsJsonObject()));
             }
             return result;
         }
+    }
+
+    private DriveFile parseDriveFile(JsonObject obj) {
+        DriveFile df = new DriveFile(
+                obj.get("id").getAsString(),
+                obj.get("name").getAsString(),
+                obj.has("mimeType") ? obj.get("mimeType").getAsString() : null
+        );
+        if (obj.has("md5Checksum")) df.md5Checksum = obj.get("md5Checksum").getAsString();
+        if (obj.has("version")) df.version = obj.get("version").getAsString();
+        if (obj.has("size") && !obj.get("size").isJsonNull()) df.size = obj.get("size").getAsLong();
+        if (obj.has("modifiedTime") && !obj.get("modifiedTime").isJsonNull()) df.modifiedTime = obj.get("modifiedTime").getAsString();
+        if (obj.has("parents") && obj.get("parents").isJsonArray()) {
+            List<String> pList = new ArrayList<>();
+            for (JsonElement p : obj.getAsJsonArray("parents")) {
+                pList.add(p.getAsString());
+            }
+            df.parents = pList;
+        }
+        if (obj.has("trashed") && !obj.get("trashed").isJsonNull()) {
+            df.trashed = obj.get("trashed").getAsBoolean();
+        }
+        return df;
     }
 
     public DriveFile createFolder(String parentId, String folderName) throws IOException {
@@ -288,6 +325,11 @@ public class GDriveClient {
         }
     }
 
+    public String readFileString(String fileId) throws IOException {
+        byte[] bytes = readFile(fileId);
+        return new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
+    }
+
     public void delete(String fileId) throws IOException {
         HttpUrl url = HttpUrl.parse(apiBaseUrl + "files/" + fileId).newBuilder()
                 .addQueryParameter("supportsAllDrives", "true")
@@ -298,6 +340,57 @@ public class GDriveClient {
             if (!response.isSuccessful() && response.code() != 404) {
                 throw new IOException("Failed to delete file " + fileId + ": HTTP " + response.code());
             }
+        }
+    }
+
+    public void shareFolderWithUser(String folderId, String emailAddress, String role) throws IOException {
+        JsonObject permission = new JsonObject();
+        permission.addProperty("role", (role != null && !role.isEmpty()) ? role : "writer");
+        permission.addProperty("type", "user");
+        permission.addProperty("emailAddress", emailAddress.trim());
+
+        RequestBody body = RequestBody.create(permission.toString(), JSON_MEDIA_TYPE);
+        HttpUrl url = HttpUrl.parse(apiBaseUrl + "files/" + folderId + "/permissions").newBuilder()
+                .addQueryParameter("sendNotificationEmail", "false")
+                .addQueryParameter("supportsAllDrives", "true")
+                .build();
+
+        Request request = newAuthenticatedRequest(url.toString()).post(body).build();
+        try (Response response = executeWithRetry(request)) {
+            if (!response.isSuccessful()) {
+                String errorMsg = "HTTP " + response.code();
+                try {
+                    ResponseBody resBody = response.body();
+                    if (resBody != null) {
+                        errorMsg += " " + resBody.string();
+                    }
+                } catch (Exception ignored) {}
+                throw new IOException("Failed to share folder " + folderId + " with " + emailAddress + ": " + errorMsg);
+            }
+        }
+    }
+
+    public List<JsonObject> listPermissions(String folderId) throws IOException {
+        HttpUrl url = HttpUrl.parse(apiBaseUrl + "files/" + folderId + "/permissions").newBuilder()
+                .addQueryParameter("fields", "permissions(id, role, type, emailAddress, displayName)")
+                .addQueryParameter("supportsAllDrives", "true")
+                .build();
+
+        Request request = newAuthenticatedRequest(url.toString()).get().build();
+        try (Response response = executeWithRetry(request)) {
+            if (!response.isSuccessful()) {
+                throw new IOException("Failed to list permissions for " + folderId + ": HTTP " + response.code());
+            }
+            ResponseBody body = response.body();
+            if (body == null) return Collections.emptyList();
+            JsonObject json = gson.fromJson(body.string(), JsonObject.class);
+            JsonArray perms = json.getAsJsonArray("permissions");
+            if (perms == null || perms.size() == 0) return Collections.emptyList();
+            List<JsonObject> result = new ArrayList<>();
+            for (JsonElement el : perms) {
+                result.add(el.getAsJsonObject());
+            }
+            return result;
         }
     }
 }

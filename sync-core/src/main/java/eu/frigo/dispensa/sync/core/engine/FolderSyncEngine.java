@@ -52,6 +52,18 @@ public class FolderSyncEngine implements SyncEngine {
         this.gson = new Gson();
     }
 
+    public SharedFolderStore getStore() {
+        return store;
+    }
+
+    public String getPantryPath() {
+        return pantryPath;
+    }
+
+    public int getDispensaId() {
+        return dispensaId;
+    }
+
     @Override
     public Completable performSync(SyncPolicy policy) {
         return Completable.fromAction(() -> {
@@ -129,7 +141,7 @@ public class FolderSyncEngine implements SyncEngine {
         return true;
     }
 
-    private PantryManifest fetchManifest() {
+    public PantryManifest fetchManifest() {
         try {
             String manifestPath = pantryPath + SyncManager.MANIFEST_JSON;
             Boolean exists = store.exists(manifestPath).blockingGet();
@@ -246,6 +258,10 @@ public class FolderSyncEngine implements SyncEngine {
         });
 
         dataBridge.markEventsAsSynced(syncedIds);
+    }
+
+    public void forceCompaction() throws Exception {
+        performCompaction();
     }
 
     private void performCompaction() throws Exception {

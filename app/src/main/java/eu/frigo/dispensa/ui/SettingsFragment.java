@@ -96,6 +96,26 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
             });
         }
 
+        if (eu.frigo.dispensa.BuildConfig.DEBUG) {
+            androidx.preference.PreferenceCategory syncCategory = findPreference("pref_cat_sync");
+            if (syncCategory != null) {
+                Preference debugPref = new Preference(requireContext());
+                debugPref.setTitle("🛠 [DEBUG] Google Drive Inspector");
+                debugPref.setSummary("Esplora cartelle e diagnostica sincronizzazione Drive");
+                debugPref.setOnPreferenceClickListener(p -> {
+                    try {
+                        Intent intent = new Intent();
+                        intent.setClassName(requireContext().getPackageName(), "eu.frigo.dispensa.activity.GDriveDebugActivity");
+                        startActivity(intent);
+                    } catch (Exception e) {
+                        android.widget.Toast.makeText(requireContext(), "Debug non disponibile in questa build: " + e.getMessage(), android.widget.Toast.LENGTH_SHORT).show();
+                    }
+                    return true;
+                });
+                syncCategory.addPreference(debugPref);
+            }
+        }
+
         notificationTimePreference = findPreference(getString(R.string.pref_key_exp_time));
         if (notificationTimePreference != null) {
             updateNotificationTimeSummary();

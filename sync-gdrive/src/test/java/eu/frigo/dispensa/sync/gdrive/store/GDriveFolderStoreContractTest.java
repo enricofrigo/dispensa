@@ -69,6 +69,32 @@ public class GDriveFolderStoreContractTest {
                 }
 
                 if (path.startsWith("/drive/v3/files")) {
+                    if (path.contains("/permissions")) {
+                        if ("POST".equals(method)) {
+                            String body = request.getBody().readUtf8();
+                            JsonObject permReq = gson.fromJson(body, JsonObject.class);
+                            JsonObject permRes = new JsonObject();
+                            permRes.addProperty("id", "perm-" + UUID.randomUUID());
+                            permRes.addProperty("role", permReq.get("role").getAsString());
+                            permRes.addProperty("type", permReq.get("type").getAsString());
+                            if (permReq.has("emailAddress")) {
+                                permRes.addProperty("emailAddress", permReq.get("emailAddress").getAsString());
+                            }
+                            return new MockResponse().setResponseCode(200).setBody(gson.toJson(permRes));
+                        } else if ("GET".equals(method)) {
+                            JsonObject res = new JsonObject();
+                            JsonArray perms = new JsonArray();
+                            JsonObject p = new JsonObject();
+                            p.addProperty("id", "perm-1");
+                            p.addProperty("role", "writer");
+                            p.addProperty("type", "user");
+                            p.addProperty("emailAddress", "collaborator@gmail.com");
+                            perms.add(p);
+                            res.add("permissions", perms);
+                            return new MockResponse().setResponseCode(200).setBody(gson.toJson(res));
+                        }
+                    }
+
                     if ("GET".equals(method)) {
                         if (path.contains("alt=media")) {
                             // Read file content
@@ -78,7 +104,7 @@ public class GDriveFolderStoreContractTest {
                                 return new MockResponse().setResponseCode(200).setBody(new okio.Buffer().write(mf.content));
                             }
                             return new MockResponse().setResponseCode(404);
-                        } else if (path.contains("?q=")) {
+                        } else if (request.getRequestUrl() != null && request.getRequestUrl().queryParameter("q") != null) {
                             // Query
                             String q = request.getRequestUrl().queryParameter("q");
                             JsonArray filesArr = new JsonArray();
@@ -261,5 +287,47 @@ public class GDriveFolderStoreContractTest {
 
         folderStore.deleteFolder("pantry-test/events").blockingAwait();
         Assert.assertFalse(folderStore.exists("pantry-test/events").blockingGet());
+    }
+
+    @Test
+    public void testShareFolderWithUser() throws IOException {
+        String folderId = folderStore.getOrCreateFolderId("pantry-shared");
+        Assert.assertNotNull(folderId);
+
+        // Share with user
+        folderStore.getClient().shareFolderWithUser(folderId, "friend@gmail.com", "writer");
+
+        // List permissions
+        List<JsonObject> perms = folderStore.getClient().listPermissions(folderId);
+        Assert.assertNotNull(perms);
+        Assert.assertFalse(perms.isEmpty());
+        Assert.assertEquals("writer", perms.get(0).get("role").getAsString());
+        Assert.assertEquals("collaborator@gmail.com", perms.get(0).get("emailAddress").getAsString());
+    }
+
+    @Test
+    public void testCustomRootFolderStore() throws IOException {
+        // Create custom folder in root store
+        String customFolderId = folderStore.getOrCreateFolderId("pantry-direct");
+        Assert.assertNotNull(customFolderId);
+
+        // Create store directly rooted at that folder ID (multi-account scenario)
+        GDriveFolderStore directStore = new GDriveFolderStore(folderStore.getClient(), customFolderId);
+        Assert.assertEquals(customFolderId, directStore.getRootFolderId());
+        Assert.assertEquals(customFolderId, directStore.getOrCreateFolderId(""));
+
+        // Write and read directly inside custom root
+        byte[] data = "{\"msg\":\"direct\"}".getBytes(StandardCharsets.UTF_8);
+        directStore.writeAtomic("manifest.json", data, null).blockingAwait();
+
+        Assert.assertTrue(directStore.exists("manifest.json").blockingGet());
+        byte[] read = directStore.read("manifest.json").blockingGet();
+        Assert.assertArrayEquals(data, read);
+
+        // Subfolder inside custom root
+        directStore.writeAtomic("events/evt1.json", data, null).blockingAwait();
+        List<String> eventFiles = directStore.listFiles("events").blockingGet();
+        Assert.assertEquals(1, eventFiles.size());
+        Assert.assertEquals("evt1.json", eventFiles.get(0));
     }
 }

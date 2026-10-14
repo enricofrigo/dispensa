@@ -246,9 +246,27 @@ public class SharedDispenseActivity extends AppCompatActivity implements SharedD
     }
 
     @Override
+    public boolean onCreateOptionsMenu(android.view.Menu menu) {
+        if (eu.frigo.dispensa.BuildConfig.DEBUG) {
+            menu.add(0, 9999, 0, "[DEBUG] GDrive Explorer")
+                    .setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
+        }
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
             finish();
+            return true;
+        } else if (item.getItemId() == 9999) {
+            try {
+                Intent intent = new Intent();
+                intent.setClassName(getPackageName(), "eu.frigo.dispensa.activity.GDriveDebugActivity");
+                startActivity(intent);
+            } catch (Exception e) {
+                Toast.makeText(this, "Non disponibile in questa build", Toast.LENGTH_SHORT).show();
+            }
             return true;
         }
         return super.onOptionsItemSelected(item);
