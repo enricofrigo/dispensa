@@ -92,7 +92,33 @@ public class WebDavSharingProvider implements SharingProvider {
         String remoteId = (dispensa != null && dispensa.remoteId != null && !dispensa.remoteId.trim().isEmpty())
                 ? dispensa.remoteId.trim()
                 : (config != null && config.remotePantryId != null ? config.remotePantryId : (dispensa != null ? String.valueOf(dispensa.id) : "default"));
-        return base + SyncManager.getSyncPath(remoteId);
+        String syncPath = SyncManager.getSyncPath(remoteId);
+        String standardPath = base.endsWith(SyncManager.APP_FOLDER_NAME + "/")
+                ? base + syncPath
+                : base + SyncManager.APP_FOLDER_NAME + "/" + syncPath;
+
+        if (android.os.Looper.myLooper() != android.os.Looper.getMainLooper()) {
+            try {
+                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+                String url = (config != null && config.url != null) ? config.url : prefs.getString(SyncManager.KEY_WEBDAV_URL, "");
+                String user = (config != null && config.username != null) ? config.username : prefs.getString(SyncManager.KEY_WEBDAV_USER, "");
+                String pass = (config != null && config.password != null) ? config.password : prefs.getString(SyncManager.KEY_WEBDAV_PASS, "");
+                if (!url.isEmpty()) {
+                    WebDavClient client = WebDavClientFactory.getInstance().getClient(url, user, pass);
+                    try (okhttp3.Response checkResp = client.head(standardPath + SyncManager.MANIFEST_JSON)) {
+                        if (!checkResp.isSuccessful()) {
+                            try (okhttp3.Response legacyResp = client.head(base + syncPath + SyncManager.MANIFEST_JSON)) {
+                                if (legacyResp.isSuccessful()) {
+                                    return base + syncPath;
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+
+        return standardPath;
     }
 
     @Override
@@ -104,9 +130,12 @@ public class WebDavSharingProvider implements SharingProvider {
         String path = prefs.getString(SyncManager.KEY_WEBDAV_PATH, SyncManager.DEFAULT_PATH);
         boolean isShared = prefs.getBoolean(SyncManager.KEY_WEBDAV_MODE_SHARED, false);
         String pantryKey = prefs.getString(SyncManager.SYNC_WEBDAV_PANTRY_KEY, "");
+        String remoteId = (dispensa != null && dispensa.remoteId != null && !dispensa.remoteId.trim().isEmpty())
+                ? dispensa.remoteId.trim()
+                : (dispensa != null ? String.valueOf(dispensa.id) : "default");
 
-        return new JoinedPantryConfig(
-                dispensa.id,
+        JoinedPantryConfig config = new JoinedPantryConfig(
+                dispensa != null ? dispensa.id : 0,
                 url,
                 user,
                 pass,
@@ -114,5 +143,7 @@ public class WebDavSharingProvider implements SharingProvider {
                 isShared,
                 pantryKey
         );
+        config.remotePantryId = remoteId;
+        return config;
     }
 }

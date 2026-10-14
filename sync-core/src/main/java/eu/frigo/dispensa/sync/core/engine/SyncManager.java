@@ -25,6 +25,7 @@ public class SyncManager {
     public static final String KEY_DEVICE_NAME = "pref_key_device_name";
     public static final String DEFAULT_PATH = "/";
     
+    public static final String APP_FOLDER_NAME = "Dispensa";
     public static final int CURRENT_SYNC_VERSION = 2;
     public static final String LEGACY_SYNC_PATH = "dispensa-sync/";
     

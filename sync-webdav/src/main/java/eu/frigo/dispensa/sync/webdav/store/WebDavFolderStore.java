@@ -167,14 +167,40 @@ public class WebDavFolderStore implements SharedFolderStore {
     @Override
     public Single<List<String>> listFiles(String folderRelativePath) {
         return Single.fromCallable(() -> {
-            // Simplified: list files via PROPFIND if implemented by server, or return empty list
             String path = folderRelativePath.startsWith("/") ? folderRelativePath.substring(1) : folderRelativePath;
             if (!path.endsWith("/") && !path.isEmpty()) {
                 path = path + "/";
             }
-            try (Response response = client.propfind(path)) {
-                return new ArrayList<>();
+            List<String> results = new ArrayList<>();
+            try (Response response = client.propfind(path, "1")) {
+                if ((response.isSuccessful() || response.code() == 207) && response.body() != null) {
+                    String xml = response.body().string();
+                    String cleanFolder = path.endsWith("/") ? path.substring(0, path.length() - 1) : path;
+                    String folderName = cleanFolder.contains("/") ? cleanFolder.substring(cleanFolder.lastIndexOf("/") + 1) : cleanFolder;
+
+                    java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("<(?:[a-zA-Z0-9_-]+:)?href>([^<]+)</(?:[a-zA-Z0-9_-]+:)?href>");
+                    java.util.regex.Matcher matcher = pattern.matcher(xml);
+                    while (matcher.find()) {
+                        String href = matcher.group(1);
+                        if (href == null) continue;
+                        String decoded = java.net.URLDecoder.decode(href, "UTF-8");
+                        if (decoded.endsWith("/")) continue;
+
+                        String fileName = decoded;
+                        if (fileName.contains("/")) {
+                            fileName = fileName.substring(fileName.lastIndexOf("/") + 1);
+                        }
+                        if (fileName.equals(folderName)) continue;
+
+                        if (!fileName.isEmpty() && !results.contains(fileName)) {
+                            results.add(fileName);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Failed to list files for " + path, e);
             }
+            return results;
         });
     }
 
@@ -192,6 +218,10 @@ public class WebDavFolderStore implements SharedFolderStore {
 
     @Override
     public Completable deleteFolder(String folderRelativePath) {
-        return deleteFile(folderRelativePath);
+        String clean = folderRelativePath.startsWith("/") ? folderRelativePath.substring(1) : folderRelativePath;
+        if (!clean.isEmpty() && !clean.endsWith("/")) {
+            clean = clean + "/";
+        }
+        return deleteFile(clean);
     }
 }
