@@ -38,7 +38,7 @@ google-services.json
 # Gemini artifact
 task.artifact.md
 walkthrough.artifact.md
-ANTIGRAVITY.md
-antigravity.md
+GEMINI.md
 /.jdk21/
 *.dm
+dispensa-491717-bef9cbd48656.json
