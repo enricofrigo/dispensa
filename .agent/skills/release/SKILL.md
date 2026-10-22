@@ -1,6 +1,6 @@
 ---
 name: release
-description: Automatizza la creazione di una nuova release di Dispensa (F-Droid e Play): genera i changelog Fastlane in it-IT e en-US, aggiorna gli screenshot UI con Robolectric Native (FastlaneScreenshotsTest), fa bump versione/tag/push e aggiorna eu.frigo.dispensa.yml su fdroiddata (con modalità --dry-run preventiva).
+description: "Automatizza la creazione di una nuova release di Dispensa (F-Droid e Play): genera i changelog Fastlane in it-IT e en-US, aggiorna gli screenshot UI con Robolectric Native (FastlaneScreenshotsTest), fa bump versione/tag/push e aggiorna eu.frigo.dispensa.yml su fdroiddata (con modalità --dry-run preventiva)."
 ---
 
 # Dispensa Release Workflow Skill

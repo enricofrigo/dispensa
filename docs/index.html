@@ -1,27 +1,1135 @@
-<head><meta name="google-site-verification" content="be_Ka6cQQRgXYnydAbYm9Ds5KQqfExfTOmssK9lCxBk" /></head>
-<h1 id="-dispensa-app">📦 Dispensa App</h1>
-<blockquote>
-<p><strong>Gestisci la tua dispensa in modo semplice ed efficiente.</strong><br>A pantry manager to track what you have, avoid waste, and plan better.</p>
-</blockquote>
-<h2 id="-installazione">🚀 Installazione</h2>
-<ul>
-<li><a href="https://play.google.com/store/apps/details?id=eu.frigo.dispensa">Playstore</a></li>
-<li><a href="https://github.com/enricofrigo/dispensa/releases">Releases</a></li>
-</ul>
-<h2 id="-funzionalit-principali">🧰 Funzionalità principali</h2>
-<ul>
-<li>📝 Aggiungi, modifica ed elimina articoli nella tua dispensa</li>
-<li>🔔 Ricevi notifiche per prodotti in scadenza</li>
-<li>📦 Location personalizzabili e condivisibili via URL or QR code</li>
-<li>🛒 Aggiungi i prodotti alla lista della spesa e condividila</li>
-<li>🇮🇹 ligue supportate italiano ed inglese (it - en - de)</li>
-</ul>
-<h1 id="-screenshots">📷 Screenshots</h1>
-<p><img src="https://github.com/user-attachments/assets/0af2eb93-bbd6-44f4-9bfd-bd40b7d0f0b1" width="200px" />
-<img src="https://github.com/user-attachments/assets/9d53fad6-6bac-45f5-bcdc-715f7a067146" width="200px" />
-<img src="https://github.com/user-attachments/assets/fe3ded2b-5946-4882-9675-b92fc12e9792" width="200px" /></p>
-<h3 id="-prerequisiti">✅ Prerequisiti</h3>
-<ul>
-<li>Android Studio (per la versione di sviluppo)</li>
-<li>Android 14.0+ (per l&#39;app su dispositivo)</li>
-</ul>
+<!DOCTYPE html>
+<html lang="it" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="google-site-verification" content="be_Ka6cQQRgXYnydAbYm9Ds5KQqfExfTOmssK9lCxBk" />
+  <title>Dispensa — Gestisci la tua dispensa, evita gli sprechi</title>
+  <meta name="description" content="Dispensa è l'app Android gratuita e open-source per monitorare le scadenze alimentari, gestire la lista della spesa e sincronizzare la dispensa in famiglia via WebDAV, Google Drive o cartella locale." />
+  <link rel="icon" type="image/png" href="assets/icon.png" />
+  <style>
+    :root {
+      --bg: #f6f8f9;
+      --bg-alt: #edf2f4;
+      --surface: #ffffff;
+      --surface-glass: rgba(255, 255, 255, 0.85);
+      --text: #111827;
+      --text-muted: #4b5563;
+      --border: #dde3ea;
+      --primary: #0f766e;
+      --primary-hover: #0d5f59;
+      --primary-soft: #e6f4f1;
+      --accent-warm: #d97736;
+      --accent-warm-soft: #fef3c7;
+      --accent-purple: #6200ee;
+      --shadow-sm: 0 4px 12px rgba(15, 23, 42, 0.05);
+      --shadow-md: 0 14px 34px rgba(15, 23, 42, 0.08);
+      --shadow-lg: 0 24px 48px rgba(15, 23, 42, 0.14);
+      --radius-lg: 24px;
+      --radius-md: 16px;
+      --radius-sm: 10px;
+      --max-w: 1180px;
+    }
+
+    [data-theme="dark"] {
+      --bg: #0b1116;
+      --bg-alt: #111a22;
+      --surface: #16212b;
+      --surface-glass: rgba(22, 33, 43, 0.85);
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --border: #253341;
+      --primary: #2dd4bf;
+      --primary-hover: #5eead4;
+      --primary-soft: rgba(45, 212, 191, 0.14);
+      --accent-warm: #f59e0b;
+      --accent-warm-soft: rgba(245, 158, 11, 0.15);
+      --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.25);
+      --shadow-md: 0 14px 34px rgba(0, 0, 0, 0.38);
+      --shadow-lg: 0 24px 48px rgba(0, 0, 0, 0.55);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      transition: background-color 0.25s ease, color 0.25s ease;
+      overflow-x: hidden;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .container {
+      max-width: var(--max-w);
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Navbar */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--surface-glass);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 70px;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+      font-size: 1.25rem;
+      letter-spacing: -0.02em;
+    }
+
+    .brand img {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      font-weight: 500;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+
+    .nav-links a:hover {
+      color: var(--primary);
+    }
+
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .pill-switch {
+      display: inline-flex;
+      align-items: center;
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 3px;
+    }
+
+    .pill-btn {
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      font-weight: 700;
+      padding: 6px 11px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .pill-btn.active {
+      background: var(--surface);
+      color: var(--primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .icon-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      padding: 7px 12px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .icon-btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    /* Hero */
+    .hero {
+      padding: 68px 0 80px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      top: -120px;
+      right: -120px;
+      width: 520px;
+      height: 520px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--primary-soft) 0%, transparent 70%);
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 48px;
+      align-items: center;
+    }
+
+    .badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+
+    .badge.warm {
+      background: var(--accent-warm-soft);
+      color: var(--accent-warm);
+    }
+
+    .hero h1 {
+      font-size: clamp(2.2rem, 4.5vw, 3.5rem);
+      line-height: 1.12;
+      letter-spacing: -0.03em;
+      margin-bottom: 20px;
+    }
+
+    .hero h1 .highlight {
+      color: var(--primary);
+    }
+
+    .hero-lead {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      max-width: 580px;
+      margin-bottom: 32px;
+    }
+
+    .cta-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 13px 22px;
+      border-radius: 14px;
+      font-weight: 700;
+      font-size: 0.96rem;
+      transition: transform 0.15s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+      border: 1px solid transparent;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 10px 24px rgba(15, 118, 110, 0.26);
+    }
+
+    [data-theme="dark"] .btn-primary {
+      color: #06221f;
+    }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--text);
+      border-color: var(--border);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--primary);
+    }
+
+    .btn svg {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+    }
+
+    .hero-meta span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Hero Phones */
+    .hero-visual {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      min-height: 460px;
+    }
+
+    .phone-stack {
+      position: relative;
+      width: 100%;
+      max-width: 420px;
+      height: 500px;
+    }
+
+    .phone-mockup {
+      background: #111827;
+      border: 6px solid #263244;
+      border-radius: 34px;
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+      transition: transform 0.3s ease;
+    }
+
+    .phone-mockup img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .phone-main {
+      width: 255px;
+      position: absolute;
+      left: 16px;
+      top: 0;
+      z-index: 2;
+    }
+
+    .phone-secondary {
+      width: 230px;
+      position: absolute;
+      right: 10px;
+      top: 56px;
+      z-index: 1;
+      opacity: 0.96;
+      transform: rotate(4deg);
+    }
+
+    .phone-stack:hover .phone-main {
+      transform: translateY(-6px) rotate(-1.5deg);
+    }
+
+    .phone-stack:hover .phone-secondary {
+      transform: translateY(-6px) rotate(6deg);
+    }
+
+    /* Section Header */
+    section {
+      padding: 76px 0;
+    }
+
+    .section-alt {
+      background: var(--bg-alt);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-header {
+      text-align: center;
+      max-width: 680px;
+      margin: 0 auto 48px;
+    }
+
+    .section-eyebrow {
+      display: inline-block;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--primary);
+      margin-bottom: 10px;
+    }
+
+    .section-header h2 {
+      font-size: clamp(1.75rem, 3vw, 2.4rem);
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }
+
+    .section-header p {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+    }
+
+    /* Bento Features */
+    .bento-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 22px;
+    }
+
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 28px;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--primary);
+    }
+
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.45rem;
+      margin-bottom: 18px;
+    }
+
+    .feature-card h3 {
+      font-size: 1.18rem;
+      margin-bottom: 10px;
+    }
+
+    .feature-card p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    /* Sync Banner */
+    .sync-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 40px;
+      box-shadow: var(--shadow-md);
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 36px;
+      align-items: center;
+    }
+
+    .sync-providers {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .provider-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 15px;
+      border-radius: 12px;
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .sync-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .sync-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 14px 16px;
+      background: var(--bg-alt);
+      border-radius: 14px;
+      border: 1px solid var(--border);
+    }
+
+    .step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.85rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    [data-theme="dark"] .step-num {
+      color: #06221f;
+    }
+
+    /* Screenshots Gallery */
+    .gallery-toolbar {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+    }
+
+    .screenshots-track {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 24px;
+    }
+
+    .shot-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 14px;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      cursor: zoom-in;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .shot-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--primary);
+    }
+
+    .shot-frame {
+      width: 100%;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      margin-bottom: 12px;
+      background: #000;
+    }
+
+    .shot-frame img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .shot-caption {
+      font-weight: 600;
+      font-size: 0.92rem;
+      text-align: center;
+      color: var(--text);
+    }
+
+    /* Lightbox Modal */
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(11, 17, 22, 0.86);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      padding: 24px;
+      cursor: zoom-out;
+    }
+
+    .lightbox.open {
+      display: flex;
+    }
+
+    .lightbox img {
+      max-height: 90vh;
+      max-width: 92vw;
+      border-radius: 20px;
+      box-shadow: var(--shadow-lg);
+      border: 2px solid rgba(255, 255, 255, 0.15);
+    }
+
+    /* Footer */
+    footer {
+      padding: 48px 0;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      font-size: 0.92rem;
+      color: var(--text-muted);
+    }
+
+    .footer-inner {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      font-weight: 500;
+    }
+
+    .footer-links a:hover {
+      color: var(--primary);
+      text-decoration: underline;
+    }
+
+    @media (max-width: 960px) {
+      .hero-grid,
+      .sync-box {
+        grid-template-columns: 1fr;
+      }
+
+      .bento-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .hero-visual {
+        margin-top: 16px;
+      }
+
+      .nav-links {
+        display: none;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .bento-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .screenshots-track {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 14px;
+      }
+
+      .sync-box {
+        padding: 24px;
+      }
+
+      .phone-stack {
+        height: 420px;
+        max-width: 320px;
+      }
+
+      .phone-main {
+        width: 200px;
+        left: 6px;
+      }
+
+      .phone-secondary {
+        width: 180px;
+        right: 6px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="container nav-inner">
+      <a href="#" class="brand">
+        <img src="assets/icon.png" alt="Dispensa Icon" />
+        <span>Dispensa</span>
+      </a>
+
+      <nav class="nav-links">
+        <a href="#features" data-i18n="nav_features">Funzionalità</a>
+        <a href="#sync" data-i18n="nav_sync">Sincronizzazione</a>
+        <a href="#screenshots" data-i18n="nav_screenshots">Screenshot</a>
+        <a href="https://github.com/enricofrigo/dispensa" target="_blank" rel="noopener">GitHub</a>
+      </nav>
+
+      <div class="nav-controls">
+        <div class="pill-switch" role="group" aria-label="Language switch">
+          <button type="button" class="pill-btn active" id="lang-it" onclick="setLanguage('it')">IT</button>
+          <button type="button" class="pill-btn" id="lang-en" onclick="setLanguage('en')">EN</button>
+        </div>
+
+        <button type="button" class="icon-btn" id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+          <span id="theme-icon">🌙</span>
+          <span id="theme-label" data-i18n="theme_dark">Scuro</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <main>
+    <section class="hero">
+      <div class="container hero-grid">
+        <div>
+          <div class="badges">
+            <span class="badge" data-i18n="badge_foss">✨ 100% Gratuita & Open Source</span>
+            <span class="badge warm" data-i18n="badge_privacy">🔒 Offline-First & Zero Pubblicità</span>
+          </div>
+
+          <h1 data-i18n="hero_title">
+            Zero sprechi in cucina.<br />
+            <span class="highlight">La tua dispensa</span> sempre sotto controllo.
+          </h1>
+
+          <p class="hero-lead" data-i18n="hero_subtitle">
+            Monitora le scadenze alimentari, aggiungi prodotti in un istante con barcode e OCR, gestisci la lista della spesa e condividi la dispensa in famiglia usando il tuo spazio cloud o locale.
+          </p>
+
+          <div class="cta-group">
+            <a href="https://play.google.com/store/apps/details?id=eu.frigo.dispensa" target="_blank" rel="noopener" class="btn btn-primary">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.198l2.807 1.626a1 1 0 0 1 0 1.73l-2.808 1.626L15.206 12l2.492-2.491zM5.864 2.658L16.8 8.99l-2.302 2.302-8.634-8.634z"/></svg>
+              <span>Google Play</span>
+            </a>
+
+            <a href="https://f-droid.org/packages/eu.frigo.dispensa" target="_blank" rel="noopener" class="btn btn-secondary">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zm0 12.5c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+              <span>F-Droid</span>
+            </a>
+
+            <a href="https://github.com/enricofrigo/dispensa/releases" target="_blank" rel="noopener" class="btn btn-secondary">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+              <span data-i18n="cta_releases">Scarica APK (GitHub)</span>
+            </a>
+          </div>
+
+          <div class="hero-meta">
+            <span>📱 Android 8.1+ (API 27+)</span>
+            <span data-i18n="meta_langs">🌍 Lingue: Italiano, English, Deutsch</span>
+            <span>🛡️ Licenza GPL-3.0</span>
+          </div>
+        </div>
+
+        <div class="hero-visual">
+          <div class="phone-stack">
+            <div class="phone-mockup phone-main">
+              <img data-shot="01_main_activity" src="assets/screenshots/it/01_main_activity_light.jpeg" alt="Schermata principale Dispensa" />
+            </div>
+            <div class="phone-mockup phone-secondary">
+              <img data-shot="05_shared_dispense_activity" src="assets/screenshots/it/05_shared_dispense_activity_light.jpeg" alt="Dispense condivise" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Bento -->
+    <section id="features" class="section-alt">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-eyebrow" data-i18n="feat_eyebrow">Funzionalità Principali</span>
+          <h2 data-i18n="feat_title">Tutto ciò che serve per organizzare la spesa e la cucina</h2>
+          <p data-i18n="feat_desc">Progettata per essere velocissima nell'uso quotidiano, senza costringerti a creare account su server di terze parti.</p>
+        </div>
+
+        <div class="bento-grid">
+          <article class="feature-card">
+            <div class="feature-icon">📷</div>
+            <h3 data-i18n="f1_title">Barcode & OCR Scadenze</h3>
+            <p data-i18n="f1_desc">Inquadra il codice a barre per recuperare nome e foto da Open Food Facts e scansiona la data di scadenza direttamente dalla confezione.</p>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-icon">🔔</div>
+            <h3 data-i18n="f2_title">Notifiche Anti-Spreco</h3>
+            <p data-i18n="f2_desc">Ricevi promemoria automatici per i prodotti in scadenza e traccia anche i giorni di validità dopo l'apertura della confezione.</p>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <h3 data-i18n="f3_title">Sync Familiare Decentralizzato</h3>
+            <p data-i18n="f3_desc">Sincronizza più dispositivi tramite WebDAV (Nextcloud, ownCloud), Google Drive o cartella locale SAF. Invita i familiari con un QR Code crittografato.</p>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-icon">🗄️</div>
+            <h3 data-i18n="f4_title">Depositi & Categorie</h3>
+            <p data-i18n="f4_desc">Organizza i tuoi alimenti in Frigo, Freezer, Dispensa, Cantina o posizioni personalizzate e filtra rapidamente per tag e categorie.</p>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-icon">🛒</div>
+            <h3 data-i18n="f5_title">Lista della Spesa Integrata</h3>
+            <p data-i18n="f5_desc">Finito il latte? Spostalo nella lista della spesa con un tocco o usa lo scanner rapido di consumo quando svuoti un prodotto.</p>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <h3 data-i18n="f6_title">Offline-First & Backup</h3>
+            <p data-i18n="f6_desc">Tutti i dati restano sul tuo telefono e funzionano anche senza rete. Esporta e importa backup completi in qualsiasi momento.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sync Highlight -->
+    <section id="sync">
+      <div class="container">
+        <div class="sync-box">
+          <div>
+            <span class="section-eyebrow" data-i18n="sync_eyebrow">Condivisione Sicura</span>
+            <h2 style="font-size: clamp(1.6rem, 2.8vw, 2.2rem); margin-bottom: 14px;" data-i18n="sync_title">
+              I tuoi dati restano tuoi. Sincronizza dove vuoi tu.
+            </h2>
+            <p style="color: var(--text-muted); margin-bottom: 16px;" data-i18n="sync_desc">
+              A differenza delle app tradizionali, Dispensa non salva le tue abitudini alimentari su un server centrale proprietario. Scegli tu il provider che preferisci e condividi l'accesso con chi vive con te.
+            </p>
+            <div class="sync-providers">
+              <span class="provider-chip">☁️ WebDAV / Nextcloud</span>
+              <span class="provider-chip">📁 Local Folder (SAF / Syncthing)</span>
+              <span class="provider-chip">🔄 Google Drive (Play Store)</span>
+            </div>
+          </div>
+
+          <div class="sync-steps">
+            <div class="sync-step">
+              <span class="step-num">1</span>
+              <div>
+                <strong data-i18n="step1_title">Configura la cartella condivisa</strong>
+                <p style="font-size: 0.9rem; color: var(--text-muted);" data-i18n="step1_desc">Collega il tuo Nextcloud/WebDAV, Google Drive o una cartella sul dispositivo.</p>
+              </div>
+            </div>
+            <div class="sync-step">
+              <span class="step-num">2</span>
+              <div>
+                <strong data-i18n="step2_title">Genera il QR Code o Link di invito</strong>
+                <p style="font-size: 0.9rem; color: var(--text-muted);" data-i18n="step2_desc">Le chiavi di accesso vengono condivise in modo protetto direttamente tra i vostri dispositivi.</p>
+              </div>
+            </div>
+            <div class="sync-step">
+              <span class="step-num">3</span>
+              <div>
+                <strong data-i18n="step3_title">Dispensa sempre allineata</strong>
+                <p style="font-size: 0.9rem; color: var(--text-muted);" data-i18n="step3_desc">Ogni aggiunta o prodotto consumato si sincronizza automaticamente in background.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Screenshots Section -->
+    <section id="screenshots" class="section-alt">
+      <div class="container">
+        <div class="section-header" style="margin-bottom: 24px;">
+          <span class="section-eyebrow" data-i18n="shots_eyebrow">Interfaccia Material 3</span>
+          <h2 data-i18n="shots_title">Guarda Dispensa in azione</h2>
+          <p data-i18n="shots_desc">Clicca su qualsiasi schermata per ingrandirla oppure prova l'anteprima in modalità Chiara o Scura.</p>
+        </div>
+
+        <div class="gallery-toolbar">
+          <div class="pill-switch" role="group" aria-label="Screenshot mode switch">
+            <button type="button" class="pill-btn active" id="shot-light-btn" onclick="setShotTheme('light')" data-i18n="shots_light">☀️ Tema Chiaro</button>
+            <button type="button" class="pill-btn" id="shot-dark-btn" onclick="setShotTheme('dark')" data-i18n="shots_dark">🌙 Tema Scuro</button>
+          </div>
+        </div>
+
+        <div class="screenshots-track">
+          <div class="shot-card" onclick="openLightbox(this)">
+            <div class="shot-frame">
+              <img data-shot="01_main_activity" src="assets/screenshots/it/01_main_activity_light.jpeg" alt="Dispensa Principale" loading="lazy" />
+            </div>
+            <span class="shot-caption" data-i18n="cap_1">Dispensa & Scadenze</span>
+          </div>
+
+          <div class="shot-card" onclick="openLightbox(this)">
+            <div class="shot-frame">
+              <img data-shot="02_add_product_activity" src="assets/screenshots/it/02_add_product_activity_light.jpeg" alt="Modifica Prodotto" loading="lazy" />
+            </div>
+            <span class="shot-caption" data-i18n="cap_2">Scheda Prodotto & Apertura</span>
+          </div>
+
+          <div class="shot-card" onclick="openLightbox(this)">
+            <div class="shot-frame">
+              <img data-shot="03_shopping_list_activity" src="assets/screenshots/it/03_shopping_list_activity_light.jpeg" alt="Lista della spesa" loading="lazy" />
+            </div>
+            <span class="shot-caption" data-i18n="cap_3">Lista della Spesa</span>
+          </div>
+
+          <div class="shot-card" onclick="openLightbox(this)">
+            <div class="shot-frame">
+              <img data-shot="05_shared_dispense_activity" src="assets/screenshots/it/05_shared_dispense_activity_light.jpeg" alt="Dispense condivise" loading="lazy" />
+            </div>
+            <span class="shot-caption" data-i18n="cap_4">Dispense Condivise</span>
+          </div>
+
+          <div class="shot-card" onclick="openLightbox(this)">
+            <div class="shot-frame">
+              <img data-shot="07_sync_onboarding_activity" src="assets/screenshots/it/07_sync_onboarding_activity_light.jpeg" alt="Condivisione QR Code" loading="lazy" />
+            </div>
+            <span class="shot-caption" data-i18n="cap_5">Invito Rapido con QR Code</span>
+          </div>
+
+          <div class="shot-card" onclick="openLightbox(this)">
+            <div class="shot-frame">
+              <img data-shot="11_manage_locations_activity" src="assets/screenshots/it/11_manage_locations_activity_light.jpeg" alt="Gestione depositi" loading="lazy" />
+            </div>
+            <span class="shot-caption" data-i18n="cap_6">Depositi Personalizzabili</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <img id="lightbox-img" src="" alt="Screenshot ingrandito" />
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container footer-inner">
+      <div>
+        <strong>📦 Dispensa</strong> — <span data-i18n="footer_copy">Sviluppata da Enrico Frigo. Progetto Open Source.</span>
+      </div>
+      <div class="footer-links">
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="terms.html" data-i18n="footer_terms">Termini di Servizio</a>
+        <a href="https://github.com/enricofrigo/dispensa" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/enricofrigo/dispensa/issues" target="_blank" rel="noopener" data-i18n="footer_issues">Segnala un problema</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const translations = {
+      it: {
+        page_title: "Dispensa — Gestisci la tua dispensa, evita gli sprechi",
+        nav_features: "Funzionalità",
+        nav_sync: "Sincronizzazione",
+        nav_screenshots: "Screenshot",
+        theme_dark: "Scuro",
+        theme_light: "Chiaro",
+        badge_foss: "✨ 100% Gratuita & Open Source",
+        badge_privacy: "🔒 Offline-First & Zero Pubblicità",
+        hero_title: 'Zero sprechi in cucina.<br /><span class="highlight">La tua dispensa</span> sempre sotto controllo.',
+        hero_subtitle: "Monitora le scadenze alimentari, aggiungi prodotti in un istante con barcode e OCR, gestisci la lista della spesa e condividi la dispensa in famiglia usando il tuo spazio cloud o locale.",
+        cta_releases: "Scarica APK (GitHub)",
+        meta_langs: "🌍 Lingue: Italiano, English, Deutsch",
+        feat_eyebrow: "Funzionalità Principali",
+        feat_title: "Tutto ciò che serve per organizzare la spesa e la cucina",
+        feat_desc: "Progettata per essere velocissima nell'uso quotidiano, senza costringerti a creare account su server di terze parti.",
+        f1_title: "Barcode & OCR Scadenze",
+        f1_desc: "Inquadra il codice a barre per recuperare nome e foto da Open Food Facts e scansiona la data di scadenza direttamente dalla confezione.",
+        f2_title: "Notifiche Anti-Spreco",
+        f2_desc: "Ricevi promemoria automatici per i prodotti in scadenza e traccia anche i giorni di validità dopo l'apertura della confezione.",
+        f3_title: "Sync Familiare Decentralizzato",
+        f3_desc: "Sincronizza più dispositivi tramite WebDAV (Nextcloud, ownCloud), Google Drive o cartella locale SAF. Invita i familiari con un QR Code crittografato.",
+        f4_title: "Depositi & Categorie",
+        f4_desc: "Organizza i tuoi alimenti in Frigo, Freezer, Dispensa, Cantina o posizioni personalizzate e filtra rapidamente per tag e categorie.",
+        f5_title: "Lista della Spesa Integrata",
+        f5_desc: "Finito il latte? Spostalo nella lista della spesa con un tocco o usa lo scanner rapido di consumo quando svuoti un prodotto.",
+        f6_title: "Offline-First & Backup",
+        f6_desc: "Tutti i dati restano sul tuo telefono e funzionano anche senza rete. Esporta e importa backup completi in qualsiasi momento.",
+        sync_eyebrow: "Condivisione Sicura",
+        sync_title: "I tuoi dati restano tuoi. Sincronizza dove vuoi tu.",
+        sync_desc: "A differenza delle app tradizionali, Dispensa non salva le tue abitudini alimentari su un server centrale proprietario. Scegli tu il provider che preferisci e condividi l'accesso con chi vive con te.",
+        step1_title: "Configura la cartella condivisa",
+        step1_desc: "Collega il tuo Nextcloud/WebDAV, Google Drive o una cartella sul dispositivo.",
+        step2_title: "Genera il QR Code o Link di invito",
+        step2_desc: "Le chiavi di accesso vengono condivise in modo protetto direttamente tra i vostri dispositivi.",
+        step3_title: "Dispensa sempre allineata",
+        step3_desc: "Ogni aggiunta o prodotto consumato si sincronizza automaticamente in background.",
+        shots_eyebrow: "Interfaccia Material 3",
+        shots_title: "Guarda Dispensa in azione",
+        shots_desc: "Clicca su qualsiasi schermata per ingrandirla oppure prova l'anteprima in modalità Chiara o Scura.",
+        shots_light: "☀️ Tema Chiaro",
+        shots_dark: "🌙 Tema Scuro",
+        cap_1: "Dispensa & Scadenze",
+        cap_2: "Scheda Prodotto & Apertura",
+        cap_3: "Lista della Spesa",
+        cap_4: "Dispense Condivise",
+        cap_5: "Invito Rapido con QR Code",
+        cap_6: "Depositi Personalizzabili",
+        footer_copy: "Sviluppata da Enrico Frigo. Progetto Open Source.",
+        footer_terms: "Termini di Servizio",
+        footer_issues: "Segnala un problema"
+      },
+      en: {
+        page_title: "Dispensa — Smart Pantry Manager & Food Expiry Tracker",
+        nav_features: "Features",
+        nav_sync: "Sync & Sharing",
+        nav_screenshots: "Screenshots",
+        theme_dark: "Dark",
+        theme_light: "Light",
+        badge_foss: "✨ 100% Free & Open Source",
+        badge_privacy: "🔒 Offline-First & Zero Ads",
+        hero_title: 'Cut food waste.<br /><span class="highlight">Your home pantry</span> always under control.',
+        hero_subtitle: "Track food expiration dates, add items in seconds via barcode & OCR, manage your shopping list, and sync pantries across family devices using your own cloud or local storage.",
+        cta_releases: "Download APK (GitHub)",
+        meta_langs: "🌍 Languages: Italiano, English, Deutsch",
+        feat_eyebrow: "Key Features",
+        feat_title: "Everything you need to organize your kitchen and groceries",
+        feat_desc: "Built for speed in everyday use, without forcing you to sign up for proprietary cloud accounts.",
+        f1_title: "Barcode & Expiry OCR",
+        f1_desc: "Scan barcodes to fetch product details from Open Food Facts and read expiration dates straight from the package with OCR.",
+        f2_title: "Smart Expiry Alerts",
+        f2_desc: "Get timely notifications before food expires and automatically track shelf-life days after opening a package.",
+        f3_title: "Decentralized Family Sync",
+        f3_desc: "Sync across devices via WebDAV (Nextcloud, ownCloud), Google Drive, or Local Folder (SAF). Invite family members with an encrypted QR Code.",
+        f4_title: "Custom Locations & Tags",
+        f4_desc: "Organize items across Fridge, Freezer, Pantry, Cellar, or custom storage spots, and filter effortlessly by category tags.",
+        f5_title: "Built-in Shopping List",
+        f5_desc: "Out of milk? Add it to your shopping list with a single tap or use the quick consume scanner when finishing a product.",
+        f6_title: "Offline-First & Full Backups",
+        f6_desc: "All data stays on your device and works offline. Export and restore full JSON backups whenever you want.",
+        sync_eyebrow: "Private Sharing",
+        sync_title: "Your data stays yours. Sync wherever you choose.",
+        sync_desc: "Unlike traditional apps, Dispensa never stores your household inventory on a proprietary central server. Pick your own storage provider and share access with your household.",
+        step1_title: "Connect a shared folder",
+        step1_desc: "Link your Nextcloud/WebDAV server, Google Drive, or a local folder on your device.",
+        step2_title: "Share via QR Code or Link",
+        step2_desc: "Sync credentials and encryption keys are exchanged securely between your devices.",
+        step3_title: "Always in sync",
+        step3_desc: "Every added or consumed item syncs automatically in the background.",
+        shots_eyebrow: "Material 3 Interface",
+        shots_title: "See Dispensa in action",
+        shots_desc: "Click any screenshot to zoom in, or toggle between Light and Dark mode previews.",
+        shots_light: "☀️ Light Mode",
+        shots_dark: "🌙 Dark Mode",
+        cap_1: "Pantry & Expiries",
+        cap_2: "Product Details & Opened Date",
+        cap_3: "Shopping List",
+        cap_4: "Shared Pantries",
+        cap_5: "Quick QR Code Invite",
+        cap_6: "Customizable Locations",
+        footer_copy: "Developed by Enrico Frigo. Open Source Project.",
+        footer_terms: "Terms of Service",
+        footer_issues: "Report an Issue"
+      }
+    };
+
+    let currentLang = "it";
+    let currentShotTheme = "light";
+
+    function updateScreenshots() {
+      document.querySelectorAll("img[data-shot]").forEach((img) => {
+        const shotName = img.getAttribute("data-shot");
+        img.src = `assets/screenshots/${currentLang}/${shotName}_${currentShotTheme}.jpeg`;
+      });
+      document.getElementById("shot-light-btn").classList.toggle("active", currentShotTheme === "light");
+      document.getElementById("shot-dark-btn").classList.toggle("active", currentShotTheme === "dark");
+    }
+
+    function setLanguage(lang) {
+      currentLang = lang === "en" ? "en" : "it";
+      document.documentElement.lang = currentLang;
+      const dict = translations[currentLang];
+      document.title = dict.page_title;
+
+      document.querySelectorAll("[data-i18n]").forEach((el) => {
+        const key = el.getAttribute("data-i18n");
+        if (dict[key]) {
+          el.innerHTML = dict[key];
+        }
+      });
+
+      document.getElementById("lang-it").classList.toggle("active", currentLang === "it");
+      document.getElementById("lang-en").classList.toggle("active", currentLang === "en");
+
+      updateThemeButtonLabel();
+      updateScreenshots();
+    }
+
+    function setShotTheme(mode) {
+      currentShotTheme = mode === "dark" ? "dark" : "light";
+      updateScreenshots();
+    }
+
+    function updateThemeButtonLabel() {
+      const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+      const dict = translations[currentLang];
+      document.getElementById("theme-icon").textContent = isDark ? "☀️" : "🌙";
+      document.getElementById("theme-label").textContent = isDark ? dict.theme_light : dict.theme_dark;
+    }
+
+    function toggleTheme() {
+      const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+      const nextTheme = isDark ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", nextTheme);
+      currentShotTheme = nextTheme;
+      updateThemeButtonLabel();
+      updateScreenshots();
+    }
+
+    function openLightbox(card) {
+      const img = card.querySelector("img");
+      if (!img) return;
+      const lightbox = document.getElementById("lightbox");
+      const lightboxImg = document.getElementById("lightbox-img");
+      lightboxImg.src = img.src;
+      lightboxImg.alt = img.alt;
+      lightbox.classList.add("open");
+    }
+
+    function closeLightbox() {
+      document.getElementById("lightbox").classList.remove("open");
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeLightbox();
+    });
+
+    // Auto-detect browser language on first load if non-Italian
+    if (navigator.language && !navigator.language.toLowerCase().startsWith("it")) {
+      setLanguage("en");
+    }
+  </script>
+</body>
+</html>
