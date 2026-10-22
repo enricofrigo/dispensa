@@ -67,6 +67,22 @@ android {
     lint {
         disable.add("UnsafeOptInUsageError")
     }
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+            all {
+                it.systemProperty(
+                    "fastlane.screenshots",
+                    project.findProperty("fastlane.screenshots") ?: "false"
+                )
+                it.systemProperty(
+                    "fastlane.output.dir",
+                    (project.findProperty("fastlane.output.dir")
+                        ?: rootProject.file("fastlane/metadata/android").absolutePath).toString()
+                )
+            }
+        }
+    }
 }
 
 dependencies {
@@ -104,6 +120,7 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.ext.junit)
     testImplementation(libs.robolectric)
+    testImplementation(libs.room.runtime)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
 
