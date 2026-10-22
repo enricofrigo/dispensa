@@ -1,0 +1,3 @@
+• correzione migrazione database dalla versione 0.1.14
+• miglioramenti e correzioni alla sincronizzazione e condivisione dispense via WebDAV
+• miglioramenti di stabilità nella sincronizzazione multi-dispositivo
