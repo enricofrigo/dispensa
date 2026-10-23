@@ -1,11 +1,34 @@
-Dispensa ti aiuta a gestire la tua dispensa in modo semplice ed efficiente.
+Tieni sempre sotto controllo cosa hai in cucina, riduci gli sprechi alimentari e risparmia tempo al supermercato con Dispensa!
 
-Funzionalità:
-• Aggiungi, modifica ed elimina articoli nella tua dispensa
-• Integrazione con Open Food Facts per recuperare automaticamente le informazioni sui prodotti
-• Ricevi notifiche per prodotti in scadenza
-• Location personalizzabili per organizzare al meglio i tuoi prodotti
-• Scansione barcode per aggiungere prodotti velocemente
-• Supporto italiano e inglese
+Dispensa è l'assistente gratuito, senza pubblicità e open-source pensato per aiutarti a organizzare frigo, freezer e dispensa in pochi secondi, da solo o insieme a tutta la famiglia.
 
-Evita sprechi alimentari e tieni sempre sotto controllo cosa hai in dispensa!
+🚀 AGGIUNGI PRODOTTI IN UN ISTANTE
+• Scanner Codice a Barre: inquadra il barcode per recuperare automaticamente nome e foto del prodotto grazie a Open Food Facts.
+• Scansione OCR della Scadenza: leggi la data di scadenza direttamente dall'etichetta con la fotocamera, senza digitarla a mano.
+• Consumo Rapido: usa lo scanner dedicato per scalare la quantità dei prodotti appena terminati.
+
+🔔 MAI PIÙ CIBO SCADUTO
+• Notifiche Intelligenti: ricevi un promemoria prima che gli alimenti scadano.
+• Apertura Confezione: imposta i giorni di validità dopo l'apertura (es. latte aperto da consumare entro 3 giorni) e lascia che l'app ricalcoli la scadenza per te.
+• Colpo d'occhio immediato: indicatori visivi chiari per distinguere subito i prodotti freschi, in scadenza (giallo) o scaduti (rosso).
+
+🗄️ ORGANIZZAZIONE SU MISURA
+• Posizioni Personalizzabili: suddividi i prodotti tra Dispensa, Frigo, Freezer, Cantina o crea i tuoi spazi personalizzati.
+• Categorie e Tag: etichetta gli alimenti (es. Latticini, Biologico, Senza Glutine) e cercali all'istante.
+
+🛒 LISTA DELLA SPESA INTEGRATA
+• Un prodotto è finito? Aggiungilo alla lista della spesa con un solo tocco.
+• Spunta gli articoli mentre fai acquisti e condividi la lista con chi vuoi.
+
+🔄 CONDIVISIONE IN FAMIGLIA (SENZA SERVER PROPRIETARI)
+Condividi una o più dispense su più telefoni scegliendo tu dove salvare i dati:
+• Google Drive
+• Server WebDAV (Nextcloud, ownCloud, ecc.)
+• Cartella Locale / Syncthing (SAF)
+Invita i tuoi familiari in un attimo facendo semplicemente inquadrare un QR Code crittografato!
+
+🔒 PRIVACY TOTALE & 100% GRATUITA
+• Funziona completamente offline: i tuoi dati restano sul tuo dispositivo.
+• Nessun account obbligatorio, nessun tracciamento, nessuna pubblicità e nessun abbonamento.
+• Backup completi: esporta e importa il tuo database quando vuoi.
+• Lingue supportate: Italiano, Inglese e Tedesco.
