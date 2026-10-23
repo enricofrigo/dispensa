@@ -1,11 +1,34 @@
-Dispensa helps you manage your pantry simply and efficiently.
+Always keep track of what you have in your kitchen, reduce food waste, and save time at the grocery store with Dispensa!
 
-Features:
-• Add, edit, and remove items from your pantry
-• Integration with Open Food Facts to automatically retrieve product information
-• Receive notifications for expiring products
-• Customizable locations to better organize your products
-• Barcode scan to quickly add products
-• Italian and English language support
+Dispensa is the free, ad-free, open-source assistant designed to help you organize your fridge, freezer, and pantry in seconds—on your own or synced across your whole household.
 
-Avoid food waste and always keep track of what you have in your pantry!
+🚀 ADD ITEMS IN SECONDS
+• Barcode Scanner: scan any barcode to automatically fetch product names and photos powered by Open Food Facts.
+• Expiry Date OCR: scan expiration dates straight from the package label with your camera instead of typing them manually.
+• Quick Consume Scanner: use the dedicated scanner to quickly decrease quantities as you finish products.
+
+🔔 NEVER WASTE FOOD AGAIN
+• Smart Reminders: get notified before your groceries expire.
+• Opened Package Tracking: set shelf-life days after opening (e.g., milk to be consumed within 3 days of opening) and let the app recalculate the expiry date automatically.
+• Clear Visual Status: color-coded cards make it effortless to spot fresh, expiring soon (yellow), or expired (red) items at a glance.
+
+🗄️ TAILORED ORGANIZATION
+• Customizable Locations: organize food across Pantry, Fridge, Freezer, Cellar, or create your own custom storage spots.
+• Categories & Tags: label your items (e.g., Dairy, Organic, Gluten-Free) and filter or search them in an instant.
+
+🛒 BUILT-IN SHOPPING LIST
+• Out of an ingredient? Move it to your shopping list with a single tap.
+• Check off items while shopping and share your list with anyone.
+
+🔄 FAMILY SYNC (NO PROPRIETARY SERVERS)
+Share one or multiple pantries across devices while staying in full control of where your data lives:
+• Google Drive
+• WebDAV servers (Nextcloud, ownCloud, etc.)
+• Local Folder / Syncthing (SAF)
+Invite family members in seconds simply by scanning an encrypted QR Code!
+
+🔒 PRIVACY FIRST & 100% FREE
+• Works completely offline: your data stays on your device.
+• No mandatory accounts, no tracking, no ads, and no subscriptions.
+• Full Backups: export and restore your database whenever you want.
+• Supported languages: English, Italian, and German.
