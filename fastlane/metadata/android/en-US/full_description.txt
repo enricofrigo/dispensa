@@ -32,3 +32,8 @@ Invite family members in seconds simply by scanning an encrypted QR Code!
 • No mandatory accounts, no tracking, no ads, and no subscriptions.
 • Full Backups: export and restore your database whenever you want.
 • Supported languages: English, Italian, and German.
+
+🤝 OPEN SOURCE & SUPPORT
+Dispensa is an evolving open-source project!
+Found a bug, have a feature request, or want to contribute?
+Report it on GitHub: github.com/enricofrigo/dispensa/issues

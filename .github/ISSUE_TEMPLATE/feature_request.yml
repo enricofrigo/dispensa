@@ -1,0 +1,20 @@
+name: "💡 Feature Request / Proposta Funzionalità"
+description: "Suggest an idea or improvement for Dispensa / Suggerisci un'idea o miglioramento."
+title: "[FEATURE]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: "Feature Description / Descrizione della funzionalità"
+      description: "What feature would you like to see and why would it be useful? / Quale funzione vorresti e perché?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternative
+    attributes:
+      label: "Alternatives Considered / Alternative considerate"
+      description: "Have you considered any alternative solutions? / Hai pensato a soluzioni alternative?"
+    validations:
+      required: false
