@@ -32,3 +32,8 @@ Invita i tuoi familiari in un attimo facendo semplicemente inquadrare un QR Code
 • Nessun account obbligatorio, nessun tracciamento, nessuna pubblicità e nessun abbonamento.
 • Backup completi: esporta e importa il tuo database quando vuoi.
 • Lingue supportate: Italiano, Inglese e Tedesco.
+
+🤝 OPEN SOURCE & SUPPORTO
+Dispensa è un progetto open-source in continua evoluzione!
+Hai trovato un bug, vuoi proporre una nuova funzionalità o contribuire?
+Segnalalo su GitHub: github.com/enricofrigo/dispensa/issues
