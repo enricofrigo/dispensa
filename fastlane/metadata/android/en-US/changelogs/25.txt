@@ -1,3 +1,1 @@
-• Fix database migration from v0.1.14
-• Fix and improve WebDAV pantry synchronization and sharing
-• Multi-device sync stability improvements
+

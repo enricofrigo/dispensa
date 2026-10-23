@@ -1,0 +1,2 @@
+json_key_file(ENV["PLAY_JSON_KEY_FILE"] || "dispensa-491717-bef9cbd48656.json")
+package_name("eu.frigo.dispensa")
