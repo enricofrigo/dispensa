@@ -121,6 +121,17 @@ public class FastlaneScreenshotsTest {
         instanceField.set(null, null);
     }
 
+    private void initializeMlKitIfAvailable(Context context) {
+        try {
+            Class<?> mlKitContextClass = Class.forName("com.google.mlkit.common.sdkinternal.MlKitContext");
+            Method zza = mlKitContextClass.getDeclaredMethod("zza", Context.class);
+            zza.setAccessible(true);
+            zza.invoke(null, context);
+        } catch (Throwable ignored) {
+            // ML Kit is only present in the 'play' flavor
+        }
+    }
+
     private void prepareEnvironment(String languageCode, boolean isItalian, boolean isDark) {
         Application app = ApplicationProvider.getApplicationContext();
         Locale locale = new Locale(languageCode);
@@ -131,6 +142,7 @@ public class FastlaneScreenshotsTest {
         );
 
         SyncFlavorInitializer.initialize(app);
+        initializeMlKitIfAvailable(app);
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(app);
         prefs.edit()
@@ -456,6 +468,33 @@ public class FastlaneScreenshotsTest {
             controller.setup();
             waitForAsyncTasks();
             captureActivity(controller.get(), fastlaneLocaleDir, "12_consume_scanner_activity_" + themeSuffix + ".jpeg");
+        }
+
+        // 13. SyncGDriveConfigActivity (Play flavor only)
+        try {
+            @SuppressWarnings("unchecked")
+            Class<? extends Activity> gdriveClass = (Class<? extends Activity>) Class.forName(
+                    "eu.frigo.dispensa.activity.SyncGDriveConfigActivity"
+            );
+            try (ActivityController<? extends Activity> controller = Robolectric.buildActivity(gdriveClass)) {
+                controller.setup();
+                waitForAsyncTasks();
+                Activity act = controller.get();
+                TextView tvStatus = act.findViewById(R.id.tv_gdrive_status);
+                View btnSignIn = act.findViewById(R.id.btn_gdrive_sign_in);
+                View btnSignOut = act.findViewById(R.id.btn_gdrive_sign_out);
+                View btnSave = act.findViewById(R.id.btn_save_gdrive_config);
+                if (tvStatus != null) {
+                    tvStatus.setText(act.getString(R.string.sync_gdrive_connected_as, "mario.rossi@gmail.com"));
+                }
+                if (btnSignIn != null) btnSignIn.setVisibility(View.GONE);
+                if (btnSignOut != null) btnSignOut.setVisibility(View.VISIBLE);
+                if (btnSave != null) btnSave.setEnabled(true);
+                waitForAsyncTasks();
+                captureActivity(act, fastlaneLocaleDir, "13_sync_gdrive_config_activity_" + themeSuffix + ".jpeg");
+            }
+        } catch (ClassNotFoundException ignored) {
+            // Expected when running on the fdroid flavor
         }
     }
 

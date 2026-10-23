@@ -1,7 +1,17 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
 }
+
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties().apply {
+    if (keystorePropertiesFile.exists()) {
+        keystorePropertiesFile.inputStream().use { load(it) }
+    }
+}
+
 android {
     namespace = "eu.frigo.dispensa"
     compileSdk = 36
@@ -33,6 +43,31 @@ android {
     }
 
 
+    val releaseStoreFilePath = keystoreProperties.getProperty("storeFile")
+        ?: System.getenv("RELEASE_STORE_FILE")
+        ?: "../sign.jks"
+    val releaseStoreFile = rootProject.file(releaseStoreFilePath)
+    val releaseStorePassword = keystoreProperties.getProperty("storePassword")
+        ?: System.getenv("RELEASE_STORE_PASSWORD")
+    val releaseKeyAlias = keystoreProperties.getProperty("keyAlias")
+        ?: System.getenv("RELEASE_KEY_ALIAS")
+        ?: "key0"
+    val releaseKeyPassword = keystoreProperties.getProperty("keyPassword")
+        ?: System.getenv("RELEASE_KEY_PASSWORD")
+        ?: releaseStorePassword
+    val hasReleaseSigning = releaseStoreFile.exists() && !releaseStorePassword.isNullOrBlank()
+
+    if (hasReleaseSigning) {
+        signingConfigs {
+            create("release") {
+                storeFile = releaseStoreFile
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
@@ -46,6 +81,12 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+            ndk {
+                debugSymbolLevel = "FULL"
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

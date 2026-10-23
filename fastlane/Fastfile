@@ -1,0 +1,33 @@
+default_platform(:android)
+
+platform :android do
+  desc "Deploy or validate a Play Store release (default track: internal)"
+  lane :play_deploy do |options|
+    aab_path = options[:aab] || "app/build/outputs/bundle/playRelease/app-play-release.aab"
+    mapping_path = options[:mapping] || "app/build/outputs/mapping/playRelease/mapping.txt"
+    track = options[:track] || "internal"
+    validate_only = options[:validate_only].to_s == "true"
+    metadata_path = options[:metadata_path] || "fastlane/metadata/android"
+    skip_screenshots = options[:skip_screenshots].to_s == "true"
+
+    supply_args = {
+      package_name: "eu.frigo.dispensa",
+      json_key: ENV["PLAY_JSON_KEY_FILE"] || "dispensa-491717-bef9cbd48656.json",
+      track: track,
+      aab: aab_path,
+      metadata_path: metadata_path,
+      skip_upload_apk: true,
+      skip_upload_metadata: false,
+      skip_upload_changelogs: false,
+      skip_upload_images: true,
+      skip_upload_screenshots: skip_screenshots,
+      validate_only: validate_only
+    }
+
+    if File.exist?(mapping_path)
+      supply_args[:mapping] = mapping_path
+    end
+
+    supply(supply_args)
+  end
+end
