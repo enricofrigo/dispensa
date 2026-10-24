@@ -1,5 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="product_default_background">#121212</color>
-    <color name="product_default_stroke">#333333</color>
+    <!-- Opzione A: Salvia & Terracotta (Dark Mode) -->
+    <!-- Primary (Verde Menta Pastello) -->
+    <color name="md_theme_primary">#95D5B2</color>
+    <color name="md_theme_onPrimary">#003822</color>
+    <color name="md_theme_primaryContainer">#1B4332</color>
+    <color name="md_theme_onPrimaryContainer">#B7E4C7</color>
+
+    <!-- Secondary (Ambra / Terracotta Caldo) -->
+    <color name="md_theme_secondary">#F4A261</color>
+    <color name="md_theme_onSecondary">#442407</color>
+    <color name="md_theme_secondaryContainer">#5C3418</color>
+    <color name="md_theme_onSecondaryContainer">#FFDBD0</color>
+
+    <!-- Tertiary -->
+    <color name="md_theme_tertiary">#A5CCDF</color>
+    <color name="md_theme_onTertiary">#073543</color>
+    <color name="md_theme_tertiaryContainer">#244C5A</color>
+    <color name="md_theme_onTertiaryContainer">#C1E8FB</color>
+
+    <!-- Background & Surface -->
+    <color name="md_theme_background">#111613</color>
+    <color name="md_theme_onBackground">#E1E3DF</color>
+    <color name="md_theme_surface">#1A211D</color>
+    <color name="md_theme_onSurface">#E1E3DF</color>
+    <color name="md_theme_surfaceVariant">#414943</color>
+    <color name="md_theme_onSurfaceVariant">#C1C9C3</color>
+    <color name="md_theme_outline">#8B938D</color>
+    <color name="md_theme_outlineVariant">#414943</color>
+
+    <!-- Colori Semafórici Scadenze (Dark Mode) -->
+    <!-- Scaduto (Error) -->
+    <color name="product_expired_text">#FF8A80</color> <!-- Corallo luminoso ad alto contrasto su scuro -->
+    <color name="product_expired_stroke">#E53935</color> <!-- Bordo rosso vivo -->
+    <color name="product_expired_background">#2C1212</color> <!-- Sfondo rosso scuro tenue -->
+
+    <!-- In Scadenza (Warning) -->
+    <color name="product_expiring_soon_text">#FFE082</color> <!-- Giallo ambrato luminoso ad alto contrasto su scuro -->
+    <color name="product_expiring_soon_stroke">#FFB300</color> <!-- Bordo giallo ambrato vivo -->
+    <color name="product_expiring_soon_background">#2A1F05</color> <!-- Sfondo ambra scuro tenue -->
+
+    <!-- Prodotto Regolare / Default -->
+    <color name="product_default_stroke">#2E3832</color>
+    <color name="product_default_background">#1A211D</color>
+    <color name="grey_text">#A3AEA7</color>
+    <color name="selected_item_background">#1B4332</color>
+
+    <!-- Base Constants & Legacy Aliases -->
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="purple_200">#1B4332</color>
+    <color name="purple_500">#95D5B2</color>
+    <color name="purple_700">#1B4332</color>
+    <color name="teal_200">#F4A261</color>
+    <color name="teal_700">#F4A261</color>
 </resources>
