@@ -731,8 +731,8 @@ public class MainActivity extends AppCompatActivity
 
         if (shoppingBadge == null) {
             shoppingBadge = BadgeDrawable.create(this);
-            shoppingBadge.setBackgroundColor(ContextCompat.getColor(this, R.color.product_expired_stroke));
-            shoppingBadge.setBadgeTextColor(ContextCompat.getColor(this, R.color.white));
+            shoppingBadge.setBackgroundColor(ContextCompat.getColor(this, R.color.md_theme_secondary));
+            shoppingBadge.setBadgeTextColor(ContextCompat.getColor(this, R.color.md_theme_onSecondary));
             shoppingBadge.setHorizontalOffset(12);
             shoppingBadge.setVerticalOffset(12);
         }

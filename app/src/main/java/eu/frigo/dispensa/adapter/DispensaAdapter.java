@@ -126,22 +126,25 @@ public class DispensaAdapter extends ListAdapter<Dispensa, DispensaAdapter.Dispe
                 imageViewProviderIcon.setVisibility(View.GONE);
             }
 
-            if (dispensa.id == currentDispensaId) {
-                itemView.setBackgroundColor(ContextCompat.getColor(itemView.getContext(), R.color.selected_item_background));
-            } else {
-                itemView.setBackgroundColor(ContextCompat.getColor(itemView.getContext(), android.R.color.transparent));
+            if (itemView instanceof com.google.android.material.card.MaterialCardView) {
+                com.google.android.material.card.MaterialCardView card = (com.google.android.material.card.MaterialCardView) itemView;
+                if (dispensa.id == currentDispensaId) {
+                    card.setCardBackgroundColor(ContextCompat.getColor(itemView.getContext(), R.color.selected_item_background));
+                    card.setStrokeColor(ContextCompat.getColor(itemView.getContext(), R.color.md_theme_primary));
+                    card.setStrokeWidth(4);
+                } else {
+                    card.setCardBackgroundColor(ContextCompat.getColor(itemView.getContext(), R.color.md_theme_surface));
+                    card.setStrokeColor(ContextCompat.getColor(itemView.getContext(), R.color.md_theme_outlineVariant));
+                    card.setStrokeWidth(2);
+                }
             }
 
-            android.util.TypedValue typedValue = new android.util.TypedValue();
-            itemView.getContext().getTheme().resolveAttribute(androidx.appcompat.R.attr.colorControlNormal, typedValue, true);
-            int colorSelected = (typedValue.resourceId != 0)
-                    ? ContextCompat.getColor(itemView.getContext(), typedValue.resourceId)
-                    : typedValue.data;
-
             if (dispensa.isDefault()) {
-                buttonDefault.setImageTintList(android.content.res.ColorStateList.valueOf(colorSelected));
+                buttonDefault.setImageTintList(android.content.res.ColorStateList.valueOf(
+                        ContextCompat.getColor(itemView.getContext(), R.color.md_theme_primary)));
             } else {
-                buttonDefault.setImageTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.GRAY));
+                buttonDefault.setImageTintList(android.content.res.ColorStateList.valueOf(
+                        ContextCompat.getColor(itemView.getContext(), R.color.md_theme_outline)));
             }
 
             itemView.setOnClickListener(v -> listener.onDispensaClick(dispensa));

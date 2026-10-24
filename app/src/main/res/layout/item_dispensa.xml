@@ -2,102 +2,163 @@
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/cardDispensaItem"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="4dp"
-    app:cardElevation="2dp"
-    app:cardCornerRadius="8dp">
+    android:layout_marginHorizontal="8dp"
+    android:layout_marginVertical="4dp"
+    app:cardElevation="1dp"
+    app:cardCornerRadius="12dp"
+    app:strokeWidth="1dp"
+    app:strokeColor="?attr/colorOutlineVariant"
+    app:cardBackgroundColor="?attr/colorSurface">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="16dp"
-        android:gravity="center_vertical">
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="8dp">
 
+        <!-- RIGA 1: Header (Icona dispensa + Nome & Proprietario + Pulsante Stella Default) -->
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginEnd="12dp"
+                android:src="@drawable/pantry_24px"
+                app:tint="?attr/colorPrimary"
+                android:contentDescription="@null" />
 
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+                android:layout_weight="1"
+                android:orientation="vertical">
 
                 <TextView
                     android:id="@+id/textViewDispensaName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="17sp"
+                    android:textStyle="bold"
+                    android:textColor="?attr/colorOnSurface"
+                    android:maxLines="2"
+                    android:ellipsize="end"
+                    tools:text="Dispensa Principale Casa" />
+
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:text="@string/dispensa_name" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="2dp">
 
-                <ImageView
-                    android:id="@+id/imageViewProviderIcon"
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:layout_marginStart="8dp"
-                    android:src="@drawable/ic_provider_webdav"
-                    app:tint="?attr/colorPrimary"
-                    android:visibility="gone"
-                    tools:visibility="visible"
-                    android:contentDescription="@string/pref_sync_provider_title" />
+                    <ImageView
+                        android:id="@+id/imageViewProviderIcon"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_marginEnd="6dp"
+                        android:src="@drawable/ic_provider_webdav"
+                        app:tint="?attr/colorPrimary"
+                        android:visibility="gone"
+                        tools:visibility="visible"
+                        android:contentDescription="@string/pref_sync_provider_title" />
+
+                    <TextView
+                        android:id="@+id/textViewOwnerName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="12sp"
+                        android:textColor="?attr/colorOutline"
+                        android:visibility="gone"
+                        tools:text="Proprietario: Pixel 8"
+                        tools:visibility="visible" />
+
+                </LinearLayout>
 
             </LinearLayout>
 
-            <TextView
-                android:id="@+id/textViewOwnerName"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="14sp"
-                android:textColor="@android:color/darker_gray"
-                android:visibility="gone"
-                tools:text="Proprietario: Pixel 8"
-                tools:visibility="visible" />
+            <ImageButton
+                android:id="@+id/buttonDefault"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:padding="10dp"
+                android:scaleType="fitCenter"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_default_select"
+                android:contentDescription="@string/set_as_default" />
 
         </LinearLayout>
 
-        <ImageButton
-            android:id="@+id/buttonDefault"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_default_select"
-            android:contentDescription="@string/set_as_default" />
+        <!-- Divider sottile tra riga intestazione e riga azioni -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="2dp"
+            android:background="?attr/colorOutlineVariant"
+            android:alpha="0.4" />
 
-        <ImageButton
-            android:id="@+id/buttonShare"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_share_24"
-            android:contentDescription="@string/action_share" />
+        <!-- RIGA 2: Azioni secondarie allineate a destra (Condividi, Dispositivi, Modifica, Elimina) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end|center_vertical">
 
-        <ImageButton
-            android:id="@+id/buttonDevices"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_devices_24" />
+            <ImageButton
+                android:id="@+id/buttonShare"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:padding="8dp"
+                android:scaleType="fitCenter"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_share_24"
+                app:tint="?attr/colorOnSurfaceVariant"
+                android:contentDescription="@string/action_share" />
 
-        <ImageButton
-            android:id="@+id/buttonEdit"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/edit_24px"
-            android:contentDescription="@string/edit" />
+            <ImageButton
+                android:id="@+id/buttonDevices"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:padding="8dp"
+                android:scaleType="fitCenter"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_devices_24"
+                app:tint="?attr/colorOnSurfaceVariant"
+                android:contentDescription="@string/pref_cat_device_title" />
 
-        <ImageButton
-            android:id="@+id/buttonDelete"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_delete_24"
-            android:contentDescription="@string/delete" />
+            <ImageButton
+                android:id="@+id/buttonEdit"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:padding="8dp"
+                android:scaleType="fitCenter"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/edit_24px"
+                app:tint="?attr/colorOnSurfaceVariant"
+                android:contentDescription="@string/edit" />
+
+            <ImageButton
+                android:id="@+id/buttonDelete"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:padding="8dp"
+                android:scaleType="fitCenter"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_delete_24"
+                app:tint="?attr/colorError"
+                android:contentDescription="@string/delete" />
+
+        </LinearLayout>
 
     </LinearLayout>
 

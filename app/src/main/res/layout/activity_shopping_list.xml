@@ -18,7 +18,7 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             app:navigationIcon="?attr/homeAsUpIndicator"
-            app:popupTheme="@style/ThemeOverlay.AppCompat.DayNight" />
+            app:popupTheme="@style/ThemeOverlay.Material3" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -59,39 +59,69 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:cardElevation="8dp"
-            app:cardCornerRadius="0dp">
+            app:cardCornerRadius="0dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="?attr/colorOutlineVariant"
+            app:cardBackgroundColor="?attr/colorSurface">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:padding="8dp"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="12dp"
                 android:gravity="center_vertical">
 
-                <EditText
-                    android:id="@+id/editTextItemName"
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/layoutItemName"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:hint="@string/hint_product_name"
-                    android:inputType="textCapSentences" />
+                    android:hint="@string/hint_product_name">
 
-                <EditText
-                    android:id="@+id/editTextItemQuantity"
-                    android:layout_width="60dp"
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/editTextItemName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textCapSentences"
+                        android:maxLines="1" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/layoutItemQuantity"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+                    android:layout_width="72dp"
                     android:layout_height="wrap_content"
-                    android:hint="@string/quantity_hint"
-                    android:gravity="center"
-                    android:inputType="number"
-                    android:text="1" />
+                    android:layout_marginStart="8dp"
+                    android:hint="@string/quantity_hint">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/editTextItemQuantity"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:inputType="number"
+                        android:text="1"
+                        android:maxLines="1" />
+
+                </com.google.android.material.textfield.TextInputLayout>
 
                 <ImageButton
                     android:id="@+id/buttonAddItem"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="8dp"
+                    android:padding="12dp"
+                    android:scaleType="fitCenter"
+                    android:background="@drawable/bg_btn_add_item"
                     android:src="@drawable/ic_add_24"
+                    app:tint="?attr/colorOnPrimary"
                     android:contentDescription="@string/add" />
+
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

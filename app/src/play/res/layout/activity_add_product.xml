@@ -17,7 +17,7 @@
             android:id="@+id/toolbar_add_product"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:popupTheme="@style/ThemeOverlay.AppCompat.DayNight" />
+            app:popupTheme="@style/ThemeOverlay.Material3" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -28,7 +28,7 @@
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
         android:fillViewport="true"
         android:clipToPadding="false"
-        android:paddingBottom="80dp">
+        android:paddingBottom="112dp">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -253,18 +253,13 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:minHeight="48dp" />
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="@string/hint_category_tags"
-                android:textAppearance="?attr/textAppearanceSubtitle1"/>
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:gravity="center_vertical"
+                android:layout_marginTop="16dp">
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/layoutShelfLife"
@@ -309,6 +304,13 @@
                 android:layout_height="wrap_content"
                 android:text="@string/open_date_nd"
                 android:visibility="gone" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/hint_category_tags"
+                android:textAppearance="?attr/textAppearanceSubtitle1"/>
 
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/chipGroupCategories"
@@ -377,6 +379,9 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_marginTop="24dp"
+        app:backgroundTint="?attr/colorSecondary"
+        android:textColor="?attr/colorOnSecondary"
+        app:iconTint="?attr/colorOnSecondary"
         android:text="@string/save_product_button"/>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

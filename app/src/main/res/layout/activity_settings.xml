@@ -17,7 +17,7 @@
             android:id="@+id/toolbar_settings"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:popupTheme="@style/ThemeOverlay.AppCompat.DayNight" />
+            app:popupTheme="@style/ThemeOverlay.Material3" />
 
     </com.google.android.material.appbar.AppBarLayout>
 

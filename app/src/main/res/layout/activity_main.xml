@@ -16,7 +16,7 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:popupTheme="@style/ThemeOverlay.AppCompat.DayNight">
+            app:popupTheme="@style/ThemeOverlay.Material3">
 
             <LinearLayout
                 android:id="@+id/layout_dispensa_title"
@@ -126,6 +126,8 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="16dp"
             android:contentDescription="@string/add_new_product"
+            app:backgroundTint="?attr/colorSecondary"
+            app:tint="?attr/colorOnSecondary"
             app:srcCompat="@drawable/ic_add_24" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -134,6 +136,8 @@
             android:layout_height="wrap_content"
             android:contentDescription="@string/consume_scan_description"
             app:fabSize="mini"
+            app:backgroundTint="?attr/colorSecondaryContainer"
+            app:tint="?attr/colorOnSecondaryContainer"
             app:srcCompat="@drawable/ic_remove_24" />
 
     </LinearLayout>
