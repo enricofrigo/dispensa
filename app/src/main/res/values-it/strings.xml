@@ -36,6 +36,8 @@
     <string name="err_quantity_valid">Inserisci un numero valido per la quantità</string>
     <string name="expiry_date_hint">Data di Scadenza</string>
     <string name="save_product_button">Salva Prodotto</string>
+    <string name="btn_save_and_add_another_expiry">+ Altra scadenza</string>
+    <string name="batch_saved_snackbar">Lotto %1$d salvato per %2$s! Inserisci la nuova data.</string>
     <string name="quantity_label">Quantità: %d</string>
     <string name="expiry_date_label">Scadenza: %s</string>
     <string name="expiry_date_mandatory">La data di scadenza è obbligatoria</string>

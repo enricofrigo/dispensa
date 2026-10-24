@@ -36,6 +36,8 @@
     <string name="err_quantity_valid">Geben Sie eine gültige Anzahl ein</string>
     <string name="expiry_date_hint">Verfallsdatum</string>
     <string name="save_product_button">Produkt speichern</string>
+    <string name="btn_save_and_add_another_expiry">+ Weiteres Datum</string>
+    <string name="batch_saved_snackbar">Charge %1$d für %2$s gespeichert! Nächstes Datum eingeben.</string>
     <string name="quantity_label">Anzahl: %d</string>
     <string name="expiry_date_label">Verfallsdatum: %s</string>
     <string name="expiry_date_mandatory">Verfallsdatum ist erforderlich</string>

@@ -373,15 +373,40 @@
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-        android:id="@+id/buttonSaveProduct"
+    <LinearLayout
+        android:id="@+id/layout_bottom_actions"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_marginTop="24dp"
-        app:backgroundTint="?attr/colorSecondary"
-        android:textColor="?attr/colorOnSecondary"
-        app:iconTint="?attr/colorOnSecondary"
-        android:text="@string/save_product_button"/>
+        android:layout_gravity="bottom"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="16dp"
+        android:clipToPadding="false"
+        android:background="@android:color/transparent">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonSaveAndAddAnotherExpiry"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="0dp"
+            android:layout_height="56dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            app:icon="@drawable/ic_add_24"
+            app:iconGravity="textStart"
+            android:text="@string/btn_save_and_add_another_expiry" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonSaveProduct"
+            style="@style/Widget.Material3.Button"
+            android:layout_width="0dp"
+            android:layout_height="56dp"
+            android:layout_weight="1"
+            app:backgroundTint="?attr/colorSecondary"
+            android:textColor="?attr/colorOnSecondary"
+            app:iconTint="?attr/colorOnSecondary"
+            android:text="@string/save_product_button" />
+
+    </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
