@@ -127,7 +127,7 @@ public class DispensaAdapter extends ListAdapter<Dispensa, DispensaAdapter.Dispe
             }
 
             if (dispensa.id == currentDispensaId) {
-                itemView.setBackgroundColor(ContextCompat.getColor(itemView.getContext(), R.color.purple_200));
+                itemView.setBackgroundColor(ContextCompat.getColor(itemView.getContext(), R.color.selected_item_background));
             } else {
                 itemView.setBackgroundColor(ContextCompat.getColor(itemView.getContext(), android.R.color.transparent));
             }

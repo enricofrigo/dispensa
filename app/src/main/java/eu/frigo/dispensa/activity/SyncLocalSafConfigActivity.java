@@ -102,7 +102,7 @@ public class SyncLocalSafConfigActivity extends AppCompatActivity {
     private void updateUi() {
         if (selectedTreeUri != null) {
             statusTextView.setText(R.string.sync_status_connected);
-            statusTextView.setTextColor(getColor(R.color.teal_700));
+            statusTextView.setTextColor(getColor(R.color.md_theme_primary));
             folderPathTextView.setText(selectedTreeUri.toString());
             testPermissionsButton.setEnabled(true);
             clearFolderButton.setEnabled(true);

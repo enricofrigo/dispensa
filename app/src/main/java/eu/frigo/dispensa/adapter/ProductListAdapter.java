@@ -168,7 +168,7 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
 
                 // Stato 1: Scaduto
                 if (product.product.getActualExpiryTimestamp() < todayTimestamp) {
-                    textViewExpiryDate.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.product_expired_stroke));
+                    textViewExpiryDate.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.product_expired_text));
                     if (cardProductItem != null) {
                         cardProductItem.setStrokeColor(ContextCompat.getColor(itemView.getContext(), R.color.product_expired_stroke));
                         cardProductItem.setStrokeWidth(itemView.getResources().getDimensionPixelSize(R.dimen.card_stroke_width_highlighted)); // Definisci questa dimen
@@ -176,7 +176,7 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
                 }
                 // Stato 2: In scadenza a breve
                 else if (product.product.getActualExpiryTimestamp() <= warningTimestamp) {
-                    textViewExpiryDate.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.product_expiring_soon_stroke));
+                    textViewExpiryDate.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.product_expiring_soon_text));
                     if (cardProductItem != null) {
                         cardProductItem.setStrokeColor(ContextCompat.getColor(itemView.getContext(), R.color.product_expiring_soon_stroke));
                         cardProductItem.setStrokeWidth(itemView.getResources().getDimensionPixelSize(R.dimen.card_stroke_width_highlighted));

@@ -39,7 +39,7 @@
                 android:id="@+id/banner_open_food_facts"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@color/purple_200"
+                android:background="@color/md_theme_primaryContainer"
                 android:orientation="horizontal"
                 android:visibility="gone"
                 android:padding="8dp">
