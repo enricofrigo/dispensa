@@ -38,6 +38,15 @@
         <!-- Legacy attributes -->
         <item name="colorPrimaryVariant">#95D5B2</item>
         <item name="colorSecondaryVariant">#F4A261</item>
+        <item name="colorAccent">@color/md_theme_secondary</item>
+        <item name="android:colorAccent">@color/md_theme_secondary</item>
+
+        <!-- Popup and Floating menus (Material 3 surface mapping) -->
+        <item name="colorBackgroundFloating">@color/md_theme_surface</item>
+        <item name="popupMenuBackground">@color/md_theme_surface</item>
+        <item name="actionOverflowMenuStyle">@style/Widget.Material3.PopupMenu.Overflow</item>
+        <item name="popupMenuStyle">@style/Widget.Material3.PopupMenu</item>
+        <item name="actionBarPopupTheme">@style/ThemeOverlay.Material3</item>
 
         <item name="appIconColor">@color/white</item>
 
