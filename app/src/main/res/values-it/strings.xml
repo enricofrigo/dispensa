@@ -118,7 +118,8 @@ I prodotti in questo deposito potrebbero dover essere riassegnati.</string>
     <string name="expiring_products_notification_title">Prodotti in Scadenza %d</string>
 
     <!-- Preferences -->
-    <string name="pref_cat_expiry_title">Notifiche</string>
+    <string name="pref_cat_general_title">Aspetto e Generale</string>
+    <string name="pref_cat_expiry_title">Scadenze e Notifiche</string>
     <string name="pref_cat_device_title">Dispositivo</string>
     <string name="pref_device_name_title">Nome Dispositivo</string>
     <string name="pref_device_name_summary">Nome di questo dispositivo per la condivisione</string>
@@ -150,7 +151,7 @@ I prodotti in questo deposito potrebbero dover essere riassegnati.</string>
     <string name="language_english">Inglese</string>
     <string name="language_italian">Italiano</string>
 
-    <string name="pref_cat_data_title">Cache e Integrazioni</string>
+    <string name="pref_cat_data_title">Dati e Avanzate</string>
     <string name="notify_clean_images_done">Eliminate %d immagini orfane</string>
     <string name="err_api">Impossibile caricare i dati dalle API, abilitare le API Open Food Fact!</string>
 
@@ -163,6 +164,8 @@ I prodotti in questo deposito potrebbero dover essere riassegnati.</string>
     <string name="pref_off_cache_clear_summary">Cancella tutti i dati e le immagini offline</string>
     <string name="notify_cache_cleared">Cache svuotata con successo</string>
     <string name="notify_loaded_from_cache">Caricato dalla cache offline</string>
+    <string name="pref_installation_id_title">ID Installazione</string>
+    <string name="installation_id_copied">ID installazione copiato negli appunti</string>
 
     <!--Dfault Location -->
     <string name="default_location_pantry_entry">Dispensa</string>
@@ -220,7 +223,7 @@ I prodotti in questo deposito potrebbero dover essere riassegnati.</string>
     <string name="shopping_list_quantity">x%d</string>
     <string name="action_share">Condividi</string>
     <string name="share_shopping_list_title">Lista della spesa</string>
-    <string name="pref_cat_sync_title">Condividi su Cloud</string>
+    <string name="pref_cat_sync_title">Sincronizzazione e Condivisione</string>
     <string name="pref_sync_enabled_title">Abilita la sincronizzazione Cloud Sync</string>
     <string name="pref_sync_enabled_summary">Sincronizza la tua dispensa su tutti i dispositivi</string>
     <string name="pref_sync_provider_title">Provider di sincronizzazione</string>
