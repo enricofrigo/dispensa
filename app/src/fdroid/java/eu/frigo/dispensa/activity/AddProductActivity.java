@@ -26,6 +26,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
@@ -41,9 +42,10 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.preference.PreferenceManager;
 
 import com.bumptech.glide.Glide;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
-import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.zxing.InvertedLuminanceSource;
 import com.journeyapps.barcodescanner.BarcodeCallback;
@@ -127,6 +129,8 @@ public class AddProductActivity extends AppCompatActivity {
     private TextView textViewOpenedDate;
     private Long currentOpenedDate = 0L;
     private int currentShelfLifeDays = -1;
+    private int savedBatchesCount = 0;
+    private String lastSavedProductName = "";
 
     public static final String EXTRA_PRODUCT_ID = "PRODUCT_ID";
     public static final String EXTRA_PRODUCT_NAME = "PRODUCT_NAME";
@@ -192,7 +196,9 @@ public class AddProductActivity extends AppCompatActivity {
 
         View rootLayout = findViewById(R.id.add_product_root_layout);
         View nestedScrollView = findViewById(R.id.add_product_nested_scroll);
-        final ExtendedFloatingActionButton finalFab = findViewById(R.id.buttonSaveProduct);
+        final View bottomActionsLayout = findViewById(R.id.layout_bottom_actions);
+        final MaterialButton buttonSaveProduct = findViewById(R.id.buttonSaveProduct);
+        final MaterialButton buttonSaveAndAddAnotherExpiry = findViewById(R.id.buttonSaveAndAddAnotherExpiry);
 
         ViewCompat.setOnApplyWindowInsetsListener(rootLayout, (v, windowInsets) -> {
             Insets systemBars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -206,19 +212,31 @@ public class AddProductActivity extends AppCompatActivity {
                         nestedScrollView.getPaddingTop(),
                         nestedScrollView.getPaddingRight(),
                         Math.max(systemBars.bottom, ime.bottom)
-                                + (int) (80 * getResources().getDisplayMetrics().density)
+                                + (int) (88 * getResources().getDisplayMetrics().density)
                 );
             }
 
-            if (finalFab != null) {
+            if (bottomActionsLayout != null) {
                 ViewGroup.MarginLayoutParams lp =
-                        (ViewGroup.MarginLayoutParams) finalFab.getLayoutParams();
-                lp.bottomMargin = Math.max(systemBars.bottom, ime.bottom)
-                        + (int) (16 * getResources().getDisplayMetrics().density);
-                finalFab.setLayoutParams(lp);
+                        (ViewGroup.MarginLayoutParams) bottomActionsLayout.getLayoutParams();
+                lp.bottomMargin = Math.max(systemBars.bottom, ime.bottom);
+                bottomActionsLayout.setLayoutParams(lp);
             }
 
             return windowInsets;
+        });
+
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (savedBatchesCount > 0) {
+                    Intent resultIntent = new Intent();
+                    resultIntent.putExtra(NEW_PRODUCT_NAME, lastSavedProductName);
+                    resultIntent.putExtra(NEW_PRODUCT_EDIT, false);
+                    setResult(RESULT_OK, resultIntent);
+                }
+                finish();
+            }
         });
 
         initializeZXingReader();  // reader per galleria
@@ -361,7 +379,8 @@ public class AddProductActivity extends AppCompatActivity {
             if (getSupportActionBar() != null) {
                 getSupportActionBar().setTitle(getString(R.string.edit_product));
             }
-            finalFab.setText(getString(R.string.update_product));
+            buttonSaveAndAddAnotherExpiry.setVisibility(GONE);
+            buttonSaveProduct.setText(getString(R.string.update_product));
             observeProductForEditMode();
             buttonScanBarcodeGallery.setVisibility(GONE);
             buttonScanBarcodeCamera.setVisibility(GONE);
@@ -372,7 +391,8 @@ public class AddProductActivity extends AppCompatActivity {
             if (getSupportActionBar() != null) {
                 getSupportActionBar().setTitle(getString(R.string.add_product_title));
             }
-            finalFab.setText(getString(R.string.save_product_button));
+            buttonSaveAndAddAnotherExpiry.setVisibility(View.VISIBLE);
+            buttonSaveProduct.setText(getString(R.string.save_product_button));
             editTextQuantity.setText(DEFAULT_QUANTITY);
             editTextQuantity.setSelection(Objects.requireNonNull(editTextQuantity.getText()).length());
 
@@ -453,7 +473,8 @@ public class AddProductActivity extends AppCompatActivity {
             updateOpenedDateUI(currentOpenedDate);
         });
 
-        finalFab.setOnClickListener(v -> saveOrUpdateProduct());
+        buttonSaveProduct.setOnClickListener(v -> saveOrUpdateProduct(false));
+        buttonSaveAndAddAnotherExpiry.setOnClickListener(v -> saveOrUpdateProduct(true));
 
         if (!openFoodFactsApiEnabled) {
             // Se OFF è disabilitato, ha senso nascondere anche lo scanner
@@ -1141,7 +1162,7 @@ public class AddProductActivity extends AppCompatActivity {
         }
     }
 
-    private void saveOrUpdateProduct() {
+    private void saveOrUpdateProduct(boolean addAnotherExpiry) {
         String barcode = editTextBarcode.getText() != null
                 ? editTextBarcode.getText().toString().trim() : "";
         String name = editTextProductName.getText() != null
@@ -1176,6 +1197,7 @@ public class AddProductActivity extends AppCompatActivity {
                 return;
             }
             barcode = "dsp-" + System.currentTimeMillis();
+            editTextBarcode.setText(barcode);
         }
         if (quantityStr.isEmpty()) {
             editTextQuantity.setError(getString(R.string.quantity_mandatory));
@@ -1198,7 +1220,7 @@ public class AddProductActivity extends AppCompatActivity {
         if (expiryDate.isEmpty()) {
             editTextExpiryDate.setError(getString(R.string.expiry_date_mandatory));
             Toast.makeText(this,
-                    "La data di scadenza è obbligatoria",
+                    getString(R.string.expiry_date_mandatory),
                     Toast.LENGTH_SHORT).show();
             return;
         }
@@ -1232,12 +1254,28 @@ public class AddProductActivity extends AppCompatActivity {
             addProductViewModel.insert(product, tagsToSave);
         }
 
-        clearProductApiFieldsAndData();
-        Intent resultIntent = new Intent();
-        resultIntent.putExtra(NEW_PRODUCT_NAME, name);
-        resultIntent.putExtra(NEW_PRODUCT_EDIT, isEditMode);
-        setResult(RESULT_OK, resultIntent);
-        finish();
+        savedBatchesCount++;
+        lastSavedProductName = name;
+
+        if (addAnotherExpiry) {
+            View rootLayout = findViewById(R.id.add_product_root_layout);
+            if (rootLayout != null) {
+                Snackbar.make(rootLayout, getString(R.string.batch_saved_snackbar, savedBatchesCount, name), Snackbar.LENGTH_LONG).show();
+            }
+            editTextQuantity.setText(DEFAULT_QUANTITY);
+            editTextQuantity.setError(null);
+            editTextExpiryDate.setText("");
+            editTextExpiryDate.setError(null);
+            editTextExpiryDate.requestFocus();
+            showDatePickerDialog();
+        } else {
+            clearProductApiFieldsAndData();
+            Intent resultIntent = new Intent();
+            resultIntent.putExtra(NEW_PRODUCT_NAME, name);
+            resultIntent.putExtra(NEW_PRODUCT_EDIT, isEditMode);
+            setResult(RESULT_OK, resultIntent);
+            finish();
+        }
     }
 
     private void showDatePickerDialog() {
@@ -1265,7 +1303,13 @@ public class AddProductActivity extends AppCompatActivity {
 
     @Override
     public boolean onSupportNavigateUp() {
-        onBackPressed();
+        if (savedBatchesCount > 0) {
+            Intent resultIntent = new Intent();
+            resultIntent.putExtra(NEW_PRODUCT_NAME, lastSavedProductName);
+            resultIntent.putExtra(NEW_PRODUCT_EDIT, false);
+            setResult(RESULT_OK, resultIntent);
+        }
+        finish();
         return true;
     }
 }

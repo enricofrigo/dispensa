@@ -36,6 +36,8 @@
     <string name="err_quantity_valid">Insert a valid quantity</string>
     <string name="expiry_date_hint">Expiry date</string>
     <string name="save_product_button">Save product</string>
+    <string name="btn_save_and_add_another_expiry">+ Another expiry</string>
+    <string name="batch_saved_snackbar">Batch %1$d saved for %2$s! Enter next expiry date.</string>
     <string name="quantity_label">Quantity: %d</string>
     <string name="expiry_date_label">Expiry: %s</string>
     <string name="expiry_date_mandatory">Expiry date is mandatory</string>
