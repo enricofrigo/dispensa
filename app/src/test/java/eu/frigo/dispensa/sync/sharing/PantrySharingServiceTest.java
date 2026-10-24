@@ -1,5 +1,6 @@
 package eu.frigo.dispensa.sync.sharing;
 
+import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
 
@@ -15,6 +16,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 import java.util.HashSet;
 import java.util.List;
@@ -31,6 +33,7 @@ import eu.frigo.dispensa.sync.core.store.SharedFolderStore;
 import eu.frigo.dispensa.sync.local.LocalSafSyncProviderLoader;
 
 @RunWith(RobolectricTestRunner.class)
+@Config(application = Application.class, sdk = 34)
 public class PantrySharingServiceTest {
 
     private Context context;

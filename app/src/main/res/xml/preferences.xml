@@ -3,85 +3,11 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     app:theme="@style/Base.Theme.Dispensa">
 
+    <!-- 🎨 Categoria 1: Aspetto e Generale -->
     <PreferenceCategory
-        app:title="@string/pref_cat_device_title"
-        app:layout="@layout/custom_category"
-        app:iconSpaceReserved="false">
-
-        <EditTextPreference
-            app:key="pref_key_device_name"
-            app:title="@string/pref_device_name_title"
-            app:summary="@string/pref_device_name_summary"
-            app:useSimpleSummaryProvider="true"
-            app:layout="@layout/preference_single_line"
-            app:iconSpaceReserved="false"/>
-
-    </PreferenceCategory>
-
-    <PreferenceCategory
-        app:title="@string/pref_cat_expiry_title"
-        app:layout="@layout/custom_category"
-        app:iconSpaceReserved="false">
-
-        <EditTextPreference
-            app:key="@string/pref_key_exp_days"
-            app:title="@string/pref_exp_days_title"
-            app:summary="@string/pref_exp_days_summary"
-            app:defaultValue="3"
-            app:useSimpleSummaryProvider="true"
-            app:layout="@layout/preference_single_line"
-            android:inputType="number"
-            app:iconSpaceReserved="false"/>
-
-        <Preference
-            app:key="@string/pref_key_exp_time"
-            app:title="@string/pref_key_exp_time_title"
-            app:summary="@string/pref_key_exp_summary"
-            app:layout="@layout/preference_single_line"
-            app:defaultValue="18:00"
-            app:iconSpaceReserved="false"/>
-
-        <EditTextPreference
-            app:key="pref_key_default_expiry_days"
-            app:title="@string/pref_default_expiry_days_title"
-            app:summary="@string/pref_default_expiry_days_summary"
-            app:layout="@layout/preference_single_line"
-            app:useSimpleSummaryProvider="true"
-            android:inputType="number"
-            app:iconSpaceReserved="false"/>
-
-        <EditTextPreference
-            app:key="pref_key_default_shelf_life"
-            app:title="@string/pref_default_shelf_life_title"
-            app:summary="@string/pref_default_shelf_life_summary"
-            app:layout="@layout/preference_single_line"
-            app:defaultValue="5"
-            app:useSimpleSummaryProvider="true"
-            android:inputType="number"
-            app:iconSpaceReserved="false"/>
-
-    </PreferenceCategory>
-    <PreferenceCategory app:title="@string/pref_cat_title_language"
-        app:layout="@layout/custom_category"
-        app:iconSpaceReserved="false">
-
-        <ListPreference
-            app:key="language_preference"
-            app:title="@string/pref_cat_title_language"
-            app:summary="%s"
-            app:entries="@array/language_entries"
-            app:entryValues="@array/language_values"
-            app:defaultValue="en"
-            app:layout="@layout/preference_single_line"
-            app:iconSpaceReserved="false"
-            android:persistent="true"/>
-
-    </PreferenceCategory>
-    <PreferenceCategory
-        app:key="pref_key_data"
-        app:layout="@layout/custom_category"
-        app:title="@string/pref_cat_data_title"
-        app:iconSpaceReserved="false">
+        app:key="pref_cat_general"
+        app:title="@string/pref_cat_general_title"
+        app:layout="@layout/custom_category">
 
         <ListPreference
             app:key="@string/pref_key_theme"
@@ -90,101 +16,159 @@
             app:entries="@array/theme_entries"
             app:entryValues="@array/theme_values"
             app:defaultValue="system"
-            app:layout="@layout/preference_single_line"
-            app:iconSpaceReserved="false"
+            app:icon="@drawable/ic_palette_24"
+            android:persistent="true"/>
+
+        <ListPreference
+            app:key="language_preference"
+            app:title="@string/pref_cat_title_language"
+            app:summary="%s"
+            app:entries="@array/language_entries"
+            app:entryValues="@array/language_values"
+            app:defaultValue="en"
+            app:icon="@drawable/ic_language_24"
             android:persistent="true"/>
 
         <Preference
-            app:key="pref_off_cache_clear"
-            app:title="@string/pref_off_cache_clear_title"
-            app:summary="@string/pref_off_cache_clear_summary"
-            app:iconSpaceReserved="false"/>
-
-        <EditTextPreference
-            app:key="pref_off_cache_limit"
-            app:title="@string/pref_off_cache_limit_title"
-            app:summary="@string/pref_off_cache_limit_summary"
-            app:defaultValue="100"
-            app:layout="@layout/preference_single_line"
-            app:useSimpleSummaryProvider="true"
-            android:inputType="number"
-            app:iconSpaceReserved="false"/>
-
-        <EditTextPreference
-            app:key="pref_off_cache_ttl_days"
-            app:title="@string/pref_off_cache_ttl_title"
-            app:summary="@string/pref_off_cache_ttl_summary"
-            app:defaultValue="30"
-            app:layout="@layout/preference_single_line"
-            app:useSimpleSummaryProvider="true"
-            android:inputType="number"
-            app:iconSpaceReserved="false"/>
-
-        <SwitchPreferenceCompat
-            app:key="pref_key_enable_off_api"
-            app:title="@string/pref_off_title"
-            app:summary="@string/pref_off_summary"
-            app:defaultValue="@bool/pref_enable_api"
-            app:iconSpaceReserved="false"/>
+            app:key="@string/pref_key_location"
+            app:title="@string/title_manage_locations"
+            app:summary="@string/hint_manage_locations"
+            app:icon="@drawable/location_home_24px"/>
 
     </PreferenceCategory>
 
+    <!-- 🔔 Categoria 2: Scadenze e Notifiche -->
+    <PreferenceCategory
+        app:key="pref_cat_expiry"
+        app:title="@string/pref_cat_expiry_title"
+        app:layout="@layout/custom_category">
+
+        <EditTextPreference
+            app:key="@string/pref_key_exp_days"
+            app:title="@string/pref_exp_days_title"
+            app:summary="@string/pref_exp_days_summary"
+            app:defaultValue="3"
+            app:useSimpleSummaryProvider="true"
+            app:icon="@drawable/ic_notifications_24"
+            android:inputType="number"/>
+
+        <Preference
+            app:key="@string/pref_key_exp_time"
+            app:title="@string/pref_key_exp_time_title"
+            app:summary="@string/pref_key_exp_summary"
+            app:defaultValue="18:00"
+            app:icon="@drawable/ic_schedule_24"/>
+
+        <EditTextPreference
+            app:key="pref_key_default_expiry_days"
+            app:title="@string/pref_default_expiry_days_title"
+            app:summary="@string/pref_default_expiry_days_summary"
+            app:useSimpleSummaryProvider="true"
+            app:icon="@drawable/ic_calendar_24"
+            android:inputType="number"/>
+
+        <EditTextPreference
+            app:key="pref_key_default_shelf_life"
+            app:title="@string/pref_default_shelf_life_title"
+            app:summary="@string/pref_default_shelf_life_summary"
+            app:defaultValue="5"
+            app:useSimpleSummaryProvider="true"
+            app:icon="@drawable/ic_hourglass_24"
+            android:inputType="number"/>
+
+    </PreferenceCategory>
+
+    <!-- ☁️ Categoria 3: Sincronizzazione e Condivisione -->
     <PreferenceCategory
         app:key="pref_cat_sync"
         app:title="@string/pref_cat_sync_title"
-        app:layout="@layout/custom_category"
-        app:iconSpaceReserved="false">
+        app:layout="@layout/custom_category">
+
+        <EditTextPreference
+            app:key="pref_key_device_name"
+            app:title="@string/pref_device_name_title"
+            app:summary="@string/pref_device_name_summary"
+            app:useSimpleSummaryProvider="true"
+            app:icon="@drawable/ic_devices_24"/>
 
         <SwitchPreferenceCompat
             app:key="pref_sync_enabled"
             app:title="@string/pref_sync_enabled_title"
             app:summary="@string/pref_sync_enabled_summary"
             app:defaultValue="false"
-            app:iconSpaceReserved="false"/>
+            app:icon="@drawable/ic_cloud_sync_24"/>
 
         <Preference
             app:key="pref_shared_pantries"
             app:title="@string/pref_shared_pantries_title"
             app:summary="@string/pref_shared_pantries_summary"
             app:dependency="pref_sync_enabled"
-            app:layout="@layout/preference_single_line"
-            app:iconSpaceReserved="false"/>
+            app:icon="@drawable/ic_share_24"/>
 
         <Preference
             app:key="pref_sync_config"
             app:title="@string/pref_providers_title"
             app:summary="@string/pref_providers_summary"
             app:dependency="pref_sync_enabled"
-            app:layout="@layout/preference_single_line"
-            app:iconSpaceReserved="false"/>
+            app:icon="@drawable/ic_cloud_sync_24"/>
 
         <Preference
             app:key="pref_sync_now"
             app:title="@string/pref_sync_now_title"
             app:dependency="pref_sync_enabled"
-            app:layout="@layout/preference_single_line"
-            app:iconSpaceReserved="false"/>
+            app:icon="@drawable/ic_sync_24"/>
 
         <Preference
             app:key="pref_sync_status"
             app:title="@string/pref_sync_status_title"
             app:dependency="pref_sync_enabled"
-            app:layout="@layout/preference_single_line"
-            app:iconSpaceReserved="false"
+            app:icon="@drawable/ic_info_24"
             app:selectable="false"/>
 
+    </PreferenceCategory>
+
+    <!-- 🗄️ Categoria 4: Dati, OpenFoodFacts e Avanzate -->
+    <PreferenceCategory
+        app:key="pref_key_data"
+        app:title="@string/pref_cat_data_title"
+        app:layout="@layout/custom_category">
+
+        <SwitchPreferenceCompat
+            app:key="pref_key_enable_off_api"
+            app:title="@string/pref_off_title"
+            app:summary="@string/pref_off_summary"
+            app:defaultValue="@bool/pref_enable_api"
+            app:icon="@drawable/ic_public_24"/>
+
         <Preference
-            android:key="separator_sync"
-            android:layout="@layout/pref_separator"
-            android:selectable="false"
-            android:enabled="false"
-            android:shouldDisableView="false" />
+            app:key="pref_off_cache_clear"
+            app:title="@string/pref_off_cache_clear_title"
+            app:summary="@string/pref_off_cache_clear_summary"
+            app:icon="@drawable/ic_delete_24"/>
+
+        <EditTextPreference
+            app:key="pref_off_cache_limit"
+            app:title="@string/pref_off_cache_limit_title"
+            app:summary="@string/pref_off_cache_limit_summary"
+            app:defaultValue="100"
+            app:useSimpleSummaryProvider="true"
+            app:icon="@drawable/ic_storage_24"
+            android:inputType="number"/>
+
+        <EditTextPreference
+            app:key="pref_off_cache_ttl_days"
+            app:title="@string/pref_off_cache_ttl_title"
+            app:summary="@string/pref_off_cache_ttl_summary"
+            app:defaultValue="30"
+            app:useSimpleSummaryProvider="true"
+            app:icon="@drawable/ic_history_24"
+            android:inputType="number"/>
 
         <Preference
             app:key="app_installation_id"
-            app:layout="@layout/preference_single_line"
-            app:iconSpaceReserved="false"
-            app:selectable="false"/>
+            app:title="@string/pref_installation_id_title"
+            app:icon="@drawable/ic_fingerprint_24"
+            app:selectable="true"/>
 
     </PreferenceCategory>
 

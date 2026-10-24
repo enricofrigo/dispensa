@@ -117,7 +117,8 @@
     <string name="expiring_products_notification_title">Ablaufende Produkte %d</string>
 
     <!-- Preferences -->
-    <string name="pref_cat_expiry_title">Benachrichtigungen</string>
+    <string name="pref_cat_general_title">Erscheinungsbild und Allgemein</string>
+    <string name="pref_cat_expiry_title">Ablauf und Benachrichtigungen</string>
     <string name="pref_cat_device_title">Gerät</string>
     <string name="pref_device_name_title">Gerätename</string>
     <string name="pref_device_name_summary">Name dieses Geräts für die Freigabe</string>
@@ -150,7 +151,7 @@
     <string name="language_italian">Italienisch</string>
     <string name="language_german">Deutsch</string>
 
-    <string name="pref_cat_data_title">Cache und Integrationen</string>
+    <string name="pref_cat_data_title">Daten und Erweitert</string>
     <string name="pref_off_title">Open Food Fact API aktivieren</string>
     <string name="pref_off_summary">Der App das Herunterladen von Daten aus Open Food Fact ermöglichen</string>
     <string name="notify_clean_images_done">%d verwaiste Bilder wurden gelöscht</string>
@@ -163,6 +164,8 @@
     <string name="pref_off_cache_ttl_summary">Löschfrist für Cache-Einträge (Standard: 30 Tage)</string>
     <string name="pref_off_cache_clear_title">Cache leeren</string>
     <string name="pref_off_cache_clear_summary">Alle Offline-Daten und Bilder löschen</string>
+    <string name="pref_installation_id_title">Installations-ID</string>
+    <string name="installation_id_copied">Installations-ID in Zwischenablage kopiert</string>
     <string name="notify_cache_cleared">Cache geleert</string>
     <string name="notify_loaded_from_cache">Aus dem Offline-Cache geladen</string>
 
@@ -218,7 +221,7 @@
     <string name="shopping_list_quantity">x%d</string>
     <string name="action_share">Teilen</string>
     <string name="share_shopping_list_title">Meine Einkaufsliste</string>
-    <string name="pref_cat_sync_title">Cloud-Synchronisierung</string>
+    <string name="pref_cat_sync_title">Synchronisierung und Freigabe</string>
     <string name="pref_sync_enabled_title">Cloud-Synchronisierung aktivieren</string>
     <string name="pref_sync_enabled_summary">Ihre Vorratskammer geräteübergreifend synchronisieren</string>
     <string name="pref_sync_provider_title">Synchronisierungsanbieter</string>

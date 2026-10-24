@@ -117,7 +117,8 @@
     <string name="expiring_products_notification_title">Expiring Products %d</string>
 
     <!-- Preferences -->
-    <string name="pref_cat_expiry_title">Notifications</string>
+    <string name="pref_cat_general_title">Appearance and General</string>
+    <string name="pref_cat_expiry_title">Expiry and Notifications</string>
     <string name="pref_cat_device_title">Device</string>
     <string name="pref_device_name_title">Device Name</string>
     <string name="pref_device_name_summary">Name of this device for sharing</string>
@@ -149,7 +150,7 @@
     <string name="language_english">English</string>
     <string name="language_italian">Italian</string>
 
-    <string name="pref_cat_data_title">Cache and Integrations</string>
+    <string name="pref_cat_data_title">Data and Advanced</string>
     <string name="pref_off_title">Enable Open Food Fact API</string>
     <string name="pref_off_summary">Enable app to download data from Open Food Fact</string>
     <string name="notify_clean_images_done">Cleaned %d orphaned images</string>
@@ -163,6 +164,8 @@
     <string name="pref_off_cache_clear_title">Clear cache</string>
     <string name="pref_off_cache_clear_summary">Delete all offline data and images</string>
     <string name="notify_cache_cleared">Cache cleared</string>
+    <string name="pref_installation_id_title">Installation ID</string>
+    <string name="installation_id_copied">Installation ID copied to clipboard</string>
     <string name="notify_loaded_from_cache">Loaded from offline cache</string>
 
     <string name="default_location_pantry_entry">Pantry</string>
@@ -220,7 +223,7 @@
     <string name="share_shopping_list_title">My Shopping List</string>
 
     <!-- Sync -->
-    <string name="pref_cat_sync_title">Cloud Sync</string>
+    <string name="pref_cat_sync_title">Sync and Sharing</string>
     <string name="pref_sync_enabled_title">Enable Cloud Sync</string>
     <string name="pref_sync_enabled_summary">Synchronize your pantry across devices</string>
     <string name="pref_sync_provider_title">Sync Provider</string>

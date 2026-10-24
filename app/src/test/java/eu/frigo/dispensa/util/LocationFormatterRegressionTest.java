@@ -1,5 +1,6 @@
 package eu.frigo.dispensa.util;
 
+import android.app.Application;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.res.Resources;
@@ -10,12 +11,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.data.storage.PredefinedData;
 import eu.frigo.dispensa.data.storage.StorageLocation;
 
 @RunWith(RobolectricTestRunner.class)
+@Config(application = Application.class, sdk = 34)
 public class LocationFormatterRegressionTest {
 
     private Context context;

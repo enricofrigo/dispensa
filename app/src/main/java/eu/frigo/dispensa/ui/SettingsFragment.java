@@ -174,7 +174,22 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
             });
         }
         Preference appId = findPreference(InstallationIdProvider.PREF_INSTALLATION_ID);
-        appId.setSummary(InstallationIdProvider.getOrCreateInstallationId(getContext()));
+        if (appId != null) {
+            String installationId = InstallationIdProvider.getOrCreateInstallationId(getContext());
+            appId.setSummary(installationId);
+            appId.setOnPreferenceClickListener(preference -> {
+                Context context = getContext();
+                if (context != null) {
+                    android.content.ClipboardManager clipboard = (android.content.ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+                    if (clipboard != null) {
+                        android.content.ClipData clip = android.content.ClipData.newPlainText(getString(R.string.pref_installation_id_title), installationId);
+                        clipboard.setPrimaryClip(clip);
+                        android.widget.Toast.makeText(context, R.string.installation_id_copied, android.widget.Toast.LENGTH_SHORT).show();
+                    }
+                }
+                return true;
+            });
+        }
 
         ListPreference themePref = findPreference(KEY_THEME_PREFERENCE);
         if (themePref != null) {
@@ -298,13 +313,11 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
         Preference configPref = findPreference(KEY_SYNC_CONFIG);
         Preference syncNowPref = findPreference("pref_sync_now");
         Preference statusPref = findPreference(KEY_SYNC_STATUS);
-        Preference separator = findPreference("separator_sync");
 
         if (sharedPantriesPref != null) sharedPantriesPref.setVisible(enabled);
         if (configPref != null) configPref.setVisible(enabled);
         if (syncNowPref != null) syncNowPref.setVisible(enabled);
         if (statusPref != null) statusPref.setVisible(enabled);
-        if (separator != null) separator.setVisible(enabled);
     }
 
     private void showProviderConfigurationChooser() {
@@ -401,11 +414,11 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
     public boolean onPreferenceTreeClick(Preference preference) {
         if (preference.getKey() != null && preference.getKey().equals(getString(R.string.pref_key_location))) {
             getParentFragmentManager().beginTransaction()
-                .replace(android.R.id.content, new ManageLocationsFragment())
+                .replace(R.id.settings_container, new ManageLocationsFragment())
                 .addToBackStack(null)
                 .commit();
-            return false;
+            return true;
         }
-        return false;
+        return super.onPreferenceTreeClick(preference);
     }
 }
