@@ -11,6 +11,8 @@ import android.content.pm.PackageManager;
 import android.media.Image;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.ViewGroup;
 import android.util.Size;
 import android.view.View;
@@ -41,6 +43,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 
 import androidx.core.view.WindowInsetsCompat;
+import androidx.core.widget.NestedScrollView;
 import androidx.lifecycle.ViewModelProvider;
 import android.util.Log;
 import androidx.preference.PreferenceManager;
@@ -139,6 +142,7 @@ public class AddProductActivity extends AppCompatActivity {
     private boolean isRescanning = false;
     private int savedBatchesCount = 0;
     private String lastSavedProductName = "";
+    private NestedScrollView nestedScrollView;
     public final static String EXTRA_BARCODE = "SCANNED_BARCODE_DATA";
     public final static String EXTRA_PRODUCT_ID = "PRODUCT_ID";
     public final static String EXTRA_PRODUCT_NAME = "PRODUCT_NAME";
@@ -194,7 +198,7 @@ public class AddProductActivity extends AppCompatActivity {
         setContentView(R.layout.activity_add_product);
 
         View rootLayout = findViewById(R.id.add_product_root_layout);
-        View nestedScrollView = findViewById(R.id.add_product_nested_scroll);
+        nestedScrollView = findViewById(R.id.add_product_nested_scroll);
         final View bottomActionsLayout = findViewById(R.id.layout_bottom_actions);
         final MaterialButton buttonSaveProduct = findViewById(R.id.buttonSaveProduct);
         final MaterialButton buttonSaveAndAddAnotherExpiry = findViewById(R.id.buttonSaveAndAddAnotherExpiry);
@@ -464,6 +468,9 @@ public class AddProductActivity extends AppCompatActivity {
                 editTextExpiryDate.setText("");
                 buttonRescanExpiryDate.setVisibility(GONE);
                 isRescanning = true;
+                if (nestedScrollView != null) {
+                    nestedScrollView.smoothScrollTo(0, 0);
+                }
                 checkCameraPermissionAndStartScanner();
             });
         }
@@ -1231,8 +1238,13 @@ public class AddProductActivity extends AppCompatActivity {
             editTextExpiryDate.setText("");
             editTextExpiryDate.setError(null);
             buttonRescanExpiryDate.setVisibility(GONE);
-            editTextExpiryDate.requestFocus();
-            showDatePickerDialog();
+            lastDiscardedExpiryDate = expiryDate;
+            new Handler(Looper.getMainLooper()).postDelayed(() -> lastDiscardedExpiryDate = null, 2500);
+            isRescanning = false;
+            if (nestedScrollView != null) {
+                nestedScrollView.smoothScrollTo(0, 0);
+            }
+            checkCameraPermissionAndStartScanner();
         } else {
             clearProductApiFieldsAndData();
             Intent resultIntent = new Intent();
