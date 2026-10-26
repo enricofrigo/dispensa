@@ -10,40 +10,58 @@
     android:layout_marginEnd="8dp"
     android:layout_marginBottom="4dp"
     app:cardElevation="2dp"
-    app:cardCornerRadius="8dp"
+    app:cardCornerRadius="12dp"
     app:strokeWidth="1dp"
-    app:strokeColor="@color/product_default_stroke">
+    app:strokeColor="?attr/colorOutlineVariant"
+    app:cardBackgroundColor="?attr/colorSurface">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="12dp">
 
-        <!-- PARTE SUPERIORE: Immagine e Bottone -->
+        <!-- PARTE SUPERIORE: Immagine e Bottoni (Consuma + Carrello) -->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
             <ImageView
                 android:id="@+id/imageViewItemProduct"
-                android:layout_width="70dp"
-                android:layout_height="70dp"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
                 android:scaleType="centerCrop"
                 android:contentDescription="@string/product_image_description"
                 tools:srcCompat="@drawable/ic_placeholder_image" />
 
-            <ImageButton
-                android:id="@+id/buttonShoppingCart"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
                 android:layout_alignParentTop="true"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/shopping_list_add"
-                android:padding="10dp"
-                android:src="@drawable/ic_cart_plus"
-                app:tint="?attr/colorControlNormal" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageButton
+                    android:id="@+id/buttonConsumeProduct"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/action_consume"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_delete_24"
+                    app:tint="?attr/colorSecondary" />
+
+                <ImageButton
+                    android:id="@+id/buttonShoppingCart"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/shopping_list_add"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_cart_plus"
+                    app:tint="?attr/colorControlNormal" />
+            </LinearLayout>
         </RelativeLayout>
 
         <!-- PARTE INFERIORE: Testi sotto l'immagine -->
