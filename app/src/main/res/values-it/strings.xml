@@ -38,6 +38,11 @@
     <string name="save_product_button">Salva Prodotto</string>
     <string name="btn_save_and_add_another_expiry">+ Altra scadenza</string>
     <string name="batch_saved_snackbar">Lotto %1$d salvato per %2$s! Inserisci la nuova data.</string>
+    <string name="filter_all_count">Tutti (%d)</string>
+    <string name="filter_expiring_soon_count">In scadenza (%d)</string>
+    <string name="filter_expired_count">Scaduti (%d)</string>
+    <string name="action_consume">Consuma una unità</string>
+    <string name="no_products_matching_filter">Nessun prodotto corrisponde al filtro</string>
     <string name="quantity_label">Quantità: %d</string>
     <string name="expiry_date_label">Scadenza: %s</string>
     <string name="expiry_date_mandatory">La data di scadenza è obbligatoria</string>
@@ -100,6 +105,7 @@
     <string name="title_manage_locations">Gestione depositi</string>
     <string name="location_management_description">Riordina i tuoi depositi o seleziona la dispensa predefinita all\'avvio dell\'applicazione</string>
     <string name="error_empty_location">Il nome non può essere vuoto</string>
+    <string name="error_empty_item_name">Il nome del prodotto non può essere vuoto</string>
     <string name="notify_add_location">deposito \'%s\' aggiunta</string>
     <string name="notify_update_location">deposito aggiornata</string>
     <string name="error_delete_default_location">I depositi predefinite non possono essere eliminate.</string>

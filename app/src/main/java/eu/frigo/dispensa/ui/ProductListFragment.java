@@ -23,6 +23,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
+
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -56,8 +59,19 @@ public class ProductListFragment extends Fragment implements SharedPreferences.O
     private String currentSearchQuery = "";
     private boolean isAllProductsMode = true;
     private long specificLocationId = -1L;
+    public enum ExpiryFilter {
+        ALL,
+        EXPIRING_SOON,
+        EXPIRED
+    }
+
     private String locationInternalKeyFilter;
-    private TextView textViewProductCount;
+    private ChipGroup chipGroupFilters;
+    private Chip chipFilterAll;
+    private Chip chipFilterExpiringSoon;
+    private Chip chipFilterExpired;
+    private TextView textViewEmptyFilter;
+    private ExpiryFilter currentExpiryFilter = ExpiryFilter.ALL;
 
     public static ProductListFragment newInstance(@Nullable String internalKey) {
         ProductListFragment fragment = new ProductListFragment();
@@ -95,7 +109,25 @@ public class ProductListFragment extends Fragment implements SharedPreferences.O
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_product_list, container, false); // Crea questo layout
         recyclerView = view.findViewById(R.id.recyclerViewProductsFragment);
-        textViewProductCount = view.findViewById(R.id.textViewProductCount);
+        chipGroupFilters = view.findViewById(R.id.chipGroupFilters);
+        chipFilterAll = view.findViewById(R.id.chipFilterAll);
+        chipFilterExpiringSoon = view.findViewById(R.id.chipFilterExpiringSoon);
+        chipFilterExpired = view.findViewById(R.id.chipFilterExpired);
+        textViewEmptyFilter = view.findViewById(R.id.textViewEmptyFilter);
+
+        if (chipGroupFilters != null) {
+            chipGroupFilters.setOnCheckedStateChangeListener((group, checkedIds) -> {
+                if (checkedIds.contains(R.id.chipFilterExpiringSoon)) {
+                    currentExpiryFilter = ExpiryFilter.EXPIRING_SOON;
+                } else if (checkedIds.contains(R.id.chipFilterExpired)) {
+                    currentExpiryFilter = ExpiryFilter.EXPIRED;
+                } else {
+                    currentExpiryFilter = ExpiryFilter.ALL;
+                }
+                filterAndSubmitList();
+            });
+        }
+
         productListAdapter = new ProductListAdapter(new ProductListAdapter.ProductDiff(), (ProductListAdapter.OnProductInteractionListener) getActivity());
         recyclerView.setAdapter(productListAdapter);
         swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
@@ -167,6 +199,9 @@ public class ProductListFragment extends Fragment implements SharedPreferences.O
             if (getActivity() instanceof MainActivity) {
                 ((MainActivity) getActivity()).invalidateOptionsMenu();
             }
+            if (key.equals(SettingsFragment.KEY_EXPIRY_DAYS_BEFORE)) {
+                filterAndSubmitList();
+            }
         }
     }
     public void onDestroy() {
@@ -221,46 +256,93 @@ public class ProductListFragment extends Fragment implements SharedPreferences.O
         });
     }
     private void filterAndSubmitList() {
-        List<ProductWithCategoryDefinitions> filteredList = new ArrayList<>();
+        List<ProductWithCategoryDefinitions> queryMatchingList = new ArrayList<>();
         if (currentSearchQuery.isEmpty()) {
-            filteredList.addAll(originalProductList);
+            queryMatchingList.addAll(originalProductList);
         } else {
             for (ProductWithCategoryDefinitions productWithDefs : originalProductList) {
                 String productName = productWithDefs.product.getProductName() != null ? productWithDefs.product.getProductName().toLowerCase(Locale.getDefault()) : "";
                 String barcode = productWithDefs.product.getBarcode() != null ? productWithDefs.product.getBarcode().toLowerCase(Locale.getDefault()) : "";
 
                 if (productName.contains(currentSearchQuery) || barcode.contains(currentSearchQuery)) {
-                    filteredList.add(productWithDefs);
+                    queryMatchingList.add(productWithDefs);
                 }
             }
         }
-        Log.d("ProductListFragment", "Fragment (" + getUniqueKeyPart() + "): Lista filtrata (" + currentSearchQuery + "): " + filteredList.size() + " elementi.");
-        if(textViewProductCount != null) {
-            long todayTimestamp = DateConverter.getTodayNormalizedTimestamp();
+
+        long todayTimestamp = DateConverter.getTodayNormalizedTimestamp();
+        int daysBeforeWarning = 3;
+        if (getContext() != null) {
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getContext());
             String daysBeforeStr = prefs.getString(SettingsFragment.KEY_EXPIRY_DAYS_BEFORE, "3");
-            int daysBeforeWarning;
             try {
                 daysBeforeWarning = Integer.parseInt(daysBeforeStr);
             } catch (NumberFormatException e) {
                 daysBeforeWarning = 3;
             }
-            Calendar warningCalendar = Calendar.getInstance();
-            warningCalendar.setTimeInMillis(todayTimestamp);
-            warningCalendar.add(Calendar.DAY_OF_YEAR, daysBeforeWarning);
-
-            String countText = getString(R.string.product_count_footer_simple, filteredList.size());
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                int expired = filteredList.stream().filter(productWithCategoryDefinitions -> productWithCategoryDefinitions.product.getActualExpiryTimestamp()<todayTimestamp).toList().size();
-                int nearExpired = filteredList.stream().filter(productWithCategoryDefinitions -> productWithCategoryDefinitions.product.getActualExpiryTimestamp()<=warningCalendar.getTimeInMillis()).toList().size();
-                countText = getString(R.string.product_count_footer, filteredList.size(), expired, nearExpired);
-            }
-            textViewProductCount.setText(countText);
         }
+        Calendar warningCalendar = Calendar.getInstance();
+        warningCalendar.setTimeInMillis(todayTimestamp);
+        warningCalendar.add(Calendar.DAY_OF_YEAR, daysBeforeWarning);
+        long warningTimestamp = warningCalendar.getTimeInMillis();
+
+        int totalCount = queryMatchingList.size();
+        int expiredCount = 0;
+        int expiringSoonCount = 0;
+
+        for (ProductWithCategoryDefinitions item : queryMatchingList) {
+            if (item.product != null && item.product.getExpiryDate() != null) {
+                Long actualExpiry = item.product.getActualExpiryTimestamp();
+                if (actualExpiry != null && actualExpiry > 0) {
+                    if (actualExpiry < todayTimestamp) {
+                        expiredCount++;
+                    } else if (actualExpiry <= warningTimestamp) {
+                        expiringSoonCount++;
+                    }
+                }
+            }
+        }
+
+        if (chipFilterAll != null) {
+            chipFilterAll.setText(getString(R.string.filter_all_count, totalCount));
+        }
+        if (chipFilterExpiringSoon != null) {
+            chipFilterExpiringSoon.setText(getString(R.string.filter_expiring_soon_count, expiringSoonCount));
+        }
+        if (chipFilterExpired != null) {
+            chipFilterExpired.setText(getString(R.string.filter_expired_count, expiredCount));
+        }
+
+        List<ProductWithCategoryDefinitions> finalFilteredList = new ArrayList<>();
+        for (ProductWithCategoryDefinitions item : queryMatchingList) {
+            if (currentExpiryFilter == ExpiryFilter.ALL) {
+                finalFilteredList.add(item);
+            } else if (item.product != null && item.product.getExpiryDate() != null) {
+                Long actualExpiry = item.product.getActualExpiryTimestamp();
+                if (actualExpiry != null && actualExpiry > 0) {
+                    if (currentExpiryFilter == ExpiryFilter.EXPIRED && actualExpiry < todayTimestamp) {
+                        finalFilteredList.add(item);
+                    } else if (currentExpiryFilter == ExpiryFilter.EXPIRING_SOON && actualExpiry >= todayTimestamp && actualExpiry <= warningTimestamp) {
+                        finalFilteredList.add(item);
+                    }
+                }
+            }
+        }
+
+        if (textViewEmptyFilter != null) {
+            if (finalFilteredList.isEmpty() && totalCount > 0) {
+                textViewEmptyFilter.setVisibility(View.VISIBLE);
+            } else {
+                textViewEmptyFilter.setVisibility(View.GONE);
+            }
+        }
+
+        Log.d("ProductListFragment", "Fragment (" + getUniqueKeyPart() + "): Lista finale filtrata (" + currentExpiryFilter + ", query='" + currentSearchQuery + "'): " + finalFilteredList.size() + " elementi.");
+
         if (productListAdapter != null) {
-            productListAdapter.submitList(filteredList);
-            if (productListAdapter != null && !filteredList.isEmpty()) { // Solo se la lista sottomessa non è vuota
-                recyclerView.post(() -> { // Usa post per assicurarti che sia eseguito dopo il ciclo di layout corrente
+            productListAdapter.submitList(finalFilteredList);
+            if (!finalFilteredList.isEmpty()) {
+                recyclerView.post(() -> {
                     Log.d("PLF_Debug", "Forcing requestLayout for " + getUniqueKeyPart() + " because problem persists.");
                     recyclerView.requestLayout();
                 });

@@ -138,7 +138,7 @@
             app:fabSize="mini"
             app:backgroundTint="?attr/colorSecondaryContainer"
             app:tint="?attr/colorOnSecondaryContainer"
-            app:srcCompat="@drawable/ic_remove_24" />
+            app:srcCompat="@drawable/ic_delete_24" />
 
     </LinearLayout>
 

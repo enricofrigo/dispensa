@@ -76,12 +76,8 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
         private final MaterialCardView cardProductItem;
         private final OnProductInteractionListener listenerInternal;
         private final ImageButton buttonShoppingCart;
+        private final ImageButton buttonConsumeProduct;
         private ProductWithCategoryDefinitions currentProduct;
-        private static final int SINGLE_CLICK_ACTION = 1;
-        private static final int DOUBLE_CLICK_ACTION = 2;
-        private static final long CLICK_TIMEOUT = 250;
-        private final android.os.Handler clickHandler = new android.os.Handler(android.os.Looper.getMainLooper());
-        private int clickExecutionState = 0;
         private final ImageView imageViewOpenedIcon;
 
         ProductViewHolder(View itemView, OnProductInteractionListener listener) {
@@ -94,6 +90,7 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
             cardProductItem = itemView.findViewById(R.id.card_product_item);
             imageViewOpenedIcon = itemView.findViewById(R.id.imageViewOpenedIcon);
             buttonShoppingCart = itemView.findViewById(R.id.buttonShoppingCart);
+            buttonConsumeProduct = itemView.findViewById(R.id.buttonConsumeProduct);
             itemView.setOnCreateContextMenuListener(this);
         }
 
@@ -144,6 +141,14 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
                     listenerInternal.onShoppingCartToggled(currentProduct, currentlyInList);
                 }
             });
+
+            if (buttonConsumeProduct != null) {
+                buttonConsumeProduct.setOnClickListener(v -> {
+                    if (listenerInternal != null && currentProduct != null) {
+                        listenerInternal.onProductItemClickedForQuantity(currentProduct);
+                    }
+                });
+            }
             
             if (product.product.getExpiryDate() != null) {
                 textViewExpiryDate.setText(String.format(textViewExpiryDate.getContext().getString(R.string.exp_date), product.product.getActualExpiryDateString()));
@@ -184,49 +189,23 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
                 }
                 // Stato 3: Non in scadenza a breve / Non scaduto
                 else {
-                    textViewExpiryDate.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.grey_text)); // O il tuo colore di default
+                    textViewExpiryDate.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.md_theme_onSurfaceVariant));
                     if (cardProductItem != null) {
-                        cardProductItem.setStrokeColor(ContextCompat.getColor(itemView.getContext(), R.color.product_default_stroke));
-                        cardProductItem.setStrokeWidth(itemView.getResources().getDimensionPixelSize(R.dimen.card_stroke_width_default)); // Definisci questa dimen
+                        cardProductItem.setStrokeColor(ContextCompat.getColor(itemView.getContext(), R.color.md_theme_outlineVariant));
+                        cardProductItem.setStrokeWidth(itemView.getResources().getDimensionPixelSize(R.dimen.card_stroke_width_default));
                     }
                 }
             } else {
                 textViewExpiryDate.setText(String.format(itemView.getContext().getString(R.string.exp_date),itemView.getContext().getString(R.string.not_defined)));
-                textViewExpiryDate.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.grey_text)); // O il tuo colore di default
+                textViewExpiryDate.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.md_theme_onSurfaceVariant));
                 if (cardProductItem != null) {
-                    cardProductItem.setStrokeColor(ContextCompat.getColor(itemView.getContext(), R.color.product_default_stroke));
+                    cardProductItem.setStrokeColor(ContextCompat.getColor(itemView.getContext(), R.color.md_theme_outlineVariant));
                     cardProductItem.setStrokeWidth(itemView.getResources().getDimensionPixelSize(R.dimen.card_stroke_width_default));
                 }
             }
             itemView.setOnClickListener(v -> {
-                if (listenerInternal == null || currentProduct == null) {
-                    return;
-                }
-
-                if (clickExecutionState == 0) { // Primo click o click dopo un timeout/azione
-                    clickExecutionState = SINGLE_CLICK_ACTION; // Segna che un singolo click è in attesa
-                    Log.d("ClickLogic", "First click. Single click action PENDING (Edit).");
-
-                    // Posticipa l'azione del singolo click
-                    clickHandler.postDelayed(() -> {
-                        // Questo Runnable viene eseguito se non c'è un secondo click entro CLICK_TIMEOUT
-                        if (clickExecutionState == SINGLE_CLICK_ACTION) { // Controlla se siamo ancora in attesa del singolo click
-                            Log.d("ClickLogic", "Timeout expired. Executing SINGLE click action (Edit).");
-                            listenerInternal.onEditActionClicked(currentProduct); // Esegui l'azione di modifica
-                            clickExecutionState = 0; // Resetta lo stato
-                        }
-                    }, CLICK_TIMEOUT);
-
-                } else if (clickExecutionState == SINGLE_CLICK_ACTION) { // Secondo click arrivato mentre un singolo click era in attesa
-                    // Questo è un doppio click!
-                    clickExecutionState = DOUBLE_CLICK_ACTION; // Segna che stiamo per eseguire un doppio click
-                    Log.d("ClickLogic", "Second click detected. Executing DOUBLE click action (Decrement Quantity).");
-
-                    // Rimuovi il Runnable del singolo click che era in attesa
-                    clickHandler.removeCallbacksAndMessages(null); // Rimuove tutti i Runnable in sospeso per questo Handler
-
-                    listenerInternal.onProductItemClickedForQuantity(currentProduct); // Esegui l'azione di decremento quantità
-                    clickExecutionState = 0; // Resetta lo stato dopo l'azione
+                if (listenerInternal != null && currentProduct != null) {
+                    listenerInternal.onEditActionClicked(currentProduct);
                 }
             });
         }

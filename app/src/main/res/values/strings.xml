@@ -38,6 +38,11 @@
     <string name="save_product_button">Save product</string>
     <string name="btn_save_and_add_another_expiry">+ Another expiry</string>
     <string name="batch_saved_snackbar">Batch %1$d saved for %2$s! Enter next expiry date.</string>
+    <string name="filter_all_count">All (%d)</string>
+    <string name="filter_expiring_soon_count">Expiring soon (%d)</string>
+    <string name="filter_expired_count">Expired (%d)</string>
+    <string name="action_consume">Consume 1 unit</string>
+    <string name="no_products_matching_filter">No products match the selected filter</string>
     <string name="quantity_label">Quantity: %d</string>
     <string name="expiry_date_label">Expiry: %s</string>
     <string name="expiry_date_mandatory">Expiry date is mandatory</string>
@@ -100,6 +105,7 @@
     <string name="title_manage_locations">Manage location</string>
     <string name="location_management_description">Reorder your location or select the default on application opening</string>
     <string name="error_empty_location">Name cannot be empty</string>
+    <string name="error_empty_item_name">Item name cannot be empty</string>
     <string name="notify_add_location">Location \'%s\' added</string>
     <string name="notify_update_location">Location updated</string>
     <string name="error_delete_default_location">Default locations cannot be deleted.</string>

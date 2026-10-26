@@ -38,6 +38,11 @@
     <string name="save_product_button">Produkt speichern</string>
     <string name="btn_save_and_add_another_expiry">+ Weiteres Datum</string>
     <string name="batch_saved_snackbar">Charge %1$d für %2$s gespeichert! Nächstes Datum eingeben.</string>
+    <string name="filter_all_count">Alle (%d)</string>
+    <string name="filter_expiring_soon_count">Bald ablaufend (%d)</string>
+    <string name="filter_expired_count">Abgelaufen (%d)</string>
+    <string name="action_consume">1 Einheit verbrauchen</string>
+    <string name="no_products_matching_filter">Keine Produkte entsprechen dem ausgewählten Filter</string>
     <string name="quantity_label">Anzahl: %d</string>
     <string name="expiry_date_label">Verfallsdatum: %s</string>
     <string name="expiry_date_mandatory">Verfallsdatum ist erforderlich</string>
@@ -100,6 +105,7 @@
     <string name="title_manage_locations">Lagerortverwaltung</string>
     <string name="location_management_description">Ändern Sie die Reihenfolge Ihrer Lagerortverwaltung oder wählen Sie beim Öffnen der App die Standardeinstellung aus</string>
     <string name="error_empty_location">Name darf nicht leer sein</string>
+    <string name="error_empty_item_name">Artikelname darf nicht leer sein</string>
     <string name="notify_add_location">Lagerort \'%s\' hinzugefügt</string>
     <string name="notify_update_location">Lagerort aktualisiert</string>
     <string name="error_delete_default_location">Standard-Lagerort kann nicht gelöscht werden.</string>

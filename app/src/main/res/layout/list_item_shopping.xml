@@ -11,9 +11,10 @@
     android:layout_marginTop="4dp"
     android:layout_marginBottom="4dp"
     app:cardElevation="1dp"
-    app:cardCornerRadius="8dp"
+    app:cardCornerRadius="12dp"
     app:strokeWidth="1dp"
-    app:strokeColor="@color/product_default_stroke">
+    app:strokeColor="?attr/colorOutlineVariant"
+    app:cardBackgroundColor="?attr/colorSurface">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -37,7 +38,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="14sp"
-            android:textColor="@color/grey_text"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:layout_marginStart="12dp"
             android:layout_marginEnd="12dp"
             tools:text="x2" />

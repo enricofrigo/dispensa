@@ -80,7 +80,7 @@ public class ShoppingListActivity extends AppCompatActivity
         buttonAdd.setOnClickListener(v -> {
             String name = editTextName.getText().toString().trim();
             if (name.isEmpty()) {
-                editTextName.setError(getString(R.string.error_empty_location));
+                editTextName.setError(getString(R.string.error_empty_item_name));
                 return;
             }
 
