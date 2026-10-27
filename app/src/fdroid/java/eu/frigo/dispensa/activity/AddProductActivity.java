@@ -129,6 +129,12 @@ public class AddProductActivity extends AppCompatActivity {
     private TextView textViewOpenedDate;
     private Long currentOpenedDate = 0L;
     private int currentShelfLifeDays = -1;
+    private int currentRemainingPercentage = 100;
+    private ChipGroup chipGroupEditPercentages;
+    private Chip chipEditPercent100;
+    private Chip chipEditPercent75;
+    private Chip chipEditPercent50;
+    private Chip chipEditPercent25;
     private int savedBatchesCount = 0;
     private String lastSavedProductName = "";
 
@@ -286,6 +292,19 @@ public class AddProductActivity extends AppCompatActivity {
         buttonMarkAsOpened = findViewById(R.id.buttonMarkAsOpened);
         buttonMarkAsClosed = findViewById(R.id.buttonMarkAsClosed);
         textViewOpenedDate = findViewById(R.id.textViewOpenedDate);
+
+        chipGroupEditPercentages = findViewById(R.id.chipGroupEditPercentages);
+        chipEditPercent100 = findViewById(R.id.chipEditPercent100);
+        chipEditPercent75 = findViewById(R.id.chipEditPercent75);
+        chipEditPercent50 = findViewById(R.id.chipEditPercent50);
+        chipEditPercent25 = findViewById(R.id.chipEditPercent25);
+
+        if (chipGroupEditPercentages != null) {
+            chipEditPercent100.setOnClickListener(v -> currentRemainingPercentage = 100);
+            chipEditPercent75.setOnClickListener(v -> setPercentageAndAutoOpen(75));
+            chipEditPercent50.setOnClickListener(v -> setPercentageAndAutoOpen(50));
+            chipEditPercent25.setOnClickListener(v -> setPercentageAndAutoOpen(25));
+        }
 
         chipGroupCategories = findViewById(R.id.chipGroupCategories);
         editTextNewCategory = findViewById(R.id.editTextNewCategory);
@@ -470,6 +489,8 @@ public class AddProductActivity extends AppCompatActivity {
 
         buttonMarkAsClosed.setOnClickListener(v -> {
             currentOpenedDate = 0L;
+            currentRemainingPercentage = 100;
+            if (chipEditPercent100 != null) chipEditPercent100.setChecked(true);
             updateOpenedDateUI(currentOpenedDate);
         });
 
@@ -481,6 +502,14 @@ public class AddProductActivity extends AppCompatActivity {
             buttonScanBarcodeCamera.setVisibility(GONE);
             buttonScanBarcodeGallery.setVisibility(GONE);
             barcodeView.setVisibility(GONE);
+        }
+    }
+
+    private void setPercentageAndAutoOpen(int percentage) {
+        currentRemainingPercentage = percentage;
+        if (currentOpenedDate == null || currentOpenedDate <= 0L) {
+            currentOpenedDate = System.currentTimeMillis();
+            updateOpenedDateUI(currentOpenedDate);
         }
     }
 
@@ -794,6 +823,13 @@ public class AddProductActivity extends AppCompatActivity {
                     editTextShelfLifeAfterOpening.setText("");
                 }
                 editTextNote.setText(productBeingEdited.product.getNote() != null ? productBeingEdited.product.getNote() : "");
+                currentRemainingPercentage = productBeingEdited.product.getRemainingPercentage();
+                if (chipGroupEditPercentages != null) {
+                    if (currentRemainingPercentage <= 25) chipEditPercent25.setChecked(true);
+                    else if (currentRemainingPercentage <= 50) chipEditPercent50.setChecked(true);
+                    else if (currentRemainingPercentage <= 75) chipEditPercent75.setChecked(true);
+                    else chipEditPercent100.setChecked(true);
+                }
                 updateOpenedDateUI(currentOpenedDate);
 
                 if (productBeingEdited.categoryDefinitions != null) {
@@ -1241,6 +1277,11 @@ public class AddProductActivity extends AppCompatActivity {
                 currentOpenedDate,
                 shelfLifeDays
         );
+        product.setRemainingPercentage(currentRemainingPercentage);
+        if (currentRemainingPercentage < 100 && (currentOpenedDate == null || currentOpenedDate <= 0L)) {
+            currentOpenedDate = System.currentTimeMillis();
+            product.setOpenedDate(currentOpenedDate);
+        }
         String note = editTextNote.getText() != null ? editTextNote.getText().toString().trim() : null;
         if (note != null && note.isEmpty()) {
             note = null;
@@ -1264,6 +1305,10 @@ public class AddProductActivity extends AppCompatActivity {
             }
             editTextQuantity.setText(DEFAULT_QUANTITY);
             editTextQuantity.setError(null);
+            currentRemainingPercentage = 100;
+            if (chipEditPercent100 != null) chipEditPercent100.setChecked(true);
+            currentOpenedDate = 0L;
+            updateOpenedDateUI(currentOpenedDate);
             editTextExpiryDate.setText("");
             editTextExpiryDate.setError(null);
             editTextExpiryDate.requestFocus();

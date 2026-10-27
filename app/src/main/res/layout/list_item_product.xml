@@ -106,5 +106,17 @@
                 app:tint="?attr/colorControlNormal" />
         </LinearLayout>
 
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/progressRemaining"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            app:trackCornerRadius="2dp"
+            app:trackThickness="4dp"
+            android:max="100"
+            android:visibility="gone"
+            tools:visibility="visible"
+            tools:progress="60" />
+
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

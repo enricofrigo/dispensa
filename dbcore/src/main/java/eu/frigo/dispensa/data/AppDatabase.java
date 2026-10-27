@@ -41,7 +41,7 @@ import eu.frigo.dispensa.sync.core.engine.InstallationIdProvider;
 @Database(entities = {Product.class, CategoryDefinition.class,
         ProductCategoryLink.class, StorageLocation.class, OpenFoodFactCacheEntity.class,
         ShoppingItem.class, SyncOutbox.class, Dispensa.class, JoinedPantryConfig.class },
-        version = 21)
+        version = 22)
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract ProductDao productDao();
@@ -159,6 +159,13 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    public static final Migration MIGRATION_21_22 = new Migration(21, 22) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("ALTER TABLE `products` ADD COLUMN `remaining_percentage` INTEGER NOT NULL DEFAULT 100");
+        }
+    };
+
     static final Migration MIGRATION_6_7 = new Migration(6,7) {
         @Override
         public void migrate(SupportSQLiteDatabase database) {
@@ -193,7 +200,7 @@ public abstract class AppDatabase extends RoomDatabase {
             synchronized (AppDatabase.class) {
                 if (INSTANCE == null) {
                     // Esegui backup preventivo se è prevista una migrazione
-                    PreMigrationBackupHelper.checkAndBackup(context.getApplicationContext(), "dispensa_database", 21);
+                    PreMigrationBackupHelper.checkAndBackup(context.getApplicationContext(), "dispensa_database", 22);
 
                     RoomDatabase.Callback sRoomDatabaseCallback = new RoomDatabase.Callback() {
                         @Override
@@ -237,6 +244,7 @@ public abstract class AppDatabase extends RoomDatabase {
                             .addMigrations(MIGRATION_11_12)
                             .addMigrations(MIGRATION_12_21)
                             .addMigrations(MIGRATION_20_21)
+                            .addMigrations(MIGRATION_21_22)
                             .addCallback(sRoomDatabaseCallback)
                             //.fallbackToDestructiveMigration()
                             .build();
