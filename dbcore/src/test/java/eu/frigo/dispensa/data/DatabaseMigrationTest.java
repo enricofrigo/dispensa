@@ -147,9 +147,9 @@ public class DatabaseMigrationTest {
         db.setVersion(12);
         db.close();
 
-        // 2. Apri con Room a v21 fornendo MIGRATION_12_21
+        // 2. Apri con Room fornendo le migrazioni necessarie fino alla versione corrente
         AppDatabase roomDb = Room.databaseBuilder(context, AppDatabase.class, TEST_DB_NAME)
-                .addMigrations(AppDatabase.MIGRATION_12_21)
+                .addMigrations(AppDatabase.MIGRATION_12_21, AppDatabase.MIGRATION_21_22)
                 .allowMainThreadQueries()
                 .build();
 
@@ -161,6 +161,7 @@ public class DatabaseMigrationTest {
         Assert.assertEquals("Pasta Barilla", p.getProductName());
         Assert.assertEquals(1, p.dispensaId); // Default valorizzato correttamente
         Assert.assertNull(p.getNote()); // Colonna note aggiunta
+        Assert.assertEquals(100, p.getRemainingPercentage()); // Default v22
 
         Dispensa defaultDispensa = roomDb.dispensaDao().getDefaultDispensaSync();
         Assert.assertNotNull(defaultDispensa);
@@ -277,9 +278,9 @@ public class DatabaseMigrationTest {
         db.setVersion(20);
         db.close();
 
-        // 2. Apri con Room fornendo MIGRATION_20_21
+        // 2. Apri con Room fornendo MIGRATION_20_21 e MIGRATION_21_22
         AppDatabase roomDb = Room.databaseBuilder(context, AppDatabase.class, TEST_DB_NAME)
-                .addMigrations(AppDatabase.MIGRATION_20_21)
+                .addMigrations(AppDatabase.MIGRATION_20_21, AppDatabase.MIGRATION_21_22)
                 .allowMainThreadQueries()
                 .build();
 
@@ -289,6 +290,73 @@ public class DatabaseMigrationTest {
         Assert.assertEquals("webdav", config.providerId);
         Assert.assertEquals("https://example.com/webdav", config.url);
         Assert.assertTrue(config.isShared);
+
+        roomDb.close();
+    }
+
+    @Test
+    public void testMigration21To22_addsRemainingPercentage() throws Exception {
+        // 1. Crea DB a v21 con tabella products
+        SupportSQLiteOpenHelper helper = new FrameworkSQLiteOpenHelperFactory()
+                .create(SupportSQLiteOpenHelper.Configuration.builder(context)
+                        .name(TEST_DB_NAME)
+                        .callback(new SupportSQLiteOpenHelper.Callback(21) {
+                            @Override
+                            public void onCreate(SupportSQLiteDatabase db) {}
+                            @Override
+                            public void onUpgrade(SupportSQLiteDatabase db, int oldVersion, int newVersion) {}
+                        }).build());
+        SupportSQLiteDatabase db = helper.getWritableDatabase();
+
+        // Creazione schema essenziale v21
+        db.execSQL("CREATE TABLE IF NOT EXISTS `products` (" +
+                "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`dispensa_id` INTEGER NOT NULL DEFAULT 1, " +
+                "`barcode` TEXT, `quantity` INTEGER NOT NULL, " +
+                "`expiry_date` INTEGER, `product_name` TEXT, `image_url` TEXT, " +
+                "`storage_location` TEXT, `opened_date` INTEGER NOT NULL DEFAULT 0, " +
+                "`shelf_life_after_opening_days` INTEGER NOT NULL DEFAULT -1, " +
+                "`note` TEXT, `last_modified` INTEGER NOT NULL DEFAULT 0)");
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_products_storage_location` ON `products` (`storage_location`)");
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_products_dispensa_id` ON `products` (`dispensa_id`)");
+
+        db.execSQL("CREATE TABLE IF NOT EXISTS `dispense` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT, `is_default` INTEGER NOT NULL DEFAULT 0, `last_modified` INTEGER NOT NULL DEFAULT 0, `remote_id` TEXT, `device_owner_id` TEXT, `device_owner_name` TEXT)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `storage_locations` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `dispensa_id` INTEGER NOT NULL DEFAULT 1, `name` TEXT, `internal_key` TEXT, `order_index` INTEGER NOT NULL, `is_default` INTEGER NOT NULL DEFAULT 0, `is_predefined` INTEGER NOT NULL DEFAULT 0, `last_modified` INTEGER NOT NULL DEFAULT 0)");
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_storage_locations_internal_key_dispensa_id` ON `storage_locations` (`internal_key`, `dispensa_id`)");
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_storage_locations_dispensa_id` ON `storage_locations` (`dispensa_id`)");
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_storage_locations_order_index` ON `storage_locations` (`order_index`)");
+
+        db.execSQL("CREATE TABLE IF NOT EXISTS `shopping_items` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `dispensa_id` INTEGER NOT NULL DEFAULT 1, `name` TEXT, `quantity` INTEGER NOT NULL, `checked` INTEGER NOT NULL, `last_modified` INTEGER NOT NULL DEFAULT 0)");
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_shopping_items_dispensa_id` ON `shopping_items` (`dispensa_id`)");
+
+        db.execSQL("CREATE TABLE IF NOT EXISTS `categories_definitions` (`category_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `tag_name` TEXT, `display_name_it` TEXT, `language_code` TEXT, `color_hex` TEXT)");
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_categories_definitions_tag_name` ON `categories_definitions` (`tag_name`)");
+
+        db.execSQL("CREATE TABLE IF NOT EXISTS `product_category_links` (`product_id_fk` INTEGER NOT NULL, `category_id_fk` INTEGER NOT NULL, PRIMARY KEY(`product_id_fk`, `category_id_fk`), FOREIGN KEY(`product_id_fk`) REFERENCES `products`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE, FOREIGN KEY(`category_id_fk`) REFERENCES `categories_definitions`(`category_id`) ON UPDATE NO ACTION ON DELETE CASCADE)");
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_product_category_links_product_id_fk` ON `product_category_links` (`product_id_fk`)");
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_product_category_links_category_id_fk` ON `product_category_links` (`category_id_fk`)");
+
+        db.execSQL("CREATE TABLE IF NOT EXISTS `openfoodfact_cache` (`barcode` TEXT NOT NULL, `product_name` TEXT, `image_local_path` TEXT, `categories_tags` TEXT, `timestamp_ms` INTEGER NOT NULL, PRIMARY KEY(`barcode`))");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `sync_outbox` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `syncId` TEXT, `dataType` TEXT, `payload` TEXT, `timestamp` INTEGER NOT NULL, `isSynced` INTEGER NOT NULL, `dispensa_id` INTEGER NOT NULL DEFAULT 0)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `joined_pantry_configs` (`dispensa_id` INTEGER NOT NULL, `provider_id` TEXT NOT NULL DEFAULT 'webdav', `url` TEXT, `username` TEXT, `password` TEXT, `path` TEXT, `is_shared` INTEGER NOT NULL, `pantry_key` TEXT, `config_payload` TEXT, `remote_pantry_id` TEXT, PRIMARY KEY(`dispensa_id`))");
+
+        db.execSQL("INSERT INTO products (id, product_name, barcode, quantity, storage_location) " +
+                "VALUES (101, 'Farina 00', '8001234', 1, 'PANTRY')");
+
+        db.setVersion(21);
+        db.close();
+
+        // 2. Apri con Room fornendo MIGRATION_21_22
+        AppDatabase roomDb = Room.databaseBuilder(context, AppDatabase.class, TEST_DB_NAME)
+                .addMigrations(AppDatabase.MIGRATION_21_22)
+                .allowMainThreadQueries()
+                .build();
+
+        // 3. Verifica colonna e valore di default
+        Product p = roomDb.productDao().getProductByIdSync(101);
+        Assert.assertNotNull(p);
+        Assert.assertEquals("Farina 00", p.getProductName());
+        Assert.assertEquals(100, p.getRemainingPercentage());
 
         roomDb.close();
     }

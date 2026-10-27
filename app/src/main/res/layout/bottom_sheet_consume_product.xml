@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="24dp"
+    android:paddingEnd="24dp"
+    android:paddingBottom="24dp">
+
+    <!-- Material 3 Drag Handle -->
+    <com.google.android.material.bottomsheet.BottomSheetDragHandleView
+        android:id="@+id/dragHandle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <!-- Nome Prodotto -->
+    <TextView
+        android:id="@+id/textViewConsumeProductName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceTitleLarge"
+        android:textStyle="bold"
+        tools:text="Latte Parzialmente Scremato" />
+
+    <!-- Dettagli (Scadenza e Posizione) -->
+    <TextView
+        android:id="@+id/textViewConsumeProductSubtitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOutline"
+        tools:text="Frigo • Scadenza: 15/11/2026 • 2 confezioni" />
+
+    <!-- Sezione consuma unità intera (visibile quando quantity > 1) -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/buttonConsumeWholeUnit"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        app:icon="@drawable/ic_delete_24"
+        tools:text="Consuma 1 unità intera (rimangono 1)" />
+
+    <com.google.android.material.divider.MaterialDivider
+        android:id="@+id/dividerWholeUnit"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Titolo Percentuale e Valore Attuale -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/textViewPercentageTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:text="@string/consume_percentage_label"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/textViewPercentageDisplay"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:textStyle="bold"
+            tools:text="100%" />
+    </RelativeLayout>
+
+    <!-- Slider continuo -->
+    <com.google.android.material.slider.Slider
+        android:id="@+id/sliderRemainingPercentage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:stepSize="5"
+        android:value="100"
+        android:valueFrom="0"
+        android:valueTo="100" />
+
+    <!-- Chip rapidi a step -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="none"
+        android:layout_marginTop="4dp">
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chipGroupPercentages"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:selectionRequired="false"
+            app:singleSelection="true">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipPercent100"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="100%" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipPercent75"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="75%" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipPercent50"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="50%" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipPercent25"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="25%" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipPercent0"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0% (Finito)" />
+
+        </com.google.android.material.chip.ChipGroup>
+    </HorizontalScrollView>
+
+    <!-- Info box avviso scorporo lotti (visibile se quantity > 1 e percentage < 100) -->
+    <TextView
+        android:id="@+id/textViewSplitInfo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:background="?attr/colorSurfaceVariant"
+        android:padding="12dp"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:visibility="gone"
+        tools:text="Verrà aperta 1 confezione al 50%. Le restanti 2 rimarranno chiuse (100%)."
+        tools:visibility="visible" />
+
+    <!-- Pulsante Conferma Consumo -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/buttonConfirmConsume"
+        style="@style/Widget.Material3.Button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:backgroundTint="?attr/colorSecondary"
+        android:textColor="?attr/colorOnSecondary"
+        android:text="@string/consume_confirm_button" />
+
+</LinearLayout>

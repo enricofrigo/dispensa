@@ -21,6 +21,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.progressindicator.LinearProgressIndicator;
 
 import java.util.Calendar;
 import java.util.HashSet;
@@ -28,6 +29,7 @@ import java.util.Set;
 
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.data.category.ProductWithCategoryDefinitions;
+import eu.frigo.dispensa.data.product.Product;
 import eu.frigo.dispensa.ui.SettingsFragment;
 import eu.frigo.dispensa.util.DateConverter;
 
@@ -77,6 +79,7 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
         private final OnProductInteractionListener listenerInternal;
         private final ImageButton buttonShoppingCart;
         private final ImageButton buttonConsumeProduct;
+        private final LinearProgressIndicator progressRemaining;
         private ProductWithCategoryDefinitions currentProduct;
         private final ImageView imageViewOpenedIcon;
 
@@ -91,24 +94,52 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
             imageViewOpenedIcon = itemView.findViewById(R.id.imageViewOpenedIcon);
             buttonShoppingCart = itemView.findViewById(R.id.buttonShoppingCart);
             buttonConsumeProduct = itemView.findViewById(R.id.buttonConsumeProduct);
+            progressRemaining = itemView.findViewById(R.id.progressRemaining);
             itemView.setOnCreateContextMenuListener(this);
         }
 
         void bind(ProductWithCategoryDefinitions product, Set<String> shoppingListNames) {
             this.currentProduct = product;
 
-            if (product.product.isOpened()) {
+            int remaining = product.product.getRemainingPercentage();
+            boolean isOpened = product.product.isOpened() || remaining < 100;
+
+            if (isOpened) {
                 imageViewOpenedIcon.setVisibility(View.VISIBLE);
             } else {
                 imageViewOpenedIcon.setVisibility(View.GONE);
             }
+
+            if (progressRemaining != null) {
+                if (remaining < 100 || isOpened) {
+                    progressRemaining.setProgressCompat(remaining, false);
+                    progressRemaining.setVisibility(View.VISIBLE);
+                    int progressColor;
+                    if (remaining > 50) {
+                        progressColor = ContextCompat.getColor(itemView.getContext(), R.color.md_theme_primary);
+                    } else if (remaining > 25) {
+                        progressColor = ContextCompat.getColor(itemView.getContext(), R.color.product_expiring_soon_stroke);
+                    } else {
+                        progressColor = ContextCompat.getColor(itemView.getContext(), R.color.product_expired_stroke);
+                    }
+                    progressRemaining.setIndicatorColor(progressColor);
+                } else {
+                    progressRemaining.setVisibility(View.GONE);
+                }
+            }
+
             if (product.product.getProductName() != null && !product.product.getProductName().isEmpty()) {
                 textViewProductName.setText(product.product.getProductName());
                 textViewProductName.setVisibility(View.VISIBLE);
             } else {
                 textViewProductName.setText(product.product.getBarcode());
             }
-            textViewQuantity.setText(itemView.getContext().getString(R.string.quantity_label, product.product.getQuantity()));
+
+            if (remaining < 100) {
+                textViewQuantity.setText(itemView.getContext().getString(R.string.quantity_label_with_percentage, product.product.getQuantity(), remaining));
+            } else {
+                textViewQuantity.setText(itemView.getContext().getString(R.string.quantity_label, product.product.getQuantity()));
+            }
 
             textViewExpiryDate.setText(itemView.getContext().getString(R.string.expiry_date_label, product.product.getExpiryDateString()));
             if (product.product.getImageUrl() != null && !product.product.getImageUrl().trim().isEmpty()) {
@@ -244,15 +275,20 @@ public class ProductListAdapter extends ListAdapter<ProductWithCategoryDefinitio
 
         @Override
         public boolean areContentsTheSame(@NonNull ProductWithCategoryDefinitions oldItem, @NonNull ProductWithCategoryDefinitions newItem) {
-            return oldItem.product.getBarcode().equals(newItem.product.getBarcode()) &&
-                    oldItem.product.getQuantity() == newItem.product.getQuantity() &&
-                    oldItem.product.getProductName().equals(newItem.product.getProductName()) &&
-                    (oldItem.product.getImageUrl() == null || oldItem.product.getImageUrl().equals(newItem.product.getImageUrl())) &&
-                    oldItem.product.getExpiryDate().equals(newItem.product.getExpiryDate()) &&
-                    (oldItem.product.getOpenedDate()==null || oldItem.product.getOpenedDate().equals(newItem.product.getOpenedDate())) &&
-                    oldItem.product.getShelfLifeAfterOpeningDays() == newItem.product.getShelfLifeAfterOpeningDays() &&
-                    (oldItem.product.getStorageLocation()==null || oldItem.product.getStorageLocation().equals(newItem.product.getStorageLocation())) &&
-                    java.util.Objects.equals(oldItem.product.getNote(), newItem.product.getNote());
+            Product oldP = oldItem.product;
+            Product newP = newItem.product;
+            if (oldP == null || newP == null) return false;
+
+            return oldP.quantity == newP.quantity &&
+                    oldP.remainingPercentage == newP.remainingPercentage &&
+                    oldP.openedDate == newP.openedDate &&
+                    oldP.shelfLifeAfterOpeningDays == newP.shelfLifeAfterOpeningDays &&
+                    java.util.Objects.equals(oldP.getBarcode(), newP.getBarcode()) &&
+                    java.util.Objects.equals(oldP.getProductName(), newP.getProductName()) &&
+                    java.util.Objects.equals(oldP.getImageUrl(), newP.getImageUrl()) &&
+                    java.util.Objects.equals(oldP.getExpiryDate(), newP.getExpiryDate()) &&
+                    java.util.Objects.equals(oldP.getStorageLocation(), newP.getStorageLocation()) &&
+                    java.util.Objects.equals(oldP.getNote(), newP.getNote());
         }
     }
 }
