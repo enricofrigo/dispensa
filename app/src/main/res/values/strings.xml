@@ -329,4 +329,16 @@
     <string name="pantry_status_owner">Owner: You</string>
     <string name="pantry_status_guest">Shared by: %s</string>
     <string name="not_configured_badge">(Not configured)</string>
+
+    <!-- Modulo 5: Consumo Percentuale & Automazioni -->
+    <string name="consume_dialog_title">Consume product</string>
+    <string name="consume_whole_unit">Consume 1 full unit (%d left)</string>
+    <string name="consume_percentage_label">Remaining package percentage</string>
+    <string name="consume_remaining_format">%d%% remaining</string>
+    <string name="consume_split_info">1 unit will be opened at %1$d%%. The other %2$d will stay sealed (100%%).</string>
+    <string name="consume_confirm_button">Confirm consumption</string>
+    <string name="product_almost_finished_snackbar">%s is almost finished! Add to shopping list?</string>
+    <string name="action_add_to_cart">Add</string>
+    <string name="opened_and_split_success">1 unit opened at %1$d%%. %2$d left sealed.</string>
+    <string name="quantity_label_with_percentage">Quantity: %1$d (%2$d%%)</string>
 </resources>

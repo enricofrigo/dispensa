@@ -329,4 +329,16 @@ I prodotti in questo deposito potrebbero dover essere riassegnati.</string>
     <string name="pantry_status_owner">Proprietario: Tu</string>
     <string name="pantry_status_guest">Condivisa da: %s</string>
     <string name="not_configured_badge">(Non configurato)</string>
+
+    <!-- Modulo 5: Consumo Percentuale & Automazioni -->
+    <string name="consume_dialog_title">Consuma prodotto</string>
+    <string name="consume_whole_unit">Consuma 1 unità intera (rimangono %d)</string>
+    <string name="consume_percentage_label">Percentuale rimanente della confezione</string>
+    <string name="consume_remaining_format">%d%% rimanente</string>
+    <string name="consume_split_info">Verrà aperta 1 confezione al %1$d%%. Le restanti %2$d rimarranno chiuse (100%%).</string>
+    <string name="consume_confirm_button">Conferma consumo</string>
+    <string name="product_almost_finished_snackbar">%s è quasi finito! Aggiungere alla lista della spesa?</string>
+    <string name="action_add_to_cart">Aggiungi</string>
+    <string name="opened_and_split_success">1 confezione aperta al %1$d%%. %2$d rimaste chiuse.</string>
+    <string name="quantity_label_with_percentage">Quantità: %1$d (%2$d%%)</string>
 </resources>
