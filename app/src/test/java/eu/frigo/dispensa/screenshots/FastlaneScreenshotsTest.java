@@ -480,10 +480,16 @@ public class FastlaneScreenshotsTest {
                 controller.setup();
                 waitForAsyncTasks();
                 Activity act = controller.get();
-                TextView tvStatus = act.findViewById(R.id.tv_gdrive_status);
-                View btnSignIn = act.findViewById(R.id.btn_gdrive_sign_in);
-                View btnSignOut = act.findViewById(R.id.btn_gdrive_sign_out);
-                View btnSave = act.findViewById(R.id.btn_save_gdrive_config);
+                String pkg = act.getPackageName();
+                int idStatus = act.getResources().getIdentifier("tv_gdrive_status", "id", pkg);
+                int idSignIn = act.getResources().getIdentifier("btn_gdrive_sign_in", "id", pkg);
+                int idSignOut = act.getResources().getIdentifier("btn_gdrive_sign_out", "id", pkg);
+                int idSave = act.getResources().getIdentifier("btn_save_gdrive_config", "id", pkg);
+
+                TextView tvStatus = idStatus != 0 ? act.findViewById(idStatus) : null;
+                View btnSignIn = idSignIn != 0 ? act.findViewById(idSignIn) : null;
+                View btnSignOut = idSignOut != 0 ? act.findViewById(idSignOut) : null;
+                View btnSave = idSave != 0 ? act.findViewById(idSave) : null;
                 if (tvStatus != null) {
                     tvStatus.setText(act.getString(R.string.sync_gdrive_connected_as, "mario.rossi@gmail.com"));
                 }
