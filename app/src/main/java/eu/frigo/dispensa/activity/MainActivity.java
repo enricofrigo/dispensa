@@ -57,6 +57,7 @@ import java.util.Objects;
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.adapter.LocationViewPagerAdapter;
 import eu.frigo.dispensa.adapter.ProductListAdapter;
+import eu.frigo.dispensa.ui.ConsumeBottomSheetHelper;
 import eu.frigo.dispensa.data.AppDatabase;
 import eu.frigo.dispensa.data.backup.BackupManager;
 import eu.frigo.dispensa.data.category.ProductWithCategoryDefinitions;
@@ -698,18 +699,77 @@ public class MainActivity extends AppCompatActivity
         Log.d("MainActivity", "onProductItemClickedForQuantity called with product: " + productWithCategoryDefinitions);
         if (productWithCategoryDefinitions == null)
             return;
-        Product product = productWithCategoryDefinitions.product;
+        showConsumeBottomSheet(productWithCategoryDefinitions);
+    }
 
-        int currentQuantity = product.getQuantity();
-        if (currentQuantity > 1) {
-            Product updatedProduct = product.copyWithNewQuantity(currentQuantity - 1); // Assicurati che Product abbia
-                                                                                       // questo metodo
-            productViewModel.update(updatedProduct);
-        } else if (currentQuantity == 1) {
-            productViewModel.delete(product);
-            showSnackbarWithUndo(
-                    String.format(getString(R.string.notify_used), product.getProductName()),
-                    () -> productViewModel.insert(product));
+    private void showConsumeBottomSheet(ProductWithCategoryDefinitions productWithDefs) {
+        if (productWithDefs == null || productWithDefs.product == null) return;
+
+        ConsumeBottomSheetHelper.show(this, productWithDefs, new ConsumeBottomSheetHelper.OnConsumeActionListener() {
+            @Override
+            public void onConsumeWholeUnit(Product productToConsume) {
+                consumeOne(productToConsume);
+            }
+
+            @Override
+            public void onUpdatePercentage(Product productToUpdate, int newPercentage) {
+                productToUpdate.setRemainingPercentage(newPercentage);
+                if (newPercentage < 100 && productToUpdate.getOpenedDate() <= 0) {
+                    productToUpdate.setOpenedDate(System.currentTimeMillis());
+                } else if (newPercentage == 100) {
+                    productToUpdate.setOpenedDate(0L);
+                }
+                productViewModel.update(productToUpdate);
+
+                if (newPercentage <= 25) {
+                    showShoppingSuggestionSnackbar(productToUpdate);
+                }
+            }
+
+            @Override
+            public void onSplitAndConsume(Product originalProduct, int newPercentage) {
+                int currentQty = originalProduct.getQuantity();
+                Product updatedOriginal = originalProduct.copyWithNewQuantity(currentQty - 1);
+                productViewModel.update(updatedOriginal);
+
+                Product openedLot = new Product();
+                openedLot.dispensaId = originalProduct.dispensaId;
+                openedLot.barcode = originalProduct.barcode;
+                openedLot.setProductName(originalProduct.getProductName());
+                openedLot.setImageUrl(originalProduct.getImageUrl());
+                openedLot.setStorageLocation(originalProduct.getStorageLocation());
+                openedLot.setExpiryDate(originalProduct.getExpiryDate());
+                openedLot.shelfLifeAfterOpeningDays = originalProduct.shelfLifeAfterOpeningDays;
+                openedLot.setNote(originalProduct.getNote());
+                openedLot.setQuantity(1);
+                openedLot.setRemainingPercentage(newPercentage);
+                openedLot.setOpenedDate(System.currentTimeMillis());
+
+                productViewModel.insert(openedLot);
+
+                showSnackbarWithUndo(getString(R.string.opened_and_split_success, newPercentage, currentQty - 1), null);
+
+                if (newPercentage <= 25) {
+                    showShoppingSuggestionSnackbar(openedLot);
+                }
+            }
+        });
+    }
+
+    private void showShoppingSuggestionSnackbar(Product product) {
+        String name = product.getProductName() != null ? product.getProductName() : product.getBarcode();
+        View targetLayout = mainCoordinatorLayout != null ? mainCoordinatorLayout : findViewById(R.id.main_coordinator_layout);
+        if (targetLayout != null) {
+            Snackbar snackbar = Snackbar.make(targetLayout,
+                    getString(R.string.product_almost_finished_snackbar, name),
+                    Snackbar.LENGTH_LONG);
+            if (fabContainer != null) {
+                snackbar.setAnchorView(fabContainer);
+            }
+            snackbar.setAction(R.string.action_add_to_cart, v -> {
+                shoppingListViewModel.addItem(name, 1);
+            });
+            snackbar.show();
         }
     }
 
@@ -786,13 +846,11 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void confirmAndConsume(Product product) {
-        new AlertDialog.Builder(this)
-                .setTitle(R.string.use)
-                .setMessage(String.format(getString(R.string.consume_product_confirm),
-                        product.getProductName(), product.getExpiryDateString()))
-                .setPositiveButton(R.string.ok, (dialog, which) -> consumeOne(product))
-                .setNegativeButton(R.string.cancel, null)
-                .show();
+        if (product == null) return;
+        ProductWithCategoryDefinitions wrapper = new ProductWithCategoryDefinitions();
+        wrapper.product = product;
+        wrapper.categoryDefinitions = new ArrayList<>();
+        showConsumeBottomSheet(wrapper);
     }
 
     private void showDuplicateBarcodeSelectionDialog(List<Product> products, int selectedIndex) {

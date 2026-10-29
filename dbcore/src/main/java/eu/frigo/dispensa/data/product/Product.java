@@ -51,6 +51,10 @@ public class Product {
     @ColumnInfo(name = "shelf_life_after_opening_days", defaultValue = "-1")
     public int shelfLifeAfterOpeningDays = -1;
 
+    @SerializedName("remaining_percentage")
+    @ColumnInfo(name = "remaining_percentage", defaultValue = "100")
+    public int remainingPercentage = 100;
+
     @SerializedName("note")
     @ColumnInfo(name = "note")
     public String note;
@@ -177,6 +181,14 @@ public class Product {
         this.note = note;
     }
 
+    public int getRemainingPercentage() {
+        return remainingPercentage;
+    }
+
+    public void setRemainingPercentage(int remainingPercentage) {
+        this.remainingPercentage = Math.max(0, Math.min(100, remainingPercentage));
+    }
+
     @Ignore
     public Long getActualExpiryTimestamp() {
         if (openedDate > 0 && shelfLifeAfterOpeningDays > 0) {
@@ -225,6 +237,7 @@ public class Product {
                 ", storageLocation='" + storageLocation + '\'' +
                 ", openedDate=" + openedDate +
                 ", shelfLifeAfterOpeningDays=" + shelfLifeAfterOpeningDays +
+                ", remainingPercentage=" + remainingPercentage +
                 ", note='" + note + '\'' +
                 '}';
     }
@@ -240,6 +253,7 @@ public class Product {
         copy.storageLocation = this.storageLocation;
         copy.openedDate = this.openedDate;
         copy.shelfLifeAfterOpeningDays = this.shelfLifeAfterOpeningDays;
+        copy.remainingPercentage = this.remainingPercentage;
         copy.lastModified = this.lastModified;
         copy.dispensaId = this.dispensaId;
         copy.note = this.note;
@@ -271,6 +285,7 @@ public class Product {
         copy.storageLocation = this.storageLocation;
         copy.openedDate = this.openedDate;
         copy.shelfLifeAfterOpeningDays = this.shelfLifeAfterOpeningDays;
+        copy.remainingPercentage = this.remainingPercentage;
         copy.note = this.note;
         copy.lastModified = this.lastModified;
         return copy;

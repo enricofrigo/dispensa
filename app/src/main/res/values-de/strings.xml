@@ -314,4 +314,16 @@
     <string name="pantry_status_owner">Besitzer: Du</string>
     <string name="pantry_status_guest">Geteilt von: %s</string>
     <string name="not_configured_badge">(Nicht konfiguriert)</string>
+
+    <!-- Modulo 5: Consumo Percentuale & Automazioni -->
+    <string name="consume_dialog_title">Produkt verbrauchen</string>
+    <string name="consume_whole_unit">1 ganze Einheit verbrauchen (%d übrig)</string>
+    <string name="consume_percentage_label">Verbleibender Prozentsatz der Packung</string>
+    <string name="consume_remaining_format">%d%% verbleibend</string>
+    <string name="consume_split_info">1 Einheit wird zu %1$d%% geöffnet. Die restlichen %2$d bleiben verschlossen (100%%).</string>
+    <string name="consume_confirm_button">Verbrauch bestätigen</string>
+    <string name="product_almost_finished_snackbar">%s ist fast aufgebraucht! Zur Einkaufsliste hinzufügen?</string>
+    <string name="action_add_to_cart">Hinzufügen</string>
+    <string name="opened_and_split_success">1 Einheit zu %1$d%% geöffnet. %2$d verbleiben verschlossen.</string>
+    <string name="quantity_label_with_percentage">Menge: %1$d (%2$d%%)</string>
 </resources>
