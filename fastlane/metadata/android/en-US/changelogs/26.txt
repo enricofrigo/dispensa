@@ -1,0 +1,11 @@
+• fix Bugfix Layout e Quick-Wins UI Miglioramenti Interazione Card Home e Filtri Rapidi
+• fix remove skill
+• fix remove skill add more expire date
+• fix theme color palette and layout
+• fix theme color palette and layout
+• fix theme color palette
+• fix settings page
+• new bug report and new feature request form
+• update play store card
+• play flavour fastlane release script
+• new index ux
