@@ -1,0 +1,345 @@
+<resources>
+    <string name="app_name">Dispensa</string>
+
+    <!-- Toolbar -->
+    <string name="tab_title_all_products">Όλα</string>
+    <string name="product_image_description">εικόνα</string>
+    <string name="add_new_product">Προσθήκη προϊόντος</string>
+    <string name="action_search">Αναζήτηση</string>
+    <string name="action_search_hint">Αναζήτηση προϊόντος…</string>
+    <string name="action_toggle_layout">Αλλαγή διάταξης</string>
+    <string name="drag_handle_description">Μετακίνηση</string>
+    <string name="action_settings">Ρυθμίσεις</string>
+    <string name="layout_grid_title">Πλέγμα</string>
+    <string name="layout_list_title">Λίστα</string>
+
+    <!-- Permissions -->
+    <string name="notify_permission_title">Απαιτείται άδεια ειδοποιήσεων</string>
+    <string name="notify_permission_description">Η εφαρμογή χρειάζεται άδεια για να σου στέλνει ειδοποιήσεις για προϊόντα που πλησιάζουν στην ημερομηνία λήξης τους.</string>
+    <string name="notify_permission_accpeted">Η άδεια ειδοποιήσεων παραχωρήθηκε</string>
+    <string name="notify_permission_denied">Η άδεια ειδοποιήσεων απορρίφθηκε. Δεν είναι δυνατή η αποστολή ειδοποιήσεων.</string>
+    <string name="camera_permission_accepted">Η άδεια πρόσβασης στην κάμερα παραχωρήθηκε</string>
+    <string name="camera_permission_denied">Η άδεια πρόσβασης στην κάμερα απορρίφθηκε. Δεν είναι δυνατή η σάρωση.</string>
+
+    <!-- Products -->
+    <string name="add_product">Προσθήκη προϊόντος</string>
+    <string name="edit_product">Επεξεργασία προϊόντος</string>
+    <string name="update_product">Ενημέρωση προϊόντος</string>
+    <string name="barcode_hint">Γραμμοκώδικας</string>
+    <string name="scan_barcode_description">Σάρωση γραμμοκώδικα</string>
+    <string name="scan_barcode_error">Η σάρωση του γραμμοκώδικα απέτυχε ή ακυρώθηκε</string>
+    <string name="no_barcode_in_image">Δεν βρέθηκε γραμμοκώδικας.</string>
+    <string name="err_load_image">Σφάλμα φόρτωσης εικόνας.</string>
+    <string name="quantity_hint">Ποσότητα</string>
+    <string name="quantity_mandatory">Η ποσότητα είναι υποχρεωτική</string>
+    <string name="err_quantity_zero">Η ποσότητα πρέπει να είναι μεγαλύτερη από το μηδέν</string>
+    <string name="err_quantity_valid">Εισήγαγε έγκυρη ποσότητα</string>
+    <string name="expiry_date_hint">Ημερομηνία λήξης</string>
+    <string name="save_product_button">Αποθήκευση προϊόντος</string>
+    <string name="btn_save_and_add_another_expiry">+ Προσθήκη ημερομηνίας λήξης</string>
+    <string name="batch_saved_snackbar">Η παρτίδα %1$d για το προϊόν %2$s αποθηκεύτηκε! Εισήγαγε την επόμενη ημερομηνία λήξης.</string>
+    <string name="filter_all_count">Όλα (%d)</string>
+    <string name="filter_expiring_soon_count">Λήγουν σύντομα (%d)</string>
+    <string name="filter_expired_count">Ληγμένα (%d)</string>
+    <string name="action_consume">Κατανάλωση 1 τεμαχίου</string>
+    <string name="no_products_matching_filter">Δεν υπάρχουν προϊόντα που να αντιστοιχούν στο επιλεγμένο φίλτρο</string>
+    <string name="quantity_label">Ποσότητα: %d</string>
+    <string name="expiry_date_label">Λήξη: %s</string>
+    <string name="expiry_date_mandatory">Η ημερομηνία λήξης είναι υποχρεωτική</string>
+    <string name="add_product_title">Προσθήκη προϊόντος</string>
+    <string name="exp_date">Λήξη: %s</string>
+    <string name="not_defined">Μ/Δ</string>
+    <string name="notify_load_product">Φόρτωση δεδομένων προϊόντος…</string>
+    <string name="err_load_product">Σφάλμα φόρτωσης του προϊόντος για επεξεργασία.</string>
+    <string name="err_camera">Σφάλμα εκκίνησης της κάμερας</string>
+    <string name="err_barcode">Μη έγκυρος γραμμοκώδικας</string>
+    <string name="notify_loaded_product">Τα δεδομένα φορτώθηκαν</string>
+    <string name="notify_update_product">Το προϊόν ενημερώθηκε: %s</string>
+    <string name="notify_add_product">Το προϊόν προστέθηκε: %s</string>
+    <string name="notify_add_new_product">Προστέθηκε νέο προϊόν</string>
+    <string name="delete_product_title">Επιβεβαίωση διαγραφής</string>
+    <string name="delete_product_descritpion">Είσαι σίγουρος ότι θέλεις να διαγράψεις το προϊόν: %s;</string>
+    <string name="notify_delete_product">Το προϊόν διαγράφηκε: %s</string>
+    <string name="notify_used">"\"%s\" διαγράφηκε."</string>
+
+    <!-- Open/close -->
+    <string name="open">Άνοιγμα</string>
+    <string name="open_date_nd">Άνοιγμα σε: Μ/Δ</string>
+    <string name="open_date">Άνοιγμα σε: %s</string>
+    <string name="product_opened_icon_description">ανοιγμένο</string>
+    <string name="days_opened">Διάρκεια διατήρησης μετά το άνοιγμα (ημέρες)</string>
+    <string name="close">Κλείσιμο</string>
+    <string name="err_days">Εισήγαγε έναν έγκυρο αριθμό</string>
+
+    <!-- Buttons -->
+    <string name="add">Προσθήκη</string>
+    <string name="delete">Διαγραφή</string>
+    <string name="reomve">Αφαίρεση</string>
+    <string name="edit">Επεξεργασία</string>
+    <string name="use">Χρήση</string>
+    <string name="save">Αποθήκευση</string>
+    <string name="cancel">Ακύρωση</string>
+    <string name="ok">Εντάξει</string>
+    <string name="move">Μετακίνηση</string>
+
+    <!-- Messages -->
+    <string name="notify_saved">Η αποθήκευση ολοκληρώθηκε με επιτυχία</string>
+    <string name="not_find">Δεν βρέθηκε</string>
+    <string name="err_network">Σφάλμα δικτύου</string>
+    <string name="canceled">Ακυρώθηκε</string>
+
+    <!-- Tags -->
+    <string name="button_add_tag">Προσθήκη</string>
+    <string name="hint_product_name">Όνομα προϊόντος</string>
+    <string name="product_name_mandatory">Το όνομα προϊόντος είναι υποχρεωτικό αν δεν υπάρχει γραμμοκώδικας</string>
+    <string name="hint_product_image">Εικόνα προϊόντος</string>
+    <string name="hint_product_notes">Σημειώσεις</string>
+    <string name="hint_category_tags">Ετικέτες</string>
+    <string name="hint_category_new">Νέα ετικέτα (π.χ. en:dairy)</string>
+
+    <!-- Location -->
+    <string name="hint_store_location">Τοποθεσία</string>
+    <string name="edit_location">Επεξεργασία τοποθεσίας</string>
+    <string name="delete_location">Διαγραφή τοποθεσίας</string>
+    <string name="add_new_location">Προσθήκη νέας τοποθεσίας</string>
+    <string name="title_manage_locations">Διαχείριση τοποθεσιών</string>
+    <string name="location_management_description">Αναδιάταξε τις τοποθεσίες σου ή επίλεξε ποια θα εμφανίζεται ως προεπιλογή κατά το άνοιγμα της εφαρμογής</string>
+    <string name="error_empty_location">Το όνομα δεν μπορεί να είναι κενό</string>
+    <string name="error_empty_item_name">Το όνομα του αντικειμένου δεν μπορεί να είναι κενό</string>
+    <string name="notify_add_location">Η τοποθεσία \'%s\' προστέθηκε</string>
+    <string name="notify_update_location">Η τοποθεσία ενημερώθηκε</string>
+    <string name="error_delete_default_location">Οι προεπιλεγμένες τοποθεσίες δεν μπορούν να διαγραφούν.</string>
+    <string name="delete_location_confirmation_title">Επιβεβαίωση διαγραφής</string>
+    <string name="error_delete_location_confirmation">Είσαι σίγουρος ότι θέλεις να διαγράψεις την τοποθεσία \'%s\';\nΊσως χρειαστεί να μετακινήσεις τα προϊόντα που βρίσκονται σε αυτήν.</string>
+    <string name="notify_delete_location">Η τοποθεσία \'%s\' διαγράφηκε</string>
+    <string name="err_location_select">Επίλεξε μια τοποθεσία</string>
+    <string name="add_product_camera_preview_hint">Σάρωσε τον γραμμοκώδικα ή την ημερομηνία λήξης για να προσθέσεις προϊόν</string>
+
+    <!-- Version -->
+    <string name="version_format_detailed">Έκδοση: %1$s (Αρ. Έκδοσης: %2$s)</string>
+    <string name="version_not_available">Έκδοση: Μ/Δ</string>
+    <string name="loading_version">Έκδοση: Φόρτωση…</string>
+
+    <!-- Notifiche -->
+    <string name="expiry_notification_channel_name">Ειδοποιήσεις λήξης προϊόντων</string>
+    <string name="expiring_products_notification_title">Προϊόντα που λήγουν: %d</string>
+
+    <!-- Preferences -->
+    <string name="pref_cat_general_title">Εμφάνιση και Γενικά</string>
+    <string name="pref_cat_expiry_title">Λήξεις και Ειδοποιήσεις</string>
+    <string name="pref_cat_device_title">Συσκευή</string>
+    <string name="pref_device_name_title">Όνομα συσκευής</string>
+    <string name="pref_device_name_summary">Όνομα αυτής της συσκευής για κοινή χρήση</string>
+    <string name="pref_exp_days_title">Ημέρες πριν από τη λήξη</string>
+    <string name="pref_exp_days_summary">Πόσες ημέρες πριν από τη λήξη θα λαμβάνεις ειδοποίηση.</string>
+    <string name="pref_key_exp_days">pref_expiry_days_before</string>
+    <string name="pref_key_exp_time">pref_notification_time</string>
+    <string name="pref_key_exp_time_title">Ώρα ειδοποίησης</string>
+    <string name="pref_key_exp_summary">Επίλεξε την ώρα ειδοποίησης.</string>
+    <string name="pref_default_shelf_life_title">Προεπιλεγμένη διάρκεια διατήρησης μετά το άνοιγμα (ημέρες)</string>
+    <string name="pref_default_shelf_life_summary">Προεπιλεγμένος αριθμός ημερών κατά την προσθήκη νέου προϊόντος</string>
+    <string name="pref_default_expiry_days_title">Προεπιλεγμένες ημέρες μέχρι τη λήξη</string>
+    <string name="pref_default_expiry_days_summary">Αυτόματος υπολογισμός της ημερομηνίας λήξης με βάση τη σημερινή ημερομηνία συν τις υπόλοιπες ημέρες</string>
+    <string name="pref_exp_days_error">Εισήγαγε έγκυρο αριθμό ημερών από 0 έως 365.</string>
+
+    <string name="pref_key_location">manage_locations</string>
+    <string name="pref_predefined_tab_style_icon">Εμφάνιση των προκαθορισμένων καρτελών ως εικονίδια</string>
+
+    <string name="pref_key_theme">theme_preference</string>
+    <string name="pref_theme_title">Θέμα εφαρμογής</string>
+    <string name="pref_theme_dark_entry">Σκούρο</string>
+    <string name="pref_theme_light_entry">Ανοιχτό</string>
+    <string name="pref_theme_system_entry">Προεπιλογή συστήματος</string>
+    <string name="pref_theme_dark">dark</string>
+    <string name="pref_theme_light">light</string>
+    <string name="pref_theme_system">system</string>
+
+    <string name="pref_cat_title_language">Γλώσσα</string>
+    <string name="language_english">Αγγλικά</string>
+    <string name="language_italian">Ιταλικά</string>
+    <string name="language_german">Γερμανικά</string>
+    <string name="language_greek">Ελληνικά</string>
+
+    <string name="pref_cat_data_title">Δεδομένα και Προχωρημένες Επιλογές</string>
+    <string name="pref_off_title">Ενεργοποίηση της API του Open Food Facts</string>
+    <string name="pref_off_summary">Επίτρεψε στην εφαρμογή να λαμβάνει δεδομένα από το Open Food Facts</string>
+    <string name="notify_clean_images_done">Διαγράφηκαν %d εικόνες χωρίς αντίστοιχο προϊόν</string>
+    <string name="err_api">Δεν είναι δυνατή η φόρτωση δεδομένων από την API. Ενεργοποίησε το Open Food Facts!</string>
+
+    <!-- Cache Settings -->
+    <string name="pref_off_cache_limit_title">Όριο προσωρινής αποθήκευσης εκτός σύνδεσης</string>
+    <string name="pref_off_cache_limit_summary">Μέγιστος αριθμός προϊόντων στην προσωρινή αποθήκευση (προεπιλογή: 100)</string>
+    <string name="pref_off_cache_ttl_title">Διάρκεια προσωρινής αποθήκευσης (ημέρες)</string>
+    <string name="pref_off_cache_ttl_summary">Χρόνος διατήρησης των δεδομένων στην προσωρινή αποθήκευση (προεπιλογή: 30 ημέρες)</string>
+    <string name="pref_off_cache_clear_title">Εκκαθάριση προσωρινής αποθήκευσης</string>
+    <string name="pref_off_cache_clear_summary">Διαγραφή όλων των δεδομένων και εικόνων εκτός σύνδεσης</string>
+    <string name="notify_cache_cleared">Η προσωρινή αποθήκευση εκκαθαρίστηκε</string>
+    <string name="pref_installation_id_title">Αναγνωριστικό εγκατάστασης</string>
+    <string name="installation_id_copied">Το αναγνωριστικό εγκατάστασης αντιγράφηκε στο πρόχειρο</string>
+    <string name="notify_loaded_from_cache">Φορτώθηκε από την προσωρινή αποθήκευση εκτός σύνδεσης</string>
+
+    <string name="default_location_pantry_entry">Τροφοθήκη</string>
+    <string name="default_location_freezer_entry">Καταψύκτης</string>
+    <string name="default_location_fridge_entry">Ψυγείο</string>
+
+    <string name="move_product_to_title">Μετακίνηση στο %s</string>
+    <string name="product_moved_toast">Το %s μετακινήθηκε στο %s</string>
+    <string name="product_count_footer_simple">Προϊόντα: %d</string>
+    <string name="product_count_footer">Προϊόντα: %d    Ληγμένα: %d     Κοντά στη λήξη: %d</string>
+
+    <string name="off_banner_text">Το Open Food Facts είναι απενεργοποιημένο.</string>
+    <string name="off_banner_button">Προτιμήσεις</string>
+    <string name="exp_date_del_rescan">Διαγραφή και εκ νέου σάρωση ημερομηνίας λήξης</string>
+    <string name="add_product_scan">Σάρωση</string>
+    <string name="add_product_image">Επιλογή εικόνας</string>
+    <string name="pick_product_image_gallery">Επιλογή από τη συλλογή</string>
+    <string name="take_product_photo">Λήψη φωτογραφίας</string>
+    <string name="err_create_photo_file">Δεν ήταν δυνατή η δημιουργία αρχείου φωτογραφίας</string>
+    <string name="image_changed">Η εικόνα ενημερώθηκε</string>
+
+    <string name="action_export">Εξαγωγή δεδομένων</string>
+    <string name="action_import">Εισαγωγή δεδομένων</string>
+    <string name="export_success">Τα δεδομένα εξήχθησαν</string>
+    <string name="export_error">Σφάλμα κατά την εξαγωγή δεδομένων: %s</string>
+    <string name="import_success">Η εισαγωγή δεδομένων ολοκληρώθηκε με επιτυχία. Επανεκκίνηση…</string>
+    <string name="import_error">Σφάλμα κατά την εισαγωγή δεδομένων: %s</string>
+    <string name="import_confirm_title">Επιβεβαίωση εισαγωγής</string>
+    <string name="import_confirm_message">Αυτή η ενέργεια θα αντικαταστήσει όλα τα υπάρχοντα δεδομένα με εκείνα του επιλεγμένου αρχείου. Συνέχεια;</string>
+    <string name="set_as_default">Ορισμός ως προεπιλογή</string>
+
+    <!-- Tooltips -->
+    <string name="hint_add_product">Πρόσθεσε εδώ το πρώτο σου προϊόν</string>
+    <string name="hint_consume_product">Σάρωσε για να καταναλώσεις ένα προϊόν</string>
+    <string name="hint_manage_locations">Πάτησε εδώ για να διαχειριστείς τις τοποθεσίες αποθήκευσης</string>
+    <string name="hint_manage_settings">Πάτησε εδώ για εισαγωγή/εξαγωγή προϊόντων ή διαχείριση των ρυθμίσεων</string>
+
+    <!-- Consume Scanner -->
+    <string name="consume_product_not_found">Δεν βρέθηκε προϊόν με αυτό το γραμμοκώδικα</string>
+    <string name="consume_product_confirm">Θέλεις να καταναλώσεις 1 τεμάχιο από το %1$s (Λήξη: %2$s);</string>
+    <string name="consume_duplicate_title">Βρέθηκαν πολλαπλά προϊόντα. Επίλεξε ποιο θέλεις να καταναλώσεις:</string>
+    <string name="consume_success">Το προϊόν καταναλώθηκε με επιτυχία</string>
+    <string name="consume_scan_description">Σάρωσε το προϊόν για να το καταναλώσεις</string>
+
+    <!-- Shopping List -->
+    <string name="shopping_list_title">Λίστα αγορών</string>
+    <string name="shopping_list_empty">Η λίστα αγορών σου είναι κενή</string>
+    <string name="shopping_list_add">Προσθήκη στη λίστα αγορών</string>
+    <string name="shopping_list_remove">Αφαίρεση από τη λίστα αγορών</string>
+    <string name="shopping_list_clear_checked">Αφαίρεση αγορασμένων προϊόντων</string>
+    <string name="shopping_list_clear_confirm">Να αφαιρεθούν όλα τα αγορασμένα προϊόντα από τη λίστα;</string>
+    <string name="shopping_list_quantity">x%d</string>
+    <string name="action_share">Κοινή χρήση</string>
+    <string name="share_shopping_list_title">Η λίστα αγορών μου</string>
+
+    <!-- Sync -->
+    <string name="pref_cat_sync_title">Συγχρονισμός και κοινή χρήση</string>
+    <string name="pref_sync_enabled_title">Ενεργοποίηση συγχρονισμού στο cloud</string>
+    <string name="pref_sync_enabled_summary">Συγχρόνισε την τροφοθήκη σου μεταξύ συσκευών</string>
+    <string name="pref_sync_provider_title">Συγχρονισμός Παρόχου</string>
+    <string name="pref_sync_now_title">Συγχρονισμός Τώρα</string>
+    <string name="pref_sync_status_title">Κατάσταση Συγχρονισμού</string>
+    <string name="sync_status_connected">Συνδεδεμένος ως %s</string>
+    <string name="sync_status_disconnected">Αποσυνδεδεμένος</string>
+    <string name="sync_last_time">Τελευταίος συγχρονισμός: %s</string>
+    <string name="share_pantry">Κοινή χρήση τροφοθήκης</string>
+    <string name="share_pantry_dialog_title">Κοινή χρήση τροφοθήκης</string>
+    <string name="provider_webdav">WebDAV</string>
+    <string name="provider_local_saf">Τοπικός Κοινόχρηστος Φάκελος (SAF)</string>
+    <string name="provider_gdrive">Google Drive</string>
+    <string name="sync_gdrive_config_title">Ρύθμιση Google Drive</string>
+    <string name="sync_gdrive_sign_in">Σύνδεση με Google</string>
+    <string name="sync_gdrive_sign_out">Αποσύνδεση από το Google Drive</string>
+    <string name="sync_gdrive_connected_as">Συνδεδεμένος ως: %s</string>
+    <string name="sync_gdrive_not_connected">Δεν υπάρχει σύνδεση με το Google Drive</string>
+    <string name="sync_gdrive_share_with_title">Κοινή χρήση με λογαριασμό Google</string>
+    <string name="sync_gdrive_share_with_desc">Εισήγαγε τη διεύθυνση email Google του παραλήπτη ή επίλεξέ τον από τις επαφές σου για να μοιραστείς αυτήν την τροφοθήκη.</string>
+    <string name="sync_gdrive_email_hint">Email λογαριασμού Google</string>
+    <string name="sync_gdrive_pick_contact">Επιλογή από επαφές</string>
+    <string name="sync_gdrive_share_action">Κοινή χρήση &amp; και εμφάνιση QR</string>
+    <string name="sync_gdrive_sharing_in_progress">Κοινή χρήση φακέλου στο Google Drive…</string>
+    <string name="sync_gdrive_shared_with">Σε κοινή χρήση με: %s</string>
+    <string name="sync_gdrive_share_another">Κοινή χρήση με άλλον λογαριασμό</string>
+    <string name="sync_gdrive_invalid_email">Εισήγαγε έγκυρη διεύθυνση email Google</string>
+    <string name="sync_gdrive_no_email_in_contact">Δεν βρέθηκε διεύθυνση email στην επιλεγμένη επαφή</string>
+    <string name="sync_gdrive_contacts_not_available">Η εφαρμογή επαφών δεν είναι διαθέσιμη</string>
+    <string name="preparing_sync_server">Προετοιμασία απομακρυσμένου συγχρονισμού…</string>
+    <string name="sync_setup_error">Η ρύθμιση κοινής χρήσης απέτυχε: %s</string>
+    <string name="sync_remote_delete_error">Σφάλμα απομακρυσμένης διαγραφής: %s. Η τοπική διαγραφή θα συνεχιστεί.</string>
+    <string name="join_pantry">Σύνδεση σε τροφοθήκη</string>
+    <string name="pairing_code_hint">Εισήγαγε κωδικό (π.χ. ΑΒ-ΓΔΕΖ)</string>
+    <string name="sync_setup_title">Ρύθμιση συγχρονισμού</string>
+    <string name="sync_webdav_url">Σύνδεσμος WebDAV</string>
+    <string name="sync_webdav_user">Όνομα χρήστη</string>
+    <string name="sync_webdav_pass">Κωδικός πρόσβασης / Token εφαρμογής</string>
+    <string name="sync_webdav_path">Διαδρομή απομακρυσμένου φακέλου</string>
+    <string name="sync_webdav_shared_mode">Κοινόχρηστος φάκελος (μόνο κωδικός πρόσβασης)</string>
+    <string name="sync_pairing_success">Η σύνδεση με την τροφοθήκη ολοκληρώθηκε με επιτυχία!</string>
+    <string name="sync_pairing_error">Μη έγκυρος κωδικός σύζευξης ή δεδομένα QR</string>
+    <string name="action_manage_devices">Διαχείριση συσκευών</string>
+    <string name="title_manage_devices">Καταχωρισμένες συσκευές</string>
+    <string name="no_devices_found">Δεν βρέθηκαν συσκευές</string>
+    <string name="warn_mandatory_fields">Συμπλήρωσε όλα τα υποχρεωτικά πεδία</string>
+    <string name="sync_setup_saved">Η διαμόρφωση αποθηκεύτηκε με επιτυχία</string>
+    <string name="sync_device_delete_confirm">Είσαι σίγουρος ότι θέλεις να αφαιρέσεις τη συσκευή \'%s\'; Δεν θα μπορεί πλέον να συγχρονίζεται μέχρι να την προσθέσεις ξανά.</string>
+    <string name="sync_device_delete_success">Η συσκευή αφαιρέθηκε με επιτυχία</string>
+    <string name="sync_delete_device_err">Σφάλμα κατά την αφαίρεση: %s</string>
+    <string name="sync_not_configured">Ο συγχρονισμός δεν έχει ρυθμιστεί</string>
+    <string name="sync_not_active_for_pantry">Ο συγχρονισμός δεν είναι ενεργός για αυτήν την τροφοθήκη</string>
+    <string name="sync_preparing_server">Προετοιμασία διακομιστή…</string>
+    <string name="sync_pairing_expired">Ο κωδικός QR έληξε (ισχύει για 10 λεπτά). Δημιούργησε έναν νέο.</string>
+    <string name="sync_owner_delete_warning">Διαγράφεις τον κάτοχο αυτής της κοινής χρήσης. Αυτό θα ΔΙΑΓΡΑΨΕΙ ΟΡΙΣΤΙΚΑ ολόκληρο τον απομακρυσμένο φάκελο συγχρονισμού και θα αποσυνδέσει όλες τις άλλες συσκευές. Θέλεις να συνεχίσεις;</string>
+    <string name="sync_pantry_deleted_success">Ο απομακρυσμένος κοινόχρηστος φάκελος διαγράφηκε με επιτυχία</string>
+
+    <!-- Dispensa Management -->
+    <string name="manage_dispense_title">Διαχείριση τροφοθηκών</string>
+    <string name="add_dispensa">Προσθήκη τροφοθήκης</string>
+    <string name="import_pantry">Εισαγωγή από αρχείο</string>
+    <string name="edit_dispensa">Επεξεργασία τροφοθήκης</string>
+    <string name="delete_dispensa_title">Διαγραφή τροφοθήκης</string>
+    <string name="delete_dispensa_message">Είσαι σίγουρος ότι θέλεις να διαγράψεις αυτήν την τροφοθήκη; Όλα τα σχετικά προϊόντα και οι τοποθεσίες θα χαθούν.</string>
+    <string name="name_required">Το όνομα είναι υποχρεωτικό</string>
+    <string name="cannot_delete_default_dispensa">Δεν είναι δυνατή η διαγραφή της προεπιλεγμένης τροφοθήκης</string>
+    <string name="dispensa_name">Όνομα τροφοθήκης</string>
+    <string name="pantry_owner_format">Κάτοχος: %s</string>
+
+    <!-- Shared Pantries & Provider Config -->
+    <string name="title_shared_dispense">Κοινόχρηστες τροφοθήκες</string>
+    <string name="subtitle_shared_dispense">Διαχείριση τροφοθηκών που συγχρονίζονται με διάφορους παρόχους</string>
+    <string name="no_shared_dispense">Δεν υπάρχουν κοινόχρηστες τροφοθήκες</string>
+    <string name="no_shared_dispense_desc">Δεν έχεις μοιραστεί ή συνδέσει ακόμη κάποια τροφοθήκη.</string>
+    <string name="sync_local_saf_config_title">Ρύθμιση τοπικού φακέλου (SAF)</string>
+    <string name="sync_local_saf_desc">Επίλεξε έναν φάκελο στη συσκευή σου, στην κάρτα SD ή σε δικτυακή τοποθεσία για την αποθήκευση και τον συγχρονισμό των τροφοθηκών σου.</string>
+    <string name="sync_local_saf_select_folder">Επιλογή φακέλου</string>
+    <string name="sync_local_saf_selected_folder">Επιλεγμένος φάκελος: %s</string>
+    <string name="sync_local_saf_no_folder">Δεν έχει επιλεγεί φάκελος</string>
+    <string name="sync_local_saf_test_permissions">Έλεγχος δικαιωμάτων</string>
+    <string name="sync_local_saf_clear_folder">Εκκαθάριση φακέλου</string>
+    <string name="sync_local_saf_permission_ok">Τα δικαιώματα ανάγνωσης και εγγραφής επαληθεύτηκαν με επιτυχία</string>
+    <string name="sync_local_saf_permission_err">Σφάλμα δικαιωμάτων: %s</string>
+    <string name="action_configure_provider">Ρύθμιση παρόχων</string>
+    <string name="action_stop_sharing">Διακοπή κοινής χρήσης</string>
+    <string name="stop_sharing_confirm_title">Διακοπή κοινής χρήσης;</string>
+    <string name="stop_sharing_confirm_message">Είσαι σίγουρος ότι θέλεις να διακόψεις τον συγχρονισμό του \'%1$s\' με το %2$s;</string>
+    <string name="provider_not_configured_prompt">Ο πάροχος \'%s\' δεν έχει ρυθμιστεί ακόμη. Θέλεις να τον ρυθμίσεις τώρα;</string>
+    <string name="pref_shared_pantries_title">Κοινόχρηστες τροφοθήκες</string>
+    <string name="pref_shared_pantries_summary">Διαχείριση συγχρονισμένων τροφοθηκών</string>
+    <string name="pref_providers_title">Πάροχοι συγχρονισμού</string>
+    <string name="pref_providers_summary">Ρύθμιση παρόχων</string>
+    <string name="action_change_provider">Αλλαγή παρόχου</string>
+    <string name="show_pairing_qr">Εμφάνιση κωδικού σύζευξης / QR</string>
+    <string name="pantry_status_owner">Κάτοχος: Εσύ</string>
+    <string name="pantry_status_guest">Κοινή χρήση από: %s</string>
+    <string name="not_configured_badge">(Δεν έχει ρυθμιστεί)</string>
+
+    <!-- Modulo 5: Consumo Percentuale & Automazioni -->
+    <string name="consume_dialog_title">Κατανάλωση προϊόντος</string>
+    <string name="consume_whole_unit">Κατανάλωση 1 ολόκληρου τεμαχίου (απομένουν %d)</string>
+    <string name="consume_percentage_label">Ποσοστό που απομένει στη συσκευασία</string>
+    <string name="consume_remaining_format">Απομένει %d%%</string>
+    <string name="consume_split_info">Θα ανοιχτεί 1 τεμάχιο με υπόλοιπο %1$d%%. Τα υπόλοιπα %2$d θα παραμείνουν σφραγισμένα (100%%).</string>
+    <string name="consume_confirm_button">Επιβεβαίωση κατανάλωσης</string>
+    <string name="product_almost_finished_snackbar">Το %s τελειώνει! Να προστεθεί στη λίστα αγορών;</string>
+    <string name="action_add_to_cart">Προσθήκη</string>
+    <string name="opened_and_split_success">Ανοίχτηκε 1 τεμάχιο με υπόλοιπο %1$d%%. Απομένουν %2$d σφραγισμένα.</string>
+    <string name="quantity_label_with_percentage">Ποσότητα: %1$d (%2$d%%)</string>
+</resources>
