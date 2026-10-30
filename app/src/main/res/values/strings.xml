@@ -157,6 +157,8 @@
     <string name="pref_cat_title_language">Language</string>
     <string name="language_english">English</string>
     <string name="language_italian">Italian</string>
+    <string name="language_german">German</string>
+    <string name="language_greek">Greek</string>
 
     <string name="pref_cat_data_title">Data and Advanced</string>
     <string name="pref_off_title">Enable Open Food Fact API</string>
@@ -217,8 +219,7 @@
     <string name="consume_duplicate_title">Multiple products found. Choose which to consume:</string>
     <string name="consume_success">Product consumed successfully</string>
     <string name="consume_scan_description">Scan product to consume</string>
-    <string name="language_german">German</string>
-
+    
     <!-- Shopping List -->
     <string name="shopping_list_title">Shopping list</string>
     <string name="shopping_list_empty">Your shopping list is empty</string>
