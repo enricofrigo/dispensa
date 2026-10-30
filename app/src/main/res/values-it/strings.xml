@@ -158,6 +158,10 @@ I prodotti in questo deposito potrebbero dover essere riassegnati.</string>
     <string name="pref_cat_title_language">Lingua</string>
     <string name="language_english">Inglese</string>
     <string name="language_italian">Italiano</string>
+    <string name="language_german">Tedesco</string>
+    <string name="language_greek">Greco</string>
+
+
 
     <string name="pref_cat_data_title">Dati e Avanzate</string>
     <string name="notify_clean_images_done">Eliminate %d immagini orfane</string>
@@ -219,7 +223,6 @@ I prodotti in questo deposito potrebbero dover essere riassegnati.</string>
     <string name="consume_duplicate_title">Più prodotti trovati. Scegli quale consumare:</string>
     <string name="consume_success">Prodotto consumato correttamente</string>
     <string name="consume_scan_description">Scansiona prodotto da consumare</string>
-    <string name="language_german">Tedesco</string>
 
     <!-- Shopping List -->
     <string name="shopping_list_title">Lista della spesa</string>
