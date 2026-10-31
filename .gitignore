@@ -45,3 +45,7 @@ dispensa-491717-bef9cbd48656.json
 keystore.properties
 /.agent/
 /scripts/
+
+# Fastlane
+fastlane/report.xml
+fastlane/README.md
