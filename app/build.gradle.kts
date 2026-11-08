@@ -24,8 +24,8 @@ android {
         applicationId = "eu.frigo.dispensa"
         minSdk = 27
         targetSdk = 36
-        versionCode = 26
-        versionName = "0.1.16"
+        versionCode = 27
+        versionName = "0.1.17"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
