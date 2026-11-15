@@ -1,0 +1,2 @@
+• fix: restore fastlane README.md entry in .gitignore
+• Add Brazilian Portuguese localization and update .gitignore
