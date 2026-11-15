@@ -1,0 +1,347 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Dispensa</string>
+
+    <!-- Toolbar -->
+    <string name="tab_title_all_products">Todos</string>
+    <string name="product_image_description">imagem</string>
+    <string name="add_new_product">Adicionar produto</string>
+    <string name="action_search">Pesquisar</string>
+    <string name="action_search_hint">Pesquisar produto…</string>
+    <string name="action_toggle_layout">Alterar layout</string>
+    <string name="drag_handle_description">Mover</string>
+    <string name="action_settings">Configurações</string>
+    <string name="layout_grid_title">Grade</string>
+    <string name="layout_list_title">Lista</string>
+
+    <!-- Permissions -->
+    <string name="notify_permission_title">Permissão de notificações necessária</string>
+    <string name="notify_permission_description">O app precisa de permissão para enviar notificações sobre produtos próximos do vencimento.</string>
+    <string name="notify_permission_accpeted">Permissão de notificações concedida</string>
+    <string name="notify_permission_denied">Permissão de notificações negada. Não é possível enviar notificações.</string>
+    <string name="camera_permission_accepted">Permissão de câmera concedida</string>
+    <string name="camera_permission_denied">Permissão de câmera negada. Não é possível escanear.</string>
+
+    <!-- Products -->
+    <string name="add_product">Adicionar produto</string>
+    <string name="edit_product">Editar produto</string>
+    <string name="update_product">Atualizar produto</string>
+    <string name="barcode_hint">Código de barras</string>
+    <string name="scan_barcode_description">Escanear código de barras</string>
+    <string name="scan_barcode_error">Falha ou cancelamento ao escanear código de barras</string>
+    <string name="no_barcode_in_image">Código de barras não encontrado.</string>
+    <string name="err_load_image">Erro ao carregar imagem.</string>
+    <string name="quantity_hint">Quantidade</string>
+    <string name="quantity_mandatory">A quantidade é obrigatória</string>
+    <string name="err_quantity_zero">A quantidade deve ser maior que zero</string>
+    <string name="err_quantity_valid">Insira uma quantidade válida</string>
+    <string name="expiry_date_hint">Data de validade</string>
+    <string name="save_product_button">Salvar produto</string>
+    <string name="btn_save_and_add_another_expiry">+ Outra validade</string>
+    <string name="batch_saved_snackbar">Lote %1$d salvo para %2$s! Insira a próxima data de validade.</string>
+    <string name="filter_all_count">Todos (%d)</string>
+    <string name="filter_expiring_soon_count">Vencendo em breve (%d)</string>
+    <string name="filter_expired_count">Vencidos (%d)</string>
+    <string name="action_consume">Consumir 1 unidade</string>
+    <string name="no_products_matching_filter">Nenhum produto corresponde ao filtro selecionado</string>
+    <string name="quantity_label">Quantidade: %d</string>
+    <string name="expiry_date_label">Validade: %s</string>
+    <string name="expiry_date_mandatory">A data de validade é obrigatória</string>
+    <string name="add_product_title">Adicionar produto</string>
+    <string name="exp_date">Validade: %s</string>
+    <string name="not_defined">N/D</string>
+    <string name="notify_load_product">carregando dados do produto…</string>
+    <string name="err_load_product">Erro ao carregar produto para edição.</string>
+    <string name="err_camera">Erro ao iniciar a câmera</string>
+    <string name="err_barcode">Código de barras inválido</string>
+    <string name="notify_loaded_product">Dados carregados</string>
+    <string name="notify_update_product">produto atualizado: %s</string>
+    <string name="notify_add_product">produto adicionado: %s</string>
+    <string name="notify_add_new_product">Novo produto adicionado</string>
+    <string name="delete_product_title">Confirmar exclusão</string>
+    <string name="delete_product_descritpion">Tem certeza de que deseja excluir o produto: %s?</string>
+    <string name="notify_delete_product">Produto excluído: %s</string>
+    <string name="notify_used">"\"%s\" excluído."</string>
+
+    <!-- Open/close -->
+    <string name="open">Aberto</string>
+    <string name="open_date_nd">Aberto em: N/D</string>
+    <string name="open_date">Aberto em: %s</string>
+    <string name="product_opened_icon_description">aberto</string>
+    <string name="days_opened">Válido após aberto (dias)</string>
+    <string name="close">Fechar</string>
+    <string name="err_days">Insira um número válido</string>
+
+    <!-- Buttons -->
+    <string name="add">Adicionar</string>
+    <string name="delete">Excluir</string>
+    <string name="reomve">Remover</string>
+    <string name="edit">Editar</string>
+    <string name="use">Usar</string>
+    <string name="save">Salvar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="ok">OK</string>
+    <string name="move">Mover</string>
+
+    <!-- Messages -->
+    <string name="notify_saved">Salvo com sucesso</string>
+    <string name="not_find">Não encontrado</string>
+    <string name="err_network">Erro de rede</string>
+    <string name="canceled">Cancelado</string>
+
+    <!-- Tags -->
+    <string name="button_add_tag">Adicionar</string>
+    <string name="hint_product_name">Nome do produto</string>
+    <string name="product_name_mandatory">O nome do produto é obrigatório se o código de barras estiver vazio</string>
+    <string name="hint_product_image">Imagem do produto</string>
+    <string name="hint_product_notes">Observações</string>
+    <string name="hint_category_tags">Tags</string>
+    <string name="hint_category_new">nova tag (ex.: pt:laticinios)</string>
+
+    <!-- Location -->
+    <string name="hint_store_location">Local</string>
+    <string name="edit_location">Editar local</string>
+    <string name="delete_location">Excluir local</string>
+    <string name="add_new_location">Adicionar novo local</string>
+    <string name="title_manage_locations">Gerenciar locais</string>
+    <string name="location_management_description">Reordene seus locais ou selecione o padrão ao abrir o aplicativo</string>
+    <string name="error_empty_location">O nome não pode ficar vazio</string>
+    <string name="error_empty_item_name">O nome do item não pode ficar vazio</string>
+    <string name="notify_add_location">Local \'%s\' adicionado</string>
+    <string name="notify_update_location">Local atualizado</string>
+    <string name="error_delete_default_location">Locais padrão não podem ser excluídos.</string>
+    <string name="delete_location_confirmation_title">Confirmar exclusão</string>
+    <string name="error_delete_location_confirmation">Tem certeza de que deseja excluir o local \'%s\'?\nOs produtos neste local podem precisar ser movidos.</string>
+    <string name="notify_delete_location">Local \'%s\' excluído</string>
+    <string name="err_location_select">Selecione um local</string>
+    <string name="add_product_camera_preview_hint">Escaneie o código de barras ou a data de validade para adicionar o produto</string>
+
+    <!-- Version -->
+    <string name="version_format_detailed">Versão: %1$s (Build: %2$s)</string>
+    <string name="version_not_available">Versão: N/D</string>
+    <string name="loading_version">Versão: Carregando…</string>
+
+    <!-- Notifiche -->
+    <string name="expiry_notification_channel_name">Notificações de validade do app Dispensa</string>
+    <string name="expiring_products_notification_title">Produtos vencendo %d</string>
+
+    <!-- Preferences -->
+    <string name="pref_cat_general_title">Aparência e Geral</string>
+    <string name="pref_cat_expiry_title">Validade e Notificações</string>
+    <string name="pref_cat_device_title">Dispositivo</string>
+    <string name="pref_device_name_title">Nome do dispositivo</string>
+    <string name="pref_device_name_summary">Nome deste dispositivo para compartilhamento</string>
+    <string name="pref_exp_days_title">Dias antes do vencimento</string>
+    <string name="pref_exp_days_summary">Número de dias antes do vencimento para receber a notificação.</string>
+    <string name="pref_key_exp_days">pref_expiry_days_before</string>
+    <string name="pref_key_exp_time">pref_notification_time</string>
+    <string name="pref_key_exp_time_title">Horário da notificação</string>
+    <string name="pref_key_exp_summary">Selecione o horário para a notificação.</string>
+    <string name="pref_default_shelf_life_title">Validade padrão após aberto (dias)</string>
+    <string name="pref_default_shelf_life_summary">Dias padrão preenchidos ao adicionar um novo produto</string>
+    <string name="pref_default_expiry_days_title">Dias de validade padrão</string>
+    <string name="pref_default_expiry_days_summary">Pré-preencher a data de validade com hoje mais estes dias</string>
+    <string name="pref_exp_days_error">Insira um número válido de dias de 0 a 365.</string>
+
+    <string name="pref_key_location">manage_locations</string>
+    <string name="pref_predefined_tab_style_icon">Mostrar abas predefinidas como ícones</string>
+
+    <string name="pref_key_theme">theme_preference</string>
+    <string name="pref_theme_title">Tema do app</string>
+    <string name="pref_theme_dark_entry">Escuro</string>
+    <string name="pref_theme_light_entry">Claro</string>
+    <string name="pref_theme_system_entry">Padrão do sistema</string>
+    <string name="pref_theme_dark">dark</string>
+    <string name="pref_theme_light">light</string>
+    <string name="pref_theme_system">system</string>
+
+    <string name="pref_cat_title_language">Idioma</string>
+    <string name="language_english">Inglês</string>
+    <string name="language_italian">Italiano</string>
+    <string name="language_german">Alemão</string>
+    <string name="language_greek">Grego</string>
+    <string name="language_portuguese_br">Português (Brasil)</string>
+
+    <string name="pref_cat_data_title">Dados e Avançado</string>
+    <string name="pref_off_title">Ativar API Open Food Facts</string>
+    <string name="pref_off_summary">Permitir que o app baixe dados do Open Food Facts</string>
+    <string name="notify_clean_images_done">%d imagens órfãs removidas</string>
+    <string name="err_api">Não foi possível carregar dados da API; ative o Open Food Facts!</string>
+
+    <!-- Cache Settings -->
+    <string name="pref_off_cache_limit_title">Limite do cache offline</string>
+    <string name="pref_off_cache_limit_summary">Número máximo de produtos em cache (padrão 100)</string>
+    <string name="pref_off_cache_ttl_title">TTL do cache (dias)</string>
+    <string name="pref_off_cache_ttl_summary">Tempo de vida das entradas em cache (padrão 30 dias)</string>
+    <string name="pref_off_cache_clear_title">Limpar cache</string>
+    <string name="pref_off_cache_clear_summary">Excluir todos os dados e imagens offline</string>
+    <string name="notify_cache_cleared">Cache limpo</string>
+    <string name="pref_installation_id_title">ID de instalação</string>
+    <string name="installation_id_copied">ID de instalação copiado para a área de transferência</string>
+    <string name="notify_loaded_from_cache">Carregado do cache offline</string>
+
+    <string name="default_location_pantry_entry">Despensa</string>
+    <string name="default_location_freezer_entry">Freezer</string>
+    <string name="default_location_fridge_entry">Geladeira</string>
+
+    <string name="move_product_to_title">Mover para %s</string>
+    <string name="product_moved_toast">%s movido para %s</string>
+    <string name="product_count_footer_simple">Produtos: %d</string>
+    <string name="product_count_footer">Produtos: %d    Vencidos: %d     Perto do vencimento: %d</string>
+
+    <string name="off_banner_text">Open Food Facts desativado.</string>
+    <string name="off_banner_button">Preferências</string>
+    <string name="exp_date_del_rescan">Excluir e escanear data de validade novamente</string>
+    <string name="add_product_scan">Escanear</string>
+    <string name="add_product_image">Selecionar imagem</string>
+    <string name="pick_product_image_gallery">Escolher da galeria</string>
+    <string name="take_product_photo">Tirar uma foto</string>
+    <string name="err_create_photo_file">Não foi possível criar o arquivo de foto</string>
+    <string name="image_changed">Imagem atualizada</string>
+
+    <string name="action_export">Exportar dados</string>
+    <string name="action_import">Importar dados</string>
+    <string name="export_success">Dados exportados</string>
+    <string name="export_error">Erro ao exportar dados: %s</string>
+    <string name="import_success">Dados importados com sucesso. Reiniciando…</string>
+    <string name="import_error">Erro ao importar dados: %s</string>
+    <string name="import_confirm_title">Confirmar importação</string>
+    <string name="import_confirm_message">Esta operação substituirá todos os dados atuais pelos do arquivo selecionado. Continuar?</string>
+    <string name="set_as_default">Definir como padrão</string>
+
+    <!-- Tooltips -->
+    <string name="hint_add_product">Adicione seu primeiro produto aqui</string>
+    <string name="hint_consume_product">Escaneie para consumir produto</string>
+    <string name="hint_manage_locations">Clique aqui para gerenciar seus locais de armazenamento</string>
+    <string name="hint_manage_settings">Clique aqui para importar/exportar seus produtos ou gerenciar configurações</string>
+
+    <!-- Consume Scanner -->
+    <string name="consume_product_not_found">Nenhum produto encontrado para este código de barras</string>
+    <string name="consume_product_confirm">Deseja consumir 1 de %1$s (Validade: %2$s)?</string>
+    <string name="consume_duplicate_title">Vários produtos encontrados. Escolha qual consumir:</string>
+    <string name="consume_success">Produto consumido com sucesso</string>
+    <string name="consume_scan_description">Escanear produto para consumir</string>
+
+    <!-- Shopping List -->
+    <string name="shopping_list_title">Lista de compras</string>
+    <string name="shopping_list_empty">Sua lista de compras está vazia</string>
+    <string name="shopping_list_add">Adicionar à lista de compras</string>
+    <string name="shopping_list_remove">Remover da lista de compras</string>
+    <string name="shopping_list_clear_checked">Limpar itens comprados</string>
+    <string name="shopping_list_clear_confirm">Remover todos os itens comprados da lista?</string>
+    <string name="shopping_list_quantity">x%d</string>
+    <string name="action_share">Compartilhar</string>
+    <string name="share_shopping_list_title">Minha lista de compras</string>
+
+    <!-- Sync -->
+    <string name="pref_cat_sync_title">Sincronização e Compartilhamento</string>
+    <string name="pref_sync_enabled_title">Ativar sincronização na nuvem</string>
+    <string name="pref_sync_enabled_summary">Sincronize sua despensa entre dispositivos</string>
+    <string name="pref_sync_provider_title">Provedor de sincronização</string>
+    <string name="pref_sync_now_title">Sincronizar agora</string>
+    <string name="pref_sync_status_title">Status da sincronização</string>
+    <string name="sync_status_connected">Conectado como %s</string>
+    <string name="sync_status_disconnected">Desconectado</string>
+    <string name="sync_last_time">Última sincronização: %s</string>
+    <string name="share_pantry">Compartilhar despensa</string>
+    <string name="share_pantry_dialog_title">Compartilhar despensa</string>
+    <string name="provider_webdav">WebDAV</string>
+    <string name="provider_local_saf">Pasta compartilhada local (SAF)</string>
+    <string name="provider_gdrive">Google Drive</string>
+    <string name="sync_gdrive_config_title">Configuração do Google Drive</string>
+    <string name="sync_gdrive_sign_in">Entrar com o Google</string>
+    <string name="sync_gdrive_sign_out">Sair do Google Drive</string>
+    <string name="sync_gdrive_connected_as">Conectado como: %s</string>
+    <string name="sync_gdrive_not_connected">Não conectado ao Google Drive</string>
+    <string name="sync_gdrive_share_with_title">Compartilhar com conta Google</string>
+    <string name="sync_gdrive_share_with_desc">Digite o e-mail do Google do destinatário ou selecione nos contatos para compartilhar esta despensa.</string>
+    <string name="sync_gdrive_email_hint">E-mail da conta Google</string>
+    <string name="sync_gdrive_pick_contact">Escolher dos contatos</string>
+    <string name="sync_gdrive_share_action">Compartilhar e mostrar QR</string>
+    <string name="sync_gdrive_sharing_in_progress">Compartilhando pasta no Google Drive…</string>
+    <string name="sync_gdrive_shared_with">Compartilhado com: %s</string>
+    <string name="sync_gdrive_share_another">Compartilhar com outra conta</string>
+    <string name="sync_gdrive_invalid_email">Insira um endereço de e-mail Google válido</string>
+    <string name="sync_gdrive_no_email_in_contact">Nenhum e-mail encontrado no contato selecionado</string>
+    <string name="sync_gdrive_contacts_not_available">App de contatos não disponível</string>
+    <string name="preparing_sync_server">Preparando sincronização remota…</string>
+    <string name="sync_setup_error">Falha na configuração do compartilhamento: %s</string>
+    <string name="sync_remote_delete_error">Erro ao excluir remotamente: %s. A exclusão local continuará.</string>
+    <string name="join_pantry">Entrar em uma despensa</string>
+    <string name="pairing_code_hint">Digite o código (ex.: AB-CDEF)</string>
+    <string name="sync_setup_title">Configurar sincronização</string>
+    <string name="sync_webdav_url">URL WebDAV</string>
+    <string name="sync_webdav_user">Usuário</string>
+    <string name="sync_webdav_pass">Senha / Token do app</string>
+    <string name="sync_webdav_path">Caminho da pasta remota</string>
+    <string name="sync_webdav_shared_mode">Pasta compartilhada (somente senha)</string>
+    <string name="sync_pairing_success">Você entrou na despensa com sucesso!</string>
+    <string name="sync_pairing_error">Código de pareamento ou dados de QR inválidos</string>
+    <string name="action_manage_devices">Gerenciar dispositivos</string>
+    <string name="title_manage_devices">Dispositivos registrados</string>
+    <string name="no_devices_found">Nenhum dispositivo encontrado</string>
+    <string name="warn_mandatory_fields">Preencha todos os campos obrigatórios</string>
+    <string name="sync_setup_saved">Configuração salva com sucesso</string>
+    <string name="sync_device_delete_confirm">Tem certeza de que deseja remover o dispositivo \'%s\'? Ele não poderá mais sincronizar até ser adicionado novamente.</string>
+    <string name="sync_device_delete_success">Dispositivo removido com sucesso</string>
+    <string name="sync_delete_device_err">Erro ao remover: %s</string>
+    <string name="sync_not_configured">Sincronização não configurada</string>
+    <string name="sync_not_active_for_pantry">A sincronização não está ativa para esta despensa</string>
+    <string name="sync_preparing_server">Preparando servidor…</string>
+    <string name="sync_pairing_expired">O código QR expirou (validade de 10 minutos). Gere um novo.</string>
+    <string name="sync_owner_delete_warning">Você está excluindo o proprietário deste compartilhamento. Isso EXCLUIRÁ PERMANENTEMENTE toda a pasta de sincronização remota e desconectará todos os outros dispositivos. Deseja continuar?</string>
+    <string name="sync_pantry_deleted_success">Pasta de compartilhamento remota excluída com sucesso</string>
+
+    <!-- Dispensa Management -->
+    <string name="manage_dispense_title">Gerenciar despensas</string>
+    <string name="add_dispensa">Adicionar despensa</string>
+    <string name="import_pantry">Importar de arquivo</string>
+    <string name="edit_dispensa">Editar despensa</string>
+    <string name="delete_dispensa_title">Excluir despensa</string>
+    <string name="delete_dispensa_message">Tem certeza de que deseja excluir esta despensa? Todos os produtos e locais associados serão perdidos.</string>
+    <string name="name_required">O nome é obrigatório</string>
+    <string name="cannot_delete_default_dispensa">Não é possível excluir a despensa padrão</string>
+    <string name="dispensa_name">Nome da despensa</string>
+    <string name="pantry_owner_format">Proprietário: %s</string>
+
+    <!-- Shared Pantries & Provider Config -->
+    <string name="title_shared_dispense">Despensas compartilhadas</string>
+    <string name="subtitle_shared_dispense">Gerencie despensas sincronizadas com vários provedores</string>
+    <string name="no_shared_dispense">Nenhuma despensa compartilhada</string>
+    <string name="no_shared_dispense_desc">Você ainda não compartilhou nem conectou nenhuma despensa.</string>
+    <string name="sync_local_saf_config_title">Configuração de pasta local (SAF)</string>
+    <string name="sync_local_saf_desc">Escolha um diretório no dispositivo, cartão SD ou pasta de rede para armazenar e sincronizar suas despensas.</string>
+    <string name="sync_local_saf_select_folder">Selecionar pasta</string>
+    <string name="sync_local_saf_selected_folder">Pasta selecionada: %s</string>
+    <string name="sync_local_saf_no_folder">Nenhuma pasta selecionada</string>
+    <string name="sync_local_saf_test_permissions">Testar permissões</string>
+    <string name="sync_local_saf_clear_folder">Limpar pasta</string>
+    <string name="sync_local_saf_permission_ok">Permissões de leitura e gravação verificadas com sucesso</string>
+    <string name="sync_local_saf_permission_err">Erro de permissão: %s</string>
+    <string name="action_configure_provider">Configurar provedores</string>
+    <string name="action_stop_sharing">Parar compartilhamento</string>
+    <string name="stop_sharing_confirm_title">Parar compartilhamento?</string>
+    <string name="stop_sharing_confirm_message">Tem certeza de que deseja parar de sincronizar \'%1$s\' com %2$s?</string>
+    <string name="provider_not_configured_prompt">O provedor \'%s\' ainda não está configurado. Deseja configurá-lo agora?</string>
+    <string name="pref_shared_pantries_title">Despensas compartilhadas</string>
+    <string name="pref_shared_pantries_summary">Gerenciar despensas sincronizadas</string>
+    <string name="pref_providers_title">Provedores de sincronização</string>
+    <string name="pref_providers_summary">Configurar provedores</string>
+    <string name="action_change_provider">Alterar provedor</string>
+    <string name="show_pairing_qr">Mostrar código de pareamento / QR</string>
+    <string name="pantry_status_owner">Proprietário: Você</string>
+    <string name="pantry_status_guest">Compartilhado por: %s</string>
+    <string name="not_configured_badge">(Não configurado)</string>
+
+    <!-- Modulo 5: Consumo Percentuale & Automazioni -->
+    <string name="consume_dialog_title">Consumir produto</string>
+    <string name="consume_whole_unit">Consumir 1 unidade inteira (%d restantes)</string>
+    <string name="consume_percentage_label">Porcentagem restante da embalagem</string>
+    <string name="consume_remaining_format">%d%% restante</string>
+    <string name="consume_split_info">1 unidade será aberta com %1$d%%. As outras %2$d permanecerão lacradas (100%%).</string>
+    <string name="consume_confirm_button">Confirmar consumo</string>
+    <string name="product_almost_finished_snackbar">%s está quase acabando! Adicionar à lista de compras?</string>
+    <string name="action_add_to_cart">Adicionar</string>
+    <string name="opened_and_split_success">1 unidade aberta com %1$d%%. %2$d lacradas restantes.</string>
+    <string name="quantity_label_with_percentage">Quantidade: %1$d (%2$d%%)</string>
+</resources>
