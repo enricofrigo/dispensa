@@ -1,18 +1,23 @@
 {
   "formatVersion": 1,
   "database": {
-    "version": 17,
-    "identityHash": "e79d5813181beb875335ccc67691a1b6",
+    "version": 23,
+    "identityHash": "50008bda9caa9432ce3c8c48bfcdcad4",
     "entities": [
       {
         "tableName": "products",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `dispensa_id` INTEGER NOT NULL DEFAULT 1, `barcode` TEXT, `quantity` INTEGER NOT NULL, `expiry_date` INTEGER, `product_name` TEXT, `image_url` TEXT, `storage_location` TEXT, `opened_date` INTEGER NOT NULL DEFAULT 0, `shelf_life_after_opening_days` INTEGER NOT NULL DEFAULT -1, `last_modified` INTEGER NOT NULL DEFAULT 0)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `sync_uuid` TEXT, `dispensa_id` INTEGER NOT NULL DEFAULT 1, `barcode` TEXT, `quantity` INTEGER NOT NULL, `expiry_date` INTEGER, `product_name` TEXT, `image_url` TEXT, `storage_location` TEXT, `opened_date` INTEGER NOT NULL DEFAULT 0, `shelf_life_after_opening_days` INTEGER NOT NULL DEFAULT -1, `remaining_percentage` INTEGER NOT NULL DEFAULT 100, `note` TEXT, `last_modified` INTEGER NOT NULL DEFAULT 0)",
         "fields": [
           {
             "fieldPath": "id",
             "columnName": "id",
             "affinity": "INTEGER",
             "notNull": true
+          },
+          {
+            "fieldPath": "syncUuid",
+            "columnName": "sync_uuid",
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "dispensaId",
@@ -67,6 +72,18 @@
             "defaultValue": "-1"
           },
           {
+            "fieldPath": "remainingPercentage",
+            "columnName": "remaining_percentage",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "100"
+          },
+          {
+            "fieldPath": "note",
+            "columnName": "note",
+            "affinity": "TEXT"
+          },
+          {
             "fieldPath": "lastModified",
             "columnName": "last_modified",
             "affinity": "INTEGER",
@@ -98,6 +115,16 @@
             ],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_products_dispensa_id` ON `${TABLE_NAME}` (`dispensa_id`)"
+          },
+          {
+            "name": "index_products_dispensa_id_sync_uuid",
+            "unique": false,
+            "columnNames": [
+              "dispensa_id",
+              "sync_uuid"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_products_dispensa_id_sync_uuid` ON `${TABLE_NAME}` (`dispensa_id`, `sync_uuid`)"
           }
         ]
       },
@@ -352,13 +379,18 @@
       },
       {
         "tableName": "shopping_items",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `dispensa_id` INTEGER NOT NULL DEFAULT 1, `name` TEXT, `quantity` INTEGER NOT NULL, `checked` INTEGER NOT NULL, `last_modified` INTEGER NOT NULL DEFAULT 0)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `sync_uuid` TEXT, `dispensa_id` INTEGER NOT NULL DEFAULT 1, `name` TEXT, `quantity` INTEGER NOT NULL, `checked` INTEGER NOT NULL, `last_modified` INTEGER NOT NULL DEFAULT 0)",
         "fields": [
           {
             "fieldPath": "id",
             "columnName": "id",
             "affinity": "INTEGER",
             "notNull": true
+          },
+          {
+            "fieldPath": "syncUuid",
+            "columnName": "sync_uuid",
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "dispensaId",
@@ -407,6 +439,16 @@
             ],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_shopping_items_dispensa_id` ON `${TABLE_NAME}` (`dispensa_id`)"
+          },
+          {
+            "name": "index_shopping_items_dispensa_id_sync_uuid",
+            "unique": false,
+            "columnNames": [
+              "dispensa_id",
+              "sync_uuid"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_shopping_items_dispensa_id_sync_uuid` ON `${TABLE_NAME}` (`dispensa_id`, `sync_uuid`)"
           }
         ]
       },
@@ -513,11 +555,77 @@
             "id"
           ]
         }
+      },
+      {
+        "tableName": "joined_pantry_configs",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`dispensa_id` INTEGER NOT NULL, `provider_id` TEXT NOT NULL DEFAULT 'webdav', `url` TEXT, `username` TEXT, `password` TEXT, `path` TEXT, `is_shared` INTEGER NOT NULL, `pantry_key` TEXT, `config_payload` TEXT, `remote_pantry_id` TEXT, PRIMARY KEY(`dispensa_id`))",
+        "fields": [
+          {
+            "fieldPath": "dispensaId",
+            "columnName": "dispensa_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "providerId",
+            "columnName": "provider_id",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'webdav'"
+          },
+          {
+            "fieldPath": "url",
+            "columnName": "url",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "username",
+            "columnName": "username",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "password",
+            "columnName": "password",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "path",
+            "columnName": "path",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isShared",
+            "columnName": "is_shared",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pantryKey",
+            "columnName": "pantry_key",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "configPayload",
+            "columnName": "config_payload",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "remotePantryId",
+            "columnName": "remote_pantry_id",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "dispensa_id"
+          ]
+        }
       }
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e79d5813181beb875335ccc67691a1b6')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '50008bda9caa9432ce3c8c48bfcdcad4')"
     ]
   }
 }

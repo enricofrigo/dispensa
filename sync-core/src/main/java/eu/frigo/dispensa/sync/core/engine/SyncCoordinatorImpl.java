@@ -57,6 +57,10 @@ public class SyncCoordinatorImpl implements SyncCoordinator {
     }
 
     public void applyOnboarding(PairingPayload payload) {
+        if (payload == null || payload.data == null) {
+            Log.w("SyncFlow", "applyOnboarding called with null or empty payload; ignoring.");
+            return;
+        }
         String providerId = payload.providerId != null ? payload.providerId : payload.data.get("providerId");
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         SharedPreferences.Editor editor = prefs.edit();

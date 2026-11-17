@@ -3,6 +3,7 @@ package eu.frigo.dispensa.sync.webdav.client;
 import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.preference.PreferenceManager;
+import eu.frigo.dispensa.sync.core.crypto.CredentialCipher;
 import eu.frigo.dispensa.sync.core.engine.SyncManager;
 
 /**
@@ -31,10 +32,13 @@ public class WebDavClientFactory {
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
             String url = prefs.getString(SyncManager.KEY_WEBDAV_URL, "");
             String user = prefs.getString(SyncManager.KEY_WEBDAV_USER, "");
-            String pass = prefs.getString(SyncManager.KEY_WEBDAV_PASS, "");
-            
-            // Note: Even if empty, we create the client. 
-            // The caller should check if sync is enabled/configured.
+            String rawPass = prefs.getString(SyncManager.KEY_WEBDAV_PASS, "");
+            if (rawPass != null && !rawPass.isEmpty() && !rawPass.startsWith(CredentialCipher.PREFIX)) {
+                String encrypted = CredentialCipher.encryptIfNeeded(rawPass);
+                prefs.edit().putString(SyncManager.KEY_WEBDAV_PASS, encrypted).apply();
+            }
+            String pass = CredentialCipher.decryptIfNeeded(rawPass);
+
             client = new WebDavClient(url, user, pass);
         }
         return client;
@@ -45,7 +49,7 @@ public class WebDavClientFactory {
      * Useful during onboarding or when settings change.
      */
     public synchronized WebDavClient getClient(String url, String user, String pass) {
-        client = new WebDavClient(url, user, pass);
+        client = new WebDavClient(url, user, CredentialCipher.decryptIfNeeded(pass));
         return client;
     }
 

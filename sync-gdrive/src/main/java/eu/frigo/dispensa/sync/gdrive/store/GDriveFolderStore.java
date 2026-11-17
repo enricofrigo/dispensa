@@ -235,22 +235,18 @@ public class GDriveFolderStore implements SharedFolderStore {
     @Override
     public Single<Boolean> exists(String relativePath) {
         return Single.fromCallable(() -> {
-            try {
-                String clean = cleanPath(relativePath);
-                if (clean.isEmpty()) {
-                    if ("root".equals(rootFolderId)) {
-                        return true;
-                    }
-                    GDriveClient.DriveFile rf = client.getFile(rootFolderId);
-                    return rf != null && !Boolean.TRUE.equals(rf.trashed);
+            String clean = cleanPath(relativePath);
+            if (clean.isEmpty()) {
+                if ("root".equals(rootFolderId)) {
+                    return true;
                 }
-                String fileId = resolveFileId(clean);
-                if (fileId != null) return true;
-                String folderId = resolveFolderId(clean, false);
-                return folderId != null;
-            } catch (Exception e) {
-                return false;
+                GDriveClient.DriveFile rf = client.getFile(rootFolderId);
+                return rf != null && !Boolean.TRUE.equals(rf.trashed);
             }
+            String fileId = resolveFileId(clean);
+            if (fileId != null) return true;
+            String folderId = resolveFolderId(clean, false);
+            return folderId != null;
         });
     }
 

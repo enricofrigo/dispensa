@@ -60,11 +60,11 @@ public class SyncOnboardingActivity extends AppCompatActivity {
 
         android.net.Uri data = getIntent().getData();
         if (data != null && ("dispensa".equals(data.getScheme()) || "https".equals(data.getScheme()))) {
-            // Started via Deep Link or App Link
+            // Started via Deep Link or App Link -> require explicit PIN entry and confirmation
             scannedQrData = data.getQueryParameter("data");
-            if (scannedQrData != null) {
+            if (scannedQrData != null && !scannedQrData.trim().isEmpty()) {
                 setupJoinMode();
-                processScannedData();
+                promptForPinAndConfirmJoin();
                 return;
             }
         }
@@ -163,18 +163,22 @@ public class SyncOnboardingActivity extends AppCompatActivity {
                     ownerEngine.initializeRemoteStructure().blockingAwait();
                     ownerEngine.forceCompaction();
 
-                    WebDavConfig config = new WebDavConfig(url, user, pass, path, pantryKey, disp.getName(), ownerDeviceId, remoteId, isShared);
+                    String plainPass = eu.frigo.dispensa.sync.core.crypto.CredentialCipher.decryptIfNeeded(pass);
+                    WebDavConfig config = new WebDavConfig(url, user, plainPass, path, pantryKey, disp.getName(), ownerDeviceId, remoteId, isShared);
                     PairingPayload payload = WebDavPairingHandler.createPayload(deviceName, config);
-                    payload.version = 2;
-                    PairingPayloadCodecImpl codec = new PairingPayloadCodecImpl(null); // Use internal key
+                    payload.version = SyncManager.CURRENT_SYNC_VERSION;
+                    String pairingPin = OnboardingCoordinator.generatePairingCode();
+                    PairingPayloadCodecImpl codec = new PairingPayloadCodecImpl(pairingPin);
                     String wireData = codec.encode(payload);
                     String deepLink = "https://enricofrigo.github.io/dispensa/syncjoin?data=" + android.net.Uri.encode(wireData);
                     Bitmap qrBitmap = QrCodeGenerator.generate(deepLink, 512);
-                    return new ShareInfo(deepLink, qrBitmap);
+                    return new ShareInfo(deepLink, qrBitmap, pairingPin);
                 }))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(info -> {
                     qrView.setImageBitmap(info.qrBitmap);
+                    String formattedPin = info.pairingPin.substring(0, 3) + "-" + info.pairingPin.substring(3);
+                    instruction.setText(getString(R.string.share_pantry) + "\nPIN: " + formattedPin);
 
                     if (shareBtn != null) {
                         shareBtn.setOnClickListener(v -> {
@@ -197,10 +201,12 @@ public class SyncOnboardingActivity extends AppCompatActivity {
     private static class ShareInfo {
         final String deepLink;
         final Bitmap qrBitmap;
+        final String pairingPin;
 
-        ShareInfo(String deepLink, Bitmap qrBitmap) {
+        ShareInfo(String deepLink, Bitmap qrBitmap, String pairingPin) {
             this.deepLink = deepLink;
             this.qrBitmap = qrBitmap;
+            this.pairingPin = pairingPin;
         }
     }
 
@@ -210,24 +216,54 @@ public class SyncOnboardingActivity extends AppCompatActivity {
         instruction.setText(R.string.join_pantry);
 
         barcodeView = findViewById(R.id.zxing_barcode_scanner);
-        barcodeView.setVisibility(View.VISIBLE);
-        barcodeView.setStatusText(getString(R.string.add_product_camera_preview_hint));
+        if (scannedQrData == null) {
+            barcodeView.setVisibility(View.VISIBLE);
+            barcodeView.setStatusText(getString(R.string.add_product_camera_preview_hint));
 
-        barcodeView.decodeSingle(result -> {
-            String rawData = result.getText();
-            scannedQrData = extractDataFromLink(rawData);
-            Log.d("SyncOnboarding", "QR scansionato con successo");
-            runOnUiThread(this::processScannedData);
-        });
+            barcodeView.decodeSingle(result -> {
+                String rawData = result.getText();
+                scannedQrData = extractDataFromLink(rawData);
+                Log.d("SyncOnboarding", "QR scansionato con successo");
+                runOnUiThread(this::promptForPinAndConfirmJoin);
+            });
+        }
     }
 
-    private void processScannedData() {
+    private void promptForPinAndConfirmJoin() {
+        if (scannedQrData == null) return;
+        if (barcodeView != null) {
+            barcodeView.pause();
+            barcodeView.setVisibility(View.GONE);
+        }
+
+        View tilPin = findViewById(R.id.til_pairing_code);
+        com.google.android.material.textfield.TextInputEditText etPin = findViewById(R.id.et_pairing_code);
+        Button btnConfirm = findViewById(R.id.btn_confirm_onboarding);
+
+        if (tilPin != null) tilPin.setVisibility(View.VISIBLE);
+        if (btnConfirm != null) {
+            btnConfirm.setVisibility(View.VISIBLE);
+            btnConfirm.setOnClickListener(v -> {
+                String enteredPin = etPin != null && etPin.getText() != null
+                        ? OnboardingCoordinator.normalizePairingCode(etPin.getText().toString())
+                        : "";
+                if (enteredPin.length() != 6) {
+                    Toast.makeText(this, R.string.sync_pairing_error, Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                processScannedData(enteredPin);
+            });
+        }
+    }
+
+    private void processScannedData(String pairingPin) {
         if (scannedQrData == null) return;
         
-        barcodeView.setVisibility(View.GONE);
-        findViewById(R.id.btn_confirm_onboarding).setVisibility(View.GONE); // Non serve più conferma manuale
+        if (barcodeView != null) barcodeView.setVisibility(View.GONE);
+        View btnConfirm = findViewById(R.id.btn_confirm_onboarding);
+        if (btnConfirm != null) btnConfirm.setEnabled(false);
 
-        new OnboardingCoordinator().joinPantry(null, scannedQrData)
+        new OnboardingCoordinator().joinPantry(pairingPin, scannedQrData)
             .flatMap(payload -> {
                 // Check expiry (10 minutes = 600 seconds)
                 long nowSec = System.currentTimeMillis() / 1000;
@@ -333,13 +369,9 @@ public class SyncOnboardingActivity extends AppCompatActivity {
                 } else {
                     Toast.makeText(this, R.string.sync_pairing_error, Toast.LENGTH_LONG).show();
                 }
-                // Riavvia lo scanner se è fallito ma non scaduto
+                if (btnConfirm != null) btnConfirm.setEnabled(true);
                 if (!PAIRING_EXPIRED.equals(throwable.getMessage())) {
-                    barcodeView.setVisibility(View.VISIBLE);
-                    barcodeView.decodeSingle(result -> {
-                        scannedQrData = extractDataFromLink(result.getText());
-                        runOnUiThread(this::processScannedData);
-                    });
+                    promptForPinAndConfirmJoin();
                 }
             });
     }

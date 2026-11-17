@@ -16,15 +16,10 @@ public class DateConverter {
 
     private static final String DISPLAY_DATE_FORMAT_PATTERN = "dd/MM/yyyy";
 
-    // Formatter per la visualizzazione. Locale.getDefault() usa le impostazioni
-    // regionali dell'utente.
-    private static final SimpleDateFormat displayFormatter = new SimpleDateFormat(DISPLAY_DATE_FORMAT_PATTERN,
-            Locale.getDefault());
-
     /**
      * Converte un timestamp Long (millisecondi, che rappresenta una data specifica
      * con l'ora normalizzata) in una stringa di data formattata per la
-     * visualizzazione.
+     * visualizzazione. Thread-safe e sempre allineato al Locale corrente.
      *
      * @param timestampMs Il timestamp in millisecondi. Se null, restituisce una
      *                    stringa vuota o un placeholder.
@@ -36,7 +31,8 @@ public class DateConverter {
         if (timestampMs == null) {
             return "";
         }
-        return displayFormatter.format(new Date(timestampMs));
+        SimpleDateFormat formatter = new SimpleDateFormat(DISPLAY_DATE_FORMAT_PATTERN, Locale.getDefault());
+        return formatter.format(new Date(timestampMs));
     }
 
     /**

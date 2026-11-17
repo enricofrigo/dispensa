@@ -16,7 +16,8 @@ public class WebDavClient {
 
     public WebDavClient(String baseUrl, String username, String password) {
         this.baseUrl = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
-        this.authHeader = Credentials.basic(username, password);
+        String plainPass = eu.frigo.dispensa.sync.core.crypto.CredentialCipher.decryptIfNeeded(password);
+        this.authHeader = Credentials.basic(username != null ? username : "", plainPass != null ? plainPass : "");
         this.okHttpClient = new OkHttpClient.Builder()
                 .connectTimeout(30, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)

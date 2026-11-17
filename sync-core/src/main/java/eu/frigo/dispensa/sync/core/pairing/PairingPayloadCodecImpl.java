@@ -3,12 +3,15 @@ package eu.frigo.dispensa.sync.core.pairing;
 import com.google.gson.Gson;
 
 public class PairingPayloadCodecImpl implements PairingPayloadCodec {
-    private static final String INTERNAL_KEY = "dispensa_secure_pairing_v2";
     private final Gson gson = new Gson();
     private final String key;
 
     public PairingPayloadCodecImpl(String pairingCode) {
-        this.key = (pairingCode == null || pairingCode.trim().isEmpty()) ? INTERNAL_KEY : pairingCode.trim();
+        String normalized = OnboardingCoordinator.normalizePairingCode(pairingCode);
+        if (normalized.isEmpty()) {
+            throw new IllegalArgumentException("Pairing code (PIN) is required and cannot be null or empty");
+        }
+        this.key = normalized;
     }
 
     @Override
@@ -25,8 +28,8 @@ public class PairingPayloadCodecImpl implements PairingPayloadCodec {
 
     @Override
     public PairingPayload decode(String wireData) throws Exception {
-        if (wireData == null) {
-            throw new IllegalArgumentException("Data is null");
+        if (wireData == null || wireData.trim().isEmpty()) {
+            throw new IllegalArgumentException("Data is null or empty");
         }
 
         String dataToProcess = wireData;
@@ -40,11 +43,11 @@ public class PairingPayloadCodecImpl implements PairingPayloadCodec {
 
         // Fix potential space-instead-of-plus issue from URL decoding
         String sanitizedData = dataToProcess.replace(" ", "+");
-        
+
         if (!sanitizedData.startsWith("v1|")) {
             throw new IllegalArgumentException("Unsupported payload version");
         }
-        
+
         String[] parts = sanitizedData.split("\\|");
         if (parts.length != 4) {
             throw new IllegalArgumentException("Invalid payload format");
@@ -52,6 +55,10 @@ public class PairingPayloadCodecImpl implements PairingPayloadCodec {
 
         CryptoEngine.EncryptedResult encrypted = new CryptoEngine.EncryptedResult(parts[1], parts[2], parts[3]);
         String json = CryptoEngine.decrypt(key, encrypted);
-        return gson.fromJson(json, PairingPayload.class);
+        PairingPayload decoded = gson.fromJson(json, PairingPayload.class);
+        if (decoded == null || decoded.data == null) {
+            throw new IllegalArgumentException("Decoded payload is empty or malformed");
+        }
+        return decoded;
     }
 }

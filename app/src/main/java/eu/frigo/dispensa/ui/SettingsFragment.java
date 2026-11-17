@@ -249,7 +249,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
             editor.putInt(KEY_NOTIFICATION_TIME_MINUTE, selectedMinute);
             editor.apply();
             updateNotificationTimeSummary();
-            ExpiryCheckWorkerScheduler.scheduleWorker(requireContext());
+            ExpiryCheckWorkerScheduler.rescheduleWorker(requireContext());
         });
         timePicker.show(getParentFragmentManager(), "TIME_PICKER_TAG");
     }

@@ -968,7 +968,7 @@ public class AddProductActivity extends AppCompatActivity {
                         Toast.makeText(this, getString(R.string.err_api), Toast.LENGTH_SHORT).show();
                         return;
                     }
-                    String fieldsToFetch = "product_name_it,product_name,image_front_url,image_url,categories_tags";
+                    String fieldsToFetch = OpenFoodFactsRetrofitClient.getLocalizedFieldsToFetch();
                     retrofit2.Call<OpenFoodFactsProductResponse> call = OffApiService.getProductByBarcode(barcode, fieldsToFetch);
 
                     call.enqueue(new Callback<>() {
@@ -979,10 +979,7 @@ public class AddProductActivity extends AppCompatActivity {
                                 OpenFoodFactsProductResponse apiResponse = response.body();
                                 if (apiResponse.getStatus() == 1 && apiResponse.getProduct() != null) {
                                     OpenFoodFactsProductResponse.ProductData productData = apiResponse.getProduct();
-                                    String productName = productData.getProductNameIt();
-                                    if (productName == null || productName.trim().isEmpty()) {
-                                        productName = productData.getProductName();
-                                    }
+                                    String productName = productData.getLocalizedProductName();
                                     final String finalProductName = productName;
                                     
                                     String imageUrl = productData.getImageFrontUrl();

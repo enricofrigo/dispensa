@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="eu.frigo.dispensa">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
@@ -31,7 +30,7 @@
 
         <activity
             android:name=".activity.SettingsActivity"
-            android:label="Impostazioni"
+            android:label="@string/action_settings"
             android:parentActivityName=".activity.MainActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"

@@ -34,9 +34,30 @@ public interface SharedFolderStore {
     Completable writeAtomic(String relativePath, byte[] data, @Nullable String expectedEtag);
 
     /**
+     * Holder for file content and optional ETag/version metadata.
+     */
+    class FileContent {
+        public final byte[] data;
+        @Nullable
+        public final String etag;
+
+        public FileContent(byte[] data, @Nullable String etag) {
+            this.data = data;
+            this.etag = etag;
+        }
+    }
+
+    /**
      * Reads the entire byte content of the file.
      */
     Single<byte[]> read(String relativePath);
+
+    /**
+     * Reads the entire byte content of the file along with its current ETag (if supported).
+     */
+    default Single<FileContent> readWithMeta(String relativePath) {
+        return read(relativePath).map(bytes -> new FileContent(bytes, null));
+    }
 
     /**
      * Checks if a file exists at the given relative path.

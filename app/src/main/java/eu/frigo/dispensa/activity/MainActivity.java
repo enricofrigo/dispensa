@@ -205,11 +205,11 @@ public class MainActivity extends AppCompatActivity
                 backupManager.importData(is, finalDispId);
                 runOnUiThread(() -> {
                     Toast.makeText(this, R.string.import_success, Toast.LENGTH_LONG).show();
-                    // Restart app to refresh all data and viewmodels
+                    // Restart Activity cleanly without killing the JVM process
                     Intent intent = new Intent(this, MainActivity.class);
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     startActivity(intent);
-                    Runtime.getRuntime().exit(0);
+                    finish();
                 });
             } catch (Exception e) {
                 Log.e("MainActivity", "Import failed", e);
@@ -247,7 +247,6 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         askForNotificationPermission();
-        eu.frigo.dispensa.data.Repository.cleanOrphanImages(this, null);
         EdgeToEdge.enable(this);
         LocaleHelper.applyLocaleOnCreate(this);
         setContentView(R.layout.activity_main);

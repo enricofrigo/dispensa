@@ -1,6 +1,7 @@
 package eu.frigo.dispensa.sync.core.pairing;
 
 import android.util.Base64;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.security.spec.KeySpec;
 import javax.crypto.Cipher;
@@ -11,11 +12,12 @@ import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
 public class CryptoEngine {
-    private static final int ITERATIONS = 10000;
+    public static final int ITERATIONS = 120000;
     private static final int KEY_LENGTH = 256;
     private static final int SALT_LENGTH = 16;
     private static final int IV_LENGTH = 12;
     private static final int TAG_LENGTH = 128;
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     public static class EncryptedResult {
         public final String salt;
@@ -30,19 +32,22 @@ public class CryptoEngine {
     }
 
     public static EncryptedResult encrypt(String passphrase, String plaintext) throws Exception {
+        if (passphrase == null || passphrase.trim().isEmpty()) {
+            throw new IllegalArgumentException("Passphrase must not be null or empty");
+        }
         byte[] salt = new byte[SALT_LENGTH];
-        new SecureRandom().nextBytes(salt);
+        SECURE_RANDOM.nextBytes(salt);
 
         SecretKey key = deriveKey(passphrase, salt);
 
         byte[] iv = new byte[IV_LENGTH];
-        new SecureRandom().nextBytes(iv);
+        SECURE_RANDOM.nextBytes(iv);
 
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
         GCMParameterSpec spec = new GCMParameterSpec(TAG_LENGTH, iv);
         cipher.init(Cipher.ENCRYPT_MODE, key, spec);
 
-        byte[] ciphertext = cipher.doFinal(plaintext.getBytes("UTF-8"));
+        byte[] ciphertext = cipher.doFinal(plaintext.getBytes(StandardCharsets.UTF_8));
 
         return new EncryptedResult(
                 Base64.encodeToString(salt, Base64.NO_WRAP),
@@ -52,6 +57,9 @@ public class CryptoEngine {
     }
 
     public static String decrypt(String passphrase, EncryptedResult encrypted) throws Exception {
+        if (passphrase == null || passphrase.trim().isEmpty()) {
+            throw new IllegalArgumentException("Passphrase must not be null or empty");
+        }
         byte[] salt = Base64.decode(encrypted.salt, Base64.NO_WRAP);
         byte[] iv = Base64.decode(encrypted.iv, Base64.NO_WRAP);
         byte[] ciphertext = Base64.decode(encrypted.ciphertext, Base64.NO_WRAP);
@@ -63,7 +71,7 @@ public class CryptoEngine {
         cipher.init(Cipher.DECRYPT_MODE, key, spec);
 
         byte[] plaintext = cipher.doFinal(ciphertext);
-        return new String(plaintext, "UTF-8");
+        return new String(plaintext, StandardCharsets.UTF_8);
     }
 
     private static SecretKey deriveKey(String passphrase, byte[] salt) throws Exception {

@@ -1,7 +1,6 @@
 package eu.frigo.dispensa.data.backup;
 
 import android.content.Context;
-import androidx.sqlite.db.SupportSQLiteDatabase;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -9,7 +8,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import eu.frigo.dispensa.data.AppDatabase;
 import eu.frigo.dispensa.data.category.CategoryDefinition;
@@ -24,6 +26,8 @@ import eu.frigo.dispensa.data.shoppinglist.ShoppingItem;
 import eu.frigo.dispensa.data.shoppinglist.ShoppingItemDao;
 import eu.frigo.dispensa.data.storage.StorageLocation;
 import eu.frigo.dispensa.data.storage.StorageLocationDao;
+import eu.frigo.dispensa.data.sync.SyncOutbox;
+import eu.frigo.dispensa.sync.core.event.SyncBus;
 
 public class BackupManager {
 
@@ -68,14 +72,14 @@ public class BackupManager {
         }
     }
 
-    private boolean isCompatible(int curVersion, int version){
+    private boolean isCompatible(int curVersion, int version) {
         return version <= curVersion;
     }
 
     private void migrateDataIfNeeded(BackupData backupData, int currentVersion) {
         if (backupData.dbVersion < currentVersion) {
             long now = System.currentTimeMillis();
-            
+
             // Migration for versions < 12 (added last_modified)
             if (backupData.dbVersion < 12) {
                 if (backupData.products != null) {
@@ -94,8 +98,6 @@ public class BackupManager {
                     }
                 }
             }
-            
-            // Add more specific migrations here if versions are very old
         }
     }
 
@@ -115,12 +117,12 @@ public class BackupManager {
             throw new Exception("Invalid backup file");
         }
 
-        if(backupData.appVersion < MIN_APP_VERSION)
+        if (backupData.appVersion < MIN_APP_VERSION)
             throw new Exception("Import from app version (" + backupData.appVersion + ") is not supported.");
 
         int currentVersion = db.getOpenHelper().getReadableDatabase().getVersion();
 
-        if (!isCompatible(currentVersion,backupData.dbVersion)) {
+        if (!isCompatible(currentVersion, backupData.dbVersion)) {
             throw new Exception("Backup version (" + backupData.dbVersion + ") is higher than database version ("
                     + currentVersion + "). Please update the app.");
         }
@@ -133,53 +135,102 @@ public class BackupManager {
             db.productDao().deleteAllProducts(targetDispensaId);
             db.storageLocationDao().deleteAllLocations(targetDispensaId);
             db.shoppingItemDao().deleteAllItems(targetDispensaId);
+            db.syncOutboxDao().deleteAllByDispensaId(targetDispensaId);
 
-            // Import categories (global, so we just add missing ones)
-            if (backupData.categories != null)
-                db.categoryDefinitionDao().insertAll(backupData.categories);
+            // 1. Import categories (global) and build oldCategoryId -> newCategoryId map
+            Map<Integer, Integer> oldToNewCategoryId = new HashMap<>();
+            if (backupData.categories != null) {
+                for (CategoryDefinition cat : backupData.categories) {
+                    int oldCatId = cat.categoryId;
+                    CategoryDefinition existing = (cat.tagName != null)
+                            ? db.categoryDefinitionDao().getCategoryByTagName(cat.tagName)
+                            : null;
+                    int effectiveCatId;
+                    if (existing != null) {
+                        effectiveCatId = existing.categoryId;
+                    } else {
+                        cat.categoryId = 0;
+                        effectiveCatId = (int) db.categoryDefinitionDao().insert(cat);
+                    }
+                    if (oldCatId > 0) {
+                        oldToNewCategoryId.put(oldCatId, effectiveCatId);
+                    }
+                }
+            }
 
-            // Import locations
+            // 2. Import locations
             if (backupData.locations != null) {
                 for (StorageLocation loc : backupData.locations) {
                     loc.id = 0; // Force auto-generation
                     loc.dispensaId = targetDispensaId;
+                    db.storageLocationDao().insert(loc);
+                    enqueueSyncOutbox(targetDispensaId, "UPSERT_LOCATION", loc, loc.lastModified);
                 }
-                db.storageLocationDao().insertAll(backupData.locations);
             }
 
-            // Import products and category links
+            // 3. Import products and build oldProductId -> newProductId map (without mutating categoryLinks in-place!)
+            Map<Integer, Integer> oldToNewProductId = new HashMap<>();
             if (backupData.products != null) {
                 for (Product p : backupData.products) {
                     int oldProductId = p.id;
                     p.id = 0; // Force auto-generation
                     p.dispensaId = targetDispensaId;
+                    if (p.syncUuid == null || p.syncUuid.trim().isEmpty()) {
+                        p.syncUuid = UUID.randomUUID().toString();
+                    }
                     if (p.hasCustomLocalImage()) {
                         p.setImageUrl(null);
                     }
                     p.validateImageUrlExistence();
-                    
+
                     long newProductId = db.productDao().insert(p);
-                    
-                    // Re-link categories for this product
-                    if (backupData.categoryLinks != null) {
-                        for (ProductCategoryLink link : backupData.categoryLinks) {
-                            if (link.productIdFk == oldProductId) {
-                                link.productIdFk = (int) newProductId;
-                                db.productCategoryLinkDao().insert(link);
-                            }
-                        }
+                    p.id = (int) newProductId;
+                    oldToNewProductId.put(oldProductId, (int) newProductId);
+                }
+            }
+
+            // 4. Second pass: re-link categories using the immutable oldToNewProductId & oldToNewCategoryId maps
+            if (backupData.categoryLinks != null) {
+                for (ProductCategoryLink link : backupData.categoryLinks) {
+                    Integer mappedProductId = oldToNewProductId.get(link.productIdFk);
+                    if (mappedProductId != null) {
+                        int mappedCategoryId = oldToNewCategoryId.getOrDefault(link.categoryIdFk, link.categoryIdFk);
+                        db.productCategoryLinkDao().insert(new ProductCategoryLink(mappedProductId, mappedCategoryId));
                     }
                 }
             }
 
-            // Import shopping items
+            // Enqueue outbox events for imported products (with their category tags)
+            if (backupData.products != null) {
+                for (Product p : backupData.products) {
+                    enqueueSyncOutbox(targetDispensaId, "UPSERT_PRODUCT", p.createExportCopy(), p.lastModified);
+                }
+            }
+
+            // 5. Import shopping items
             if (backupData.shoppingItems != null) {
                 for (ShoppingItem item : backupData.shoppingItems) {
                     item.id = 0; // Force auto-generation
                     item.dispensaId = targetDispensaId;
+                    if (item.syncUuid == null || item.syncUuid.trim().isEmpty()) {
+                        item.syncUuid = UUID.randomUUID().toString();
+                    }
+                    db.shoppingItemDao().insert(item);
+                    enqueueSyncOutbox(targetDispensaId, "UPSERT_SHOPPING_ITEM", item, item.lastModified);
                 }
-                db.shoppingItemDao().insertAll(backupData.shoppingItems);
             }
         });
+
+        SyncBus.getInstance().post(new SyncBus.LocalChangeDetected());
+    }
+
+    private void enqueueSyncOutbox(int dispensaId, String dataType, Object payload, long ts) {
+        SyncOutbox entry = new SyncOutbox();
+        entry.syncId = UUID.randomUUID().toString();
+        entry.dispensaId = dispensaId;
+        entry.dataType = dataType;
+        entry.payload = gson.toJson(payload);
+        entry.timestamp = ts > 0 ? ts : System.currentTimeMillis();
+        db.syncOutboxDao().insert(entry);
     }
 }

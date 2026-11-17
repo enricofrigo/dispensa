@@ -183,9 +183,9 @@
     <string name="default_location_fridge_entry">Ψυγείο</string>
 
     <string name="move_product_to_title">Μετακίνηση στο %s</string>
-    <string name="product_moved_toast">Το %s μετακινήθηκε στο %s</string>
+    <string name="product_moved_toast">Το %1$s μετακινήθηκε στο %2$s</string>
     <string name="product_count_footer_simple">Προϊόντα: %d</string>
-    <string name="product_count_footer">Προϊόντα: %d    Ληγμένα: %d     Κοντά στη λήξη: %d</string>
+    <string name="product_count_footer">Προϊόντα: %1$d    Ληγμένα: %2$d     Κοντά στη λήξη: %3$d</string>
 
     <string name="off_banner_text">Το Open Food Facts είναι απενεργοποιημένο.</string>
     <string name="off_banner_button">Προτιμήσεις</string>

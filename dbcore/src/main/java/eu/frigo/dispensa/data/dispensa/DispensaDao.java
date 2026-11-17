@@ -35,6 +35,9 @@ public interface DispensaDao {
     @Query("SELECT * FROM dispense WHERE is_default = 1 LIMIT 1")
     Dispensa getDefaultDispensaSync();
 
+    @Query("SELECT * FROM dispense ORDER BY is_default DESC, id ASC LIMIT 1")
+    Dispensa getFirstAvailableDispensaSync();
+
     @Query("UPDATE dispense SET is_default = 0")
     void clearDefaults();
 

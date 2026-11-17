@@ -37,4 +37,23 @@ public class GDriveAuthManagerTest {
         Assert.assertNull(GDriveAuthManager.extractConsentIntent(normalEx));
         Assert.assertNull(GDriveAuthManager.extractConsentIntent(null));
     }
+
+    @Test
+    public void testGoogleSignInOptionsUsesDriveFileScopeInsteadOfFullDriveScope() {
+        com.google.android.gms.auth.api.signin.GoogleSignInOptions options = GDriveAuthManager.getGoogleSignInOptions();
+        Assert.assertNotNull(options);
+        com.google.android.gms.common.api.Scope[] scopes = options.getScopeArray();
+        boolean hasDriveFile = false;
+        boolean hasFullDrive = false;
+        for (com.google.android.gms.common.api.Scope s : scopes) {
+            if (GDriveAuthManager.DRIVE_FILE_SCOPE.equals(s.getScopeUri())) {
+                hasDriveFile = true;
+            }
+            if (GDriveAuthManager.DRIVE_SCOPE.equals(s.getScopeUri())) {
+                hasFullDrive = true;
+            }
+        }
+        Assert.assertTrue("Must request narrow drive.file scope", hasDriveFile);
+        Assert.assertFalse("Must NOT request restricted full drive scope", hasFullDrive);
+    }
 }

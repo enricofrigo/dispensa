@@ -36,7 +36,7 @@ public class GDriveAuthManager implements GDriveTokenProvider {
     public static GoogleSignInOptions getGoogleSignInOptions() {
         return new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
-                .requestScopes(new Scope(DRIVE_SCOPE))
+                .requestScopes(new Scope(DRIVE_FILE_SCOPE))
                 .build();
     }
 
@@ -46,7 +46,7 @@ public class GDriveAuthManager implements GDriveTokenProvider {
 
     public boolean isSignedIn() {
         GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(context);
-        return account != null && GoogleSignIn.hasPermissions(account, new Scope(DRIVE_SCOPE));
+        return account != null && GoogleSignIn.hasPermissions(account, new Scope(DRIVE_FILE_SCOPE));
     }
 
     @Nullable
@@ -90,7 +90,7 @@ public class GDriveAuthManager implements GDriveTokenProvider {
             throw new IOException("No Google account signed in");
         }
         try {
-            return GoogleAuthUtil.getToken(context, account.getAccount(), "oauth2:" + DRIVE_SCOPE);
+            return GoogleAuthUtil.getToken(context, account.getAccount(), "oauth2:" + DRIVE_FILE_SCOPE);
         } catch (com.google.android.gms.auth.UserRecoverableAuthException urae) {
             Log.w(TAG, "Google Drive consent required: " + urae.getMessage());
             throw new GDriveRecoverableAuthException("Consenso Google Drive richiesto: " + urae.getMessage(), urae.getIntent(), urae);

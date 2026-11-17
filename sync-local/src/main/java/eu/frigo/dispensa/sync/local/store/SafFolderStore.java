@@ -8,6 +8,7 @@ import androidx.documentfile.provider.DocumentFile;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -73,19 +74,68 @@ public class SafFolderStore implements SharedFolderStore {
                 throw new IOException("Unable to create or access directory: " + folderPath);
             }
 
-            DocumentFile targetFile = parentDir.findFile(fileName);
-            if (targetFile == null) {
-                targetFile = parentDir.createFile("application/json", fileName);
+            byte[] payload = data != null ? data : new byte[0];
+            String tempFileName = fileName + ".tmp";
+
+            // Clean up any stale temporary file first
+            DocumentFile existingTemp = parentDir.findFile(tempFileName);
+            if (existingTemp != null && existingTemp.exists()) {
+                existingTemp.delete();
             }
 
-            if (targetFile == null) {
-                throw new IOException("Failed to create file: " + fileName);
+            DocumentFile tempFile = parentDir.createFile("application/octet-stream", tempFileName);
+            if (tempFile == null) {
+                throw new IOException("Failed to create temporary file: " + tempFileName);
             }
 
-            try (OutputStream os = context.getContentResolver().openOutputStream(targetFile.getUri(), "wt")) {
-                if (os == null) throw new IOException("Failed to open output stream for " + fileName);
-                os.write(data != null ? data : new byte[0]);
-                os.flush();
+            boolean writeSuccess = false;
+            try {
+                try (OutputStream os = context.getContentResolver().openOutputStream(tempFile.getUri(), "wt")) {
+                    if (os == null) throw new IOException("Failed to open output stream for " + tempFileName);
+                    os.write(payload);
+                    os.flush();
+                    if (os instanceof FileOutputStream) {
+                        try {
+                            ((FileOutputStream) os).getFD().sync();
+                        } catch (Exception ignored) {
+                        }
+                    }
+                }
+
+                // Atomically replace target file: try rename after removing existing target, or copy if provider disallows rename
+                DocumentFile existingTarget = parentDir.findFile(fileName);
+                if (existingTarget != null && existingTarget.exists()) {
+                    existingTarget.delete();
+                }
+
+                if (tempFile.renameTo(fileName)) {
+                    writeSuccess = true;
+                } else {
+                    DocumentFile targetFile = parentDir.findFile(fileName);
+                    if (targetFile == null) {
+                        targetFile = parentDir.createFile("application/json", fileName);
+                    }
+                    if (targetFile == null) {
+                        throw new IOException("Failed to create target file: " + fileName);
+                    }
+                    try (OutputStream os = context.getContentResolver().openOutputStream(targetFile.getUri(), "wt")) {
+                        if (os == null) throw new IOException("Failed to open output stream for " + fileName);
+                        os.write(payload);
+                        os.flush();
+                        if (os instanceof FileOutputStream) {
+                            try {
+                                ((FileOutputStream) os).getFD().sync();
+                            } catch (Exception ignored) {
+                            }
+                        }
+                    }
+                    tempFile.delete();
+                    writeSuccess = true;
+                }
+            } finally {
+                if (!writeSuccess && tempFile.exists()) {
+                    tempFile.delete();
+                }
             }
         });
     }
@@ -114,6 +164,9 @@ public class SafFolderStore implements SharedFolderStore {
     @Override
     public Single<Boolean> exists(String relativePath) {
         return Single.fromCallable(() -> {
+            if (rootDocumentFile == null || !rootDocumentFile.exists()) {
+                throw new IOException("SAF root directory is not accessible");
+            }
             DocumentFile doc = findFile(relativePath);
             return doc != null && doc.exists();
         });
@@ -126,7 +179,7 @@ public class SafFolderStore implements SharedFolderStore {
             List<String> list = new ArrayList<>();
             if (dir != null && dir.isDirectory()) {
                 for (DocumentFile child : dir.listFiles()) {
-                    if (child.isFile() && child.getName() != null) {
+                    if (child.isFile() && child.getName() != null && !child.getName().endsWith(".tmp")) {
                         list.add(child.getName());
                     }
                 }

@@ -25,6 +25,25 @@ public interface ProductDao {
     @Update
     void update(Product product);
 
+    /**
+     * Upserts a Product without triggering ON DELETE CASCADE on product_category_links
+     * when updating an existing row (id > 0).
+     */
+    @Transaction
+    default long upsertPreservingLinks(Product product) {
+        if (product.syncUuid == null || product.syncUuid.trim().isEmpty()) {
+            product.syncUuid = java.util.UUID.randomUUID().toString();
+        }
+        if (product.id > 0) {
+            Product existing = getProductByIdSync(product.id);
+            if (existing != null) {
+                update(product);
+                return product.id;
+            }
+        }
+        return insert(product);
+    }
+
     @Delete
     void delete(Product product);
 
@@ -57,6 +76,12 @@ public interface ProductDao {
 
     @Query("SELECT * FROM products WHERE barcode IS :barcode AND expiry_date IS :expiryDate AND storage_location IS :storageLocation AND dispensa_id = :dispensaId LIMIT 1")
     Product getProductByLotKeySync(String barcode, Long expiryDate, String storageLocation, int dispensaId);
+
+    @Query("SELECT * FROM products WHERE sync_uuid = :syncUuid AND dispensa_id = :dispensaId LIMIT 1")
+    Product getProductBySyncUuidSync(String syncUuid, int dispensaId);
+
+    @Query("SELECT * FROM products WHERE storage_location = :storageLocation AND dispensa_id = :dispensaId")
+    List<Product> getProductsByLocationSync(String storageLocation, int dispensaId);
 
     @Transaction
     @Query("SELECT * FROM products WHERE id = :productId")

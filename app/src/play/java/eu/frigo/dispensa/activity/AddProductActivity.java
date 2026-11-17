@@ -209,7 +209,6 @@ public class AddProductActivity extends AppCompatActivity {
         final MaterialButton buttonSaveProduct = findViewById(R.id.buttonSaveProduct);
         final MaterialButton buttonSaveAndAddAnotherExpiry = findViewById(R.id.buttonSaveAndAddAnotherExpiry);
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-        prefs.edit().putBoolean(SettingsFragment.KEY_PREF_ENABLE_OFF_API, true).apply();
 
         ViewCompat.setOnApplyWindowInsetsListener(rootLayout, (v, windowInsets) -> {
             Insets systemBars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -1062,7 +1061,7 @@ public class AddProductActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     OpenFoodFactsApiService OffApiService = OpenFoodFactsRetrofitClient.getApiService(getApplicationContext());
                     if (OffApiService == null) return;
-                    String fieldsToFetch = "product_name_it,product_name,image_front_url,image_url,categories_tags";
+                    String fieldsToFetch = OpenFoodFactsRetrofitClient.getLocalizedFieldsToFetch();
                     retrofit2.Call<OpenFoodFactsProductResponse> call = OffApiService.getProductByBarcode(barcode, fieldsToFetch);
 
                     call.enqueue(new Callback<OpenFoodFactsProductResponse>() {
@@ -1073,10 +1072,7 @@ public class AddProductActivity extends AppCompatActivity {
                                 OpenFoodFactsProductResponse apiResponse = response.body();
                                 if (apiResponse.getStatus() == 1 && apiResponse.getProduct() != null) {
                                     OpenFoodFactsProductResponse.ProductData productData = apiResponse.getProduct();
-                                    String productName = productData.getProductNameIt();
-                                    if (productName == null || productName.trim().isEmpty()) {
-                                        productName = productData.getProductName();
-                                    }
+                                    String productName = productData.getLocalizedProductName();
                                     final String finalProductName = productName;
                                     
                                     String imageUrl = productData.getImageFrontUrl();

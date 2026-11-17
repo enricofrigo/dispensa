@@ -6,7 +6,7 @@ import java.util.List;
 
 public class PantryManifest {
     @SerializedName("version")
-    public int version = 2;
+    public int version = 3;
 
     @SerializedName("pantryKey")
     public String pantryKey;

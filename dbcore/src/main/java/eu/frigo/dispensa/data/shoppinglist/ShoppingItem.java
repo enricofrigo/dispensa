@@ -3,18 +3,27 @@ package eu.frigo.dispensa.data.shoppinglist;
 import androidx.annotation.NonNull;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
+import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 
 import androidx.room.Index;
 
 import com.google.gson.annotations.SerializedName;
+import java.util.UUID;
 
-@Entity(tableName = "shopping_items", indices = {@Index(value = "dispensa_id")})
+@Entity(tableName = "shopping_items", indices = {
+        @Index(value = "dispensa_id"),
+        @Index(value = { "dispensa_id", "sync_uuid" })
+})
 public class ShoppingItem {
 
     @SerializedName("id")
     @PrimaryKey(autoGenerate = true)
     public int id;
+
+    @SerializedName("sync_uuid")
+    @ColumnInfo(name = "sync_uuid")
+    public String syncUuid;
 
     @SerializedName("dispensa_id")
     @ColumnInfo(name = "dispensa_id", defaultValue = "1")
@@ -37,9 +46,12 @@ public class ShoppingItem {
     public long lastModified = 0L;
 
     public ShoppingItem() {
+        this.syncUuid = UUID.randomUUID().toString();
     }
 
+    @Ignore
     public ShoppingItem(String name, int quantity, boolean checked) {
+        this.syncUuid = UUID.randomUUID().toString();
         this.name = name;
         this.quantity = quantity;
         this.checked = checked;

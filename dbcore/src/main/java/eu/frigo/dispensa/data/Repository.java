@@ -42,6 +42,7 @@ public class Repository {
     
     private static Repository INSTANCE;
     
+    private final AppDatabase db;
     private final ProductDao productDao;
     private final CategoryDefinitionDao categoryDefinitionDao;
     private final ProductCategoryLinkDao productCategoryLinkDao;
@@ -70,7 +71,7 @@ public class Repository {
     }
 
     public Repository(Application application) {
-        AppDatabase db = AppDatabase.getDatabase(application);
+        this.db = AppDatabase.getDatabase(application);
         productDao = db.productDao();
         categoryDefinitionDao = db.categoryDefinitionDao();
         productCategoryLinkDao = db.productCategoryLinkDao();
@@ -175,20 +176,29 @@ public class Repository {
 
     public void deleteDispensa(Dispensa dispensa) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
-            // Cancelliamo la dispensa e tutti i dati associati
-            productDao.deleteAllProducts(dispensa.id);
-            storageLocationDao.deleteAllLocations(dispensa.id);
-            syncOutboxDao.deleteAllByDispensaId(dispensa.id);
-            joinedPantryConfigDao.deleteByDispensaId(dispensa.id);
-            dispensaDao.delete(dispensa);
-            
-            // Se cancelliamo la corrente, torniamo a quella di default
-            if (currentDispensaId.getValue() != null && currentDispensaId.getValue() == dispensa.id) {
-                Dispensa def = dispensaDao.getDefaultDispensaSync();
-                if (def != null) {
-                    setCurrentDispensaId(def.id);
+            db.runInTransaction(() -> {
+                // Cancelliamo la dispensa e tutti i dati associati (inclusi link categorie e lista della spesa)
+                productCategoryLinkDao.deleteByDispensaId(dispensa.id);
+                productDao.deleteAllProducts(dispensa.id);
+                storageLocationDao.deleteAllLocations(dispensa.id);
+                shoppingItemDao.deleteAllItems(dispensa.id);
+                syncOutboxDao.deleteAllByDispensaId(dispensa.id);
+                joinedPantryConfigDao.deleteByDispensaId(dispensa.id);
+                dispensaDao.delete(dispensa);
+
+                // Se cancelliamo la corrente, torniamo a quella di default o alla prima disponibile
+                Integer curId = currentDispensaId.getValue();
+                int prefId = sharedPreferences.getInt(KEY_CURRENT_DISPENSA_ID, 0);
+                if ((curId != null && curId == dispensa.id) || prefId == dispensa.id) {
+                    Dispensa next = dispensaDao.getDefaultDispensaSync();
+                    if (next == null) {
+                        next = dispensaDao.getFirstAvailableDispensaSync();
+                    }
+                    if (next != null) {
+                        setCurrentDispensaId(next.id);
+                    }
                 }
-            }
+            });
         });
     }
 
@@ -197,7 +207,12 @@ public class Repository {
     }
 
     public void insertJoinedPantryConfig(JoinedPantryConfig config) {
-        AppDatabase.databaseWriteExecutor.execute(() -> joinedPantryConfigDao.insert(config));
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            if (config != null && config.password != null) {
+                config.password = eu.frigo.dispensa.sync.core.crypto.CredentialCipher.encryptIfNeeded(config.password);
+            }
+            joinedPantryConfigDao.insert(config);
+        });
     }
 
     public JoinedPantryConfig getJoinedPantryConfigSync(int dispensaId) {
@@ -222,20 +237,22 @@ public class Repository {
 
     public void cleanOrphanData() {
         AppDatabase.databaseWriteExecutor.execute(() -> {
-            Log.d("Repository", "Avvio pulizia dati orfani...");
-            productDao.deleteOrphans();
-            storageLocationDao.deleteOrphans();
-            syncOutboxDao.deleteOrphans();
-            joinedPantryConfigDao.deleteOrphans();
-            Log.d("Repository", "Pulizia dati orfani completata.");
+            db.runInTransaction(() -> {
+                Log.d("Repository", "Avvio pulizia dati orfani...");
+                productDao.deleteOrphans();
+                storageLocationDao.deleteOrphans();
+                shoppingItemDao.deleteOrphans();
+                syncOutboxDao.deleteOrphans();
+                joinedPantryConfigDao.deleteOrphans();
+                Log.d("Repository", "Pulizia dati orfani completata.");
+            });
         });
     }
 
     private void recordSyncEvent(String action, Object payload) {
         SyncOutbox entry = new SyncOutbox();
         entry.syncId = UUID.randomUUID().toString();
-        Integer dispId = currentDispensaId.getValue();
-        entry.dispensaId = dispId != null ? dispId : 0;
+        entry.dispensaId = resolveEffectiveDispensaId();
         entry.dataType = action;
         Object payloadToSerialize = payload;
         if (payload instanceof Product) {
@@ -274,37 +291,82 @@ public class Repository {
         }
     }
 
+    private int resolveEffectiveDispensaId() {
+        Integer dispId = currentDispensaId.getValue();
+        if (dispId != null && dispId > 0) {
+            return dispId;
+        }
+        int savedPrefId = sharedPreferences.getInt(KEY_CURRENT_DISPENSA_ID, 0);
+        if (savedPrefId > 0) {
+            return savedPrefId;
+        }
+        Dispensa def = dispensaDao.getDefaultDispensaSync();
+        return def != null ? def.id : 1;
+    }
+
+    private List<String> getCategoryTagsForProductSync(int productId) {
+        List<String> tags = new ArrayList<>();
+        if (productId <= 0) return tags;
+        List<ProductCategoryLink> allLinks = productCategoryLinkDao.getAllProductCategoryLinksSync();
+        if (allLinks != null) {
+            for (ProductCategoryLink link : allLinks) {
+                if (link.productIdFk == productId) {
+                    CategoryDefinition def = categoryDefinitionDao.getCategoryDefinitionById(link.categoryIdFk);
+                    if (def != null && def.tagName != null && !def.tagName.trim().isEmpty()) {
+                        tags.add(def.tagName.trim());
+                    }
+                }
+            }
+        }
+        return tags;
+    }
+
     public void insert(Product product) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
-            Integer dispId = currentDispensaId.getValue();
-            product.dispensaId = dispId != null ? dispId : 0;
-            product.lastModified = System.currentTimeMillis();
-            productDao.insert(product);
-            recordSyncEvent("UPSERT_PRODUCT", product);
+            db.runInTransaction(() -> {
+                product.dispensaId = resolveEffectiveDispensaId();
+                if (product.syncUuid == null || product.syncUuid.trim().isEmpty()) {
+                    product.syncUuid = UUID.randomUUID().toString();
+                }
+                product.lastModified = System.currentTimeMillis();
+                long id = productDao.insert(product);
+                product.setId((int) id);
+                recordSyncEvent("UPSERT_PRODUCT", product);
+            });
         });
     }
 
     public void delete(Product selectedProduct) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
             deleteLocalImageIfAny(selectedProduct.getImageUrl());
-            selectedProduct.lastModified = System.currentTimeMillis();
-            productDao.delete(selectedProduct);
-            recordSyncEvent("DELETE_PRODUCT", selectedProduct);
+            db.runInTransaction(() -> {
+                selectedProduct.lastModified = System.currentTimeMillis();
+                productDao.delete(selectedProduct);
+                recordSyncEvent("DELETE_PRODUCT", selectedProduct);
+            });
         });
     }
 
     public void update(Product product) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
-            Integer dispId = currentDispensaId.getValue();
-            product.dispensaId = dispId != null ? dispId : 0;
-            product.lastModified = System.currentTimeMillis();
-            Product oldProduct = productDao.getProductByIdSync(product.getId());
-            if (oldProduct != null && oldProduct.getImageUrl() != null 
-                    && !oldProduct.getImageUrl().equals(product.getImageUrl())) {
-                deleteLocalImageIfAny(oldProduct.getImageUrl());
-            }
-            productDao.update(product);
-            recordSyncEvent("UPSERT_PRODUCT", product);
+            db.runInTransaction(() -> {
+                product.dispensaId = product.dispensaId > 0 ? product.dispensaId : resolveEffectiveDispensaId();
+                product.lastModified = System.currentTimeMillis();
+                Product oldProduct = productDao.getProductByIdSync(product.getId());
+                if (oldProduct != null) {
+                    if (product.syncUuid == null || product.syncUuid.trim().isEmpty()) {
+                        product.syncUuid = oldProduct.syncUuid != null ? oldProduct.syncUuid : UUID.randomUUID().toString();
+                    }
+                    if (oldProduct.getImageUrl() != null && !oldProduct.getImageUrl().equals(product.getImageUrl())) {
+                        deleteLocalImageIfAny(oldProduct.getImageUrl());
+                    }
+                } else if (product.syncUuid == null || product.syncUuid.trim().isEmpty()) {
+                    product.syncUuid = UUID.randomUUID().toString();
+                }
+                productDao.update(product);
+                product.categoryTags = getCategoryTagsForProductSync(product.getId());
+                recordSyncEvent("UPSERT_PRODUCT", product);
+            });
         });
     }
 
@@ -325,72 +387,88 @@ public class Repository {
     }
     public void insertProductWithApiTags(Product product, List<String> apiTags) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
-            Integer dispId = currentDispensaId.getValue();
-            product.dispensaId = dispId != null ? dispId : 0;
-            product.lastModified = System.currentTimeMillis();
-            long productIdLong = productDao.insert(product);
-            int productId = (int) productIdLong;
-            product.setId(productId);
-            // ... (tags logic)
+            db.runInTransaction(() -> {
+                product.dispensaId = resolveEffectiveDispensaId();
+                if (product.syncUuid == null || product.syncUuid.trim().isEmpty()) {
+                    product.syncUuid = UUID.randomUUID().toString();
+                }
+                product.lastModified = System.currentTimeMillis();
+                long productIdLong = productDao.insert(product);
+                int productId = (int) productIdLong;
+                product.setId(productId);
 
-            if (apiTags != null && !apiTags.isEmpty()) {
-                List<ProductCategoryLink> linksToInsert = new ArrayList<>();
-                for (String apiTag : apiTags) {
-                    CategoryDefinition existingCategory = categoryDefinitionDao.getCategoryByTagName(apiTag);
-                    int categoryId;
-                    if (existingCategory == null) {
-                        CategoryDefinition newCategoryDef = new CategoryDefinition(apiTag);
-                        newCategoryDef.setLanguageCode(apiTag.split(":")[0]);
-                        long newCategoryIdLong = categoryDefinitionDao.insert(newCategoryDef);
-                        categoryId = (int) newCategoryIdLong;
-                    } else {
-                        categoryId = existingCategory.categoryId;
+                if (apiTags != null && !apiTags.isEmpty()) {
+                    List<ProductCategoryLink> linksToInsert = new ArrayList<>();
+                    for (String apiTag : apiTags) {
+                        CategoryDefinition existingCategory = categoryDefinitionDao.getCategoryByTagName(apiTag);
+                        int categoryId;
+                        if (existingCategory == null) {
+                            CategoryDefinition newCategoryDef = new CategoryDefinition(apiTag);
+                            newCategoryDef.setLanguageCode(apiTag.split(":")[0]);
+                            long newCategoryIdLong = categoryDefinitionDao.insert(newCategoryDef);
+                            categoryId = (int) newCategoryIdLong;
+                        } else {
+                            categoryId = existingCategory.categoryId;
+                        }
+                        linksToInsert.add(new ProductCategoryLink(productId, categoryId));
                     }
-                    linksToInsert.add(new ProductCategoryLink(productId, categoryId));
+                    if (!linksToInsert.isEmpty()) {
+                        productCategoryLinkDao.insertAll(linksToInsert);
+                    }
+                    product.categoryTags = new ArrayList<>(apiTags);
+                } else {
+                    product.categoryTags = new ArrayList<>();
                 }
-                if (!linksToInsert.isEmpty()) {
-                    productCategoryLinkDao.insertAll(linksToInsert);
-                }
-            }
-            recordSyncEvent("UPSERT_PRODUCT", product);
+                recordSyncEvent("UPSERT_PRODUCT", product);
+            });
         });
     }
 
     public void updateProductWithApiTags(Product product, List<String> apiTags) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
-            Integer dispId = currentDispensaId.getValue();
-            product.dispensaId = dispId != null ? dispId : 0;
-            product.lastModified = System.currentTimeMillis();
-            Product oldProduct = productDao.getProductByIdSync(product.getId());
-            if (oldProduct != null && oldProduct.getImageUrl() != null 
-                    && !oldProduct.getImageUrl().equals(product.getImageUrl())) {
-                deleteLocalImageIfAny(oldProduct.getImageUrl());
-            }
-            
-            productDao.update(product);
-            int productId = product.getId();
-
-            if (apiTags != null && !apiTags.isEmpty()) {
-                List<ProductCategoryLink> linksToInsert = new ArrayList<>();
-                for (String apiTag : apiTags) {
-                    CategoryDefinition existingCategory = categoryDefinitionDao.getCategoryByTagName(apiTag);
-                    int categoryId;
-                    if (existingCategory == null) {
-                        CategoryDefinition newCategoryDef = new CategoryDefinition(apiTag);
-                        newCategoryDef.setLanguageCode(apiTag.split(":")[0]);
-                        long newCategoryIdLong = categoryDefinitionDao.insert(newCategoryDef);
-                        categoryId = (int) newCategoryIdLong;
-                    } else {
-                        categoryId = existingCategory.categoryId;
+            db.runInTransaction(() -> {
+                product.dispensaId = product.dispensaId > 0 ? product.dispensaId : resolveEffectiveDispensaId();
+                product.lastModified = System.currentTimeMillis();
+                Product oldProduct = productDao.getProductByIdSync(product.getId());
+                if (oldProduct != null) {
+                    if (product.syncUuid == null || product.syncUuid.trim().isEmpty()) {
+                        product.syncUuid = oldProduct.syncUuid != null ? oldProduct.syncUuid : UUID.randomUUID().toString();
                     }
-                    linksToInsert.add(new ProductCategoryLink(productId, categoryId));
+                    if (oldProduct.getImageUrl() != null && !oldProduct.getImageUrl().equals(product.getImageUrl())) {
+                        deleteLocalImageIfAny(oldProduct.getImageUrl());
+                    }
+                } else if (product.syncUuid == null || product.syncUuid.trim().isEmpty()) {
+                    product.syncUuid = UUID.randomUUID().toString();
                 }
+
+                productDao.update(product);
+                int productId = product.getId();
+
                 productCategoryLinkDao.deleteByProductId(productId);
-                if (!linksToInsert.isEmpty()) {
-                    productCategoryLinkDao.insertAll(linksToInsert);
+                if (apiTags != null && !apiTags.isEmpty()) {
+                    List<ProductCategoryLink> linksToInsert = new ArrayList<>();
+                    for (String apiTag : apiTags) {
+                        CategoryDefinition existingCategory = categoryDefinitionDao.getCategoryByTagName(apiTag);
+                        int categoryId;
+                        if (existingCategory == null) {
+                            CategoryDefinition newCategoryDef = new CategoryDefinition(apiTag);
+                            newCategoryDef.setLanguageCode(apiTag.split(":")[0]);
+                            long newCategoryIdLong = categoryDefinitionDao.insert(newCategoryDef);
+                            categoryId = (int) newCategoryIdLong;
+                        } else {
+                            categoryId = existingCategory.categoryId;
+                        }
+                        linksToInsert.add(new ProductCategoryLink(productId, categoryId));
+                    }
+                    if (!linksToInsert.isEmpty()) {
+                        productCategoryLinkDao.insertAll(linksToInsert);
+                    }
+                    product.categoryTags = new ArrayList<>(apiTags);
+                } else {
+                    product.categoryTags = new ArrayList<>();
                 }
-            }
-            recordSyncEvent("UPSERT_PRODUCT", product);
+                recordSyncEvent("UPSERT_PRODUCT", product);
+            });
         });
     }
     public LiveData<List<StorageLocation>> getAllLocationsSorted() {
@@ -405,60 +483,80 @@ public class Repository {
 
     public void insertLocation(StorageLocation location) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
-            Integer dispId = currentDispensaId.getValue();
-            int currentId = dispId != null ? dispId : 0;
-            location.dispensaId = currentId;
-            location.lastModified = System.currentTimeMillis();
-            
-            // Se l'orderIndex non è impostato, prendi il massimo attuale
-            if (location.orderIndex <= 0) {
-                Integer maxIndex = AppDatabase.getDatabase(application).storageLocationDao().getMaxOrderIndex(currentId);
-                location.orderIndex = (maxIndex != null ? maxIndex : -1) + 1;
-            }
-            
-            storageLocationDao.insert(location);
-            recordSyncEvent("UPSERT_LOCATION", location);
+            db.runInTransaction(() -> {
+                int currentId = resolveEffectiveDispensaId();
+                location.dispensaId = currentId;
+                location.lastModified = System.currentTimeMillis();
+
+                if (location.orderIndex <= 0) {
+                    Integer maxIndex = storageLocationDao.getMaxOrderIndex(currentId);
+                    location.orderIndex = (maxIndex != null ? maxIndex : -1) + 1;
+                }
+
+                storageLocationDao.insert(location);
+                recordSyncEvent("UPSERT_LOCATION", location);
+            });
         });
     }
 
     public void updateLocation(StorageLocation location) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
-            Integer dispId = currentDispensaId.getValue();
-            location.dispensaId = dispId != null ? dispId : 0;
-            location.lastModified = System.currentTimeMillis();
-            storageLocationDao.update(location);
-            recordSyncEvent("UPSERT_LOCATION", location);
+            db.runInTransaction(() -> {
+                location.dispensaId = location.dispensaId > 0 ? location.dispensaId : resolveEffectiveDispensaId();
+                location.lastModified = System.currentTimeMillis();
+                storageLocationDao.update(location);
+                recordSyncEvent("UPSERT_LOCATION", location);
+            });
         });
     }
     public void deleteLocation(StorageLocation location) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
-            Integer dispId = currentDispensaId.getValue();
-            int currentId = dispId != null ? dispId : 0;
-            location.lastModified = System.currentTimeMillis();
-            StorageLocation defaultLoc = storageLocationDao.getDefaultLocationSync(currentId);
-            String fallbackKey = defaultLoc != null ? defaultLoc.internalKey : eu.frigo.dispensa.data.storage.PredefinedData.LOCATION_ALL;
-            productDao.updateProductLocation(location.internalKey, fallbackKey, currentId);
-            storageLocationDao.delete(location);
-            recordSyncEvent("DELETE_LOCATION", location);
+            db.runInTransaction(() -> {
+                int currentId = resolveEffectiveDispensaId();
+                long now = System.currentTimeMillis();
+                location.lastModified = now;
+                StorageLocation defaultLoc = storageLocationDao.getDefaultLocationSync(currentId);
+                String fallbackKey = defaultLoc != null ? defaultLoc.internalKey : eu.frigo.dispensa.data.storage.PredefinedData.LOCATION_ALL;
+
+                List<Product> affectedProducts = productDao.getProductsByLocationSync(location.internalKey, currentId);
+                productDao.updateProductLocation(location.internalKey, fallbackKey, currentId);
+                if (affectedProducts != null) {
+                    for (Product moved : affectedProducts) {
+                        moved.setStorageLocation(fallbackKey);
+                        moved.lastModified = now;
+                        if (moved.syncUuid == null || moved.syncUuid.trim().isEmpty()) {
+                            moved.syncUuid = UUID.randomUUID().toString();
+                        }
+                        productDao.update(moved);
+                        moved.categoryTags = getCategoryTagsForProductSync(moved.getId());
+                        recordSyncEvent("UPSERT_PRODUCT", moved);
+                    }
+                }
+                storageLocationDao.delete(location);
+                recordSyncEvent("DELETE_LOCATION", location);
+            });
         });
     }
 
     public void setLocationAsDefault(String internalKey) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
-            Integer dispId = currentDispensaId.getValue();
-            if (dispId != null) {
-                storageLocationDao.setAsDefault(internalKey, dispId);
-            }
+            int dispId = resolveEffectiveDispensaId();
+            storageLocationDao.setAsDefault(internalKey, dispId);
         });
     }
 
     public void updateLocationOrder(List<StorageLocation> orderedLocations) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
-            for (int i = 0; i < orderedLocations.size(); i++) {
-                StorageLocation loc = orderedLocations.get(i);
-                loc.orderIndex = i;
-                storageLocationDao.update(loc);
-            }
+            db.runInTransaction(() -> {
+                long now = System.currentTimeMillis();
+                for (int i = 0; i < orderedLocations.size(); i++) {
+                    StorageLocation loc = orderedLocations.get(i);
+                    loc.orderIndex = i;
+                    loc.lastModified = now;
+                    storageLocationDao.update(loc);
+                    recordSyncEvent("UPSERT_LOCATION", loc);
+                }
+            });
         });
     }
 
@@ -472,9 +570,12 @@ public class Repository {
     }
 
     public static void cleanOrphanImages(android.content.Context context, java.util.function.Consumer<Integer> onComplete) {
-        java.io.File imagesDir = new java.io.File(context.getExternalFilesDir(null), "product_images");
-        AppDatabase db = AppDatabase.getDatabase(context);
-        cleanOrphanImages(db, imagesDir, context.getContentResolver(), onComplete);
+        final android.content.Context appContext = context.getApplicationContext();
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            java.io.File imagesDir = new java.io.File(appContext.getExternalFilesDir(null), "product_images");
+            AppDatabase db = AppDatabase.getDatabase(appContext);
+            cleanOrphanImages(db, imagesDir, appContext.getContentResolver(), onComplete);
+        });
     }
 
     public static void cleanOrphanImages(AppDatabase db, java.io.File imagesDir, android.content.ContentResolver contentResolver, java.util.function.Consumer<Integer> onComplete) {
@@ -561,69 +662,83 @@ public class Repository {
 
     public void addToShoppingList(String productName, int quantity) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
-            Integer dispId = currentDispensaId.getValue();
-            int currentId = dispId != null ? dispId : 0;
-            ShoppingItem existing = shoppingItemDao.getItemByNameSync(productName, currentId);
-            long now = System.currentTimeMillis();
-            if (existing != null) {
-                existing.lastModified = now;
-                existing.setQuantity(existing.getQuantity() + quantity);
-                shoppingItemDao.update(existing);
-                recordSyncEvent("UPSERT_SHOPPING_ITEM", existing);
-            } else {
-                ShoppingItem newItem = new ShoppingItem(productName, quantity, false);
-                newItem.dispensaId = currentId;
-                newItem.lastModified = now;
-                shoppingItemDao.insert(newItem);
-                recordSyncEvent("UPSERT_SHOPPING_ITEM", newItem);
-            }
+            db.runInTransaction(() -> {
+                int currentId = resolveEffectiveDispensaId();
+                ShoppingItem existing = shoppingItemDao.getItemByNameSync(productName, currentId);
+                long now = System.currentTimeMillis();
+                if (existing != null) {
+                    if (existing.syncUuid == null || existing.syncUuid.trim().isEmpty()) {
+                        existing.syncUuid = UUID.randomUUID().toString();
+                    }
+                    existing.lastModified = now;
+                    existing.setQuantity(existing.getQuantity() + quantity);
+                    shoppingItemDao.update(existing);
+                    recordSyncEvent("UPSERT_SHOPPING_ITEM", existing);
+                } else {
+                    ShoppingItem newItem = new ShoppingItem(productName, quantity, false);
+                    newItem.dispensaId = currentId;
+                    newItem.lastModified = now;
+                    long id = shoppingItemDao.insert(newItem);
+                    newItem.setId((int) id);
+                    recordSyncEvent("UPSERT_SHOPPING_ITEM", newItem);
+                }
+            });
         });
     }
 
     public void removeFromShoppingList(String productName) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
-            Integer dispId = currentDispensaId.getValue();
-            int currentId = dispId != null ? dispId : 0;
-            ShoppingItem item = shoppingItemDao.getItemByNameSync(productName, currentId);
-            if (item != null) {
-                item.lastModified = System.currentTimeMillis();
-                shoppingItemDao.deleteByName(productName, currentId);
-                recordSyncEvent("DELETE_SHOPPING_ITEM", item);
-            }
+            db.runInTransaction(() -> {
+                int currentId = resolveEffectiveDispensaId();
+                ShoppingItem item = shoppingItemDao.getItemByNameSync(productName, currentId);
+                if (item != null) {
+                    item.lastModified = System.currentTimeMillis();
+                    shoppingItemDao.deleteByName(productName, currentId);
+                    recordSyncEvent("DELETE_SHOPPING_ITEM", item);
+                }
+            });
         });
     }
 
     public void updateShoppingItem(ShoppingItem item) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
-            Integer dispId = currentDispensaId.getValue();
-            item.dispensaId = dispId != null ? dispId : 0;
-            item.lastModified = System.currentTimeMillis();
-            shoppingItemDao.update(item);
-            recordSyncEvent("UPSERT_SHOPPING_ITEM", item);
+            db.runInTransaction(() -> {
+                item.dispensaId = item.dispensaId > 0 ? item.dispensaId : resolveEffectiveDispensaId();
+                if (item.syncUuid == null || item.syncUuid.trim().isEmpty()) {
+                    ShoppingItem existing = item.getId() > 0 ? null : shoppingItemDao.getItemByNameSync(item.getName(), item.dispensaId);
+                    item.syncUuid = (existing != null && existing.syncUuid != null) ? existing.syncUuid : UUID.randomUUID().toString();
+                }
+                item.lastModified = System.currentTimeMillis();
+                shoppingItemDao.update(item);
+                recordSyncEvent("UPSERT_SHOPPING_ITEM", item);
+            });
         });
     }
 
     public void deleteShoppingItem(ShoppingItem item) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
-            item.lastModified = System.currentTimeMillis();
-            shoppingItemDao.delete(item);
-            recordSyncEvent("DELETE_SHOPPING_ITEM", item);
+            db.runInTransaction(() -> {
+                item.lastModified = System.currentTimeMillis();
+                shoppingItemDao.delete(item);
+                recordSyncEvent("DELETE_SHOPPING_ITEM", item);
+            });
         });
     }
 
     public void clearCheckedShoppingItems() {
         AppDatabase.databaseWriteExecutor.execute(() -> {
-            Integer dispId = currentDispensaId.getValue();
-            int currentId = dispId != null ? dispId : 0;
-            List<ShoppingItem> checked = shoppingItemDao.getCheckedItemsSync(currentId);
-            if (checked != null) {
-                long now = System.currentTimeMillis();
-                for (ShoppingItem item : checked) {
-                    item.lastModified = now;
-                    recordSyncEvent("DELETE_SHOPPING_ITEM", item);
+            db.runInTransaction(() -> {
+                int currentId = resolveEffectiveDispensaId();
+                List<ShoppingItem> checked = shoppingItemDao.getCheckedItemsSync(currentId);
+                if (checked != null) {
+                    long now = System.currentTimeMillis();
+                    for (ShoppingItem item : checked) {
+                        item.lastModified = now;
+                        recordSyncEvent("DELETE_SHOPPING_ITEM", item);
+                    }
                 }
-            }
-            shoppingItemDao.deleteChecked(currentId);
+                shoppingItemDao.deleteChecked(currentId);
+            });
         });
     }
 }

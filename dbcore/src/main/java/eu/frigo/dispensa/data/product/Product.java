@@ -9,19 +9,31 @@ import androidx.room.PrimaryKey;
 import androidx.room.ColumnInfo;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 
 @Entity(tableName = "products", indices = { // 6. Definizione degli indici
         @Index(value = { "storage_location" }),
-        @Index(value = { "dispensa_id" })
+        @Index(value = { "dispensa_id" }),
+        @Index(value = { "dispensa_id", "sync_uuid" })
 })
 public class Product {
 
     @SerializedName("id")
     @PrimaryKey(autoGenerate = true)
     public int id;
+
+    @SerializedName("sync_uuid")
+    @ColumnInfo(name = "sync_uuid")
+    public String syncUuid;
+
+    @Ignore
+    @SerializedName("category_tags")
+    public List<String> categoryTags;
 
     @SerializedName("dispensa_id")
     @ColumnInfo(name = "dispensa_id", defaultValue = "1")
@@ -70,10 +82,12 @@ public class Product {
 
     @Ignore
     public Product() {
+        this.syncUuid = UUID.randomUUID().toString();
     }
 
     public Product(String barcode, int quantity, Long expiryDate, String productName, String imageUrl,
             String storageLocation, Long openedDate, int shelfLifeAfterOpeningDays) {
+        this.syncUuid = UUID.randomUUID().toString();
         this.barcode = barcode;
         this.quantity = quantity;
         this.expiryDate = expiryDate;
@@ -125,7 +139,7 @@ public class Product {
         if (expiryDate == null || expiryDate <= 0) {
             return notDefined;
         }
-        SimpleDateFormat sdf = new SimpleDateFormat(myFormat, Locale.ITALY);
+        SimpleDateFormat sdf = new SimpleDateFormat(myFormat, Locale.getDefault());
         return sdf.format(new Date(expiryDate));
     }
 
@@ -215,7 +229,7 @@ public class Product {
         if (actualTimestamp == null || actualTimestamp <= 0) {
             return notDefined;
         }
-        SimpleDateFormat sdf = new SimpleDateFormat(myFormat, Locale.ITALY);
+        SimpleDateFormat sdf = new SimpleDateFormat(myFormat, Locale.getDefault());
         return sdf.format(new Date(actualTimestamp));
     }
 
@@ -245,6 +259,9 @@ public class Product {
     public Product copyWithNewQuantity(int i) {
         Product copy = new Product();
         copy.id = this.id;
+        copy.syncUuid = (this.syncUuid != null && !this.syncUuid.trim().isEmpty())
+                ? this.syncUuid : UUID.randomUUID().toString();
+        copy.categoryTags = this.categoryTags != null ? new ArrayList<>(this.categoryTags) : null;
         copy.barcode = this.barcode;
         copy.quantity = i;
         copy.expiryDate = this.expiryDate;
@@ -276,6 +293,9 @@ public class Product {
     public Product createExportCopy() {
         Product copy = new Product();
         copy.id = this.id;
+        copy.syncUuid = (this.syncUuid != null && !this.syncUuid.trim().isEmpty())
+                ? this.syncUuid : UUID.randomUUID().toString();
+        copy.categoryTags = this.categoryTags != null ? new ArrayList<>(this.categoryTags) : null;
         copy.dispensaId = this.dispensaId;
         copy.barcode = this.barcode;
         copy.quantity = this.quantity;

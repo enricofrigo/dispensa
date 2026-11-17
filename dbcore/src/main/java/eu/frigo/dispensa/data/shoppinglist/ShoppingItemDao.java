@@ -31,6 +31,9 @@ public interface ShoppingItemDao {
     @Query("DELETE FROM shopping_items WHERE dispensa_id = :dispensaId")
     void deleteAllItems(int dispensaId);
 
+    @Query("DELETE FROM shopping_items WHERE dispensa_id NOT IN (SELECT id FROM dispense)")
+    void deleteOrphans();
+
     @Query("DELETE FROM shopping_items WHERE checked = 1 AND dispensa_id = :dispensaId")
     void deleteChecked(int dispensaId);
 
@@ -42,6 +45,9 @@ public interface ShoppingItemDao {
 
     @Query("SELECT * FROM shopping_items WHERE name = :name AND dispensa_id = :dispensaId LIMIT 1")
     ShoppingItem getItemByNameSync(String name, int dispensaId);
+
+    @Query("SELECT * FROM shopping_items WHERE sync_uuid = :syncUuid AND dispensa_id = :dispensaId LIMIT 1")
+    ShoppingItem getItemBySyncUuidSync(String syncUuid, int dispensaId);
 
     @Query("SELECT * FROM shopping_items WHERE checked = 1 AND dispensa_id = :dispensaId")
     List<ShoppingItem> getCheckedItemsSync(int dispensaId);

@@ -17,13 +17,20 @@ public class ExpiryCheckWorkerScheduler {
     public static final String EXPIRY_CHECK_WORK_TAG = "expiryCheckWork";
 
     public static void scheduleWorker(Context context) {
+        enqueuePeriodicWork(context, ExistingPeriodicWorkPolicy.KEEP);
+    }
+
+    public static void rescheduleWorker(Context context) {
+        enqueuePeriodicWork(context, ExistingPeriodicWorkPolicy.UPDATE);
+    }
+
+    private static void enqueuePeriodicWork(Context context, ExistingPeriodicWorkPolicy policy) {
         WorkManager workManager = WorkManager.getInstance(context.getApplicationContext());
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context.getApplicationContext());
-        int preferredHour = prefs.getInt(SettingsFragment.KEY_NOTIFICATION_TIME_HOUR, 9); // Default 9 AM
-        int preferredMinute = prefs.getInt(SettingsFragment.KEY_NOTIFICATION_TIME_MINUTE, 0); // Default 00 minutes
+        int preferredHour = prefs.getInt(SettingsFragment.KEY_NOTIFICATION_TIME_HOUR, 9);
+        int preferredMinute = prefs.getInt(SettingsFragment.KEY_NOTIFICATION_TIME_MINUTE, 0);
 
-        // Calcola il ritardo iniziale per far partire il worker all'ora desiderata
         Calendar now = Calendar.getInstance();
         Calendar preferredTimeToday = (Calendar) now.clone();
         preferredTimeToday.set(Calendar.HOUR_OF_DAY, preferredHour);
@@ -31,20 +38,15 @@ public class ExpiryCheckWorkerScheduler {
         preferredTimeToday.set(Calendar.SECOND, 0);
         preferredTimeToday.set(Calendar.MILLISECOND, 0);
 
-        long initialDelayMillis;
         if (preferredTimeToday.before(now)) {
-            // L'ora preferita per oggi è già passata, schedula per domani a quell'ora
             preferredTimeToday.add(Calendar.DAY_OF_YEAR, 1);
         }
-        initialDelayMillis = preferredTimeToday.getTimeInMillis() - now.getTimeInMillis();
+        long initialDelayMillis = preferredTimeToday.getTimeInMillis() - now.getTimeInMillis();
 
-        Constraints constraints = new Constraints.Builder()
-                // Puoi aggiungere vincoli come .setRequiredNetworkType(NetworkType.CONNECTED)
-                // .setRequiresCharging(true)
-                .build();
+        Constraints constraints = new Constraints.Builder().build();
 
         PeriodicWorkRequest expiryCheckRequest =
-                new PeriodicWorkRequest.Builder(ExpiryCheckWorker.class, 1, TimeUnit.DAYS) // Ripeti ogni giorno
+                new PeriodicWorkRequest.Builder(ExpiryCheckWorker.class, 1, TimeUnit.DAYS)
                         .setInitialDelay(initialDelayMillis, TimeUnit.MILLISECONDS)
                         .setConstraints(constraints)
                         .addTag(EXPIRY_CHECK_WORK_TAG)
@@ -52,10 +54,10 @@ public class ExpiryCheckWorkerScheduler {
 
         workManager.enqueueUniquePeriodicWork(
                 EXPIRY_CHECK_WORK_TAG,
-                ExistingPeriodicWorkPolicy.REPLACE, // REPLACE per aggiornare con il nuovo orario/ritardo
+                policy,
                 expiryCheckRequest);
 
-        android.util.Log.d("Scheduler", "Worker schedulato per le " + preferredHour + ":" + preferredMinute +
+        android.util.Log.d("Scheduler", "Worker schedulato (" + policy + ") per le " + preferredHour + ":" + preferredMinute +
                 " con ritardo iniziale di " + initialDelayMillis / (1000 * 60) + " minuti.");
     }
 

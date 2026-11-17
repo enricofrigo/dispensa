@@ -41,8 +41,10 @@ import eu.frigo.dispensa.sync.core.engine.InstallationIdProvider;
 @Database(entities = {Product.class, CategoryDefinition.class,
         ProductCategoryLink.class, StorageLocation.class, OpenFoodFactCacheEntity.class,
         ShoppingItem.class, SyncOutbox.class, Dispensa.class, JoinedPantryConfig.class },
-        version = 22)
+        version = AppDatabase.DB_VERSION)
 public abstract class AppDatabase extends RoomDatabase {
+
+    public static final int DB_VERSION = 23;
 
     public abstract ProductDao productDao();
     public abstract CategoryDefinitionDao categoryDefinitionDao();
@@ -55,7 +57,7 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract JoinedPantryConfigDao joinedPantryConfigDao();
 
     private static volatile AppDatabase INSTANCE;
-    private static final int NUMBER_OF_THREADS = 4;
+    private static final int NUMBER_OF_THREADS = 1;
     public static final ExecutorService databaseWriteExecutor =
             Executors.newFixedThreadPool(NUMBER_OF_THREADS);
 
@@ -166,6 +168,19 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    public static final Migration MIGRATION_22_23 = new Migration(22, 23) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("ALTER TABLE `products` ADD COLUMN `sync_uuid` TEXT");
+            database.execSQL("UPDATE `products` SET `sync_uuid` = 'prod_' || `dispensa_id` || '_' || `id` WHERE `sync_uuid` IS NULL");
+            database.execSQL("CREATE INDEX IF NOT EXISTS `index_products_dispensa_id_sync_uuid` ON `products` (`dispensa_id`, `sync_uuid`)");
+
+            database.execSQL("ALTER TABLE `shopping_items` ADD COLUMN `sync_uuid` TEXT");
+            database.execSQL("UPDATE `shopping_items` SET `sync_uuid` = 'shop_' || `dispensa_id` || '_' || `id` WHERE `sync_uuid` IS NULL");
+            database.execSQL("CREATE INDEX IF NOT EXISTS `index_shopping_items_dispensa_id_sync_uuid` ON `shopping_items` (`dispensa_id`, `sync_uuid`)");
+        }
+    };
+
     static final Migration MIGRATION_6_7 = new Migration(6,7) {
         @Override
         public void migrate(SupportSQLiteDatabase database) {
@@ -200,7 +215,7 @@ public abstract class AppDatabase extends RoomDatabase {
             synchronized (AppDatabase.class) {
                 if (INSTANCE == null) {
                     // Esegui backup preventivo se è prevista una migrazione
-                    PreMigrationBackupHelper.checkAndBackup(context.getApplicationContext(), "dispensa_database", 22);
+                    PreMigrationBackupHelper.checkAndBackup(context.getApplicationContext(), "dispensa_database", DB_VERSION);
 
                     RoomDatabase.Callback sRoomDatabaseCallback = new RoomDatabase.Callback() {
                         @Override
@@ -245,6 +260,7 @@ public abstract class AppDatabase extends RoomDatabase {
                             .addMigrations(MIGRATION_12_21)
                             .addMigrations(MIGRATION_20_21)
                             .addMigrations(MIGRATION_21_22)
+                            .addMigrations(MIGRATION_22_23)
                             .addCallback(sRoomDatabaseCallback)
                             //.fallbackToDestructiveMigration()
                             .build();

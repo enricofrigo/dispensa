@@ -60,20 +60,7 @@ public class RepositoryBaselineNonRegressionTest {
 
     private void flushAsyncTasks() throws Exception {
         Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();
-        if (AppDatabase.databaseWriteExecutor instanceof java.util.concurrent.ThreadPoolExecutor) {
-            java.util.concurrent.ThreadPoolExecutor tpe =
-                    (java.util.concurrent.ThreadPoolExecutor) AppDatabase.databaseWriteExecutor;
-            long deadline = System.currentTimeMillis() + 5000;
-            while ((tpe.getCompletedTaskCount() < tpe.getTaskCount()
-                    || tpe.getActiveCount() > 0
-                    || !tpe.getQueue().isEmpty())
-                    && System.currentTimeMillis() < deadline) {
-                Thread.sleep(10);
-                Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();
-            }
-        } else {
-            AppDatabase.databaseWriteExecutor.submit(() -> {}).get(5, TimeUnit.SECONDS);
-        }
+        AppDatabase.databaseWriteExecutor.submit(() -> {}).get(5, TimeUnit.SECONDS);
         Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();
     }
 
@@ -219,6 +206,11 @@ public class RepositoryBaselineNonRegressionTest {
         Assert.assertEquals(0, db.productDao().getAllProductsListStatic(defaultDispensaId).size());
         Assert.assertEquals(1, db.productDao().getAllProductsListStatic(secondDispId).size());
 
+        // Add a shopping item in second dispensa to verify deleteDispensa cleans up shopping_items too
+        repository.addToShoppingList("Zucchero Ufficio", 2);
+        flushAsyncTasks();
+        Assert.assertEquals(1, db.shoppingItemDao().getAllItemsSync(secondDispId).size());
+
         // Delete second dispensa
         Dispensa toDelete = db.dispensaDao().getDispensaByIdSync(secondDispId);
         repository.deleteDispensa(toDelete);
@@ -226,5 +218,24 @@ public class RepositoryBaselineNonRegressionTest {
 
         Assert.assertNull(db.dispensaDao().getDispensaByIdSync(secondDispId));
         Assert.assertEquals(0, db.productDao().getAllProductsListStatic(secondDispId).size());
+        Assert.assertEquals("deleteDispensa must also delete shopping_items for that dispensa",
+                0, db.shoppingItemDao().getAllItemsSync(secondDispId).size());
+        Assert.assertEquals("currentDispensaId must fall back to valid dispensa",
+                Integer.valueOf(defaultDispensaId), repository.getCurrentDispensaId().getValue());
+    }
+
+    @Test
+    public void testCleanOrphanDataRemovesOrphanShoppingItemsAndInsertResolvesDefaultDispensa() throws Exception {
+        // Insert an orphan shopping item pointing to non-existent dispensaId = 999
+        ShoppingItem orphanItem = new ShoppingItem("Orphan Item", 1, false);
+        orphanItem.dispensaId = 999;
+        db.shoppingItemDao().insert(orphanItem);
+        Assert.assertEquals(1, db.shoppingItemDao().getAllItemsSync(999).size());
+
+        repository.cleanOrphanData();
+        flushAsyncTasks();
+
+        Assert.assertEquals("cleanOrphanData must remove orphan shopping_items",
+                0, db.shoppingItemDao().getAllItemsSync(999).size());
     }
 }

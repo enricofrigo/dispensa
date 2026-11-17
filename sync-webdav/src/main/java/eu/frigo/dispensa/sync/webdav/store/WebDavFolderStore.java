@@ -6,6 +6,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import eu.frigo.dispensa.sync.core.store.SharedFolderStore;
 import eu.frigo.dispensa.sync.webdav.client.WebDavClient;
@@ -18,6 +20,15 @@ import okhttp3.Response;
  */
 public class WebDavFolderStore implements SharedFolderStore {
     private static final String TAG = "WebDavFolderStore";
+    private static final Pattern STATUS_404_PATTERN =
+            Pattern.compile("<(?:[a-zA-Z0-9_-]+:)?status>\\s*HTTP/\\d\\.\\d\\s+404\\b", Pattern.CASE_INSENSITIVE);
+    private static final Pattern RESPONSE_BLOCK_PATTERN =
+            Pattern.compile("<(?:[a-zA-Z0-9_-]+:)?response\\b[^>]*>(.*?)</(?:[a-zA-Z0-9_-]+:)?response>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
+    private static final Pattern HREF_PATTERN =
+            Pattern.compile("<(?:[a-zA-Z0-9_-]+:)?href>([^<]+)</(?:[a-zA-Z0-9_-]+:)?href>", Pattern.CASE_INSENSITIVE);
+    private static final Pattern COLLECTION_PATTERN =
+            Pattern.compile("<(?:[a-zA-Z0-9_-]+:)?collection\\s*/?>", Pattern.CASE_INSENSITIVE);
+
     private final WebDavClient client;
 
     public WebDavFolderStore(WebDavClient client) {
@@ -60,24 +71,11 @@ public class WebDavFolderStore implements SharedFolderStore {
                 currentPath.append(part);
                 String pathStr = currentPath.toString();
 
-                boolean folderExists = false;
-                try (Response response = client.propfind(pathStr + "/", "0")) {
-                    if (response.code() == 207) {
-                        String body = response.body().string();
-                        if (!body.contains("NotFound") && !body.contains("<d:status>HTTP/1.1 404")) {
-                            folderExists = true;
-                        }
-                    } else if (response.isSuccessful()) {
-                        folderExists = true;
-                    }
-                } catch (Exception ignored) {
-                    Log.e(TAG, "Failed to check if folder exists", ignored);
-                }
-
+                boolean folderExists = checkResourceExists(pathStr + "/", true);
                 if (!folderExists) {
                     try (Response response = client.mkcol(pathStr)) {
                         if (!response.isSuccessful() && response.code() != 201 && response.code() != 405) {
-                            Log.w(TAG, "MKCOL " + pathStr + " returned " + response.code());
+                            throw new IOException("MKCOL " + pathStr + " failed with HTTP " + response.code());
                         }
                     }
                 }
@@ -102,11 +100,17 @@ public class WebDavFolderStore implements SharedFolderStore {
 
     @Override
     public Single<byte[]> read(String relativePath) {
+        return readWithMeta(relativePath).map(fc -> fc.data);
+    }
+
+    @Override
+    public Single<FileContent> readWithMeta(String relativePath) {
         return Single.fromCallable(() -> {
             String path = relativePath.startsWith("/") ? relativePath.substring(1) : relativePath;
             try (Response response = client.get(path)) {
                 if (response.isSuccessful() && response.body() != null) {
-                    return response.body().bytes();
+                    String etag = response.header("ETag");
+                    return new FileContent(response.body().bytes(), etag);
                 } else if (response.code() == 404) {
                     throw new FileNotFoundException("File not found on WebDAV: " + path);
                 } else {
@@ -122,46 +126,42 @@ public class WebDavFolderStore implements SharedFolderStore {
             String clean = relativePath.startsWith("/") ? relativePath.substring(1) : relativePath;
             if (clean.isEmpty()) return true;
 
-            boolean isDirectory = clean.endsWith("/") || (!clean.contains(".") && !clean.contains("snap_") && !clean.contains("manifest"));
-
-            if (!isDirectory) {
-                // It's a file -> use HEAD request first
+            boolean endsWithSlash = clean.endsWith("/");
+            if (!endsWithSlash) {
                 try (Response response = client.head(clean)) {
                     if (response.isSuccessful()) {
                         return true;
                     }
-                    if (response.code() == 404) {
-                        return false;
+                    if (response.code() != 404 && response.code() != 405 && response.code() != 501) {
+                        throw new IOException("HTTP " + response.code() + " during HEAD on " + clean);
                     }
-                } catch (Exception ignored) {}
-
-                // Fallback: PROPFIND with Depth 0
-                try (Response response = client.propfind(clean, "0")) {
-                    if (response.code() == 404) return false;
-                    if (response.code() == 207) {
-                        String body = response.body().string();
-                        return !body.contains("404 Not Found") && !body.contains("<d:status>HTTP/1.1 404");
-                    }
-                    return response.isSuccessful();
-                } catch (Exception e) {
-                    return false;
                 }
+                // Check via PROPFIND (supports both files and folders without trailing slash)
+                if (checkResourceExists(clean, false)) {
+                    return true;
+                }
+                return checkResourceExists(clean + "/", true);
             } else {
-                // It's a directory -> use PROPFIND with Depth 0
-                String folderPath = clean.endsWith("/") ? clean : clean + "/";
-                try (Response response = client.propfind(folderPath, "0")) {
-                    if (response.code() == 404) return false;
-                    if (response.code() == 207) {
-                        String body = response.body().string();
-                        Log.d(TAG, "PROPFIND response: " + body);
-                        return !body.contains("NotFound") && !body.contains("<d:status>HTTP/1.1 404");
-                    }
-                    return response.isSuccessful();
-                } catch (Exception e) {
-                    return false;
-                }
+                return checkResourceExists(clean, true);
             }
         });
+    }
+
+    private boolean checkResourceExists(String path, boolean isFolder) throws IOException {
+        try (Response response = client.propfind(path, "0")) {
+            int code = response.code();
+            if (code == 404) {
+                return false;
+            }
+            if (code == 207) {
+                String body = response.body() != null ? response.body().string() : "";
+                return !STATUS_404_PATTERN.matcher(body).find();
+            }
+            if (response.isSuccessful()) {
+                return true;
+            }
+            throw new IOException("HTTP " + code + " during PROPFIND on " + path + " (isFolder=" + isFolder + ")");
+        }
     }
 
     @Override
@@ -173,35 +173,58 @@ public class WebDavFolderStore implements SharedFolderStore {
             }
             List<String> results = new ArrayList<>();
             try (Response response = client.propfind(path, "1")) {
-                if ((response.isSuccessful() || response.code() == 207) && response.body() != null) {
+                if (response.code() == 404) {
+                    return results;
+                }
+                if (!response.isSuccessful() && response.code() != 207) {
+                    throw new IOException("Failed to list files for " + path + ": HTTP " + response.code());
+                }
+                if (response.body() != null) {
                     String xml = response.body().string();
                     String cleanFolder = path.endsWith("/") ? path.substring(0, path.length() - 1) : path;
                     String folderName = cleanFolder.contains("/") ? cleanFolder.substring(cleanFolder.lastIndexOf("/") + 1) : cleanFolder;
 
-                    java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("<(?:[a-zA-Z0-9_-]+:)?href>([^<]+)</(?:[a-zA-Z0-9_-]+:)?href>");
-                    java.util.regex.Matcher matcher = pattern.matcher(xml);
-                    while (matcher.find()) {
-                        String href = matcher.group(1);
-                        if (href == null) continue;
-                        String decoded = java.net.URLDecoder.decode(href, "UTF-8");
-                        if (decoded.endsWith("/")) continue;
-
-                        String fileName = decoded;
-                        if (fileName.contains("/")) {
-                            fileName = fileName.substring(fileName.lastIndexOf("/") + 1);
+                    Matcher blockMatcher = RESPONSE_BLOCK_PATTERN.matcher(xml);
+                    boolean foundBlocks = false;
+                    while (blockMatcher.find()) {
+                        foundBlocks = true;
+                        String block = blockMatcher.group(1);
+                        if (block == null) continue;
+                        if (COLLECTION_PATTERN.matcher(block).find() || STATUS_404_PATTERN.matcher(block).find()) {
+                            continue;
                         }
-                        if (fileName.equals(folderName)) continue;
+                        Matcher hrefMatcher = HREF_PATTERN.matcher(block);
+                        if (hrefMatcher.find()) {
+                            addHrefFileIfValid(hrefMatcher.group(1), folderName, results);
+                        }
+                    }
 
-                        if (!fileName.isEmpty() && !results.contains(fileName)) {
-                            results.add(fileName);
+                    if (!foundBlocks) {
+                        Matcher hrefMatcher = HREF_PATTERN.matcher(xml);
+                        while (hrefMatcher.find()) {
+                            addHrefFileIfValid(hrefMatcher.group(1), folderName, results);
                         }
                     }
                 }
-            } catch (Exception e) {
-                Log.w(TAG, "Failed to list files for " + path, e);
             }
             return results;
         });
+    }
+
+    private void addHrefFileIfValid(String href, String folderName, List<String> results) throws Exception {
+        if (href == null) return;
+        String decoded = java.net.URLDecoder.decode(href, "UTF-8");
+        if (decoded.endsWith("/")) return;
+
+        String fileName = decoded;
+        if (fileName.contains("/")) {
+            fileName = fileName.substring(fileName.lastIndexOf("/") + 1);
+        }
+        if (fileName.equals(folderName)) return;
+
+        if (!fileName.isEmpty() && !results.contains(fileName)) {
+            results.add(fileName);
+        }
     }
 
     @Override

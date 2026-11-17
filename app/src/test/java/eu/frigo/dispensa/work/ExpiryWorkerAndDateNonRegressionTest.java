@@ -108,4 +108,63 @@ public class ExpiryWorkerAndDateNonRegressionTest {
         ListenableWorker.Result result = worker.doWork();
         Assert.assertEquals(ListenableWorker.Result.success(), result);
     }
+
+    @Test
+    public void testDateConverterConcurrentMultiThreadSafety() throws Exception {
+        int threads = 8;
+        int iterationsPerThread = 50;
+        java.util.concurrent.ExecutorService pool = java.util.concurrent.Executors.newFixedThreadPool(threads);
+        java.util.List<java.util.concurrent.Future<Boolean>> futures = new java.util.ArrayList<>();
+
+        for (int t = 0; t < threads; t++) {
+            final int threadIdx = t;
+            futures.add(pool.submit(() -> {
+                for (int i = 0; i < iterationsPerThread; i++) {
+                    String dateStr = String.format(java.util.Locale.US, "%02d/%02d/2027", (i % 28) + 1, (threadIdx % 12) + 1);
+                    Long ts = DateConverter.parseDisplayDateToTimestampMs(dateStr);
+                    if (ts == null) return false;
+                    String formatted = DateConverter.formatTimestampToDisplayDate(ts);
+                    if (!dateStr.equals(formatted)) return false;
+                }
+                return true;
+            }));
+        }
+
+        pool.shutdown();
+        for (java.util.concurrent.Future<Boolean> f : futures) {
+            Assert.assertTrue("Concurrent DateConverter formatting/parsing must be thread-safe", f.get());
+        }
+    }
+
+    @Test
+    public void testAlreadyExpiredProductIsTrackedToAvoidInfiniteDailyRepeat() throws Exception {
+        Dispensa disp = new Dispensa("Dispensa", true);
+        int dispId = (int) db.dispensaDao().insert(disp);
+
+        long pastExpiry = System.currentTimeMillis() - 86400000L * 5; // Expired 5 days ago
+        Product expiredProd = new Product("800999", 1, pastExpiry, "Yogurt Scaduto", null, "fridge", 0L, -1);
+        expiredProd.dispensaId = dispId;
+        int prodId = (int) db.productDao().insert(expiredProd);
+
+        java.lang.reflect.Constructor<?> ctor = WorkerParameters.class.getConstructors()[0];
+        Class<?>[] paramTypes = ctor.getParameterTypes();
+        Object[] args = new Object[paramTypes.length];
+        for (int i = 0; i < paramTypes.length; i++) {
+            Class<?> pt = paramTypes[i];
+            if (pt == int.class) args[i] = 0;
+            else if (pt == java.util.UUID.class) args[i] = java.util.UUID.randomUUID();
+            else if (pt == androidx.work.Data.class) args[i] = androidx.work.Data.EMPTY;
+            else if (pt == java.util.Collection.class) args[i] = java.util.Collections.emptyList();
+            else args[i] = null;
+        }
+        WorkerParameters mockParams = (WorkerParameters) ctor.newInstance(args);
+        ExpiryCheckWorker worker = new ExpiryCheckWorker(context, mockParams);
+
+        Assert.assertEquals(ListenableWorker.Result.success(), worker.doWork());
+
+        android.content.SharedPreferences prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
+        java.util.Set<String> notifiedKeys = prefs.getStringSet(ExpiryCheckWorker.PREF_NOTIFIED_EXPIRED_KEYS, java.util.Collections.emptySet());
+        Assert.assertTrue("Expired product key must be recorded after first notification",
+                notifiedKeys.contains(prodId + ":" + pastExpiry));
+    }
 }

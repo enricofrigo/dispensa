@@ -149,7 +149,7 @@ public class DatabaseMigrationTest {
 
         // 2. Apri con Room fornendo le migrazioni necessarie fino alla versione corrente
         AppDatabase roomDb = Room.databaseBuilder(context, AppDatabase.class, TEST_DB_NAME)
-                .addMigrations(AppDatabase.MIGRATION_12_21, AppDatabase.MIGRATION_21_22)
+                .addMigrations(AppDatabase.MIGRATION_12_21, AppDatabase.MIGRATION_21_22, AppDatabase.MIGRATION_22_23)
                 .allowMainThreadQueries()
                 .build();
 
@@ -278,9 +278,9 @@ public class DatabaseMigrationTest {
         db.setVersion(20);
         db.close();
 
-        // 2. Apri con Room fornendo MIGRATION_20_21 e MIGRATION_21_22
+        // 2. Apri con Room fornendo MIGRATION_20_21, MIGRATION_21_22 e MIGRATION_22_23
         AppDatabase roomDb = Room.databaseBuilder(context, AppDatabase.class, TEST_DB_NAME)
-                .addMigrations(AppDatabase.MIGRATION_20_21, AppDatabase.MIGRATION_21_22)
+                .addMigrations(AppDatabase.MIGRATION_20_21, AppDatabase.MIGRATION_21_22, AppDatabase.MIGRATION_22_23)
                 .allowMainThreadQueries()
                 .build();
 
@@ -346,9 +346,9 @@ public class DatabaseMigrationTest {
         db.setVersion(21);
         db.close();
 
-        // 2. Apri con Room fornendo MIGRATION_21_22
+        // 2. Apri con Room fornendo MIGRATION_21_22 e MIGRATION_22_23
         AppDatabase roomDb = Room.databaseBuilder(context, AppDatabase.class, TEST_DB_NAME)
-                .addMigrations(AppDatabase.MIGRATION_21_22)
+                .addMigrations(AppDatabase.MIGRATION_21_22, AppDatabase.MIGRATION_22_23)
                 .allowMainThreadQueries()
                 .build();
 
@@ -357,6 +357,7 @@ public class DatabaseMigrationTest {
         Assert.assertNotNull(p);
         Assert.assertEquals("Farina 00", p.getProductName());
         Assert.assertEquals(100, p.getRemainingPercentage());
+        Assert.assertEquals("prod_1_101", p.syncUuid);
 
         roomDb.close();
     }

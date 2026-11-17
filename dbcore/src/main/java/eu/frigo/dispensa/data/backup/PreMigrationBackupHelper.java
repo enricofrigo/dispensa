@@ -13,6 +13,8 @@ import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -22,6 +24,7 @@ import java.util.Map;
 public class PreMigrationBackupHelper {
 
     private static final String TAG = "PreMigrationBackup";
+    public static final int MAX_BACKUP_FILES = 2;
 
     public static void checkAndBackup(Context context, String dbName, int targetVersion) {
         File dbFile = context.getDatabasePath(dbName);
@@ -46,8 +49,8 @@ public class PreMigrationBackupHelper {
     private static void performRawBackup(Context context, SQLiteDatabase db, int fromVersion, int toVersion) {
         try {
             Map<String, List<Map<String, Object>>> backupData = new HashMap<>();
-            
-            // 1. Get all user tables
+
+            // 1. Get all user tables (excluding joined_pantry_configs credentials table or redacting passwords)
             List<String> tables = new ArrayList<>();
             try (Cursor cursor = db.rawQuery("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'room_master_table'", null)) {
                 while (cursor.moveToNext()) {
@@ -55,14 +58,21 @@ public class PreMigrationBackupHelper {
                 }
             }
 
-            // 2. Export each table
+            // 2. Export each table, redacting any sensitive credential columns
             for (String table : tables) {
+                if ("joined_pantry_configs".equalsIgnoreCase(table)) {
+                    continue;
+                }
                 List<Map<String, Object>> rows = new ArrayList<>();
                 try (Cursor cursor = db.rawQuery("SELECT * FROM " + table, null)) {
                     String[] columnNames = cursor.getColumnNames();
                     while (cursor.moveToNext()) {
                         Map<String, Object> row = new HashMap<>();
                         for (String col : columnNames) {
+                            if ("password".equalsIgnoreCase(col) || "pantry_key".equalsIgnoreCase(col) || "config_payload".equalsIgnoreCase(col)) {
+                                row.put(col, null);
+                                continue;
+                            }
                             int idx = cursor.getColumnIndex(col);
                             switch (cursor.getType(idx)) {
                                 case Cursor.FIELD_TYPE_NULL: row.put(col, null); break;
@@ -85,8 +95,8 @@ public class PreMigrationBackupHelper {
                 return;
             }
 
-            String timestamp = new SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(new Date());
-            String fileName = String.format("backup_v%d_to_v%d_%s.json", fromVersion, toVersion, timestamp);
+            String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss_SSS", Locale.US).format(new Date());
+            String fileName = String.format(Locale.US, "backup_v%d_to_v%d_%s.json", fromVersion, toVersion, timestamp);
             File backupFile = new File(backupDir, fileName);
 
             Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -95,10 +105,22 @@ public class PreMigrationBackupHelper {
                 gson.toJson(backupData, writer);
             }
 
+            rotateOldBackups(backupDir);
             Log.i(TAG, "Pre-migration backup completed successfully: " + backupFile.getAbsolutePath());
 
         } catch (Exception e) {
             Log.e(TAG, "Critical error during pre-migration backup. Migration might fail and data could be lost!", e);
+        }
+    }
+
+    private static void rotateOldBackups(File backupDir) {
+        File[] files = backupDir.listFiles((dir, name) -> name.endsWith(".json"));
+        if (files != null && files.length > MAX_BACKUP_FILES) {
+            Arrays.sort(files, Comparator.comparingLong(File::lastModified).thenComparing(File::getName));
+            int toDelete = files.length - MAX_BACKUP_FILES;
+            for (int i = 0; i < toDelete; i++) {
+                files[i].delete();
+            }
         }
     }
 }

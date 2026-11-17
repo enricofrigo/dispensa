@@ -1,11 +1,13 @@
 package eu.frigo.dispensa.sync.core.store;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import androidx.annotation.Nullable;
 
@@ -15,6 +17,7 @@ import io.reactivex.rxjava3.core.Single;
 public class InMemorySharedFolderStore implements SharedFolderStore {
     private final String providerId;
     private final Map<String, byte[]> storage;
+    private final Map<String, String> etags = new ConcurrentHashMap<>();
     private final Set<String> folders;
     private boolean available = true;
 
@@ -65,7 +68,16 @@ public class InMemorySharedFolderStore implements SharedFolderStore {
     public Completable writeAtomic(String relativePath, byte[] data, @Nullable String expectedEtag) {
         return Completable.fromAction(() -> {
             String path = normalizePath(relativePath);
-            storage.put(path, data != null ? data.clone() : new byte[0]);
+            synchronized (storage) {
+                if (expectedEtag != null) {
+                    String currentEtag = etags.get(path);
+                    if (currentEtag != null && !currentEtag.equals(expectedEtag)) {
+                        throw new IOException("Concurrency conflict (412 Precondition Failed) on " + path);
+                    }
+                }
+                storage.put(path, data != null ? data.clone() : new byte[0]);
+                etags.put(path, "etag_" + UUID.randomUUID());
+            }
         });
     }
 
@@ -78,6 +90,21 @@ public class InMemorySharedFolderStore implements SharedFolderStore {
                 throw new FileNotFoundException("File not found: " + path);
             }
             return data.clone();
+        });
+    }
+
+    @Override
+    public Single<FileContent> readWithMeta(String relativePath) {
+        return Single.fromCallable(() -> {
+            String path = normalizePath(relativePath);
+            synchronized (storage) {
+                byte[] data = storage.get(path);
+                if (data == null) {
+                    throw new FileNotFoundException("File not found: " + path);
+                }
+                String etag = etags.computeIfAbsent(path, k -> "etag_" + UUID.randomUUID());
+                return new FileContent(data.clone(), etag);
+            }
         });
     }
 
@@ -115,7 +142,10 @@ public class InMemorySharedFolderStore implements SharedFolderStore {
     public Completable deleteFile(String relativePath) {
         return Completable.fromAction(() -> {
             String path = normalizePath(relativePath);
-            storage.remove(path);
+            synchronized (storage) {
+                storage.remove(path);
+                etags.remove(path);
+            }
         });
     }
 
@@ -127,8 +157,11 @@ public class InMemorySharedFolderStore implements SharedFolderStore {
                 folder = folder + "/";
             }
             final String finalFolder = folder;
-            folders.remove(finalFolder);
-            storage.keySet().removeIf(k -> k.startsWith(finalFolder));
+            synchronized (storage) {
+                folders.remove(finalFolder);
+                storage.keySet().removeIf(k -> k.startsWith(finalFolder));
+                etags.keySet().removeIf(k -> k.startsWith(finalFolder));
+            }
         });
     }
 
