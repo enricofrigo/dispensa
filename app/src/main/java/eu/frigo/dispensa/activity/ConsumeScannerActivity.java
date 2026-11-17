@@ -12,26 +12,27 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
-import com.journeyapps.barcodescanner.BarcodeCallback;
-import com.journeyapps.barcodescanner.BarcodeResult;
-import com.journeyapps.barcodescanner.DecoratedBarcodeView;
-
-import java.util.List;
-
 import eu.frigo.dispensa.R;
+import eu.frigo.dispensa.scanner.ConsumeScannerDelegate;
 
+/**
+ * Unified ConsumeScannerActivity in src/main delegating camera/OCR scanning
+ * to the flavor-specific ConsumeScannerDelegate (ML Kit in play, ZXing in fdroid).
+ */
 public class ConsumeScannerActivity extends AppCompatActivity {
 
     public static final String EXTRA_SCANNED_BARCODE = "SCANNED_BARCODE_DATA";
     public static final String EXTRA_SCANNED_DATE_MATCH = "SCANNED_DATE_MATCH";
 
-    private DecoratedBarcodeView barcodeView;
-    private boolean isScanned = false; // Prevent multiple scans
+    private ConsumeScannerDelegate scannerDelegate;
+    private boolean isScanned = false;
 
     private final ActivityResultLauncher<String> requestPermissionLauncher = registerForActivityResult(
             new ActivityResultContracts.RequestPermission(), isGranted -> {
                 if (isGranted) {
-                    startScanning();
+                    if (scannerDelegate != null) {
+                        scannerDelegate.startScanning();
+                    }
                 } else {
                     Toast.makeText(this, getString(R.string.camera_permission_denied), Toast.LENGTH_LONG).show();
                     finish();
@@ -43,45 +44,57 @@ public class ConsumeScannerActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_consume_scanner);
 
-        barcodeView = findViewById(R.id.barcode_scanner);
+        scannerDelegate = new ConsumeScannerDelegate(this, this::returnResult);
+        scannerDelegate.onCreate();
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-            startScanning();
+            scannerDelegate.startScanning();
         } else {
             requestPermissionLauncher.launch(Manifest.permission.CAMERA);
         }
     }
 
-    private void startScanning() {
-        barcodeView.decodeContinuous(new BarcodeCallback() {
-            @Override
-            public void barcodeResult(BarcodeResult result) {
-                if (result.getText() != null && !isScanned) {
-                    isScanned = true;
-                    Intent resultIntent = new Intent();
-                    resultIntent.putExtra(EXTRA_SCANNED_BARCODE, result.getText());
-                    setResult(RESULT_OK, resultIntent);
-                    finish();
-                }
-            }
-
-        });
-    }
-
     @Override
     protected void onResume() {
         super.onResume();
-        barcodeView.resume();
+        if (scannerDelegate != null) {
+            scannerDelegate.onResume();
+        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        barcodeView.pause();
+        if (scannerDelegate != null) {
+            scannerDelegate.onPause();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (scannerDelegate != null) {
+            scannerDelegate.onDestroy();
+        }
     }
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        return barcodeView.onKeyDown(keyCode, event) || super.onKeyDown(keyCode, event);
+        if (scannerDelegate != null && scannerDelegate.onKeyDown(keyCode, event)) {
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
+    private void returnResult(String barcode, Long expiryDate) {
+        if (isScanned) return;
+        isScanned = true;
+        Intent resultIntent = new Intent();
+        resultIntent.putExtra(EXTRA_SCANNED_BARCODE, barcode);
+        if (expiryDate != null) {
+            resultIntent.putExtra(EXTRA_SCANNED_DATE_MATCH, expiryDate);
+        }
+        setResult(RESULT_OK, resultIntent);
+        finish();
     }
 }

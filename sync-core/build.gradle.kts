@@ -7,7 +7,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        minSdk = 26
+        minSdk = 27
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -22,7 +22,7 @@ dependencies {
     implementation(libs.rxandroid)
     implementation(libs.rxjava)
     implementation(libs.androidx.work.runtime)
-    implementation(libs.androidx.lifecycle.process)
+    implementation(libs.lifecycle.process)
     implementation(libs.converter.gson)
     
     testImplementation(libs.junit)

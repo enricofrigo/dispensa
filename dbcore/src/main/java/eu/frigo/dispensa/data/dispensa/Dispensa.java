@@ -3,6 +3,7 @@ package eu.frigo.dispensa.data.dispensa;
 import com.google.gson.annotations.SerializedName;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
+import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 import java.io.Serializable;
 
@@ -40,6 +41,7 @@ public class Dispensa implements Serializable {
     public Dispensa() {
     }
 
+    @Ignore
     public Dispensa(String name, boolean isDefault) {
         this.name = name;
         this.isDefault = isDefault;
@@ -47,6 +49,7 @@ public class Dispensa implements Serializable {
         this.remoteId = java.util.UUID.randomUUID().toString();
     }
 
+    @Ignore
     public Dispensa(Dispensa other) {
         this.id = other.id;
         this.name = other.name;

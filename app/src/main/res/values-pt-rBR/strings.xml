@@ -185,9 +185,9 @@
     <string name="default_location_fridge_entry">Geladeira</string>
 
     <string name="move_product_to_title">Mover para %s</string>
-    <string name="product_moved_toast">%s movido para %s</string>
+    <string name="product_moved_toast">%1$s movido para %2$s</string>
     <string name="product_count_footer_simple">Produtos: %d</string>
-    <string name="product_count_footer">Produtos: %d    Vencidos: %d     Perto do vencimento: %d</string>
+    <string name="product_count_footer">Produtos: %1$d    Vencidos: %2$d     Perto do vencimento: %3$d</string>
 
     <string name="off_banner_text">Open Food Facts desativado.</string>
     <string name="off_banner_button">Preferências</string>

@@ -181,9 +181,9 @@ I prodotti in questo deposito potrebbero dover essere riassegnati.</string>
     <string name="default_location_fridge_entry">Frigo</string>
 
     <string name="move_product_to_title">Sposta in %s</string>
-    <string name="product_moved_toast">Prodotto %s spostato in %s</string>
+    <string name="product_moved_toast">Prodotto %1$s spostato in %2$s</string>
     <string name="product_count_footer_simple">Prodotti: %d</string>
-    <string name="product_count_footer">Prodotti: %d    Scaduti: %d     Vicini alla scadenza: %d</string>
+    <string name="product_count_footer">Prodotti: %1$d    Scaduti: %2$d     Vicini alla scadenza: %3$d</string>
     <string name="pref_off_title">Abilita API Open Food Fact</string>
     <string name="pref_off_summary">Consenti all\'app di scaricare dati da Open Food Fact</string>
 

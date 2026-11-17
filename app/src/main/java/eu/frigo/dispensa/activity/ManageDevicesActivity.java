@@ -74,7 +74,7 @@ public class ManageDevicesActivity extends AppCompatActivity {
         adapter = new DeviceAdapter(deviceList, device -> showDeleteConfirmation(device));
         rvDevices.setAdapter(adapter);
 
-        currentDispensa = (Dispensa) getIntent().getSerializableExtra(PANTRY_ID);
+        currentDispensa = androidx.core.content.IntentCompat.getSerializableExtra(getIntent(), PANTRY_ID, Dispensa.class);
         if (currentDispensa != null) {
             if (getSupportActionBar() != null) {
                 getSupportActionBar().setSubtitle(currentDispensa.getName());

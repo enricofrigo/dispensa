@@ -182,9 +182,9 @@
     <string name="default_location_fridge_entry">Kühlschrank</string>
 
     <string name="move_product_to_title">Verschieben nach %s</string>
-    <string name="product_moved_toast">%s verschoben nach %s</string>
+    <string name="product_moved_toast">%1$s verschoben nach %2$s</string>
     <string name="product_count_footer_simple">Produkte: %d</string>
-    <string name="product_count_footer">Produkte: %d    Abgelaufen: %d     Bald ablaufend: %d</string>
+    <string name="product_count_footer">Produkte: %1$d    Abgelaufen: %2$d     Bald ablaufend: %3$d</string>
 
     <string name="off_banner_text">Open Food Facts deaktiviert.</string>
     <string name="off_banner_button">Einstellungen</string>
@@ -248,6 +248,17 @@
     <string name="sync_gdrive_sign_out">Von Google Drive abmelden</string>
     <string name="sync_gdrive_connected_as">Verbunden als: %s</string>
     <string name="sync_gdrive_not_connected">Nicht mit Google Drive verbunden</string>
+    <string name="sync_gdrive_share_with_title">Über Google-Konto teilen</string>
+    <string name="sync_gdrive_share_with_desc">Gib die Google-E-Mail-Adresse des Empfängers ein oder wähle ihn aus deinen Kontakten aus, um diesen Vorratsschrank zu teilen.</string>
+    <string name="sync_gdrive_email_hint">E-Mail-Adresse des Google-Kontos</string>
+    <string name="sync_gdrive_pick_contact">Aus Kontakten auswählen</string>
+    <string name="sync_gdrive_share_action">Teilen &amp; QR anzeigen</string>
+    <string name="sync_gdrive_sharing_in_progress">Ordner auf Google Drive freigeben…</string>
+    <string name="sync_gdrive_shared_with">Geteilt mit: %s</string>
+    <string name="sync_gdrive_share_another">Mit einem anderen Konto teilen</string>
+    <string name="sync_gdrive_invalid_email">Bitte geben Sie eine gültige Google-E-Mail-Adresse ein.</string>
+    <string name="sync_gdrive_no_email_in_contact">Keine E-Mail-Adresse im ausgewählten Kontakt gefunden</string>
+    <string name="sync_gdrive_contacts_not_available">Kontakte-App nicht verfügbar</string>
     <string name="preparing_sync_server">Remote-Synchronisierung wird vorbereitet…</string>
     <string name="sync_setup_error">Fehler beim Einrichten der Freigabe: %s</string>
     <string name="sync_remote_delete_error">Fehler beim Löschen auf dem Server: %s. Lokales Löschen wird fortgesetzt.</string>

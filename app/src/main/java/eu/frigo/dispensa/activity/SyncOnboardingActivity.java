@@ -13,50 +13,62 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.IntentCompat;
 import androidx.preference.PreferenceManager;
 
-import com.journeyapps.barcodescanner.DecoratedBarcodeView;
+import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
 import eu.frigo.dispensa.R;
+import eu.frigo.dispensa.data.AppDatabase;
+import eu.frigo.dispensa.data.Repository;
 import eu.frigo.dispensa.data.dispensa.Dispensa;
 import eu.frigo.dispensa.data.sync.JoinedPantryConfig;
+import eu.frigo.dispensa.data.sync.RoomPantryDataBridge;
 import eu.frigo.dispensa.sync.QrCodeGenerator;
+import eu.frigo.dispensa.sync.SyncOnboardingFlavorDelegate;
+import eu.frigo.dispensa.sync.core.crypto.CredentialCipher;
+import eu.frigo.dispensa.sync.core.engine.FolderSyncEngine;
+import eu.frigo.dispensa.sync.core.engine.InstallationIdProvider;
+import eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl;
 import eu.frigo.dispensa.sync.core.engine.SyncManager;
+import eu.frigo.dispensa.sync.core.model.PantryDevice;
+import eu.frigo.dispensa.sync.core.model.PantryManifest;
 import eu.frigo.dispensa.sync.core.pairing.OnboardingCoordinator;
 import eu.frigo.dispensa.sync.core.pairing.PairingPayload;
 import eu.frigo.dispensa.sync.core.pairing.PairingPayloadCodecImpl;
+import eu.frigo.dispensa.sync.core.store.SharedFolderStore;
+import eu.frigo.dispensa.sync.core.store.SyncCursorStoreImpl;
+import eu.frigo.dispensa.sync.sharing.PantrySharingService;
 import eu.frigo.dispensa.sync.webdav.WebDavConfig;
 import eu.frigo.dispensa.sync.webdav.WebDavPairingHandler;
 import eu.frigo.dispensa.sync.webdav.client.WebDavClient;
 import eu.frigo.dispensa.sync.webdav.client.WebDavClientFactory;
-import eu.frigo.dispensa.sync.core.model.PantryDevice;
-import eu.frigo.dispensa.sync.core.model.PantryManifest;
-import eu.frigo.dispensa.data.AppDatabase;
-import eu.frigo.dispensa.data.sync.RoomPantryDataBridge;
-import eu.frigo.dispensa.sync.core.engine.FolderSyncEngine;
-import eu.frigo.dispensa.sync.core.store.SharedFolderStore;
-import eu.frigo.dispensa.sync.core.store.SyncCursorStoreImpl;
-import eu.frigo.dispensa.sync.sharing.PantrySharingService;
+import eu.frigo.dispensa.sync.webdav.store.WebDavFolderStore;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.schedulers.Schedulers;
-import okhttp3.Response;
 
 public class SyncOnboardingActivity extends AppCompatActivity {
     public static final String EXTRA_MODE = "mode";
     public static final String MODE_SHARE = "share";
     public static final String MODE_JOIN = "join";
-    public static final java.lang.String DEVICE_ALREADY_REGISTERED = "DEVICE_ALREADY_REGISTERED";
-    public static final java.lang.String VERSION_MISMATCH = "VERSION_MISMATCH";
-    public static final java.lang.String PAIRING_EXPIRED = "PAIRING_EXPIRED";
+    public static final String VERSION_MISMATCH = "VERSION_MISMATCH";
+    public static final String DEVICE_ALREADY_REGISTERED = "DEVICE_ALREADY_REGISTERED";
+    public static final String PAIRING_EXPIRED = "PAIRING_EXPIRED";
 
     private String scannedQrData;
-    private DecoratedBarcodeView barcodeView;
+    private SyncOnboardingFlavorDelegate flavorDelegate;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sync_onboarding);
+
+        flavorDelegate = new SyncOnboardingFlavorDelegate(this, rawData -> {
+            scannedQrData = extractDataFromLink(rawData);
+            promptForPinAndConfirmJoin();
+        });
 
         android.net.Uri data = getIntent().getData();
         if (data != null && ("dispensa".equals(data.getScheme()) || "https".equals(data.getScheme()))) {
@@ -80,26 +92,68 @@ public class SyncOnboardingActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (barcodeView != null) {
-            barcodeView.resume();
+        if (flavorDelegate != null) {
+            flavorDelegate.onResume(scannedQrData != null);
         }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        if (barcodeView != null) {
-            barcodeView.pause();
+        if (flavorDelegate != null) {
+            flavorDelegate.onPause();
         }
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (flavorDelegate != null) {
+            flavorDelegate.onDestroy();
+        }
+    }
+
+    @SuppressLint("CheckResult")
     private void setupShareMode() {
         TextView instruction = findViewById(R.id.tv_onboarding_instruction);
         instruction.setText(R.string.share_pantry);
-        
+
         ImageView qrView = findViewById(R.id.iv_qr_code);
         Button shareBtn = findViewById(R.id.btn_share_link);
-        
+
+        Dispensa targetDispensa = IntentCompat.getSerializableExtra(getIntent(), ManageDevicesActivity.PANTRY_ID, Dispensa.class);
+
+        Single<Dispensa> dispSingle;
+        if (targetDispensa != null) {
+            dispSingle = Single.just(targetDispensa);
+        } else {
+            dispSingle = Repository.getInstance(getApplication()).getCurrentDispensaSingle();
+        }
+
+        dispSingle.subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(disp -> {
+                    Schedulers.io().scheduleDirect(() -> {
+                        AppDatabase db = AppDatabase.getDatabase(this);
+                        JoinedPantryConfig config = db.joinedPantryConfigDao().getConfigByDispensaId(disp.id);
+                        boolean isGDrive = flavorDelegate.isGDriveShare(config);
+
+                        runOnUiThread(() -> {
+                            if (isGDrive) {
+                                flavorDelegate.setupGDriveShareUI(disp, config, qrView, shareBtn);
+                            } else {
+                                setupStandardShareUI(disp, config, qrView, shareBtn);
+                            }
+                        });
+                    });
+                }, throwable -> {
+                    Log.e("SyncOnboarding", "Errore recupero dispensa", throwable);
+                    Toast.makeText(this, "Errore recupero dispensa: " + throwable.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    @SuppressLint("CheckResult")
+    private void setupStandardShareUI(Dispensa disp, JoinedPantryConfig config, ImageView qrView, Button shareBtn) {
         qrView.setVisibility(View.VISIBLE);
         if (shareBtn != null) shareBtn.setVisibility(View.VISIBLE);
 
@@ -111,130 +165,103 @@ public class SyncOnboardingActivity extends AppCompatActivity {
         String pantryKey = prefs.getString(SyncManager.SYNC_WEBDAV_PANTRY_KEY, "");
         boolean isShared = prefs.getBoolean(SyncManager.KEY_WEBDAV_MODE_SHARED, false);
 
-        if (url.isEmpty() || (user.isEmpty() && !isShared)) {
-            Toast.makeText(this, "Configura prima il sync nelle impostazioni", Toast.LENGTH_LONG).show();
-            finish();
-            return;
-        }
+        Single.fromCallable(() -> {
+            String deviceId = InstallationIdProvider.getOrCreateInstallationId(this);
+            String deviceName = prefs.getString(SyncManager.KEY_DEVICE_NAME, android.os.Build.MODEL);
 
-        // Recupera la dispensa passata come extra
-        Dispensa targetDispensa = (Dispensa) getIntent().getSerializableExtra(ManageDevicesActivity.PANTRY_ID);
-        
-        Single<eu.frigo.dispensa.data.dispensa.Dispensa> dispSingle;
-        if (targetDispensa != null) {
-            dispSingle = Single.just(targetDispensa);
-        } else {
-            dispSingle = eu.frigo.dispensa.data.Repository.getInstance(getApplication()).getCurrentDispensaSingle();
-        }
+            String remoteId = (disp.remoteId != null && !disp.remoteId.trim().isEmpty())
+                    ? disp.remoteId.trim()
+                    : UUID.randomUUID().toString();
+            if (disp.remoteId == null || disp.remoteId.trim().isEmpty()) {
+                disp.remoteId = remoteId;
+                AppDatabase.getDatabase(this).dispensaDao().update(disp);
+            }
 
-        dispSingle.subscribeOn(Schedulers.io())
-                .flatMap(disp -> Single.fromCallable(() -> {
-                    String deviceId = eu.frigo.dispensa.sync.core.engine.InstallationIdProvider.getOrCreateInstallationId(this);
-                    String deviceName = PreferenceManager.getDefaultSharedPreferences(this)
-                            .getString(SyncManager.KEY_DEVICE_NAME, android.os.Build.MODEL);
+            String ownerDeviceId = (disp.deviceOwnerId != null && !disp.deviceOwnerId.trim().isEmpty())
+                    ? disp.deviceOwnerId.trim()
+                    : deviceId;
+            if (disp.deviceOwnerId == null || disp.deviceOwnerId.trim().isEmpty()) {
+                disp.deviceOwnerId = ownerDeviceId;
+                AppDatabase.getDatabase(this).dispensaDao().update(disp);
+            }
 
-                    String remoteId = (disp.remoteId != null && !disp.remoteId.trim().isEmpty())
-                            ? disp.remoteId.trim()
-                            : java.util.UUID.randomUUID().toString();
-                    if (disp.remoteId == null || disp.remoteId.trim().isEmpty()) {
-                        disp.remoteId = remoteId;
-                        AppDatabase.getDatabase(this).dispensaDao().update(disp);
-                    }
+            String pantryPath = PantrySharingService.getInstance().getPantryPath(this, disp, null);
+            SharedFolderStore store = PantrySharingService.getInstance().createStore(this, disp, null);
+            FolderSyncEngine ownerEngine = new FolderSyncEngine(
+                    store,
+                    new RoomPantryDataBridge(AppDatabase.getDatabase(this)),
+                    new SyncCursorStoreImpl(this, disp.id),
+                    deviceId,
+                    deviceName,
+                    pantryPath,
+                    disp.id
+            );
+            ownerEngine.initializeRemoteStructure().blockingAwait();
+            ownerEngine.forceCompaction();
 
-                    String ownerDeviceId = (disp.deviceOwnerId != null && !disp.deviceOwnerId.trim().isEmpty())
-                            ? disp.deviceOwnerId.trim()
-                            : deviceId;
-                    if (disp.deviceOwnerId == null || disp.deviceOwnerId.trim().isEmpty()) {
-                        disp.deviceOwnerId = ownerDeviceId;
-                        AppDatabase.getDatabase(this).dispensaDao().update(disp);
-                    }
+            String plainPass = CredentialCipher.decryptIfNeeded(pass);
+            WebDavConfig webDavConfig = new WebDavConfig(url, user, plainPass, path, pantryKey, disp.getName(), ownerDeviceId, remoteId, isShared);
+            PairingPayload payload = WebDavPairingHandler.createPayload(deviceName, webDavConfig);
+            payload.version = SyncManager.CURRENT_SYNC_VERSION;
 
-                    String pantryPath = PantrySharingService.getInstance().getPantryPath(this, disp, null);
-                    SharedFolderStore store = PantrySharingService.getInstance().createStore(this, disp, null);
-                    FolderSyncEngine ownerEngine = new FolderSyncEngine(
-                            store,
-                            new RoomPantryDataBridge(AppDatabase.getDatabase(this)),
-                            new SyncCursorStoreImpl(this, disp.id),
-                            deviceId,
-                            deviceName,
-                            pantryPath,
-                            disp.id
-                    );
-                    ownerEngine.initializeRemoteStructure().blockingAwait();
-                    ownerEngine.forceCompaction();
+            String pairingPin = OnboardingCoordinator.generatePairingCode();
+            PairingPayloadCodecImpl codec = new PairingPayloadCodecImpl(pairingPin);
+            String wireData = codec.encode(payload);
+            String deepLink = "https://enricofrigo.github.io/dispensa/syncjoin?data=" + android.net.Uri.encode(wireData);
+            Bitmap qrBitmap = QrCodeGenerator.generate(deepLink, 512);
+            return new ShareInfo(deepLink, qrBitmap, null, pairingPin);
+        })
+        .subscribeOn(Schedulers.io())
+        .observeOn(AndroidSchedulers.mainThread())
+        .subscribe(info -> {
+            qrView.setImageBitmap(info.qrBitmap);
+            TextView instruction = findViewById(R.id.tv_onboarding_instruction);
+            if (instruction != null && info.pairingPin != null) {
+                String formattedPin = info.pairingPin.substring(0, 3) + "-" + info.pairingPin.substring(3);
+                instruction.setText(getString(R.string.share_pantry) + "\nPIN: " + formattedPin);
+            }
 
-                    String plainPass = eu.frigo.dispensa.sync.core.crypto.CredentialCipher.decryptIfNeeded(pass);
-                    WebDavConfig config = new WebDavConfig(url, user, plainPass, path, pantryKey, disp.getName(), ownerDeviceId, remoteId, isShared);
-                    PairingPayload payload = WebDavPairingHandler.createPayload(deviceName, config);
-                    payload.version = SyncManager.CURRENT_SYNC_VERSION;
-                    String pairingPin = OnboardingCoordinator.generatePairingCode();
-                    PairingPayloadCodecImpl codec = new PairingPayloadCodecImpl(pairingPin);
-                    String wireData = codec.encode(payload);
-                    String deepLink = "https://enricofrigo.github.io/dispensa/syncjoin?data=" + android.net.Uri.encode(wireData);
-                    Bitmap qrBitmap = QrCodeGenerator.generate(deepLink, 512);
-                    return new ShareInfo(deepLink, qrBitmap, pairingPin);
-                }))
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(info -> {
-                    qrView.setImageBitmap(info.qrBitmap);
-                    String formattedPin = info.pairingPin.substring(0, 3) + "-" + info.pairingPin.substring(3);
-                    instruction.setText(getString(R.string.share_pantry) + "\nPIN: " + formattedPin);
+            if (shareBtn != null) {
+                shareBtn.setOnClickListener(v -> {
+                    Intent sendIntent = new Intent();
+                    sendIntent.setAction(Intent.ACTION_SEND);
+                    sendIntent.putExtra(Intent.EXTRA_TEXT, "Unisciti alla mia dispensa condivisa!\n\nLink: " + info.deepLink);
+                    sendIntent.setType("text/plain");
 
-                    if (shareBtn != null) {
-                        shareBtn.setOnClickListener(v -> {
-                            Intent sendIntent = new Intent();
-                            sendIntent.setAction(Intent.ACTION_SEND);
-                            sendIntent.putExtra(Intent.EXTRA_TEXT, "Unisciti alla mia dispensa condivisa!\n\nLink: " + info.deepLink);
-                            sendIntent.setType("text/plain");
-
-                            Intent shareIntent = Intent.createChooser(sendIntent, null);
-                            startActivity(shareIntent);
-                        });
-                    }
-                    eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl.getInstance(this).triggerManualSync();
-                }, throwable -> {
-                    Log.e("SyncOnboarding", "Errore generazione QR", throwable);
-                    Toast.makeText(this, "Errore generazione QR: " + throwable.getMessage(), Toast.LENGTH_SHORT).show();
+                    Intent shareIntent = Intent.createChooser(sendIntent, null);
+                    startActivity(shareIntent);
                 });
+            }
+            SyncCoordinatorImpl.getInstance(this).triggerManualSync();
+        }, throwable -> {
+            Log.e("SyncOnboarding", "Errore generazione QR", throwable);
+            Toast.makeText(this, "Errore generazione QR: " + throwable.getMessage(), Toast.LENGTH_SHORT).show();
+        });
     }
 
-    private static class ShareInfo {
-        final String deepLink;
-        final Bitmap qrBitmap;
-        final String pairingPin;
+    public static class ShareInfo {
+        public final String deepLink;
+        public final Bitmap qrBitmap;
+        public final String recipientEmail;
+        public final String pairingPin;
 
-        ShareInfo(String deepLink, Bitmap qrBitmap, String pairingPin) {
+        public ShareInfo(String deepLink, Bitmap qrBitmap, String recipientEmail, String pairingPin) {
             this.deepLink = deepLink;
             this.qrBitmap = qrBitmap;
+            this.recipientEmail = recipientEmail;
             this.pairingPin = pairingPin;
         }
     }
 
-    @SuppressLint("CheckResult")
     private void setupJoinMode() {
         TextView instruction = findViewById(R.id.tv_onboarding_instruction);
         instruction.setText(R.string.join_pantry);
-
-        barcodeView = findViewById(R.id.zxing_barcode_scanner);
-        if (scannedQrData == null) {
-            barcodeView.setVisibility(View.VISIBLE);
-            barcodeView.setStatusText(getString(R.string.add_product_camera_preview_hint));
-
-            barcodeView.decodeSingle(result -> {
-                String rawData = result.getText();
-                scannedQrData = extractDataFromLink(rawData);
-                Log.d("SyncOnboarding", "QR scansionato con successo");
-                runOnUiThread(this::promptForPinAndConfirmJoin);
-            });
-        }
+        flavorDelegate.initScanner(scannedQrData != null);
     }
 
     private void promptForPinAndConfirmJoin() {
         if (scannedQrData == null) return;
-        if (barcodeView != null) {
-            barcodeView.pause();
-            barcodeView.setVisibility(View.GONE);
-        }
+        flavorDelegate.hideScanner();
 
         View tilPin = findViewById(R.id.til_pairing_code);
         com.google.android.material.textfield.TextInputEditText etPin = findViewById(R.id.et_pairing_code);
@@ -243,6 +270,7 @@ public class SyncOnboardingActivity extends AppCompatActivity {
         if (tilPin != null) tilPin.setVisibility(View.VISIBLE);
         if (btnConfirm != null) {
             btnConfirm.setVisibility(View.VISIBLE);
+            btnConfirm.setEnabled(true);
             btnConfirm.setOnClickListener(v -> {
                 String enteredPin = etPin != null && etPin.getText() != null
                         ? OnboardingCoordinator.normalizePairingCode(etPin.getText().toString())
@@ -256,10 +284,11 @@ public class SyncOnboardingActivity extends AppCompatActivity {
         }
     }
 
+    @SuppressLint("CheckResult")
     private void processScannedData(String pairingPin) {
         if (scannedQrData == null) return;
-        
-        if (barcodeView != null) barcodeView.setVisibility(View.GONE);
+
+        flavorDelegate.hideScanner();
         View btnConfirm = findViewById(R.id.btn_confirm_onboarding);
         if (btnConfirm != null) btnConfirm.setEnabled(false);
 
@@ -286,38 +315,45 @@ public class SyncOnboardingActivity extends AppCompatActivity {
                                 }
                                 return registerDevice(payload).map(success -> payload);
                             });
+                } else if ("gdrive".equals(providerId)) {
+                    return flavorDelegate.validateAndRegisterGDriveJoin(payload);
                 }
                 return Single.just(payload);
             })
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .flatMap(payload -> Single.fromCallable(() -> {
+                String providerId = payload.providerId != null ? payload.providerId : payload.data.get("providerId");
                 String ownerId = payload.data.get("ownerDeviceId");
                 String pantryName = payload.data.get("pantryName");
                 String ownerName = payload.deviceName;
                 String remoteId = payload.data.get("remoteId");
-                
+
                 Dispensa newDispensa = new Dispensa(pantryName, false);
                 newDispensa.deviceOwnerId = (ownerId != null && !ownerId.trim().isEmpty()) ? ownerId.trim() : "REMOTE_OWNER";
                 newDispensa.deviceOwnerName = ownerName;
                 newDispensa.remoteId = remoteId;
-                
-                long id = eu.frigo.dispensa.data.Repository.getInstance(getApplication()).insertDispensaSync(newDispensa, true);
-                
-                // Save secure config to DB
-                JoinedPantryConfig config = new JoinedPantryConfig(
-                        (int) id,
-                        payload.data.get("url"),
-                        payload.data.get("user"),
-                        payload.data.get("pass"),
-                        payload.data.get("path"),
-                        Boolean.parseBoolean(payload.data.get("isShared")),
-                        payload.data.get("pantryKey")
-                );
-                config.remotePantryId = remoteId;
-                eu.frigo.dispensa.data.Repository.getInstance(getApplication()).insertJoinedPantryConfig(config);
 
-                // Aggiorna le preferenze per includere la nuova dispensa nel sync
+                long id = Repository.getInstance(getApplication()).insertDispensaSync(newDispensa, true);
+
+                JoinedPantryConfig config;
+                if ("gdrive".equals(providerId)) {
+                    config = new JoinedPantryConfig((int) id, "gdrive", null, remoteId);
+                    config.url = payload.data.get("folderId");
+                } else {
+                    config = new JoinedPantryConfig(
+                            (int) id,
+                            payload.data.get("url"),
+                            payload.data.get("user"),
+                            payload.data.get("pass"),
+                            payload.data.get("path"),
+                            Boolean.parseBoolean(payload.data.get("isShared")),
+                            payload.data.get("pantryKey")
+                    );
+                    config.remotePantryId = remoteId;
+                }
+                Repository.getInstance(getApplication()).insertJoinedPantryConfig(config);
+
                 SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
                 String syncedIds = prefs.getString(SyncManager.SYNC_WEBDAV_SYNCED_IDS, "");
                 if (syncedIds.isEmpty()) {
@@ -330,36 +366,43 @@ public class SyncOnboardingActivity extends AppCompatActivity {
                         .putString(SyncManager.SYNC_WEBDAV_PANTRY_NAME + "_" + id, pantryName)
                         .apply();
 
-                // Eager initial sync pull
-                String myDeviceId = eu.frigo.dispensa.sync.core.engine.InstallationIdProvider.getOrCreateInstallationId(this);
+                String myDeviceId = InstallationIdProvider.getOrCreateInstallationId(this);
                 String myDeviceName = PreferenceManager.getDefaultSharedPreferences(this)
                         .getString(SyncManager.KEY_DEVICE_NAME, android.os.Build.MODEL);
+
                 try {
-                    String pantryPath = PantrySharingService.getInstance().getPantryPath(this, newDispensa, config);
-                    SharedFolderStore store = PantrySharingService.getInstance().createStore(this, newDispensa, config);
-                    FolderSyncEngine engine = new FolderSyncEngine(
-                            store,
-                            new RoomPantryDataBridge(AppDatabase.getDatabase(this)),
-                            new SyncCursorStoreImpl(this, (int) id),
-                            myDeviceId,
-                            myDeviceName,
-                            pantryPath,
-                            (int) id
-                    );
-                    engine.sync().blockingAwait();
+                    if ("gdrive".equals(providerId)) {
+                        flavorDelegate.performGDriveEagerSync(config, (int) id, myDeviceId, myDeviceName);
+                    } else if ("webdav".equals(providerId)) {
+                        String pantryPath = PantrySharingService.getInstance().getPantryPath(this, newDispensa, config);
+                        SharedFolderStore store = PantrySharingService.getInstance().createStore(this, newDispensa, config);
+                        FolderSyncEngine engine = new FolderSyncEngine(
+                                store,
+                                new RoomPantryDataBridge(AppDatabase.getDatabase(this)),
+                                new SyncCursorStoreImpl(this, (int) id),
+                                myDeviceId,
+                                myDeviceName,
+                                pantryPath,
+                                (int) id
+                        );
+                        engine.sync().blockingAwait();
+                    }
                 } catch (Exception e) {
                     Log.w("SyncOnboarding", "Initial eager pull encountered an issue; background worker will retry", e);
                 }
-                
+
                 return payload;
             }).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()))
             .subscribe(payload -> {
-                eu.frigo.dispensa.sync.core.engine.SyncCoordinatorImpl.getInstance(this).applyOnboarding(payload);
+                SyncCoordinatorImpl.getInstance(this).applyOnboarding(payload);
                 Toast.makeText(this, R.string.sync_pairing_success, Toast.LENGTH_LONG).show();
                 setResult(RESULT_OK);
                 finish();
             }, throwable -> {
                 Log.e("SyncOnboarding", "Errore join", throwable);
+                if (flavorDelegate.handleJoinError(throwable, () -> processScannedData(pairingPin))) {
+                    return;
+                }
                 if (PAIRING_EXPIRED.equals(throwable.getMessage())) {
                     Toast.makeText(this, R.string.sync_pairing_expired, Toast.LENGTH_LONG).show();
                 } else if (DEVICE_ALREADY_REGISTERED.equals(throwable.getMessage())) {
@@ -367,7 +410,7 @@ public class SyncOnboardingActivity extends AppCompatActivity {
                 } else if (VERSION_MISMATCH.equals(throwable.getMessage())) {
                     Toast.makeText(this, "Incompatibilità Versione: La dispensa remota non è compatibile con questa app.", Toast.LENGTH_LONG).show();
                 } else {
-                    Toast.makeText(this, R.string.sync_pairing_error, Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, throwable.getMessage() != null ? throwable.getMessage() : getString(R.string.sync_pairing_error), Toast.LENGTH_LONG).show();
                 }
                 if (btnConfirm != null) btnConfirm.setEnabled(true);
                 if (!PAIRING_EXPIRED.equals(throwable.getMessage())) {
@@ -392,7 +435,7 @@ public class SyncOnboardingActivity extends AppCompatActivity {
         String user = payload.data.get("user");
         String pass = payload.data.get("pass");
         WebDavClient client = WebDavClientFactory.getInstance().getClient(url, user, pass);
-        return new eu.frigo.dispensa.sync.webdav.store.WebDavFolderStore(client);
+        return new WebDavFolderStore(client);
     }
 
     private Single<Boolean> checkVersionCompatibility(PairingPayload payload) {
@@ -411,7 +454,7 @@ public class SyncOnboardingActivity extends AppCompatActivity {
             byte[] data = store.read(manifestPath).blockingGet();
             if (data == null || data.length == 0) return false;
 
-            PantryManifest manifest = new com.google.gson.Gson().fromJson(new String(data, java.nio.charset.StandardCharsets.UTF_8), PantryManifest.class);
+            PantryManifest manifest = new com.google.gson.Gson().fromJson(new String(data, StandardCharsets.UTF_8), PantryManifest.class);
             if (manifest != null) {
                 if (payload.data.get("ownerDeviceId") == null && manifest.createdByDevice != null && !manifest.createdByDevice.trim().isEmpty()) {
                     payload.data.put("ownerDeviceId", manifest.createdByDevice.trim());
@@ -430,7 +473,7 @@ public class SyncOnboardingActivity extends AppCompatActivity {
 
             String pantryPath = getWebDavPantryPath(payload);
             SharedFolderStore store = getWebDavStore(payload);
-            String deviceId = eu.frigo.dispensa.sync.core.engine.InstallationIdProvider.getOrCreateInstallationId(this);
+            String deviceId = InstallationIdProvider.getOrCreateInstallationId(this);
             String devicePath = pantryPath + SyncManager.DEFAULT_DEVICES_FOLDER + deviceId + ".json";
 
             Boolean exists = store.exists(devicePath).blockingGet();
@@ -446,7 +489,7 @@ public class SyncOnboardingActivity extends AppCompatActivity {
 
             String pantryPath = getWebDavPantryPath(payload);
             SharedFolderStore store = getWebDavStore(payload);
-            String deviceId = eu.frigo.dispensa.sync.core.engine.InstallationIdProvider.getOrCreateInstallationId(this);
+            String deviceId = InstallationIdProvider.getOrCreateInstallationId(this);
             String deviceName = PreferenceManager.getDefaultSharedPreferences(this)
                     .getString(SyncManager.KEY_DEVICE_NAME, android.os.Build.MODEL);
 
@@ -454,7 +497,7 @@ public class SyncOnboardingActivity extends AppCompatActivity {
             String deviceJson = new com.google.gson.Gson().toJson(device);
             String devicePath = pantryPath + SyncManager.DEFAULT_DEVICES_FOLDER + deviceId + ".json";
 
-            store.writeAtomic(devicePath, deviceJson.getBytes(java.nio.charset.StandardCharsets.UTF_8), null).blockingAwait();
+            store.writeAtomic(devicePath, deviceJson.getBytes(StandardCharsets.UTF_8), null).blockingAwait();
             return true;
         });
     }

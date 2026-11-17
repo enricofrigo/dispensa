@@ -560,7 +560,7 @@ public class AddProductActivity extends AppCompatActivity {
             }
             return Uri.fromFile(destFile);
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("AddProductActivity", "Errore nella copia dell'immagine:", e);
             return null;
         }
     }
@@ -663,7 +663,6 @@ public class AddProductActivity extends AppCompatActivity {
                     .addOnFailureListener(e -> Log.e("TextScanner", "Errore nella scansione del testo da imageUri", e));
 
         } catch (IOException e) {
-            e.printStackTrace();
             Log.e("Scanner", "Errore nel creare InputImage da URI", e);
             Toast.makeText(this, getString(R.string.err_load_image), Toast.LENGTH_SHORT).show();
         }
@@ -690,7 +689,7 @@ public class AddProductActivity extends AppCompatActivity {
     private String formatDate(Long timestamp) {
         if (timestamp == null || timestamp <= 0)
             return getString(R.string.not_defined);
-        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.ITALY);
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
         return sdf.format(new Date(timestamp));
     }
 
@@ -1017,7 +1016,7 @@ public class AddProductActivity extends AppCompatActivity {
         Log.d("OpenFoodFacts", "Fetching details for barcode: " + barcode);
         Toast.makeText(this, getString(R.string.notify_load_product), Toast.LENGTH_SHORT).show();
 
-        java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> {
+        eu.frigo.dispensa.data.AppDatabase.databaseWriteExecutor.execute(() -> {
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
             int cacheLimit = 100;
             int ttlDays = 30;
@@ -1084,7 +1083,7 @@ public class AddProductActivity extends AppCompatActivity {
                                     List<String> fetchedCategories = productData.getCategoriesTags();
                                     final String tagsToSave = fetchedCategories != null ? String.join(",", fetchedCategories) : "";
 
-                                    java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> {
+                                    eu.frigo.dispensa.data.AppDatabase.databaseWriteExecutor.execute(() -> {
                                         String localPath = eu.frigo.dispensa.data.openfoodfacts.OpenFoodFactCacheManager.downloadAndSaveImage(getApplicationContext(), finalImageUrl, barcode);
                                         
                                         eu.frigo.dispensa.data.openfoodfacts.OpenFoodFactCacheEntity newCache = new eu.frigo.dispensa.data.openfoodfacts.OpenFoodFactCacheEntity(

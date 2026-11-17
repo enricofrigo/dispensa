@@ -2,7 +2,6 @@ package eu.frigo.dispensa.sync.core.engine;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
 
 import java.util.UUID;
 
@@ -15,7 +14,8 @@ public class InstallationIdProvider {
             return cachedId;
         }
 
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        SharedPreferences prefs = context.getSharedPreferences(
+                context.getPackageName() + "_preferences", Context.MODE_PRIVATE);
         cachedId = prefs.getString(PREF_INSTALLATION_ID, null);
 
         if (cachedId == null) {

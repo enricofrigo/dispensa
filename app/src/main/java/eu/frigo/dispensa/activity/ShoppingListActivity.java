@@ -50,7 +50,7 @@ public class ShoppingListActivity extends AppCompatActivity
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
-        toolbar.setNavigationOnClickListener(v -> onBackPressed());
+        toolbar.setNavigationOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
 
         RecyclerView recyclerView = findViewById(R.id.recyclerViewShoppingList);
         textViewEmpty = findViewById(R.id.textViewEmptyShoppingList);

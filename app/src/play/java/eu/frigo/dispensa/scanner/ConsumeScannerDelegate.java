@@ -1,15 +1,12 @@
-package eu.frigo.dispensa.activity;
+package eu.frigo.dispensa.scanner;
 
-import android.Manifest;
-import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.util.Size;
+import android.view.KeyEvent;
 import android.widget.Toast;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.CameraSelector;
@@ -19,11 +16,11 @@ import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.core.content.ContextCompat;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.mlkit.vision.barcode.BarcodeScanner;
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions;
 import com.google.mlkit.vision.barcode.BarcodeScanning;
 import com.google.mlkit.vision.barcode.common.Barcode;
 import com.google.mlkit.vision.common.InputImage;
-
 import com.google.mlkit.vision.text.TextRecognition;
 import com.google.mlkit.vision.text.TextRecognizer;
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
@@ -34,52 +31,38 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import android.os.Handler;
-import android.os.Looper;
+import java.util.function.BiConsumer;
 
 import eu.frigo.dispensa.R;
 import eu.frigo.dispensa.data.AppDatabase;
 import eu.frigo.dispensa.data.product.Product;
 import eu.frigo.dispensa.util.DateConverter;
+import eu.frigo.dispensa.util.ExpiryDateParser;
 
-public class ConsumeScannerActivity extends AppCompatActivity {
+public class ConsumeScannerDelegate {
 
-    public static final String EXTRA_SCANNED_BARCODE = "SCANNED_BARCODE_DATA";
-    public static final String EXTRA_SCANNED_DATE_MATCH = "SCANNED_DATE_MATCH";
+    private final AppCompatActivity activity;
+    private final BiConsumer<String, Long> resultCallback;
 
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
     private ExecutorService cameraExecutor;
-    private com.google.mlkit.vision.barcode.BarcodeScanner barcodeScanner;
+    private BarcodeScanner barcodeScanner;
     private TextRecognizer textRecognizer;
-    
-    private boolean isCameraPermissionGranted;
-    private boolean isScanned = false; // Prevent multiple scans
-    
+
+    private boolean isScanned = false;
     private boolean isTextScanningMode = false;
     private String scannedBarcode = null;
     private Set<Long> targetExpiryDates = new HashSet<>();
     private final Handler handler = new Handler(Looper.getMainLooper());
     private Runnable timeoutRunnable;
-    private int searchForExpirydateTimeout = 5000;
+    private static final int SEARCH_FOR_EXPIRY_DATE_TIMEOUT_MS = 5000;
 
-    private final ActivityResultLauncher<String> requestPermissionLauncher = registerForActivityResult(
-            new ActivityResultContracts.RequestPermission(), isGranted -> {
-                if (isGranted) {
-                    isCameraPermissionGranted = true;
-                    startCamera();
-                } else {
-                    isCameraPermissionGranted = false;
-                    Toast.makeText(this, getString(R.string.camera_permission_denied), Toast.LENGTH_LONG).show();
-                    finish();
-                }
-            });
+    public ConsumeScannerDelegate(AppCompatActivity activity, BiConsumer<String, Long> resultCallback) {
+        this.activity = activity;
+        this.resultCallback = resultCallback;
+    }
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_consume_scanner);
-
+    public void onCreate() {
         BarcodeScannerOptions options = new BarcodeScannerOptions.Builder()
                 .setBarcodeFormats(
                         Barcode.FORMAT_EAN_13,
@@ -94,28 +77,19 @@ public class ConsumeScannerActivity extends AppCompatActivity {
         barcodeScanner = BarcodeScanning.getClient(options);
         textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
         cameraExecutor = Executors.newSingleThreadExecutor();
-
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-            isCameraPermissionGranted = true;
-            startCamera();
-        } else {
-            requestPermissionLauncher.launch(Manifest.permission.CAMERA);
-        }
     }
 
-    private void startCamera() {
-        if (!isCameraPermissionGranted) return;
-
-        cameraProviderFuture = ProcessCameraProvider.getInstance(this);
+    public void startScanning() {
+        cameraProviderFuture = ProcessCameraProvider.getInstance(activity);
         cameraProviderFuture.addListener(() -> {
             try {
                 ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
                 bindPreviewAndAnalysis(cameraProvider);
             } catch (ExecutionException | InterruptedException e) {
-                Toast.makeText(this, getString(R.string.err_camera), Toast.LENGTH_SHORT).show();
+                Toast.makeText(activity, activity.getString(R.string.err_camera), Toast.LENGTH_SHORT).show();
                 Log.e("ConsumeScanner", "Errore nell'avvio della fotocamera", e);
             }
-        }, ContextCompat.getMainExecutor(this));
+        }, ContextCompat.getMainExecutor(activity));
     }
 
     @androidx.annotation.OptIn(markerClass = androidx.camera.core.ExperimentalGetImage.class)
@@ -125,7 +99,7 @@ public class ConsumeScannerActivity extends AppCompatActivity {
                 .requireLensFacing(CameraSelector.LENS_FACING_BACK)
                 .build();
 
-        androidx.camera.view.PreviewView previewView = findViewById(R.id.previewViewConsume);
+        androidx.camera.view.PreviewView previewView = activity.findViewById(R.id.previewViewConsume);
         preview.setSurfaceProvider(previewView.getSurfaceProvider());
 
         ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
@@ -142,26 +116,21 @@ public class ConsumeScannerActivity extends AppCompatActivity {
             android.media.Image mediaImage = imageProxy.getImage();
             if (mediaImage != null) {
                 InputImage image = InputImage.fromMediaImage(mediaImage, imageProxy.getImageInfo().getRotationDegrees());
-                
+
                 if (!isTextScanningMode) {
                     barcodeScanner.process(image)
                             .addOnSuccessListener(barcodes -> {
                                 if (!barcodes.isEmpty() && !isTextScanningMode && !isScanned) {
                                     for (Barcode barcode : barcodes) {
                                         String rawValue = barcode.getRawValue();
-                                        Log.d("ConsumeScanner", "Barcode letto: " + rawValue);
                                         isTextScanningMode = true;
                                         scannedBarcode = rawValue;
-                                        
-                                        timeoutRunnable = () -> {
-                                            Log.d("ConsumeScanner", "Timeout "+searchForExpirydateTimeout+" secondi scaduto, restituisco solo barcode.");
-                                            returnResult(scannedBarcode, null);
-                                        };
-                                        handler.postDelayed(timeoutRunnable, searchForExpirydateTimeout);
-                                        Log.d("ConsumeScanner", "Timer di "+searchForExpirydateTimeout+" secondi avviato per la lettura data.");
-                                        
+
+                                        timeoutRunnable = () -> deliverResult(scannedBarcode, null);
+                                        handler.postDelayed(timeoutRunnable, SEARCH_FOR_EXPIRY_DATE_TIMEOUT_MS);
+
                                         AppDatabase.databaseWriteExecutor.execute(() -> {
-                                            List<Product> products = AppDatabase.getDatabase(getApplicationContext())
+                                            List<Product> products = AppDatabase.getDatabase(activity.getApplicationContext())
                                                     .productDao().getProductsByBarcode(rawValue);
                                             Set<Long> dates = new HashSet<>();
                                             for (Product p : products) {
@@ -170,13 +139,9 @@ public class ConsumeScannerActivity extends AppCompatActivity {
                                                 }
                                             }
                                             targetExpiryDates = dates;
-                                            Log.d("ConsumeScanner", "Trovati " + products.size() + " prodotti. Date target uniche: " + targetExpiryDates.size());
-                                            
-                                            // Se non ci sono multiple date da risolvere o non ci sono prodotti
                                             if (products.size() <= 1 || targetExpiryDates.isEmpty()) {
-                                                Log.d("ConsumeScanner", "Non ci sono abbastanza date da confrontare, uscita immediata iterazione testo.");
                                                 handler.removeCallbacks(timeoutRunnable);
-                                                runOnUiThread(() -> returnResult(scannedBarcode, null));
+                                                activity.runOnUiThread(() -> deliverResult(scannedBarcode, null));
                                             }
                                         });
                                         break;
@@ -189,18 +154,12 @@ public class ConsumeScannerActivity extends AppCompatActivity {
                     textRecognizer.process(image)
                             .addOnSuccessListener(text -> {
                                 if (isScanned) return;
-                                String resultText = text.getText();
-                                String parsedDateStr = eu.frigo.dispensa.util.ExpiryDateParser.parseExpiryDate(resultText);
+                                String parsedDateStr = ExpiryDateParser.parseExpiryDate(text.getText());
                                 if (parsedDateStr != null) {
                                     Long parsedDate = DateConverter.parseDisplayDateToTimestampMs(parsedDateStr);
-                                    if (parsedDate != null) {
-                                        Log.d("ConsumeScanner", "Data estratta dal testo: " + parsedDateStr + " -> timestamp: " + parsedDate);
-                                        if (targetExpiryDates.contains(parsedDate)) {
-                                            Log.d("ConsumeScanner", "MATCH! Data trovata e presente tra i prodotti: " + parsedDate);
-                                            handler.removeCallbacks(timeoutRunnable);
-                                            returnResult(scannedBarcode, parsedDate);
-                                            return;
-                                        }
+                                    if (parsedDate != null && targetExpiryDates.contains(parsedDate)) {
+                                        handler.removeCallbacks(timeoutRunnable);
+                                        deliverResult(scannedBarcode, parsedDate);
                                     }
                                 }
                             })
@@ -214,15 +173,23 @@ public class ConsumeScannerActivity extends AppCompatActivity {
 
         try {
             cameraProvider.unbindAll();
-            cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalysis);
+            cameraProvider.bindToLifecycle(activity, cameraSelector, preview, imageAnalysis);
         } catch (Exception exc) {
             Log.e("ConsumeScanner", "Use case binding fallito", exc);
         }
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
+    private void deliverResult(String barcode, Long expiryDate) {
+        if (isScanned) return;
+        isScanned = true;
+        resultCallback.accept(barcode, expiryDate);
+    }
+
+    public void onResume() {}
+
+    public void onPause() {}
+
+    public void onDestroy() {
         if (cameraExecutor != null) {
             cameraExecutor.shutdown();
         }
@@ -237,15 +204,7 @@ public class ConsumeScannerActivity extends AppCompatActivity {
         }
     }
 
-    private void returnResult(String barcode, Long expiryDate) {
-        if (isScanned) return;
-        isScanned = true;
-        Intent resultIntent = new Intent();
-        resultIntent.putExtra(EXTRA_SCANNED_BARCODE, barcode);
-        if (expiryDate != null) {
-            resultIntent.putExtra(EXTRA_SCANNED_DATE_MATCH, expiryDate);
-        }
-        setResult(RESULT_OK, resultIntent);
-        finish();
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        return false;
     }
 }
